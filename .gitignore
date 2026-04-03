@@ -1,0 +1,39 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+
+# Android
+local.properties
+google-services.json
+keystore/
+
+# Spring Boot
+*.jar
+*.war
+!gradle-wrapper.jar
+
+# Logs
+*.log
+logs/
+
+# Environment
+.env
+*.env.local
+
+# Secrets
+**/application-local.yml
+**/application-prod.yml
+**/serviceAccountKey.json
