@@ -1,5 +1,6 @@
 [versions]
 agp = "8.3.2"
+googleServices = "4.4.4"
 kotlin = "1.9.23"
 coreKtx = "1.13.1"
 appcompat = "1.7.0"
@@ -59,4 +60,4 @@ android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
-google-services = { id = "com.google.gms.google-services", version.ref = "agp" }
+google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
