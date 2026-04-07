@@ -2,11 +2,10 @@ package com.aimong.backend.domain.auth.dto;
 
 import java.util.UUID;
 
-public record ChildLoginResponse(
+public record ParentRegisterResponse(
         UUID childId,
         String nickname,
-        String sessionToken,
-        String profileImageType,
-        int totalXp
+        String code,
+        int starterTickets
 ) {
 }

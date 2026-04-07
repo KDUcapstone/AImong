@@ -3,13 +3,17 @@ package com.aimong.backend.global.filter;
 import com.aimong.backend.global.exception.AimongException;
 import com.aimong.backend.global.exception.ErrorCode;
 import com.aimong.backend.global.response.ApiResponse;
-import com.aimong.backend.global.security.JwtProvider;
+import com.aimong.backend.global.util.AuthHeaderUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthException;
+import com.google.firebase.auth.FirebaseToken;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Map;
 import java.util.Collections;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -21,16 +25,18 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 @Component
 @RequiredArgsConstructor
-public class JwtAuthFilter extends OncePerRequestFilter {
+public class FirebaseParentAuthFilter extends OncePerRequestFilter {
 
-    private static final String API_HEALTH_URI = "/api/health";
-    private static final String API_CHILD_LOGIN_URI = "/api/child/login";
     private static final String API_PARENT_PREFIX = "/api/parent/";
-    private static final String AUTHORIZATION_HEADER = "Authorization";
-    private static final String BEARER_PREFIX = "Bearer ";
+    private static final String GOOGLE_SIGN_IN_PROVIDER = "google.com";
 
-    private final JwtProvider jwtProvider;
+    private final FirebaseAuth firebaseAuth;
     private final ObjectMapper objectMapper;
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        return !request.getRequestURI().startsWith(API_PARENT_PREFIX);
+    }
 
     @Override
     protected void doFilterInternal(
@@ -38,26 +44,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain
     ) throws ServletException, IOException {
-        if (shouldSkip(request)) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-        String authorizationHeader = request.getHeader(AUTHORIZATION_HEADER);
-
-        if (authorizationHeader == null || !authorizationHeader.startsWith(BEARER_PREFIX)) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-        String accessToken = authorizationHeader.substring(BEARER_PREFIX.length());
-
         try {
-            jwtProvider.validateChildSessionToken(accessToken);
-            String uid = jwtProvider.extractChildId(accessToken);
+            String idToken = AuthHeaderUtils.extractBearerToken(request.getHeader("Authorization"));
+            FirebaseToken firebaseToken = firebaseAuth.verifyIdToken(idToken);
+            validateGoogleProvider(firebaseToken);
 
             UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(uid, null, Collections.emptyList());
+                    new UsernamePasswordAuthenticationToken(firebaseToken.getUid(), null, Collections.emptyList());
             authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
@@ -65,14 +58,23 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         } catch (AimongException exception) {
             SecurityContextHolder.clearContext();
             writeUnauthorizedResponse(response, exception.getErrorCode());
+        } catch (FirebaseAuthException exception) {
+            SecurityContextHolder.clearContext();
+            writeUnauthorizedResponse(response, ErrorCode.UNAUTHORIZED);
         }
     }
 
-    private boolean shouldSkip(HttpServletRequest request) {
-        String uri = request.getRequestURI();
-        return API_HEALTH_URI.equals(uri)
-                || API_CHILD_LOGIN_URI.equals(uri)
-                || uri.startsWith(API_PARENT_PREFIX);
+    @SuppressWarnings("unchecked")
+    private void validateGoogleProvider(FirebaseToken firebaseToken) {
+        Object firebaseClaim = firebaseToken.getClaims().get("firebase");
+        if (!(firebaseClaim instanceof Map<?, ?> firebaseMap)) {
+            throw new AimongException(ErrorCode.UNAUTHORIZED);
+        }
+
+        Object signInProvider = firebaseMap.get("sign_in_provider");
+        if (!GOOGLE_SIGN_IN_PROVIDER.equals(signInProvider)) {
+            throw new AimongException(ErrorCode.UNAUTHORIZED);
+        }
     }
 
     private void writeUnauthorizedResponse(HttpServletResponse response, ErrorCode errorCode) throws IOException {

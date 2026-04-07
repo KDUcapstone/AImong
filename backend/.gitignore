@@ -35,3 +35,10 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### Environment File ###
+.env
+firebase_key.json
+
+### Document for Codex ###
+Doc/

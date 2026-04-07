@@ -1,3 +1,44 @@
 package com.aimong.backend.domain.auth.entity;
-// TODO: @Entity - id, googleUid, email, createdAt
-public class ParentAccount {}
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
+import java.time.Instant;
+import java.util.UUID;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+@Getter
+@Entity
+@Table(name = "parent_accounts")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+public class ParentAccount {
+
+    @Id
+    private UUID id;
+
+    @Column(name = "firebase_uid", nullable = false, unique = true)
+    private String firebaseUid;
+
+    @Column(name = "email")
+    private String email;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private Instant createdAt;
+
+    public static ParentAccount create(String firebaseUid, String email) {
+        return new ParentAccount(UUID.randomUUID(), firebaseUid, email, null);
+    }
+
+    @PrePersist
+    void prePersist() {
+        if (createdAt == null) {
+            createdAt = Instant.now();
+        }
+    }
+}
