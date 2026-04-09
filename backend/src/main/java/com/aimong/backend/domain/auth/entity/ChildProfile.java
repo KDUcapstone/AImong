@@ -100,6 +100,21 @@ public class ChildProfile {
         this.sessionVersion += 1;
     }
 
+    public void applyMissionXp(int xpEarned, LocalDate today, LocalDate weekStart) {
+        if (todayXpDate == null || !todayXpDate.equals(today)) {
+            todayXp = 0;
+            todayXpDate = today;
+        }
+        if (weeklyXpWeekStart == null || !weeklyXpWeekStart.equals(weekStart)) {
+            weeklyXp = 0;
+            weeklyXpWeekStart = weekStart;
+        }
+
+        totalXp += xpEarned;
+        todayXp += xpEarned;
+        weeklyXp += xpEarned;
+    }
+
     @PrePersist
     void prePersist() {
         if (createdAt == null) {
