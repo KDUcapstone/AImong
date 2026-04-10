@@ -1,11 +1,11 @@
 # AImong 백엔드 AI 코딩 컨텍스트 (Cursor/Copilot용)
 
 ## 프로젝트 정보
-- **프레임워크**: Spring Boot 3.x (Java 17)
+- **프레임워크**: Spring Boot 3.x (Java 21)
 - **패키지**: `com.aimong.backend`
 - **DB**: Supabase (PostgreSQL) + Spring Data JPA
 - **인증**: Firebase Admin SDK (부모) + 자체 세션 토큰 (자녀)
-- **AI**: OpenAI GPT API (gpt-4o-mini)
+- **AI**: OpenAI GPT API (gpt-5-mini)
 - **FCM**: Firebase Admin SDK
 
 ## 패키지 구조 원칙

@@ -1,3 +1,20 @@
 spring:
   application:
     name: backend
+
+  datasource:
+    url: jdbc:postgresql://db.uuipyygaenzyceebrena.supabase.co:5432/postgres
+    username: postgres
+    password: ${SUPABASE_DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: none          # 테이블은 Supabase에서 직접 관리
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        default_schema: public
+    show-sql: false
+    open-in-view: false
