@@ -1,14 +1,52 @@
 <?xml version="1.0" encoding="utf-8"?>
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/nav_child">
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_child"
+    app:startDestination="@id/homeFragment">
 
-    <!-- TODO: 자녀 화면 NavGraph -->
-    <!-- SplashFragment → RoleSelectFragment → ChildCodeFragment → HomeFragment -->
-    <!-- HomeFragment ↔ MissionListFragment ↔ QuizFragment -->
-    <!-- HomeFragment ↔ ChatFragment -->
-    <!-- HomeFragment ↔ GachaFragment -->
-    <!-- HomeFragment ↔ StreakFragment -->
-    <!-- HomeFragment ↔ QuestFragment -->
+    <fragment
+        android:id="@+id/homeFragment"
+        android:name="com.kduniv.aimong.feature.home.HomeFragment"
+        android:label="Home"
+        tools:layout="@layout/fragment_home">
+        <action
+            android:id="@+id/action_homeFragment_to_missionListFragment"
+            app:destination="@id/missionListFragment" />
+        <action
+            android:id="@+id/action_homeFragment_to_chatFragment"
+            app:destination="@id/chatFragment" />
+        <action
+            android:id="@+id/action_homeFragment_to_gachaFragment"
+            app:destination="@id/gachaFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/missionListFragment"
+        android:name="com.kduniv.aimong.feature.mission.MissionListFragment"
+        android:label="Missions"
+        tools:layout="@layout/fragment_mission_list">
+        <action
+            android:id="@+id/action_missionListFragment_to_quizFragment"
+            app:destination="@id/quizFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/chatFragment"
+        android:name="com.kduniv.aimong.feature.chat.ChatFragment"
+        android:label="Chat"
+        tools:layout="@layout/fragment_chat" />
+
+    <fragment
+        android:id="@+id/quizFragment"
+        android:name="com.kduniv.aimong.feature.quiz.QuizFragment"
+        android:label="Quiz"
+        tools:layout="@layout/fragment_quiz" />
+
+    <fragment
+        android:id="@+id/gachaFragment"
+        android:name="com.kduniv.aimong.feature.gacha.GachaFragment"
+        android:label="Gacha"
+        tools:layout="@layout/fragment_gacha" />
 
 </navigation>
