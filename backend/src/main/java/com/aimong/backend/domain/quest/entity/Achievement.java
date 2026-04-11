@@ -4,16 +4,17 @@ import com.aimong.backend.domain.auth.entity.ChildProfile;
 import com.aimong.backend.global.enums.AchievementType;
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
-/**
- * 업적(히든 프로필) 달성 기록
- * total_xp 기준: SPROUT(100+) / EXPLORER(300+) / CRITIC(500+) / GUARDIAN(1000+)
- * 달성 시 profile_image_type도 함께 업데이트됨
- */
 @Entity
-@Table(name = "achievements")
+@Table(
+    name = "achievements",
+    uniqueConstraints = {
+        @UniqueConstraint(name = "uk_achievements_child_type", columnNames = {"child_id", "achievement_type"})
+    }
+)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -38,6 +39,8 @@ public class Achievement {
 
     @PrePersist
     protected void onCreate() {
-        if (unlockedAt == null) unlockedAt = OffsetDateTime.now();
+        if (unlockedAt == null) {
+            unlockedAt = OffsetDateTime.now();
+        }
     }
 }

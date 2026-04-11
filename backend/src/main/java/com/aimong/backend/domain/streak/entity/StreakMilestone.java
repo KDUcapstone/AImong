@@ -3,16 +3,22 @@ package com.aimong.backend.domain.streak.entity;
 import com.aimong.backend.domain.auth.entity.ChildProfile;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Check;
+
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
-/**
- * 사용자 목표 마일스톤 (30일 초과, 25일 단위)
- * 기능명세서 섹션 10-2: 사용자가 직접 목표 일수를 설정
- * tier: 1단계(초급) / 2단계(중급) / 3단계(고급)
- */
 @Entity
-@Table(name = "streak_milestones")
+@Table(
+    name = "streak_milestones",
+    uniqueConstraints = {
+        @UniqueConstraint(name = "uk_streak_milestones_child_target", columnNames = {"child_id", "target_days"})
+    },
+    indexes = {
+        @Index(name = "idx_streak_milestones_child", columnList = "child_id")
+    }
+)
+@Check(constraints = "(reward_claimed = false OR achieved = true) AND ((achieved = false AND achieved_at IS NULL) OR (achieved = true AND achieved_at IS NOT NULL))")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -29,10 +35,10 @@ public class StreakMilestone {
     private ChildProfile child;
 
     @Column(name = "target_days", nullable = false)
-    private Short targetDays;  // 30 초과
+    private Short targetDays;
 
     @Column(name = "tier", nullable = false)
-    private Short tier;  // 1, 2, 3
+    private Short tier;
 
     @Column(name = "achieved", nullable = false)
     @Builder.Default
@@ -50,7 +56,9 @@ public class StreakMilestone {
 
     @PrePersist
     protected void onCreate() {
-        if (createdAt == null) createdAt = OffsetDateTime.now();
+        if (createdAt == null) {
+            createdAt = OffsetDateTime.now();
+        }
     }
 
     public void achieve() {

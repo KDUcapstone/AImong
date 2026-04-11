@@ -4,17 +4,20 @@ import com.aimong.backend.domain.auth.entity.ChildProfile;
 import com.aimong.backend.global.enums.WeeklyQuestType;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Check;
+
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
-/**
- * 위클리 퀘스트 현황
- * XP_100(주간 XP 100) / MISSION_5(미션 5개) / CHAT_3(챗봇 3회)
- * week_start = 해당 주 월요일 날짜
- */
 @Entity
-@Table(name = "weekly_quests")
+@Table(
+    name = "weekly_quests",
+    uniqueConstraints = {
+        @UniqueConstraint(name = "uk_weekly_quests_child_week_type", columnNames = {"child_id", "week_start", "quest_type"})
+    }
+)
+@Check(constraints = "((completed = false AND completed_at IS NULL) OR (completed = true AND completed_at IS NOT NULL)) AND (reward_claimed = false OR completed = true)")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor

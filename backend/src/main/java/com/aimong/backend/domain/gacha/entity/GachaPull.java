@@ -5,17 +5,19 @@ import com.aimong.backend.global.enums.PetGrade;
 import com.aimong.backend.global.enums.TicketType;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Check;
+
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
-/**
- * 가챠 뽑기 기록
- * is_new=true  → granted_pet_id NOT NULL, fragments_got=0 (신규 펫 지급)
- * is_new=false → granted_pet_id NULL, fragments_got>0   (중복 → 조각 지급)
- * sr_miss_before: 이번 뽑기 직전의 srMissCount → pity 확률 계산 이력 보존
- */
 @Entity
-@Table(name = "gacha_pulls")
+@Table(
+    name = "gacha_pulls",
+    indexes = {
+        @Index(name = "idx_gacha_pulls_child", columnList = "child_id, pulled_at")
+    }
+)
+@Check(constraints = "(is_new = true AND granted_pet_id IS NOT NULL AND fragments_got = 0) OR (is_new = false AND granted_pet_id IS NULL AND fragments_got > 0)")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -61,6 +63,8 @@ public class GachaPull {
 
     @PrePersist
     protected void onCreate() {
-        if (pulledAt == null) pulledAt = OffsetDateTime.now();
+        if (pulledAt == null) {
+            pulledAt = OffsetDateTime.now();
+        }
     }
 }

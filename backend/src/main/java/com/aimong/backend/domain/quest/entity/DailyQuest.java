@@ -4,17 +4,20 @@ import com.aimong.backend.domain.auth.entity.ChildProfile;
 import com.aimong.backend.global.enums.DailyQuestType;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Check;
+
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
-/**
- * 데일리 퀘스트 현황
- * MISSION_1(미션 1개) / XP_20(오늘 XP 20) / CHAT_GPT(챗봇 대화) / ALL_3(3개 모두)
- * 매일 자정 스케줄러가 새 행 생성
- */
 @Entity
-@Table(name = "daily_quests")
+@Table(
+    name = "daily_quests",
+    uniqueConstraints = {
+        @UniqueConstraint(name = "uk_daily_quests_child_date_type", columnNames = {"child_id", "quest_date", "quest_type"})
+    }
+)
+@Check(constraints = "((completed = false AND completed_at IS NULL) OR (completed = true AND completed_at IS NOT NULL)) AND (reward_claimed = false OR completed = true)")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor

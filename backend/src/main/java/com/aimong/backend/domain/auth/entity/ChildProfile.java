@@ -3,12 +3,18 @@ package com.aimong.backend.domain.auth.entity;
 import com.aimong.backend.global.enums.ProfileImageType;
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "child_profiles")
+@Table(
+    name = "child_profiles",
+    indexes = {
+        @Index(name = "idx_child_profiles_parent", columnList = "parent_id")
+    }
+)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -27,7 +33,6 @@ public class ChildProfile {
     @Column(name = "nickname", nullable = false)
     private String nickname;
 
-    /** child_code DOMAIN — 6자리 숫자 문자열, DB에서 형식 검증 */
     @Column(name = "code", nullable = false, unique = true)
     private String code;
 
@@ -51,7 +56,6 @@ public class ChildProfile {
     @Builder.Default
     private Integer gachaPullCount = 0;
 
-    /** 영웅 이상 미획득 연속 횟수 — pity 확률 계산 기준 */
     @Column(name = "sr_miss_count", nullable = false)
     @Builder.Default
     private Integer srMissCount = 0;
@@ -61,16 +65,13 @@ public class ChildProfile {
     @Builder.Default
     private ProfileImageType profileImageType = ProfileImageType.DEFAULT;
 
-    /** 코드 재발급 시 +1 → 기존 JWT 무효화 */
     @Column(name = "session_version", nullable = false)
     @Builder.Default
     private Integer sessionVersion = 1;
 
-    /** today_xp 마지막 적립 날짜(KST) — 날짜 바뀌면 today_xp 0 초기화 */
     @Column(name = "today_xp_date")
     private LocalDate todayXpDate;
 
-    /** weekly_xp 마지막 적립 주 월요일(KST) — 주차 바뀌면 weekly_xp 0 초기화 */
     @Column(name = "weekly_xp_week_start")
     private LocalDate weeklyXpWeekStart;
 
@@ -82,7 +83,9 @@ public class ChildProfile {
 
     @PrePersist
     protected void onCreate() {
-        if (createdAt == null) createdAt = OffsetDateTime.now();
+        if (createdAt == null) {
+            createdAt = OffsetDateTime.now();
+        }
     }
 
     public void addXp(int xp) {
