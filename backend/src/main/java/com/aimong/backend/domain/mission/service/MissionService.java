@@ -1,5 +1,6 @@
 package com.aimong.backend.domain.mission.service;
 
+import com.aimong.backend.domain.mission.MissionCompletionPolicy;
 import com.aimong.backend.domain.mission.dto.MissionListResponse;
 import com.aimong.backend.domain.mission.dto.MissionSummaryResponse;
 import com.aimong.backend.domain.mission.dto.StageProgressResponse;
@@ -24,9 +25,9 @@ public class MissionService {
     @Transactional(readOnly = true)
     public MissionListResponse getMissions(UUID childId) {
         StageProgressResponse stageProgress = new StageProgressResponse(
-                missionAttemptRepository.countCompletedMissionByStage(childId, (short) 1),
-                missionAttemptRepository.countCompletedMissionByStage(childId, (short) 2),
-                missionAttemptRepository.countCompletedMissionByStage(childId, (short) 3)
+                countCompletedMissionByStage(childId, (short) 1),
+                countCompletedMissionByStage(childId, (short) 2),
+                countCompletedMissionByStage(childId, (short) 3)
         );
 
         List<MissionSummaryResponse> missions = missionRepository.findAllByIsActiveTrueOrderByStageAscIdAsc()
@@ -51,7 +52,14 @@ public class MissionService {
                 .findTopByChildIdAndMissionIdOrderBySubmittedAtDesc(childId, mission.getId())
                 .orElse(null);
 
-        LocalDate completedAt = latestAttempt != null ? latestAttempt.getAttemptDate() : null;
+        LocalDate completedAt = missionAttemptRepository.findLatestCompletedAt(
+                        childId,
+                        mission.getId(),
+                        MissionCompletionPolicy.PASS_SCORE_NUMERATOR,
+                        MissionCompletionPolicy.PASS_SCORE_DENOMINATOR
+                )
+                .orElse(null);
+        boolean isCompleted = completedAt != null;
 
         return new MissionSummaryResponse(
                 mission.getId(),
@@ -59,9 +67,18 @@ public class MissionService {
                 mission.getTitle(),
                 mission.getDescription(),
                 isUnlocked(mission, stageProgress),
-                latestAttempt != null,
+                isCompleted,
                 completedAt,
                 latestAttempt != null
+        );
+    }
+
+    private long countCompletedMissionByStage(UUID childId, short stage) {
+        return missionAttemptRepository.countCompletedMissionByStage(
+                childId,
+                stage,
+                MissionCompletionPolicy.PASS_SCORE_NUMERATOR,
+                MissionCompletionPolicy.PASS_SCORE_DENOMINATOR
         );
     }
 }

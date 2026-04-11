@@ -30,7 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class QuizService {
 
-    private static final int QUESTION_COUNT = 5;
+    private static final int QUESTION_COUNT = 10;
 
     private final MissionRepository missionRepository;
     private final QuestionBankRepository questionBankRepository;

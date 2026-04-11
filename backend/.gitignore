@@ -39,6 +39,7 @@ out/
 ### Environment File ###
 .env
 firebase_key.json
+google-services.json
 
 ### Document for Codex ###
 Doc/

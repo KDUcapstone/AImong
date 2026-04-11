@@ -2,6 +2,7 @@ package com.aimong.backend.domain.mission.service;
 
 import com.aimong.backend.domain.auth.entity.ChildProfile;
 import com.aimong.backend.domain.auth.repository.ChildProfileRepository;
+import com.aimong.backend.domain.mission.MissionCompletionPolicy;
 import com.aimong.backend.domain.mission.dto.SubmitRequest;
 import com.aimong.backend.domain.mission.dto.SubmitResponse;
 import com.aimong.backend.domain.mission.entity.Mission;
@@ -35,7 +36,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class SubmitService {
 
-    private static final int TOTAL_QUESTIONS = 5;
+    private static final int TOTAL_QUESTIONS = 10;
 
     private final QuizAttemptRepository quizAttemptRepository;
     private final MissionRepository missionRepository;
@@ -96,16 +97,19 @@ public class SubmitService {
             ));
         }
 
+        boolean isPassed = MissionCompletionPolicy.isPassed(score, TOTAL_QUESTIONS);
         boolean isPerfect = score == TOTAL_QUESTIONS;
         LocalDate today = KstDateUtils.today();
         long todayAttempts = missionAttemptRepository.countByChildIdAndMissionIdAndAttemptDate(childId, missionId, today);
         int attemptNo = Math.toIntExact(todayAttempts) + 1;
         boolean isReview = attemptNo > 1;
-        int xpEarned = calculateXp(isPerfect, isReview);
+        int xpEarned = calculateXp(isPassed, isPerfect, isReview);
 
         ChildProfile childProfile = childProfileRepository.findById(childId)
                 .orElseThrow(() -> new AimongException(ErrorCode.CHILD_NOT_FOUND));
-        childProfile.applyMissionXp(xpEarned, today, KstDateUtils.currentWeekStart());
+        if (xpEarned > 0) {
+            childProfile.applyMissionXp(xpEarned, today, KstDateUtils.currentWeekStart());
+        }
 
         missionAttemptRepository.save(MissionAttempt.create(
                 childId,
@@ -149,7 +153,11 @@ public class SubmitService {
         }
     }
 
-    private int calculateXp(boolean isPerfect, boolean isReview) {
+    private int calculateXp(boolean isPassed, boolean isPerfect, boolean isReview) {
+        if (!isPassed) {
+            return 0;
+        }
+
         int xpEarned = 10;
         if (isPerfect) {
             xpEarned += 10;
