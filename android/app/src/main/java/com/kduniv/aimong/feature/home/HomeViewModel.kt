@@ -23,8 +23,11 @@ class HomeViewModel @Inject constructor() : BaseViewModel() {
         viewModelScope.launch {
             // TODO: 실제 API 또는 Local DB에서 데이터 로드
             _uiState.value = HomeUiState.Success(
-                petState = PetState.BABY,
-                streakDays = 5
+                petStage = PetStage.EGG,
+                petMood = PetMood.IDLE,
+                totalXp = 100,
+                continuousDays = 5,
+                tickets = TicketCount(normal = 3, rare = 1, epic = 0)
             )
         }
     }

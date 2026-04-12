@@ -1,7 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.kotlin.kapt)
+    alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
     alias(libs.plugins.google.services)
 }
@@ -40,6 +40,19 @@ android {
         viewBinding = true
         buildConfig = true
     }
+
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
+    }
+}
+
+hilt {
+    enableAggregatingTask = true
 }
 
 dependencies {
@@ -56,16 +69,14 @@ dependencies {
 
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
-    kapt(libs.androidx.room.compiler)
+    ksp(libs.androidx.room.compiler)
 
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.work.runtime.ktx)
 
     // Hilt 설정
     implementation(libs.hilt.android)
-    kapt(libs.hilt.compiler)
-    // Kotlin 2.0+ 메타데이터 에러 해결을 위해 추가
-    kapt("org.jetbrains.kotlinx:kotlinx-metadata-jvm:0.9.0")
+    ksp(libs.hilt.compiler)
 
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.gson)
@@ -83,7 +94,8 @@ dependencies {
     implementation(libs.mlkit.entity.extraction)
     implementation(libs.mlkit.text.recognition.korean)
 
-    implementation(libs.lottie)
+    // 직접 문자열 선언으로 카탈로그 꼬임 방지
+    api("com.airbnb.android:lottie:6.6.2")
 
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.coroutines.play.services)
