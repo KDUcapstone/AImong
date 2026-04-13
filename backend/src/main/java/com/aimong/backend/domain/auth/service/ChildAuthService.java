@@ -10,6 +10,7 @@ import com.aimong.backend.global.exception.ErrorCode;
 import com.aimong.backend.global.security.JwtProvider;
 import com.aimong.backend.global.util.ClientIpUtils;
 import jakarta.servlet.http.HttpServletRequest;
+import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,7 +23,7 @@ public class ChildAuthService {
     private final JwtProvider jwtProvider;
     private final LoginAttemptService loginAttemptService;
 
-    @Transactional(readOnly = true)
+    @Transactional
     public ChildLoginResponse login(ChildLoginRequest request, HttpServletRequest httpServletRequest) {
         String clientIp = ClientIpUtils.extractClientIp(httpServletRequest);
         loginAttemptService.validateNotLocked(clientIp, request.code());
@@ -37,6 +38,7 @@ public class ChildAuthService {
                 childProfile.getId().toString(),
                 childProfile.getSessionVersion()
         );
+        childProfile.touchLastActiveAt(Instant.now());
         loginAttemptService.recordSuccess(clientIp, request.code());
 
         return new ChildLoginResponse(
@@ -44,7 +46,8 @@ public class ChildAuthService {
                 childProfile.getNickname(),
                 sessionToken,
                 childProfile.getProfileImageType().name(),
-                childProfile.getTotalXp()
+                childProfile.getTotalXp(),
+                childProfile.getLevel()
         );
     }
 }

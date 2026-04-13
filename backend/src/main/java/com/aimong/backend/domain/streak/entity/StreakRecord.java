@@ -6,6 +6,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -26,6 +27,9 @@ public class StreakRecord {
     @Column(name = "continuous_days", nullable = false)
     private int continuousDays;
 
+    @Column(name = "last_completed_date")
+    private LocalDate lastCompletedDate;
+
     @Column(name = "today_mission_count", nullable = false)
     private int todayMissionCount;
 
@@ -36,7 +40,30 @@ public class StreakRecord {
     private Instant updatedAt;
 
     public static StreakRecord create(UUID childId) {
-        return new StreakRecord(childId, 0, 0, 0, null);
+        return new StreakRecord(childId, 0, null, 0, 0, null);
+    }
+
+    public void recordMissionCompletion(LocalDate today) {
+        if (lastCompletedDate == null || lastCompletedDate.isBefore(today.minusDays(1))) {
+            continuousDays = 1;
+            todayMissionCount = 1;
+        } else if (lastCompletedDate.equals(today.minusDays(1))) {
+            continuousDays += 1;
+            todayMissionCount = 1;
+        } else if (lastCompletedDate.equals(today)) {
+            todayMissionCount += 1;
+        } else {
+            continuousDays = 1;
+            todayMissionCount = 1;
+        }
+
+        lastCompletedDate = today;
+        updatedAt = Instant.now();
+    }
+
+    public void addShield(int count) {
+        shieldCount += count;
+        updatedAt = Instant.now();
     }
 
     @PrePersist

@@ -1,5 +1,6 @@
 package com.aimong.backend.domain.auth.entity;
 
+import com.aimong.backend.domain.pet.entity.PetGrade;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -75,6 +76,9 @@ public class ChildProfile {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    @Column(name = "last_active_at")
+    private Instant lastActiveAt;
+
     public static ChildProfile create(ParentAccount parentAccount, String nickname, String code) {
         return new ChildProfile(
                 UUID.randomUUID(),
@@ -91,6 +95,7 @@ public class ChildProfile {
                 0,
                 ProfileImageType.DEFAULT,
                 1,
+                null,
                 null
         );
     }
@@ -113,6 +118,41 @@ public class ChildProfile {
         totalXp += xpEarned;
         todayXp += xpEarned;
         weeklyXp += xpEarned;
+    }
+
+    public int getLevel() {
+        return (totalXp / 100) + 1;
+    }
+
+    public int getNextLevelTargetXp() {
+        return getLevel() * 100;
+    }
+
+    public void refreshProfileImageType() {
+        if (totalXp >= 1000) {
+            profileImageType = ProfileImageType.GUARDIAN;
+        } else if (totalXp >= 500) {
+            profileImageType = ProfileImageType.CRITIC;
+        } else if (totalXp >= 300) {
+            profileImageType = ProfileImageType.EXPLORER;
+        } else if (totalXp >= 100) {
+            profileImageType = ProfileImageType.SPROUT;
+        } else {
+            profileImageType = ProfileImageType.DEFAULT;
+        }
+    }
+
+    public void touchLastActiveAt(Instant instant) {
+        this.lastActiveAt = instant;
+    }
+
+    public void recordGachaPull(PetGrade grade) {
+        gachaPullCount += 1;
+        if (grade == PetGrade.NORMAL) {
+            srMissCount += 1;
+            return;
+        }
+        srMissCount = 0;
     }
 
     @PrePersist

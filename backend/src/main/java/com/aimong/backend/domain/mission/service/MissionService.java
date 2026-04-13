@@ -5,7 +5,6 @@ import com.aimong.backend.domain.mission.dto.MissionListResponse;
 import com.aimong.backend.domain.mission.dto.MissionSummaryResponse;
 import com.aimong.backend.domain.mission.dto.StageProgressResponse;
 import com.aimong.backend.domain.mission.entity.Mission;
-import com.aimong.backend.domain.mission.entity.MissionAttempt;
 import com.aimong.backend.domain.mission.repository.MissionAttemptRepository;
 import com.aimong.backend.domain.mission.repository.MissionRepository;
 import java.time.LocalDate;
@@ -48,10 +47,6 @@ public class MissionService {
     }
 
     private MissionSummaryResponse toMissionSummary(UUID childId, Mission mission, StageProgressResponse stageProgress) {
-        MissionAttempt latestAttempt = missionAttemptRepository
-                .findTopByChildIdAndMissionIdOrderBySubmittedAtDesc(childId, mission.getId())
-                .orElse(null);
-
         LocalDate completedAt = missionAttemptRepository.findLatestCompletedAt(
                         childId,
                         mission.getId(),
@@ -69,7 +64,7 @@ public class MissionService {
                 isUnlocked(mission, stageProgress),
                 isCompleted,
                 completedAt,
-                latestAttempt != null
+                isCompleted
         );
     }
 

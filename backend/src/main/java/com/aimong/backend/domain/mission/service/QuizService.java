@@ -3,13 +3,14 @@ package com.aimong.backend.domain.mission.service;
 import com.aimong.backend.domain.mission.dto.MissionQuestionsResponse;
 import com.aimong.backend.domain.mission.dto.QuestionResponse;
 import com.aimong.backend.domain.mission.dto.StageProgressResponse;
+import com.aimong.backend.domain.mission.config.MissionQuestionProperties;
 import com.aimong.backend.domain.mission.entity.Mission;
 import com.aimong.backend.domain.mission.entity.QuestionBank;
 import com.aimong.backend.domain.mission.entity.QuizAttempt;
 import com.aimong.backend.domain.mission.repository.MissionAttemptRepository;
 import com.aimong.backend.domain.mission.repository.MissionRepository;
-import com.aimong.backend.domain.mission.repository.QuestionBankRepository;
 import com.aimong.backend.domain.mission.repository.QuizAttemptRepository;
+import com.aimong.backend.domain.mission.service.question.MissionQuestionSetFactory;
 import com.aimong.backend.global.exception.AimongException;
 import com.aimong.backend.global.exception.ErrorCode;
 import com.aimong.backend.global.util.KstDateUtils;
@@ -18,8 +19,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -30,13 +29,12 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class QuizService {
 
-    private static final int QUESTION_COUNT = 10;
-
     private final MissionRepository missionRepository;
-    private final QuestionBankRepository questionBankRepository;
     private final QuizAttemptRepository quizAttemptRepository;
     private final MissionAttemptRepository missionAttemptRepository;
     private final MissionService missionService;
+    private final MissionQuestionSetFactory missionQuestionSetFactory;
+    private final MissionQuestionProperties missionQuestionProperties;
     private final ObjectMapper objectMapper;
 
     @Transactional
@@ -50,13 +48,13 @@ public class QuizService {
             throw new AimongException(ErrorCode.MISSION_LOCKED);
         }
 
-        List<QuestionBank> questions = new ArrayList<>(questionBankRepository.findAllByMissionIdAndIsActiveTrue(missionId));
-        if (questions.size() < QUESTION_COUNT) {
-            throw new AimongException(ErrorCode.INTERNAL_SERVER_ERROR);
-        }
+        boolean isReview = missionAttemptRepository.existsByChildIdAndMissionIdAndAttemptDate(
+                childId,
+                missionId,
+                KstDateUtils.today()
+        );
 
-        Collections.shuffle(questions);
-        List<QuestionBank> selectedQuestions = questions.subList(0, QUESTION_COUNT);
+        List<QuestionBank> selectedQuestions = missionQuestionSetFactory.create(missionId, childId, isReview);
         List<UUID> selectedQuestionIds = selectedQuestions.stream()
                 .map(QuestionBank::getId)
                 .toList();
@@ -65,22 +63,16 @@ public class QuizService {
                 childId,
                 missionId,
                 writeQuestionIds(selectedQuestionIds),
-                Instant.now().plus(30, ChronoUnit.MINUTES)
+                Instant.now().plus(missionQuestionProperties.attemptTtlMinutes(), ChronoUnit.MINUTES)
         );
         quizAttemptRepository.save(quizAttempt);
-
-        boolean isReview = missionAttemptRepository.existsByChildIdAndMissionIdAndAttemptDate(
-                childId,
-                missionId,
-                KstDateUtils.today()
-        );
 
         return new MissionQuestionsResponse(
                 mission.getId(),
                 mission.getTitle(),
                 isReview,
                 quizAttempt.getId(),
-                QUESTION_COUNT,
+                missionQuestionProperties.setSize(),
                 quizAttempt.getExpiresAt(),
                 selectedQuestions.stream().map(this::toQuestionResponse).toList()
         );

@@ -1,4 +1,5 @@
 server:
+  port: 8080
   servlet:
     context-path: /api
 
@@ -9,15 +10,15 @@ spring:
     name: backend
 
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/aimong}
-    username: ${DB_USERNAME:aimong}
-    password: ${DB_PASSWORD:aimong}
+    url: ${SUPABASE_DB_URL:${DB_URL:jdbc:postgresql://localhost:5432/aimong}}
+    username: ${SUPABASE_DB_USERNAME:${DB_USERNAME:aimong}}
+    password: ${SUPABASE_DB_PASSWORD:${DB_PASSWORD:aimong}}
     driver-class-name: org.postgresql.Driver
 
   data:
     redis:
       host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6400}
+      port: ${REDIS_PORT:6379}
       timeout: 3s
 
   jpa:
@@ -43,3 +44,10 @@ jwt:
   secret: ${JWT_SECRET}
   issuer: aimong-backend
   child-session-expiration: 2592000000
+
+aimong:
+  mission:
+    question:
+      set-size: 10
+      attempt-ttl-minutes: 30
+      dynamic-generation-enabled: false

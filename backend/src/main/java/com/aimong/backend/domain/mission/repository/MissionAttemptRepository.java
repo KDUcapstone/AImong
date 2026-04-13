@@ -14,8 +14,6 @@ public interface MissionAttemptRepository extends JpaRepository<MissionAttempt, 
 
     long countByChildIdAndMissionIdAndAttemptDate(UUID childId, UUID missionId, LocalDate attemptDate);
 
-    Optional<MissionAttempt> findTopByChildIdAndMissionIdOrderBySubmittedAtDesc(UUID childId, UUID missionId);
-
     @Query("""
             select count(distinct ma.missionId)
             from MissionAttempt ma
@@ -37,6 +35,7 @@ public interface MissionAttemptRepository extends JpaRepository<MissionAttempt, 
             from MissionAttempt ma
             where ma.childId = :childId
               and ma.missionId = :missionId
+              and ma.attemptNo = 1
               and ma.score * :passScoreDenominator >= ma.total * :passScoreNumerator
             """)
     Optional<LocalDate> findLatestCompletedAt(
@@ -45,4 +44,5 @@ public interface MissionAttemptRepository extends JpaRepository<MissionAttempt, 
             @Param("passScoreNumerator") int passScoreNumerator,
             @Param("passScoreDenominator") int passScoreDenominator
     );
+
 }

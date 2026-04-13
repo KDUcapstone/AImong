@@ -9,6 +9,7 @@ import com.aimong.backend.domain.auth.repository.ChildProfileRepository;
 import com.aimong.backend.domain.auth.repository.ParentAccountRepository;
 import com.aimong.backend.domain.gacha.entity.Ticket;
 import com.aimong.backend.domain.gacha.repository.TicketRepository;
+import com.aimong.backend.domain.gacha.service.GachaPullService;
 import com.aimong.backend.domain.streak.entity.StreakRecord;
 import com.aimong.backend.domain.streak.repository.StreakRecordRepository;
 import com.aimong.backend.global.exception.AimongException;
@@ -37,6 +38,7 @@ public class ParentAuthService {
     private final ChildProfileRepository childProfileRepository;
     private final TicketRepository ticketRepository;
     private final StreakRecordRepository streakRecordRepository;
+    private final GachaPullService gachaPullService;
 
     @Transactional
     public ParentRegisterResponse register(String authorizationHeader, ParentRegisterRequest request) {
@@ -51,6 +53,7 @@ public class ParentAuthService {
         );
         ticketRepository.save(Ticket.create(childProfile.getId(), STARTER_TICKETS));
         streakRecordRepository.save(StreakRecord.create(childProfile.getId()));
+        gachaPullService.initializeStarterOnboarding(childProfile);
 
         return new ParentRegisterResponse(
                 childProfile.getId(),
@@ -66,7 +69,7 @@ public class ParentAuthService {
         ParentAccount parentAccount = parentAccountRepository.findByFirebaseUid(firebaseToken.getUid())
                 .orElseThrow(() -> new AimongException(ErrorCode.UNAUTHORIZED));
 
-        ChildProfile childProfile = childProfileRepository.findById(UUID.fromString(childId))
+        ChildProfile childProfile = childProfileRepository.findWithLockById(parseChildId(childId))
                 .orElseThrow(() -> new AimongException(ErrorCode.CHILD_NOT_FOUND));
 
         if (!childProfile.getParentAccount().getId().equals(parentAccount.getId())) {
@@ -88,7 +91,6 @@ public class ParentAuthService {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private void validateGoogleProvider(FirebaseToken firebaseToken) {
         Object firebaseClaim = firebaseToken.getClaims().get("firebase");
         if (!(firebaseClaim instanceof Map<?, ?> firebaseMap)) {
@@ -109,5 +111,13 @@ public class ParentAuthService {
             }
         }
         throw new AimongException(ErrorCode.CODE_GENERATION_FAILED);
+    }
+
+    private UUID parseChildId(String childId) {
+        try {
+            return UUID.fromString(childId);
+        } catch (IllegalArgumentException exception) {
+            throw new AimongException(ErrorCode.BAD_REQUEST, exception);
+        }
     }
 }

@@ -12,7 +12,7 @@ public record SubmitRequest(
         @NotEmpty List<@Valid AnswerRequest> answers
 ) {
     public record AnswerRequest(
-            @NotNull UUID questionId,
+            @NotBlank String questionId,
             @NotBlank String selected
     ) {
     }

@@ -39,6 +39,21 @@ public class Ticket {
         return new Ticket(childId, normal, 0, 0, null);
     }
 
+    public void addNormal(int count) {
+        normal += count;
+        updatedAt = Instant.now();
+    }
+
+    public void addRare(int count) {
+        rare += count;
+        updatedAt = Instant.now();
+    }
+
+    public void addEpic(int count) {
+        epic += count;
+        updatedAt = Instant.now();
+    }
+
     @PrePersist
     void prePersist() {
         if (updatedAt == null) {
