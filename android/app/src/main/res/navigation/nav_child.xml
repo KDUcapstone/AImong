@@ -11,8 +11,8 @@
         android:label="Home"
         tools:layout="@layout/fragment_home">
         <action
-            android:id="@+id/action_homeFragment_to_missionListFragment"
-            app:destination="@id/missionListFragment" />
+            android:id="@+id/action_homeFragment_to_learningFragment"
+            app:destination="@id/learningFragment" />
         <action
             android:id="@+id/action_homeFragment_to_chatFragment"
             app:destination="@id/chatFragment" />
@@ -22,12 +22,12 @@
     </fragment>
 
     <fragment
-        android:id="@+id/missionListFragment"
+        android:id="@+id/learningFragment"
         android:name="com.kduniv.aimong.feature.mission.MissionListFragment"
         android:label="Missions"
         tools:layout="@layout/fragment_mission_list">
         <action
-            android:id="@+id/action_missionListFragment_to_quizFragment"
+            android:id="@+id/action_learningFragment_to_quizFragment"
             app:destination="@id/quizFragment" />
     </fragment>
 

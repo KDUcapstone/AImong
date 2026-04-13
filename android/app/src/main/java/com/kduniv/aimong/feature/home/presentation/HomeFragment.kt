@@ -6,8 +6,12 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import android.view.MotionEvent
+import androidx.navigation.fragment.findNavController
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.kduniv.aimong.R
 import com.kduniv.aimong.core.ui.BaseFragment
+import com.kduniv.aimong.core.util.setOnScaleTouchListener
 import com.kduniv.aimong.databinding.FragmentHomeBinding
 import com.kduniv.aimong.databinding.ItemHomeQuestBinding
 import dagger.hilt.android.AndroidEntryPoint
@@ -19,9 +23,12 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
     private val viewModel: HomeViewModel by viewModels()
 
     override fun initView() {
-        // 뽑기 버튼 클릭
-        binding.btnGacha.setOnClickListener {
-            // TODO: 가챠 화면 이동
+        // 뽑기 버튼 클릭 및 애니메이션 적용
+        binding.btnGacha.apply {
+            setOnClickListener {
+                findNavController().navigate(R.id.action_homeFragment_to_gachaFragment)
+            }
+            setOnScaleTouchListener()
         }
     }
 
@@ -100,14 +107,27 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
                     ivCompleted.visibility = View.VISIBLE
                     ivCompleted.setImageResource(R.drawable.bg_quest_completed_check) // 시안과 동일한 체크 박스
                     tvStartBtn.visibility = View.GONE
+                    
+                    // 완료된 카드는 클릭 비활성화
+                    root.setOnClickListener(null)
+                    root.setOnTouchListener(null)
                 } else {
                     root.setBackgroundResource(R.drawable.bg_quest_item_active) // 진행 중인 건 선명한 파란 테두리
                     ivCompleted.visibility = View.GONE
                     tvStartBtn.visibility = if (quest.canStart) View.VISIBLE else View.GONE
-                }
-                
-                root.setOnClickListener {
-                    if (quest.canStart) { /* 학습 화면 이동 */ }
+                    
+                    // [수정] 카드 전체가 아닌 '시작' 버튼에만 클릭 리스너와 애니메이션 적용
+                    root.setOnClickListener(null) 
+                    root.setOnTouchListener(null)
+
+                    tvStartBtn.setOnScaleTouchListener()
+                    tvStartBtn.setOnClickListener {
+                        if (quest.canStart) {
+                            // 탭 전환을 통해 이동
+                            val bottomNav = requireActivity().findViewById<BottomNavigationView>(R.id.bottom_nav)
+                            bottomNav.selectedItemId = R.id.learningFragment
+                        }
+                    }
                 }
             }
             binding.layoutQuestList.addView(itemBinding.root)
