@@ -2,6 +2,8 @@ package com.aimong.backend.domain.auth.service;
 
 import com.aimong.backend.domain.auth.dto.ChildLoginRequest;
 import com.aimong.backend.domain.auth.dto.ChildLoginResponse;
+import com.aimong.backend.domain.auth.dto.FcmTokenRequest;
+import com.aimong.backend.domain.auth.dto.FcmTokenResponse;
 import com.aimong.backend.domain.auth.entity.ChildProfile;
 import com.aimong.backend.domain.auth.repository.ChildProfileRepository;
 import com.aimong.backend.domain.auth.support.LoginAttemptService;
@@ -11,6 +13,7 @@ import com.aimong.backend.global.security.JwtProvider;
 import com.aimong.backend.global.util.ClientIpUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +25,7 @@ public class ChildAuthService {
     private final ChildProfileRepository childProfileRepository;
     private final JwtProvider jwtProvider;
     private final LoginAttemptService loginAttemptService;
+    private final ChildActivityService childActivityService;
 
     @Transactional
     public ChildLoginResponse login(ChildLoginRequest request, HttpServletRequest httpServletRequest) {
@@ -46,8 +50,16 @@ public class ChildAuthService {
                 childProfile.getNickname(),
                 sessionToken,
                 childProfile.getProfileImageType().name(),
-                childProfile.getTotalXp(),
-                childProfile.getLevel()
+                childProfile.getTotalXp()
         );
+    }
+
+    @Transactional
+    public FcmTokenResponse registerFcmToken(UUID childId, FcmTokenRequest request) {
+        ChildProfile childProfile = childProfileRepository.findById(childId)
+                .orElseThrow(() -> new AimongException(ErrorCode.CHILD_NOT_FOUND));
+        childProfile.updateFcmToken(request.fcmToken());
+        childActivityService.touchLastActiveAt(childId);
+        return new FcmTokenResponse(true);
     }
 }

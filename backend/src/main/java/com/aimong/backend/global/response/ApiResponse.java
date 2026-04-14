@@ -7,15 +7,25 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 public record ApiResponse<T>(
         boolean success,
         T data,
-        ErrorBody error
+        ErrorBody error,
+        String requestId
 ) {
 
     public static <T> ApiResponse<T> success(T data) {
-        return new ApiResponse<>(true, data, null);
+        return new ApiResponse<>(true, data, null, RequestIdUtils.getOrCreate());
     }
 
     public static <T> ApiResponse<T> fail(ErrorCode errorCode) {
-        return new ApiResponse<>(false, null, new ErrorBody(errorCode.getCode(), errorCode.getMessage()));
+        return fail(errorCode, errorCode.getMessage());
+    }
+
+    public static <T> ApiResponse<T> fail(ErrorCode errorCode, String message) {
+        return new ApiResponse<>(
+                false,
+                null,
+                new ErrorBody(errorCode.getCode(), message),
+                RequestIdUtils.getOrCreate()
+        );
     }
 
     public record ErrorBody(

@@ -1,5 +1,8 @@
 package com.aimong.backend.domain.auth.service;
 
+import com.aimong.backend.domain.auth.dto.FcmTokenRequest;
+import com.aimong.backend.domain.auth.dto.FcmTokenResponse;
+import com.aimong.backend.domain.auth.dto.ParentChildrenResponse;
 import com.aimong.backend.domain.auth.dto.ParentRegisterRequest;
 import com.aimong.backend.domain.auth.dto.ParentRegisterResponse;
 import com.aimong.backend.domain.auth.dto.RegenerateCodeResponse;
@@ -80,6 +83,32 @@ public class ParentAuthService {
         return new RegenerateCodeResponse(childProfile.getCode());
     }
 
+    @Transactional
+    public FcmTokenResponse registerFcmToken(String firebaseUid, FcmTokenRequest request) {
+        ParentAccount parentAccount = parentAccountRepository.findByFirebaseUid(firebaseUid)
+                .orElseThrow(() -> new AimongException(ErrorCode.UNAUTHORIZED));
+        parentAccount.updateFcmToken(request.fcmToken());
+        return new FcmTokenResponse(true);
+    }
+
+    @Transactional(readOnly = true)
+    public ParentChildrenResponse getChildren(String firebaseUid) {
+        ParentAccount parentAccount = parentAccountRepository.findByFirebaseUid(firebaseUid)
+                .orElseThrow(() -> new AimongException(ErrorCode.UNAUTHORIZED));
+
+        return new ParentChildrenResponse(
+                childProfileRepository.findAllByParentAccountIdOrderByCreatedAtAsc(parentAccount.getId()).stream()
+                        .map(childProfile -> new ParentChildrenResponse.ChildSummary(
+                                childProfile.getId(),
+                                childProfile.getNickname(),
+                                childProfile.getCode(),
+                                childProfile.getProfileImageType().name(),
+                                childProfile.getTotalXp()
+                        ))
+                        .toList()
+        );
+    }
+
     private FirebaseToken verifyFirebaseToken(String authorizationHeader) {
         try {
             String idToken = AuthHeaderUtils.extractBearerToken(authorizationHeader);
@@ -87,7 +116,7 @@ public class ParentAuthService {
             validateGoogleProvider(firebaseToken);
             return firebaseToken;
         } catch (FirebaseAuthException exception) {
-            throw new AimongException(ErrorCode.UNAUTHORIZED, exception);
+            throw new AimongException(ErrorCode.INVALID_TOKEN, exception);
         }
     }
 
@@ -110,7 +139,7 @@ public class ParentAuthService {
                 return code;
             }
         }
-        throw new AimongException(ErrorCode.CODE_GENERATION_FAILED);
+        throw new AimongException(ErrorCode.CODE_GENERATION_FAILED_WITH_RETRY);
     }
 
     private UUID parseChildId(String childId) {

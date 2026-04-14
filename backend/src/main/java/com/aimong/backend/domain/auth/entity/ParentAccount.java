@@ -28,11 +28,18 @@ public class ParentAccount {
     @Column(name = "email")
     private String email;
 
+    @Column(name = "fcm_token")
+    private String fcmToken;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
     public static ParentAccount create(String firebaseUid, String email) {
-        return new ParentAccount(UUID.randomUUID(), firebaseUid, email, null);
+        return new ParentAccount(UUID.randomUUID(), firebaseUid, email, null, null);
+    }
+
+    public void updateFcmToken(String fcmToken) {
+        this.fcmToken = fcmToken;
     }
 
     @PrePersist

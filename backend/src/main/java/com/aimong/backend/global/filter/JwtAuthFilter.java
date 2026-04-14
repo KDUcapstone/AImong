@@ -64,7 +64,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
         } catch (AimongException exception) {
             SecurityContextHolder.clearContext();
-            writeUnauthorizedResponse(response, exception.getErrorCode());
+            writeUnauthorizedResponse(response, ErrorCode.LOGIN_REQUIRED, ErrorCode.LOGIN_REQUIRED.getMessage());
         }
     }
 
@@ -75,10 +75,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 || uri.startsWith(API_PARENT_PREFIX);
     }
 
-    private void writeUnauthorizedResponse(HttpServletResponse response, ErrorCode errorCode) throws IOException {
+    private void writeUnauthorizedResponse(HttpServletResponse response, ErrorCode errorCode, String message) throws IOException {
         response.setStatus(errorCode.getHttpStatus().value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("UTF-8");
-        response.getWriter().write(objectMapper.writeValueAsString(ApiResponse.fail(errorCode)));
+        response.getWriter().write(objectMapper.writeValueAsString(ApiResponse.fail(errorCode, message)));
     }
 }

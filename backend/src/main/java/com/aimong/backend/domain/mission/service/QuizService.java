@@ -1,5 +1,6 @@
 package com.aimong.backend.domain.mission.service;
 
+import com.aimong.backend.domain.auth.service.ChildActivityService;
 import com.aimong.backend.domain.mission.dto.MissionQuestionsResponse;
 import com.aimong.backend.domain.mission.dto.QuestionResponse;
 import com.aimong.backend.domain.mission.dto.StageProgressResponse;
@@ -7,6 +8,7 @@ import com.aimong.backend.domain.mission.config.MissionQuestionProperties;
 import com.aimong.backend.domain.mission.entity.Mission;
 import com.aimong.backend.domain.mission.entity.QuestionBank;
 import com.aimong.backend.domain.mission.entity.QuizAttempt;
+import com.aimong.backend.domain.mission.repository.MissionDailyProgressRepository;
 import com.aimong.backend.domain.mission.repository.MissionAttemptRepository;
 import com.aimong.backend.domain.mission.repository.MissionRepository;
 import com.aimong.backend.domain.mission.repository.QuizAttemptRepository;
@@ -32,6 +34,8 @@ public class QuizService {
     private final MissionRepository missionRepository;
     private final QuizAttemptRepository quizAttemptRepository;
     private final MissionAttemptRepository missionAttemptRepository;
+    private final MissionDailyProgressRepository missionDailyProgressRepository;
+    private final ChildActivityService childActivityService;
     private final MissionService missionService;
     private final MissionQuestionSetFactory missionQuestionSetFactory;
     private final MissionQuestionProperties missionQuestionProperties;
@@ -39,20 +43,21 @@ public class QuizService {
 
     @Transactional
     public MissionQuestionsResponse getQuestions(UUID childId, UUID missionId) {
+        childActivityService.touchLastActiveAt(childId);
         Mission mission = missionRepository.findById(missionId)
                 .filter(Mission::isActive)
                 .orElseThrow(() -> new AimongException(ErrorCode.MISSION_NOT_FOUND));
 
         StageProgressResponse stageProgress = missionService.getMissions(childId).stageProgress();
         if (!missionService.isUnlocked(mission, stageProgress)) {
-            throw new AimongException(ErrorCode.MISSION_LOCKED);
+            throw new AimongException(ErrorCode.MISSION_QUESTIONS_LOCKED);
         }
 
-        boolean isReview = missionAttemptRepository.existsByChildIdAndMissionIdAndAttemptDate(
+        boolean isReview = missionDailyProgressRepository.findByChildIdAndMissionIdAndProgressDate(
                 childId,
                 missionId,
                 KstDateUtils.today()
-        );
+        ).isPresent();
 
         List<QuestionBank> selectedQuestions = missionQuestionSetFactory.create(missionId, childId, isReview);
         List<UUID> selectedQuestionIds = selectedQuestions.stream()

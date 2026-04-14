@@ -36,13 +36,16 @@ class ChildAuthServiceTest {
     private LoginAttemptService loginAttemptService;
 
     @Mock
+    private ChildActivityService childActivityService;
+
+    @Mock
     private HttpServletRequest httpServletRequest;
 
     @InjectMocks
     private ChildAuthService childAuthService;
 
     @Test
-    void loginReturnsDerivedLevelAndUpdatesLastActiveAt() {
+    void loginReturnsSessionPayloadAndUpdatesLastActiveAt() {
         ChildProfile childProfile = ChildProfile.create(
                 ParentAccount.create("firebase-uid", "parent@example.com"),
                 "민준",
@@ -62,7 +65,6 @@ class ChildAuthServiceTest {
         assertThat(response.sessionToken()).isEqualTo("jwt-token");
         assertThat(response.profileImageType()).isEqualTo(childProfile.getProfileImageType().name());
         assertThat(response.totalXp()).isEqualTo(250);
-        assertThat(response.level()).isEqualTo(3);
         assertThat(childProfile.getLastActiveAt()).isNotNull();
         assertThat(childProfile.getLastActiveAt()).isBeforeOrEqualTo(Instant.now());
         verify(loginAttemptService).validateNotLocked("127.0.0.1", "482917");

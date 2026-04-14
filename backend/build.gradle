@@ -44,3 +44,27 @@ dependencies {
 tasks.named('test') {
 	useJUnitPlatform()
 }
+
+tasks.register('generateKerisQuestionBank', JavaExec) {
+	group = 'aimong'
+	description = 'Generate KERIS elementary AI question bank JSON, review, validation, and SQL artifacts.'
+	classpath = sourceSets.main.runtimeClasspath
+	mainClass = 'com.aimong.backend.tools.questionbank.QuestionBankTool'
+	args = [
+		'full',
+		'src/main/resources/question-bank/keris-elementary-ai-curriculum.json',
+		'build/generated/question-bank/keris-elementary-ai'
+	]
+}
+
+tasks.register('generateKeris16MissionQuestionBank', JavaExec) {
+	group = 'aimong'
+	description = 'Generate the 16-mission KERIS elementary AI question bank artifacts.'
+	classpath = sourceSets.main.runtimeClasspath
+	mainClass = 'com.aimong.backend.tools.questionbank.QuestionBankTool'
+	args = [
+		'full',
+		'src/main/resources/question-bank/keris-elementary-ai-16-mission-curriculum.json',
+		'build/generated/question-bank/keris-elementary-ai-16-mission'
+	]
+}

@@ -73,6 +73,9 @@ public class ChildProfile {
     @Column(name = "session_version", nullable = false)
     private int sessionVersion;
 
+    @Column(name = "fcm_token")
+    private String fcmToken;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -95,6 +98,7 @@ public class ChildProfile {
                 0,
                 ProfileImageType.DEFAULT,
                 1,
+                null,
                 null,
                 null
         );
@@ -144,6 +148,10 @@ public class ChildProfile {
 
     public void touchLastActiveAt(Instant instant) {
         this.lastActiveAt = instant;
+    }
+
+    public void updateFcmToken(String fcmToken) {
+        this.fcmToken = fcmToken;
     }
 
     public void recordGachaPull(PetGrade grade) {

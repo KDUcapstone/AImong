@@ -11,5 +11,5 @@ import jakarta.persistence.LockModeType;
 public interface QuizAttemptRepository extends JpaRepository<QuizAttempt, UUID> {
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    Optional<QuizAttempt> findWithLockByIdAndChildId(UUID id, UUID childId);
+    Optional<QuizAttempt> findWithLockById(UUID id);
 }

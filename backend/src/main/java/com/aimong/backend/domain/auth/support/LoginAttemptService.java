@@ -21,9 +21,15 @@ public class LoginAttemptService {
     private final StringRedisTemplate redisTemplate;
 
     public void validateNotLocked(String clientIp, String code) {
-        if (Boolean.TRUE.equals(redisTemplate.hasKey(ipLockKey(clientIp)))
-                || Boolean.TRUE.equals(redisTemplate.hasKey(codeLockKey(code)))) {
-            throw new AimongException(ErrorCode.TOO_MANY_REQUESTS);
+        Long ipLockSeconds = redisTemplate.getExpire(ipLockKey(clientIp));
+        Long codeLockSeconds = redisTemplate.getExpire(codeLockKey(code));
+        long remainingSeconds = Math.max(normalizeTtl(ipLockSeconds), normalizeTtl(codeLockSeconds));
+
+        if (remainingSeconds > 0) {
+            throw new AimongException(
+                    ErrorCode.TOO_MANY_REQUESTS,
+                    "잠시 후 다시 시도해주세요 (" + remainingSeconds + "초 남음)"
+            );
         }
     }
 
@@ -69,5 +75,12 @@ public class LoginAttemptService {
 
     private String codeLockKey(String code) {
         return CODE_LOCK_PREFIX + code;
+    }
+
+    private long normalizeTtl(Long ttlSeconds) {
+        if (ttlSeconds == null || ttlSeconds < 0) {
+            return 0;
+        }
+        return ttlSeconds;
     }
 }

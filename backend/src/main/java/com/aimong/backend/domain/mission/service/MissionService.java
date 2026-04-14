@@ -1,5 +1,6 @@
 package com.aimong.backend.domain.mission.service;
 
+import com.aimong.backend.domain.auth.service.ChildActivityService;
 import com.aimong.backend.domain.mission.MissionCompletionPolicy;
 import com.aimong.backend.domain.mission.dto.MissionListResponse;
 import com.aimong.backend.domain.mission.dto.MissionSummaryResponse;
@@ -20,9 +21,11 @@ public class MissionService {
 
     private final MissionRepository missionRepository;
     private final MissionAttemptRepository missionAttemptRepository;
+    private final ChildActivityService childActivityService;
 
     @Transactional(readOnly = true)
     public MissionListResponse getMissions(UUID childId) {
+        childActivityService.touchLastActiveAt(childId);
         StageProgressResponse stageProgress = new StageProgressResponse(
                 countCompletedMissionByStage(childId, (short) 1),
                 countCompletedMissionByStage(childId, (short) 2),

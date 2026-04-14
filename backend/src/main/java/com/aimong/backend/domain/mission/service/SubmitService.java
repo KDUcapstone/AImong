@@ -2,11 +2,13 @@ package com.aimong.backend.domain.mission.service;
 
 import com.aimong.backend.domain.auth.entity.ChildProfile;
 import com.aimong.backend.domain.auth.repository.ChildProfileRepository;
+import com.aimong.backend.domain.auth.service.ChildActivityService;
 import com.aimong.backend.domain.gacha.entity.Ticket;
 import com.aimong.backend.domain.gacha.repository.TicketRepository;
 import com.aimong.backend.domain.mission.MissionCompletionPolicy;
 import com.aimong.backend.domain.mission.dto.SubmitRequest;
 import com.aimong.backend.domain.mission.dto.SubmitResponse;
+import com.aimong.backend.domain.mission.dto.StageProgressResponse;
 import com.aimong.backend.domain.mission.entity.Mission;
 import com.aimong.backend.domain.mission.entity.MissionAttempt;
 import com.aimong.backend.domain.mission.entity.MissionDailyProgress;
@@ -25,6 +27,7 @@ import com.aimong.backend.domain.quest.service.DailyQuestService;
 import com.aimong.backend.domain.quest.service.WeeklyQuestService;
 import com.aimong.backend.domain.streak.entity.MilestoneReward;
 import com.aimong.backend.domain.streak.entity.StreakRecord;
+import com.aimong.backend.domain.streak.repository.FriendStreakRepository;
 import com.aimong.backend.domain.streak.repository.MilestoneRewardRepository;
 import com.aimong.backend.domain.streak.repository.StreakRecordRepository;
 import com.aimong.backend.global.exception.AimongException;
@@ -62,26 +65,35 @@ public class SubmitService {
     private final MissionAttemptRepository missionAttemptRepository;
     private final MissionDailyProgressRepository missionDailyProgressRepository;
     private final ChildProfileRepository childProfileRepository;
+    private final ChildActivityService childActivityService;
     private final TicketRepository ticketRepository;
     private final StreakRecordRepository streakRecordRepository;
+    private final FriendStreakRepository friendStreakRepository;
     private final MilestoneRewardRepository milestoneRewardRepository;
     private final DailyQuestService dailyQuestService;
     private final WeeklyQuestService weeklyQuestService;
     private final AchievementService achievementService;
     private final PetGrowthService petGrowthService;
     private final QuizService quizService;
+    private final MissionService missionService;
     private final ObjectMapper objectMapper;
 
     @Transactional
     public SubmitResponse submit(UUID childId, UUID missionId, SubmitRequest request) {
+        childActivityService.touchLastActiveAt(childId);
         Mission mission = missionRepository.findById(missionId)
                 .filter(Mission::isActive)
                 .orElseThrow(() -> new AimongException(ErrorCode.MISSION_NOT_FOUND));
 
-        QuizAttempt quizAttempt = quizAttemptRepository.findWithLockByIdAndChildId(request.quizAttemptId(), childId)
+        StageProgressResponse stageProgress = missionService.getMissions(childId).stageProgress();
+        if (!missionService.isUnlocked(mission, stageProgress)) {
+            throw new AimongException(ErrorCode.MISSION_LOCKED);
+        }
+
+        QuizAttempt quizAttempt = quizAttemptRepository.findWithLockById(request.quizAttemptId())
                 .orElseThrow(() -> new AimongException(ErrorCode.QUIZ_ATTEMPT_INVALID));
 
-        if (!mission.getId().equals(quizAttempt.getMissionId())) {
+        if (!quizAttempt.getChildId().equals(childId) || !mission.getId().equals(quizAttempt.getMissionId())) {
             throw new AimongException(ErrorCode.FORBIDDEN);
         }
         if (quizAttempt.getSubmittedAt() != null) {
@@ -90,10 +102,6 @@ public class SubmitService {
         if (!quizAttempt.getExpiresAt().isAfter(Instant.now())) {
             throw new AimongException(ErrorCode.ATTEMPT_EXPIRED);
         }
-        if (request.answers().size() != TOTAL_QUESTIONS) {
-            throw new AimongException(ErrorCode.BAD_REQUEST);
-        }
-
         List<UUID> questionIds = quizService.parseQuestionIds(quizAttempt.getQuestionIdsJson());
         validateQuestionIds(questionIds, request.answers());
 
@@ -129,7 +137,14 @@ public class SubmitService {
         LocalDate today = KstDateUtils.today();
         LocalDate weekStart = KstDateUtils.currentWeekStart();
         int attemptNo = Math.toIntExact(missionAttemptRepository.countByChildIdAndMissionIdAndAttemptDate(childId, missionId, today)) + 1;
-        boolean isReview = attemptNo > 1;
+        boolean isReview = missionDailyProgressRepository.findByChildIdAndMissionIdAndProgressDate(childId, missionId, today)
+                .isPresent();
+        ChildProfile childProfile = childProfileRepository.findById(childId)
+                .orElseThrow(() -> new AimongException(ErrorCode.CHILD_NOT_FOUND));
+        Ticket ticket = ticketRepository.findWithLockByChildId(childId)
+                .orElseGet(() -> ticketRepository.save(Ticket.create(childId, 0)));
+        StreakRecord streakRecord = streakRecordRepository.findWithLockByChildId(childId)
+                .orElseGet(() -> streakRecordRepository.save(StreakRecord.create(childId)));
 
         quizAttempt.markSubmitted(Instant.now());
 
@@ -146,7 +161,7 @@ public class SubmitService {
             ));
             missionDailyProgressRepository.findWithLockByChildIdAndMissionIdAndProgressDate(childId, missionId, today)
                     .ifPresent(progress -> progress.applyReviewAttempt(reviewScore));
-            return buildReviewResponse(score, wrongCount, isPassed, isPerfect, results);
+            return buildReviewResponse(score, wrongCount, isPassed, isPerfect, childProfile, ticket, streakRecord, results);
         }
 
         if (!isPassed) {
@@ -159,20 +174,14 @@ public class SubmitService {
                     TOTAL_QUESTIONS,
                     0
             ));
-            return buildFailureResponse(score, wrongCount, isPerfect, results);
+            return buildFailureResponse(score, wrongCount, isPerfect, childProfile, ticket, streakRecord, results);
         }
 
-        ChildProfile childProfile = childProfileRepository.findById(childId)
-                .orElseThrow(() -> new AimongException(ErrorCode.CHILD_NOT_FOUND));
-        Ticket ticket = ticketRepository.findWithLockByChildId(childId)
-                .orElseGet(() -> ticketRepository.save(Ticket.create(childId, 0)));
-        StreakRecord streakRecord = streakRecordRepository.findWithLockByChildId(childId)
-                .orElseGet(() -> streakRecordRepository.save(StreakRecord.create(childId)));
-
-        int previousLevel = childProfile.getLevel();
         String equippedPetGrade = petGrowthService.findEquippedPetGrade(childId);
-        int bonusXp = calculatePetBonusXp(equippedPetGrade);
-        int xpEarned = BASE_XP + bonusXp;
+        int bonusXp = calculatePetBonusXp(equippedPetGrade, wrongCount);
+        boolean streakBonusApplied = hasTodayCompletedPartner(childId, today);
+        int xpEarned = calculateEarnedXp(bonusXp, streakBonusApplied);
+        int previousLevel = childProfile.getLevel();
 
         childProfile.applyMissionXp(xpEarned, today, weekStart);
         childProfile.refreshProfileImageType();
@@ -185,18 +194,21 @@ public class SubmitService {
                 TOTAL_QUESTIONS,
                 xpEarned
         ));
-        missionAttemptRepository.save(MissionAttempt.create(
-                childId,
-                missionId,
-                today,
-                attemptNo,
-                score,
-                TOTAL_QUESTIONS,
-                xpEarned
-        ));
+        try {
+            missionAttemptRepository.save(MissionAttempt.create(
+                    childId,
+                    missionId,
+                    today,
+                    attemptNo,
+                    score,
+                    TOTAL_QUESTIONS,
+                    xpEarned
+            ));
+        } catch (RuntimeException exception) {
+            throw new AimongException(ErrorCode.SUBMIT_SAVE_FAILED, exception);
+        }
 
         int currentLevel = childProfile.getLevel();
-        boolean levelUp = currentLevel > previousLevel;
         List<SubmitResponse.RewardResponse> levelRewards = applyLevelRewards(previousLevel, currentLevel, ticket, streakRecord);
 
         dailyQuestService.updateForMissionSuccess(childId, childProfile, today);
@@ -224,18 +236,19 @@ public class SubmitService {
                 bonusXp,
                 bonusXp > 0 ? "PET_RARITY_BONUS" : null,
                 xpEarned,
-                previousLevel,
-                currentLevel,
-                levelUp,
-                childProfile.getNextLevelTargetXp(),
                 petGrowthResult.equippedPetXp(),
                 petGrowthResult.petStage(),
                 petGrowthResult.petEvolved(),
                 petGrowthResult.crownUnlocked(),
                 petGrowthResult.crownType(),
                 streakRecord.getContinuousDays(),
-                levelRewards,
+                streakRecord.getTodayMissionCount(),
+                streakBonusApplied,
                 rewards,
+                toRemainingTickets(ticket),
+                childProfile.getProfileImageType().name(),
+                childProfile.getProfileImageType() != com.aimong.backend.domain.auth.entity.ProfileImageType.DEFAULT,
+                false,
                 results
         );
     }
@@ -245,6 +258,9 @@ public class SubmitService {
             int wrongCount,
             boolean isPassed,
             boolean isPerfect,
+            ChildProfile childProfile,
+            Ticket ticket,
+            StreakRecord streakRecord,
             List<SubmitResponse.ResultResponse> results
     ) {
         return new SubmitResponse(
@@ -262,16 +278,17 @@ public class SubmitService {
                 0,
                 null,
                 null,
-                null,
-                null,
-                null,
-                null,
                 false,
                 false,
                 null,
-                0,
+                streakRecord.getContinuousDays(),
+                streakRecord.getTodayMissionCount(),
+                false,
                 List.of(),
-                List.of(),
+                toRemainingTickets(ticket),
+                childProfile.getProfileImageType().name(),
+                childProfile.getProfileImageType() != com.aimong.backend.domain.auth.entity.ProfileImageType.DEFAULT,
+                true,
                 results
         );
     }
@@ -280,6 +297,9 @@ public class SubmitService {
             int score,
             int wrongCount,
             boolean isPerfect,
+            ChildProfile childProfile,
+            Ticket ticket,
+            StreakRecord streakRecord,
             List<SubmitResponse.ResultResponse> results
     ) {
         return new SubmitResponse(
@@ -298,29 +318,49 @@ public class SubmitService {
                 null,
                 null,
                 false,
-                null,
-                null,
-                null,
-                false,
                 false,
                 null,
-                0,
+                streakRecord.getContinuousDays(),
+                streakRecord.getTodayMissionCount(),
+                false,
                 List.of(),
-                List.of(),
+                toRemainingTickets(ticket),
+                childProfile.getProfileImageType().name(),
+                childProfile.getProfileImageType() != com.aimong.backend.domain.auth.entity.ProfileImageType.DEFAULT,
+                false,
                 results
         );
     }
 
-    private int calculatePetBonusXp(String equippedPetGrade) {
+    private int calculatePetBonusXp(String equippedPetGrade, int wrongCount) {
         if (equippedPetGrade == null) {
             return 0;
         }
         return switch (PetGrade.valueOf(equippedPetGrade)) {
-            case NORMAL -> 0;
-            case RARE -> 5;
-            case EPIC -> 10;
-            case LEGEND -> 15;
+            case NORMAL -> wrongCount == 0 ? 10 : 0;
+            case RARE -> wrongCount <= 1 ? 10 : 0;
+            case EPIC -> wrongCount <= 2 ? 10 : 0;
+            case LEGEND -> wrongCount <= 2 ? 15 : 0;
         };
+    }
+
+    private int calculateEarnedXp(int bonusXp, boolean streakBonusApplied) {
+        int xpEarned = BASE_XP + bonusXp;
+        if (!streakBonusApplied) {
+            return xpEarned;
+        }
+        return (int) Math.floor(xpEarned * 1.5d);
+    }
+
+    private boolean hasTodayCompletedPartner(UUID childId, LocalDate today) {
+        return friendStreakRepository.findById(childId)
+                .flatMap(friendStreak -> streakRecordRepository.findById(friendStreak.getPartnerChildId()))
+                .map(partnerStreak -> isCompletedToday(partnerStreak, today))
+                .orElse(false);
+    }
+
+    private boolean isCompletedToday(StreakRecord streakRecord, LocalDate today) {
+        return today.equals(streakRecord.getLastCompletedDate()) && streakRecord.getTodayMissionCount() > 0;
     }
 
     private List<SubmitResponse.RewardResponse> applyLevelRewards(int previousLevel, int currentLevel, Ticket ticket, StreakRecord streakRecord) {
@@ -394,8 +434,11 @@ public class SubmitService {
                 .map(answer -> parseQuestionId(answer.questionId()))
                 .collect(Collectors.toSet());
 
+        if (actualQuestionIds.size() != answers.size()) {
+            throw new AimongException(ErrorCode.QUIZ_DUPLICATE_QUESTION);
+        }
         if (actualQuestionIds.size() != TOTAL_QUESTIONS || !actualQuestionIds.containsAll(expectedQuestionIds)) {
-            throw new AimongException(ErrorCode.BAD_REQUEST);
+            throw new AimongException(ErrorCode.QUIZ_ANSWERS_REQUIRED);
         }
     }
 
@@ -413,5 +456,13 @@ public class SubmitService {
         } catch (JsonProcessingException exception) {
             throw new AimongException(ErrorCode.INTERNAL_SERVER_ERROR, exception);
         }
+    }
+
+    private SubmitResponse.RemainingTicketsResponse toRemainingTickets(Ticket ticket) {
+        return new SubmitResponse.RemainingTicketsResponse(
+                ticket.getNormal(),
+                ticket.getRare(),
+                ticket.getEpic()
+        );
     }
 }

@@ -15,18 +15,19 @@ public record SubmitResponse(
         Integer bonusXp,
         String bonusReason,
         int xpEarned,
-        Integer previousLevel,
-        Integer level,
-        Boolean levelUp,
-        Integer nextLevelTargetXp,
         Integer equippedPetXp,
         String petStage,
         boolean petEvolved,
         boolean crownUnlocked,
         String crownType,
         int streakDays,
-        List<RewardResponse> levelRewards,
+        int todayMissionCount,
+        boolean streakBonusApplied,
         List<RewardResponse> rewards,
+        RemainingTicketsResponse remainingTickets,
+        String profileImageType,
+        boolean profileImageUnlocked,
+        boolean isReview,
         List<ResultResponse> results
 ) {
     public record RewardResponse(
@@ -42,6 +43,13 @@ public record SubmitResponse(
             String questionId,
             boolean isCorrect,
             String explanation
+    ) {
+    }
+
+    public record RemainingTicketsResponse(
+            int normal,
+            int rare,
+            int epic
     ) {
     }
 }

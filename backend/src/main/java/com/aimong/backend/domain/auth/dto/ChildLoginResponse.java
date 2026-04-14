@@ -7,7 +7,6 @@ public record ChildLoginResponse(
         String nickname,
         String sessionToken,
         String profileImageType,
-        int totalXp,
-        int level
+        int totalXp
 ) {
 }

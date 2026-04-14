@@ -1,14 +1,18 @@
 package com.aimong.backend.domain.mission.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.aimong.backend.domain.auth.service.ChildActivityService;
 import com.aimong.backend.domain.mission.config.MissionQuestionProperties;
 import com.aimong.backend.domain.mission.dto.MissionListResponse;
 import com.aimong.backend.domain.mission.dto.MissionSummaryResponse;
 import com.aimong.backend.domain.mission.dto.StageProgressResponse;
 import com.aimong.backend.domain.mission.entity.Mission;
 import com.aimong.backend.domain.mission.entity.QuestionBank;
+import com.aimong.backend.domain.mission.entity.MissionDailyProgress;
+import com.aimong.backend.domain.mission.repository.MissionDailyProgressRepository;
 import com.aimong.backend.domain.mission.repository.MissionAttemptRepository;
 import com.aimong.backend.domain.mission.repository.MissionRepository;
 import com.aimong.backend.domain.mission.repository.QuizAttemptRepository;
@@ -36,7 +40,13 @@ class QuizServiceTest {
     private MissionAttemptRepository missionAttemptRepository;
 
     @Mock
+    private MissionDailyProgressRepository missionDailyProgressRepository;
+
+    @Mock
     private MissionService missionService;
+
+    @Mock
+    private ChildActivityService childActivityService;
 
     @Mock
     private MissionQuestionSetFactory missionQuestionSetFactory;
@@ -46,11 +56,13 @@ class QuizServiceTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
-    void getQuestionsMarksSecondSameDayAttemptAsReviewEvenIfFirstAttemptFailed() {
+    void getQuestionsMarksOnlyCompletedMissionAsReview() {
         QuizService quizService = new QuizService(
                 missionRepository,
                 quizAttemptRepository,
                 missionAttemptRepository,
+                missionDailyProgressRepository,
+                childActivityService,
                 missionService,
                 missionQuestionSetFactory,
                 missionQuestionProperties,
@@ -72,13 +84,14 @@ class QuizServiceTest {
                         new StageProgressResponse(0, 0, 0)
                 ));
         when(missionService.isUnlocked(mission, new StageProgressResponse(0, 0, 0))).thenReturn(true);
-        when(missionAttemptRepository.existsByChildIdAndMissionIdAndAttemptDate(childId, missionId, KstDateUtils.today()))
-                .thenReturn(true);
+        when(missionDailyProgressRepository.findByChildIdAndMissionIdAndProgressDate(childId, missionId, KstDateUtils.today()))
+                .thenReturn(Optional.of(org.mockito.Mockito.mock(MissionDailyProgress.class)));
         when(missionQuestionSetFactory.create(missionId, childId, true)).thenReturn(List.of(question));
         when(question.getId()).thenReturn(UUID.randomUUID());
         when(question.getQuestionType()).thenReturn(com.aimong.backend.domain.mission.entity.QuestionType.OX);
         when(question.getPrompt()).thenReturn("AI can be wrong.");
 
         assertThat(quizService.getQuestions(childId, missionId).isReview()).isTrue();
+        verify(childActivityService).touchLastActiveAt(childId);
     }
 }

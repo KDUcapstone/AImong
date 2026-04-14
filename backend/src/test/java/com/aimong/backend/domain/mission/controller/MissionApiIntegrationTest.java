@@ -26,6 +26,7 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -71,7 +72,7 @@ class MissionApiIntegrationTest {
                 quizAttemptId,
                 10,
                 Instant.parse("2026-04-14T12:00:00Z"),
-                List.of(new QuestionResponse(UUID.randomUUID(), "MCQ", "Should you share a password?", List.of("Yes", "No")))
+                List.of(new QuestionResponse(UUID.randomUUID(), "OX", "Should you share a password?", List.of("Yes", "No")))
         );
 
         given(quizService.getQuestions(childId, missionId)).willReturn(response);
@@ -85,12 +86,13 @@ class MissionApiIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.error").doesNotExist())
+                .andExpect(jsonPath("$.requestId").exists())
                 .andExpect(jsonPath("$.data.missionId").value(missionId.toString()))
                 .andExpect(jsonPath("$.data.missionTitle").value("Privacy Safety"))
                 .andExpect(jsonPath("$.data.isReview").value(true))
                 .andExpect(jsonPath("$.data.quizAttemptId").value(quizAttemptId.toString()))
                 .andExpect(jsonPath("$.data.questionCount").value(10))
-                .andExpect(jsonPath("$.data.questions[0].type").value("MCQ"));
+                .andExpect(jsonPath("$.data.questions[0].type").value("OX"));
     }
 
     @Test
@@ -98,11 +100,10 @@ class MissionApiIntegrationTest {
         UUID childId = UUID.randomUUID();
         UUID missionId = UUID.randomUUID();
         UUID quizAttemptId = UUID.randomUUID();
-        UUID questionId = UUID.randomUUID();
-        SubmitRequest request = new SubmitRequest(
-                quizAttemptId,
-                List.of(new SubmitRequest.AnswerRequest(questionId.toString(), "No"))
-        );
+        List<SubmitRequest.AnswerRequest> answers = IntStream.range(0, 10)
+                .mapToObj(index -> new SubmitRequest.AnswerRequest(UUID.randomUUID().toString(), "No"))
+                .toList();
+        SubmitRequest request = new SubmitRequest(quizAttemptId, answers);
         SubmitResponse response = new SubmitResponse(
                 "normal",
                 true,
@@ -113,22 +114,23 @@ class MissionApiIntegrationTest {
                 true,
                 true,
                 "NORMAL",
-                2,
-                "PET_GRADE_BONUS",
-                12,
-                1,
-                2,
-                true,
-                50,
+                0,
+                null,
                 10,
-                "BABY",
+                95,
+                "GROWTH",
                 false,
                 false,
                 null,
                 3,
-                List.of(new SubmitResponse.RewardResponse("TICKET", "NORMAL", 1, null, "LEVEL_UP")),
-                List.of(new SubmitResponse.RewardResponse("XP", null, null, 12, "MISSION_CLEAR")),
-                List.of(new SubmitResponse.ResultResponse(questionId.toString(), true, "Do not share passwords."))
+                1,
+                false,
+                List.of(new SubmitResponse.RewardResponse("XP", null, null, 10, "MISSION_CLEAR")),
+                new SubmitResponse.RemainingTicketsResponse(2, 0, 1),
+                "SPROUT",
+                false,
+                false,
+                List.of(new SubmitResponse.ResultResponse(answers.get(0).questionId(), true, "Do not share passwords."))
         );
 
         given(submitService.submit(eq(childId), eq(missionId), any(SubmitRequest.class))).willReturn(response);
@@ -144,14 +146,17 @@ class MissionApiIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.error").doesNotExist())
+                .andExpect(jsonPath("$.requestId").exists())
                 .andExpect(jsonPath("$.data.mode").value("normal"))
                 .andExpect(jsonPath("$.data.progressApplied").value(true))
                 .andExpect(jsonPath("$.data.attemptState").value("submitted"))
                 .andExpect(jsonPath("$.data.score").value(10))
-                .andExpect(jsonPath("$.data.level").value(2))
-                .andExpect(jsonPath("$.data.levelRewards[0].ticketType").value("NORMAL"))
-                .andExpect(jsonPath("$.data.rewards[0].amount").value(12))
-                .andExpect(jsonPath("$.data.results[0].questionId").value(questionId.toString()));
+                .andExpect(jsonPath("$.data.todayMissionCount").value(1))
+                .andExpect(jsonPath("$.data.streakBonusApplied").value(false))
+                .andExpect(jsonPath("$.data.rewards[0].amount").value(10))
+                .andExpect(jsonPath("$.data.remainingTickets.normal").value(2))
+                .andExpect(jsonPath("$.data.profileImageType").value("SPROUT"))
+                .andExpect(jsonPath("$.data.results[0].questionId").value(answers.get(0).questionId()));
     }
 
     @Test
@@ -173,6 +178,7 @@ class MissionApiIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.error").doesNotExist())
+                .andExpect(jsonPath("$.requestId").exists())
                 .andExpect(jsonPath("$.data.missions[0].title").value("Password"))
                 .andExpect(jsonPath("$.data.stageProgress.stage1Completed").value(1));
     }

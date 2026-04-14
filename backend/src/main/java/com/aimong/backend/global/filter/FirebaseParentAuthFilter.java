@@ -57,10 +57,10 @@ public class FirebaseParentAuthFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
         } catch (AimongException exception) {
             SecurityContextHolder.clearContext();
-            writeUnauthorizedResponse(response, exception.getErrorCode());
+            writeUnauthorizedResponse(response, exception.getErrorCode(), exception.getResolvedMessage());
         } catch (FirebaseAuthException exception) {
             SecurityContextHolder.clearContext();
-            writeUnauthorizedResponse(response, ErrorCode.UNAUTHORIZED);
+            writeUnauthorizedResponse(response, ErrorCode.INVALID_TOKEN, ErrorCode.INVALID_TOKEN.getMessage());
         }
     }
 
@@ -77,10 +77,10 @@ public class FirebaseParentAuthFilter extends OncePerRequestFilter {
         }
     }
 
-    private void writeUnauthorizedResponse(HttpServletResponse response, ErrorCode errorCode) throws IOException {
+    private void writeUnauthorizedResponse(HttpServletResponse response, ErrorCode errorCode, String message) throws IOException {
         response.setStatus(errorCode.getHttpStatus().value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("UTF-8");
-        response.getWriter().write(objectMapper.writeValueAsString(ApiResponse.fail(errorCode)));
+        response.getWriter().write(objectMapper.writeValueAsString(ApiResponse.fail(errorCode, message)));
     }
 }

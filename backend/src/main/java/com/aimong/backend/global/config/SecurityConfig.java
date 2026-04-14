@@ -3,6 +3,7 @@ package com.aimong.backend.global.config;
 import com.aimong.backend.global.exception.ErrorCode;
 import com.aimong.backend.global.filter.FirebaseParentAuthFilter;
 import com.aimong.backend.global.filter.JwtAuthFilter;
+import com.aimong.backend.global.filter.RequestIdFilter;
 import com.aimong.backend.global.response.ApiResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
@@ -23,6 +24,7 @@ public class SecurityConfig {
 
     private final FirebaseParentAuthFilter firebaseParentAuthFilter;
     private final JwtAuthFilter jwtAuthFilter;
+    private final RequestIdFilter requestIdFilter;
     private final ObjectMapper objectMapper;
 
     @Bean
@@ -34,10 +36,14 @@ public class SecurityConfig {
                 .formLogin(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(exception -> exception.authenticationEntryPoint((request, response, authException) -> {
+                    ErrorCode errorCode = request.getRequestURI().startsWith("/api/parent/")
+                            || request.getRequestURI().startsWith("/parent/")
+                            ? ErrorCode.INVALID_TOKEN
+                            : ErrorCode.LOGIN_REQUIRED;
                     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                     response.setContentType(MediaType.APPLICATION_JSON_VALUE);
                     response.setCharacterEncoding("UTF-8");
-                    response.getWriter().write(objectMapper.writeValueAsString(ApiResponse.fail(ErrorCode.UNAUTHORIZED)));
+                    response.getWriter().write(objectMapper.writeValueAsString(ApiResponse.fail(errorCode)));
                 }))
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(
@@ -49,6 +55,7 @@ public class SecurityConfig {
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
+                .addFilterBefore(requestIdFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(firebaseParentAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
