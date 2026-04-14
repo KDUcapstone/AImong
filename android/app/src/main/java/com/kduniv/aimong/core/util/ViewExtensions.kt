@@ -27,17 +27,24 @@ fun View.setOnScaleTouchListener() {
  */
 fun TextView.setGradientText(vararg colors: Int) {
     this.post {
-        val paint = this.paint
-        val width = paint.measureText(this.text.toString())
-        if (width <= 0) return@post
-        
-        val shader = LinearGradient(
-            0f, 0f, width, 0f,
-            colors,
-            null,
-            Shader.TileMode.CLAMP
-        )
-        this.paint.shader = shader
-        this.invalidate()
+        try {
+            val paint = this.paint
+            val textStr = this.text.toString()
+            if (textStr.isEmpty()) return@post
+            
+            val width = paint.measureText(textStr)
+            if (width <= 0) return@post
+            
+            val shader = LinearGradient(
+                0f, 0f, width, 0f,
+                colors,
+                null,
+                Shader.TileMode.CLAMP
+            )
+            this.paint.shader = shader
+            this.invalidate()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 }

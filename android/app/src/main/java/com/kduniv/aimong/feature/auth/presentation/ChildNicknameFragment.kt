@@ -1,8 +1,10 @@
 package com.kduniv.aimong.feature.auth.presentation
 
+import android.graphics.Color
 import androidx.lifecycle.lifecycleScope
 import com.kduniv.aimong.core.local.SessionManager
 import com.kduniv.aimong.core.ui.BaseFragment
+import com.kduniv.aimong.core.util.setGradientText
 import com.kduniv.aimong.core.util.setOnScaleTouchListener
 import com.kduniv.aimong.databinding.FragmentChildNicknameBinding
 import dagger.hilt.android.AndroidEntryPoint
@@ -16,8 +18,18 @@ class ChildNicknameFragment : BaseFragment<FragmentChildNicknameBinding>(Fragmen
     lateinit var sessionManager: SessionManager
 
     override fun initView() {
-        binding.btnBack.setOnClickListener {
-            activity?.onBackPressedDispatcher?.onBackPressed()
+        // 남색에서 보라색으로 이어지는 3색 그라데이션 적용
+        binding.tvNicknameTitle.setGradientText(
+            Color.parseColor("#448AFF"), // Navy-Blue 시작
+            Color.parseColor("#7C4DFF"), // Purple 중간
+            Color.parseColor("#A040FF")  // Light Purple 끝
+        )
+
+        binding.btnBack.apply {
+            setOnScaleTouchListener()
+            setOnClickListener {
+                activity?.onBackPressedDispatcher?.onBackPressed()
+            }
         }
 
         binding.btnComplete.apply {
