@@ -19,15 +19,13 @@ public interface MissionAttemptRepository extends JpaRepository<MissionAttempt, 
             from MissionAttempt ma
             join Mission m on m.id = ma.missionId
             where ma.childId = :childId
-              and ma.attemptNo = 1
-              and ma.score * :passScoreDenominator >= ma.total * :passScoreNumerator
+              and ma.review = false
+              and ma.passed = true
               and m.stage = :stage
             """)
     long countCompletedMissionByStage(
             @Param("childId") UUID childId,
-            @Param("stage") short stage,
-            @Param("passScoreNumerator") int passScoreNumerator,
-            @Param("passScoreDenominator") int passScoreDenominator
+            @Param("stage") short stage
     );
 
     @Query("""
@@ -35,14 +33,12 @@ public interface MissionAttemptRepository extends JpaRepository<MissionAttempt, 
             from MissionAttempt ma
             where ma.childId = :childId
               and ma.missionId = :missionId
-              and ma.attemptNo = 1
-              and ma.score * :passScoreDenominator >= ma.total * :passScoreNumerator
+              and ma.review = false
+              and ma.passed = true
             """)
     Optional<LocalDate> findLatestCompletedAt(
             @Param("childId") UUID childId,
-            @Param("missionId") UUID missionId,
-            @Param("passScoreNumerator") int passScoreNumerator,
-            @Param("passScoreDenominator") int passScoreDenominator
+            @Param("missionId") UUID missionId
     );
 
 }

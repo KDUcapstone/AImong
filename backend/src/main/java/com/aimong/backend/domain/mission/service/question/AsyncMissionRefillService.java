@@ -33,6 +33,16 @@ public class AsyncMissionRefillService {
         }
 
         QuestionPoolMetricsCollector.QuestionPoolMetrics metrics = metricsCollector.collect(missionId);
+        if (metrics.activeCount() <= generationProperties.hardRefillTrigger()) {
+            log.info(
+                    "mission-refill critical missionId={} activeCount={} intactPackCount={}",
+                    missionId,
+                    metrics.activeCount(),
+                    metrics.intactPackCount()
+            );
+            refillImmediately(missionId);
+            return;
+        }
         if (metrics.activeCount() <= generationProperties.softRefillTrigger()) {
             queuedMissionIds.add(missionId);
             log.info(
@@ -41,6 +51,19 @@ public class AsyncMissionRefillService {
                     metrics.activeCount(),
                     metrics.intactPackCount()
             );
+        }
+    }
+
+    private void refillImmediately(UUID missionId) {
+        if (!processingMissionIds.add(missionId)) {
+            queuedMissionIds.add(missionId);
+            return;
+        }
+        try {
+            queuedMissionIds.remove(missionId);
+            refillMission(missionId);
+        } finally {
+            processingMissionIds.remove(missionId);
         }
     }
 
@@ -71,7 +94,32 @@ public class AsyncMissionRefillService {
         }
 
         int batchSize = Math.min(shortage, generationProperties.asyncGenerateBatch());
-        dynamicQuestionGenerationPort.generateQuestions(missionId, batchSize, SYSTEM_CHILD_ID, false);
+        int lowShortage = Math.max(0, 30 - (int) metrics.lowBandCount());
+        int mediumShortage = Math.max(0, 20 - (int) metrics.mediumBandCount());
+        int highShortage = Math.max(0, 10 - (int) metrics.highBandCount());
+        int lowRequest = Math.min(lowShortage, batchSize);
+        int remaining = batchSize - lowRequest;
+        int mediumRequest = Math.min(mediumShortage, remaining);
+        remaining -= mediumRequest;
+        int highRequest = Math.min(highShortage, remaining);
+        dynamicQuestionGenerationPort.generateQuestions(
+                missionId,
+                new RecompositionSelector.ShortageDetails(
+                        lowRequest,
+                        mediumRequest,
+                        highRequest,
+                        0,
+                        "ASYNC_POOL_REFILL",
+                        new RecompositionSelector.CandidatePoolCounts(
+                                (int) metrics.activeCount(),
+                                (int) metrics.lowBandCount(),
+                                (int) metrics.mediumBandCount(),
+                                (int) metrics.highBandCount()
+                        )
+                ),
+                SYSTEM_CHILD_ID,
+                false
+        );
 
         log.info(
                 "mission-refill processed missionId={} activeCount={} requestedBatch={}",

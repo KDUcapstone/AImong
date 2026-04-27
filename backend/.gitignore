@@ -38,10 +38,16 @@ out/
 
 ### Environment File ###
 .env
+.env.*
+!.env.example
 firebase_key.json
 google-services.json
 
-### Document for Codex ###
+### Private Docs And Generated Artifacts ###
+private-docs/
+_generated/
 Doc/
-docs/
-docs/keris/
+
+### Local Development Overrides ###
+docker-compose.override.yml
+docker-compose.*.override.yml

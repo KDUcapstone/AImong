@@ -18,8 +18,8 @@ public class QuestionGenerationService {
     private final KerisCurriculumRegistry kerisCurriculumRegistry;
     private final ModelRoutingPolicy modelRoutingPolicy;
     private final QuestionCandidateGenerator questionCandidateGenerator;
-    private final QuestionValidator questionValidator;
-    private final SimilarityDeduplicator similarityDeduplicator;
+    private final QuestionValidationService questionValidationService;
+    private final BatchDistributionValidator batchDistributionValidator;
 
     public GenerationBatchResult generateValidatedCandidates(QuestionGenerationRequest request) {
         KerisCurriculumRegistry.KerisMissionRule missionRule = kerisCurriculumRegistry.findMissionRule(request.missionCode())
@@ -42,16 +42,20 @@ public class QuestionGenerationService {
         List<StructuredQuestionSchema> accepted = new ArrayList<>();
         List<RejectedCandidate> rejected = new ArrayList<>();
         List<String> knownTexts = new ArrayList<>(request.existingMissionPrompts());
-        knownTexts.addAll(request.goldExamplePrompts());
 
         for (StructuredQuestionSchema candidate : rawCandidates) {
-            List<String> errors = new ArrayList<>(questionValidator.validate(candidate));
-            errors.addAll(similarityDeduplicator.validate(candidate.question(), knownTexts));
-            if (errors.isEmpty()) {
+            QuestionValidationReport report = questionValidationService.validate(
+                    new QuestionValidationService.ValidationRequest(
+                            candidate,
+                            List.copyOf(knownTexts),
+                            request.goldExamplePrompts()
+                    )
+            );
+            if (report.pass()) {
                 accepted.add(candidate);
                 knownTexts.add(candidate.question());
             } else {
-                rejected.add(new RejectedCandidate(candidate, errors));
+                rejected.add(new RejectedCandidate(candidate, report));
             }
         }
 
@@ -64,6 +68,16 @@ public class QuestionGenerationService {
                 accepted.size(),
                 rejected.size()
         );
+        BatchDistributionValidator.BatchDistributionReport batchReport = batchDistributionValidator.validate(accepted);
+        if (!batchReport.warnings().isEmpty()) {
+            log.warn(
+                    "question-generation batch-distribution-warning missionCode={} packNo={} warnings={} repairHints={}",
+                    request.missionCode(),
+                    request.packNo(),
+                    batchReport.warnings(),
+                    batchReport.repairHints()
+            );
+        }
 
         return new GenerationBatchResult(routingDecision, accepted, rejected);
     }
@@ -81,7 +95,8 @@ public class QuestionGenerationService {
             boolean optionQualityWeak,
             boolean explanationQualityWeak,
             List<String> existingMissionPrompts,
-            List<String> goldExamplePrompts
+            List<String> goldExamplePrompts,
+            List<String> repairHints
     ) {
     }
 
@@ -94,7 +109,7 @@ public class QuestionGenerationService {
 
     public record RejectedCandidate(
             StructuredQuestionSchema candidate,
-            List<String> reasons
+            QuestionValidationReport report
     ) {
     }
 }

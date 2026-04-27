@@ -103,4 +103,12 @@ public class QuestionBank {
         questionBank.isActive = true;
         return questionBank;
     }
+
+    public void quarantine() {
+        this.questionPoolStatus = QuestionPoolStatus.QUARANTINED;
+    }
+
+    public boolean isQuarantined() {
+        return questionPoolStatus == QuestionPoolStatus.QUARANTINED;
+    }
 }

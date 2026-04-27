@@ -39,8 +39,17 @@ public class MissionAttempt {
     @Column(name = "total", nullable = false)
     private int total;
 
+    @Column(name = "is_review", nullable = false)
+    private boolean review;
+
+    @Column(name = "is_passed", nullable = false)
+    private boolean passed;
+
     @Column(name = "xp_earned", nullable = false)
     private int xpEarned;
+
+    @Column(name = "created_at", nullable = false)
+    private Instant createdAt;
 
     @Column(name = "submitted_at", nullable = false)
     private Instant submittedAt;
@@ -52,6 +61,8 @@ public class MissionAttempt {
             int attemptNo,
             int score,
             int total,
+            boolean isReview,
+            boolean isPassed,
             int xpEarned
     ) {
         MissionAttempt attempt = new MissionAttempt();
@@ -62,16 +73,21 @@ public class MissionAttempt {
         attempt.attemptNo = attemptNo;
         attempt.score = score;
         attempt.total = total;
+        attempt.review = isReview;
+        attempt.passed = isPassed;
         attempt.xpEarned = xpEarned;
         return attempt;
     }
 
     public boolean isReview() {
-        return attemptNo > 1;
+        return review;
     }
 
     @PrePersist
     void prePersist() {
+        if (createdAt == null) {
+            createdAt = Instant.now();
+        }
         if (submittedAt == null) {
             submittedAt = Instant.now();
         }

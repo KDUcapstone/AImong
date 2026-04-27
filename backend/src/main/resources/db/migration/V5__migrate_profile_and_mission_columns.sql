@@ -26,6 +26,9 @@ BEGIN
           AND udt_name <> 'profile_image_type_enum'
     ) THEN
         ALTER TABLE child_profiles
+            ALTER COLUMN profile_image_type DROP DEFAULT;
+
+        ALTER TABLE child_profiles
             ALTER COLUMN profile_image_type TYPE profile_image_type_enum
             USING profile_image_type::profile_image_type_enum;
     END IF;

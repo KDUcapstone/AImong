@@ -1,7 +1,6 @@
 package com.aimong.backend.domain.mission.service;
 
 import com.aimong.backend.domain.auth.service.ChildActivityService;
-import com.aimong.backend.domain.mission.MissionCompletionPolicy;
 import com.aimong.backend.domain.mission.dto.MissionListResponse;
 import com.aimong.backend.domain.mission.dto.MissionSummaryResponse;
 import com.aimong.backend.domain.mission.dto.StageProgressResponse;
@@ -52,9 +51,7 @@ public class MissionService {
     private MissionSummaryResponse toMissionSummary(UUID childId, Mission mission, StageProgressResponse stageProgress) {
         LocalDate completedAt = missionAttemptRepository.findLatestCompletedAt(
                         childId,
-                        mission.getId(),
-                        MissionCompletionPolicy.PASS_SCORE_NUMERATOR,
-                        MissionCompletionPolicy.PASS_SCORE_DENOMINATOR
+                        mission.getId()
                 )
                 .orElse(null);
         boolean isCompleted = completedAt != null;
@@ -74,9 +71,7 @@ public class MissionService {
     private long countCompletedMissionByStage(UUID childId, short stage) {
         return missionAttemptRepository.countCompletedMissionByStage(
                 childId,
-                stage,
-                MissionCompletionPolicy.PASS_SCORE_NUMERATOR,
-                MissionCompletionPolicy.PASS_SCORE_DENOMINATOR
+                stage
         );
     }
 }

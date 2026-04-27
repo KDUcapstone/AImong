@@ -92,7 +92,10 @@ class MissionApiIntegrationTest {
                 .andExpect(jsonPath("$.data.isReview").value(true))
                 .andExpect(jsonPath("$.data.quizAttemptId").value(quizAttemptId.toString()))
                 .andExpect(jsonPath("$.data.questionCount").value(10))
-                .andExpect(jsonPath("$.data.questions[0].type").value("OX"));
+                .andExpect(jsonPath("$.data.questions[0].type").value("OX"))
+                .andExpect(jsonPath("$.data.questions[0].answer").doesNotExist())
+                .andExpect(jsonPath("$.data.questions[0].answer_payload").doesNotExist())
+                .andExpect(jsonPath("$.data.questions[0].explanation").doesNotExist());
     }
 
     @Test
@@ -156,7 +159,8 @@ class MissionApiIntegrationTest {
                 .andExpect(jsonPath("$.data.rewards[0].amount").value(10))
                 .andExpect(jsonPath("$.data.remainingTickets.normal").value(2))
                 .andExpect(jsonPath("$.data.profileImageType").value("SPROUT"))
-                .andExpect(jsonPath("$.data.results[0].questionId").value(answers.get(0).questionId()));
+                .andExpect(jsonPath("$.data.results[0].questionId").value(answers.get(0).questionId()))
+                .andExpect(jsonPath("$.data.results[0].explanation").value("Do not share passwords."));
     }
 
     @Test

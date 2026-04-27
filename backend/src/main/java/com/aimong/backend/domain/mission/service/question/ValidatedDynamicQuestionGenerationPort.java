@@ -2,15 +2,14 @@ package com.aimong.backend.domain.mission.service.question;
 
 import com.aimong.backend.domain.mission.entity.GenerationPhase;
 import com.aimong.backend.domain.mission.entity.Mission;
-import com.aimong.backend.domain.mission.entity.QuestionAnswerKey;
 import com.aimong.backend.domain.mission.entity.QuestionBank;
 import com.aimong.backend.domain.mission.repository.MissionRepository;
 import com.aimong.backend.domain.mission.repository.QuestionBankRepository;
 import com.aimong.backend.domain.mission.service.generation.GeneratedQuestionPersistenceService;
-import com.aimong.backend.domain.mission.service.generation.KerisCurriculumRegistry;
+import com.aimong.backend.domain.mission.service.generation.MissionCodeResolver;
 import com.aimong.backend.domain.mission.service.generation.QuestionGenerationService;
-import com.aimong.backend.domain.mission.service.generation.StructuredQuestionSchema;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.aimong.backend.domain.mission.service.generation.QuestionGenerationRetryFeedback;
+import com.aimong.backend.domain.mission.config.QuestionGenerationProperties;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -34,13 +33,19 @@ public class ValidatedDynamicQuestionGenerationPort implements DynamicQuestionGe
     private final QuestionBankRepository questionBankRepository;
     private final QuestionGenerationService questionGenerationService;
     private final GeneratedQuestionPersistenceService persistenceService;
-    private final KerisCurriculumRegistry kerisCurriculumRegistry;
-    private final ObjectMapper objectMapper;
+    private final MissionCodeResolver missionCodeResolver;
+    private final RuntimeRefillPlanner runtimeRefillPlanner;
+    private final QuestionGenerationProperties generationProperties;
 
     @Override
     @Transactional
-    public List<QuestionBank> generateQuestions(UUID missionId, int shortage, UUID childId, boolean isReview) {
-        if (isReview || shortage <= 0) {
+    public List<QuestionBank> generateQuestions(
+            UUID missionId,
+            RecompositionSelector.ShortageDetails shortageDetails,
+            UUID childId,
+            boolean isReview
+    ) {
+        if (isReview || shortageDetails.totalMissing() <= 0) {
             return List.of();
         }
 
@@ -49,75 +54,54 @@ public class ValidatedDynamicQuestionGenerationPort implements DynamicQuestionGe
             return List.of();
         }
 
-        String missionCode = resolveMissionCode(mission);
+        String missionCode = missionCodeResolver.resolve(mission).orElse(null);
         if (missionCode == null) {
             log.warn("question-generation skipped due to missing missionCode missionId={}", missionId);
             return List.of();
         }
 
-        QuestionGenerationService.GenerationBatchResult batchResult = questionGenerationService.generateValidatedCandidates(
-                new QuestionGenerationService.QuestionGenerationRequest(
-                        missionCode,
-                        1,
-                        inferDifficultyBand(mission.getStage()),
-                        com.aimong.backend.domain.mission.entity.QuestionType.MULTIPLE,
-                        shortage,
-                        inferDifficulty(mission.getStage()),
-                        0,
-                        false,
-                        false,
-                        false,
-                        false,
-                        questionBankRepository.findAllByMissionIdAndIsActiveTrue(missionId).stream()
-                                .map(QuestionBank::getPrompt)
-                                .toList(),
-                        List.of()
-                )
+        List<String> existingPrompts = questionBankRepository.findAllByMissionIdAndIsActiveTrue(missionId).stream()
+                .map(QuestionBank::getPrompt)
+                .toList();
+        RuntimeRefillPlanner.RuntimeRefillPlan refillPlan = runtimeRefillPlanner.planServingRefill(
+                missionCode,
+                mission.getStage(),
+                shortageDetails,
+                existingPrompts
         );
 
-        List<QuestionBank> saved = persistenceService.persistCandidates(
-                missionId,
-                batchResult.accepted().stream().limit(shortage).toList(),
-                GenerationPhase.RUNTIME,
-                "GPT"
-        );
+        List<QuestionBank> saved = new ArrayList<>();
+        int rejectedCount = 0;
+        for (RuntimeRefillPlanner.RuntimeGenerationRequest request : refillPlan.requests()) {
+            QuestionGenerationRetryFeedback feedback = QuestionGenerationRetryFeedback.empty();
+            int attemptLimit = Math.max(1, generationProperties.miniMaxRetry());
+            for (int attempt = 0; attempt < attemptLimit; attempt++) {
+                QuestionGenerationService.GenerationBatchResult batchResult =
+                        questionGenerationService.generateValidatedCandidates(request.toGenerationRequest(attempt, feedback));
+                rejectedCount += batchResult.rejected().size();
+                List<QuestionBank> persisted = persistenceService.persistCandidates(
+                        missionId,
+                        batchResult.accepted(),
+                        GenerationPhase.RUNTIME,
+                        "GPT"
+                );
+                saved.addAll(persisted);
+                if (!persisted.isEmpty()) {
+                    break;
+                }
+                feedback = feedback.merge(QuestionGenerationRetryFeedback.fromRejected(batchResult.rejected()));
+            }
+        }
 
         log.info(
-                "dynamic-question-generation missionCode={} missionId={} shortage={} saved={} rejected={}",
+                "dynamic-question-generation missionCode={} missionId={} shortage={} saved={} rejected={} requests={}",
                 missionCode,
                 missionId,
-                shortage,
+                shortageDetails.totalMissing(),
                 saved.size(),
-                batchResult.rejected().size()
+                rejectedCount,
+                refillPlan.requestCount()
         );
         return saved;
     }
-
-    private String resolveMissionCode(Mission mission) {
-        if (mission.getMissionCode() != null && !mission.getMissionCode().isBlank()) {
-            return mission.getMissionCode();
-        }
-        return kerisCurriculumRegistry.findMissionRuleByStageAndTitle(mission.getStage(), mission.getTitle())
-                .map(KerisCurriculumRegistry.KerisMissionRule::missionCode)
-                .orElse(null);
-    }
-
-    private com.aimong.backend.domain.mission.entity.DifficultyBand inferDifficultyBand(short stage) {
-        return switch (stage) {
-            case 1 -> com.aimong.backend.domain.mission.entity.DifficultyBand.LOW;
-            case 2 -> com.aimong.backend.domain.mission.entity.DifficultyBand.MEDIUM;
-            case 3 -> com.aimong.backend.domain.mission.entity.DifficultyBand.HIGH;
-            default -> com.aimong.backend.domain.mission.entity.DifficultyBand.LOW;
-        };
-    }
-
-    private int inferDifficulty(short stage) {
-        return switch (stage) {
-            case 1 -> 1;
-            case 2 -> 2;
-            case 3 -> 4;
-            default -> 1;
-        };
-    }
-
 }

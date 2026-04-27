@@ -2,11 +2,14 @@ package com.aimong.backend.domain.mission.controller;
 
 import com.aimong.backend.domain.mission.dto.MissionListResponse;
 import com.aimong.backend.domain.mission.dto.MissionQuestionsResponse;
+import com.aimong.backend.domain.mission.dto.QuestionReportRequest;
+import com.aimong.backend.domain.mission.dto.QuestionReportResponse;
 import com.aimong.backend.domain.mission.dto.SubmitRequest;
 import com.aimong.backend.domain.mission.dto.SubmitResponse;
 import com.aimong.backend.domain.mission.service.MissionService;
 import com.aimong.backend.domain.mission.service.QuizService;
 import com.aimong.backend.domain.mission.service.SubmitService;
+import com.aimong.backend.domain.mission.service.question.QuestionQualityReviewService;
 import com.aimong.backend.global.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -34,6 +37,7 @@ public class MissionController {
     private final MissionService missionService;
     private final QuizService quizService;
     private final SubmitService submitService;
+    private final QuestionQualityReviewService questionQualityReviewService;
 
     @Operation(
             summary = "미션 목록 조회",
@@ -247,6 +251,21 @@ public class MissionController {
             Authentication authentication
     ) {
         return ApiResponse.success(submitService.submit(extractChildId(authentication), missionId, request));
+    }
+
+    @PostMapping("/{missionId}/questions/{questionId}/report")
+    public ApiResponse<QuestionReportResponse> reportQuestion(
+            @PathVariable UUID missionId,
+            @PathVariable UUID questionId,
+            @Valid @RequestBody QuestionReportRequest request,
+            Authentication authentication
+    ) {
+        return ApiResponse.success(questionQualityReviewService.reportQuestion(
+                extractChildId(authentication),
+                missionId,
+                questionId,
+                request
+        ));
     }
 
     private UUID extractChildId(Authentication authentication) {

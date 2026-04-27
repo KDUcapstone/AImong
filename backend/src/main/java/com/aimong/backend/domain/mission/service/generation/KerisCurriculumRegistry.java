@@ -16,7 +16,7 @@ import org.yaml.snakeyaml.Yaml;
 @Component
 public class KerisCurriculumRegistry {
 
-    private static final Path KERIS_DOC_ROOT = Path.of("docs", "keris");
+    private static final Path KERIS_DOC_ROOT = Path.of("private-docs", "keris");
     private static final Path STAGE_MAP_PATH = KERIS_DOC_ROOT.resolve("01_stage_map.yaml");
     private static final Path MISSION_RULES_PATH = KERIS_DOC_ROOT.resolve("02_mission_rules.yaml");
 

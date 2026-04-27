@@ -21,6 +21,7 @@ public class GeneratedQuestionPersistenceService {
 
     private final QuestionBankRepository questionBankRepository;
     private final QuestionAnswerKeyRepository questionAnswerKeyRepository;
+    private final QuestionValidationService questionValidationService;
     private final ObjectMapper objectMapper;
 
     @Transactional
@@ -31,7 +32,22 @@ public class GeneratedQuestionPersistenceService {
             String sourceType
     ) {
         List<QuestionBank> saved = new ArrayList<>();
+        List<String> existingMissionPrompts = questionBankRepository.findAllByMissionIdAndIsActiveTrue(missionId).stream()
+                .map(QuestionBank::getPrompt)
+                .toList();
+
         for (StructuredQuestionSchema candidate : candidates) {
+            QuestionValidationReport report = questionValidationService.validate(
+                    new QuestionValidationService.ValidationRequest(
+                            candidate,
+                            existingMissionPrompts,
+                            List.of()
+                    )
+            );
+            if (!report.pass()) {
+                continue;
+            }
+
             QuestionBank questionBank = QuestionBank.create(
                     missionId,
                     candidate.type(),

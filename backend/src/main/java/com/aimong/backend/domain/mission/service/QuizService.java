@@ -14,6 +14,7 @@ import com.aimong.backend.domain.mission.repository.MissionRepository;
 import com.aimong.backend.domain.mission.repository.QuizAttemptRepository;
 import com.aimong.backend.domain.mission.service.question.AsyncMissionRefillService;
 import com.aimong.backend.domain.mission.service.question.MissionQuestionSetFactory;
+import com.aimong.backend.domain.mission.service.question.QuestionServingQualityGuard;
 import com.aimong.backend.global.exception.AimongException;
 import com.aimong.backend.global.exception.ErrorCode;
 import com.aimong.backend.global.util.KstDateUtils;
@@ -41,6 +42,7 @@ public class QuizService {
     private final MissionQuestionSetFactory missionQuestionSetFactory;
     private final AsyncMissionRefillService asyncMissionRefillService;
     private final MissionQuestionProperties missionQuestionProperties;
+    private final QuestionServingQualityGuard questionServingQualityGuard;
     private final ObjectMapper objectMapper;
 
     @Transactional
@@ -61,7 +63,7 @@ public class QuizService {
                 KstDateUtils.today()
         ).isPresent();
 
-        List<QuestionBank> selectedQuestions = missionQuestionSetFactory.create(missionId, childId, isReview);
+        List<QuestionBank> selectedQuestions = selectServingReadyQuestions(mission, childId, isReview);
         asyncMissionRefillService.enqueueIfNeeded(missionId);
         List<UUID> selectedQuestionIds = selectedQuestions.stream()
                 .map(QuestionBank::getId)
@@ -101,6 +103,19 @@ public class QuizService {
         } catch (JsonProcessingException exception) {
             throw new AimongException(ErrorCode.INTERNAL_SERVER_ERROR, exception);
         }
+    }
+
+    private List<QuestionBank> selectServingReadyQuestions(Mission mission, UUID childId, boolean isReview) {
+        int attemptLimit = Math.max(3, missionQuestionProperties.setSize());
+        for (int attempt = 0; attempt < attemptLimit; attempt++) {
+            List<QuestionBank> selectedQuestions = missionQuestionSetFactory.create(mission.getId(), childId, isReview);
+            QuestionServingQualityGuard.ServingValidationResult validationResult =
+                    questionServingQualityGuard.validateForServing(mission, selectedQuestions);
+            if (validationResult.validQuestions().size() == missionQuestionProperties.setSize()) {
+                return validationResult.validQuestions();
+            }
+        }
+        throw new AimongException(ErrorCode.MISSION_SET_NOT_READY);
     }
 
     private QuestionResponse toQuestionResponse(QuestionBank question) {

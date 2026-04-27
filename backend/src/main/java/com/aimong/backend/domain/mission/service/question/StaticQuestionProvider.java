@@ -9,9 +9,9 @@ import com.aimong.backend.domain.mission.repository.QuizAttemptRepository;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +27,7 @@ public class StaticQuestionProvider implements ApprovedQuestionProvider {
     private final ObjectMapper objectMapper;
 
     @Override
-    public List<QuestionBank> findApprovedQuestions(UUID missionId, UUID childId, boolean isReview) {
+    public Optional<List<QuestionBank>> findIntactUnusedPack(UUID missionId, UUID childId, boolean isReview) {
         Set<UUID> solvedQuestionIds = isReview ? Set.of() : findSolvedQuestionIds(childId, missionId);
         List<Short> intactPackNumbers = questionBankRepository.findIntactPackNumbers(
                 missionId,
@@ -45,20 +45,27 @@ public class StaticQuestionProvider implements ApprovedQuestionProvider {
             if (!isReview && packQuestions.stream().anyMatch(question -> solvedQuestionIds.contains(question.getId()))) {
                 continue;
             }
-            return packQuestions;
+            return Optional.of(packQuestions);
         }
+        return Optional.empty();
+    }
 
+    @Override
+    public ApprovedQuestionPool findApprovedQuestionPool(UUID missionId, UUID childId, boolean isReview) {
+        Set<UUID> solvedQuestionIds = isReview ? Set.of() : findSolvedQuestionIds(childId, missionId);
         List<QuestionBank> questions = new ArrayList<>(
                 questionBankRepository.findAllByMissionIdAndIsActiveTrueAndQuestionPoolStatus(missionId, QuestionPoolStatus.ACTIVE)
         );
         if (questions.isEmpty()) {
             questions = new ArrayList<>(questionBankRepository.findAllByMissionIdAndIsActiveTrue(missionId));
         }
+        int excludedBySolved = 0;
         if (!isReview) {
+            int originalSize = questions.size();
             questions.removeIf(question -> solvedQuestionIds.contains(question.getId()));
+            excludedBySolved = originalSize - questions.size();
         }
-        Collections.shuffle(questions);
-        return questions;
+        return new ApprovedQuestionPool(List.copyOf(questions), excludedBySolved);
     }
 
     private Set<UUID> findSolvedQuestionIds(UUID childId, UUID missionId) {

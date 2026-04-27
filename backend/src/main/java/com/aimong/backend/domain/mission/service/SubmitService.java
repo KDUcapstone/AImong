@@ -10,10 +10,12 @@ import com.aimong.backend.domain.mission.dto.SubmitRequest;
 import com.aimong.backend.domain.mission.dto.SubmitResponse;
 import com.aimong.backend.domain.mission.dto.StageProgressResponse;
 import com.aimong.backend.domain.mission.entity.Mission;
+import com.aimong.backend.domain.mission.entity.MissionAnswerResult;
 import com.aimong.backend.domain.mission.entity.MissionAttempt;
 import com.aimong.backend.domain.mission.entity.MissionDailyProgress;
 import com.aimong.backend.domain.mission.entity.QuestionAnswerKey;
 import com.aimong.backend.domain.mission.entity.QuizAttempt;
+import com.aimong.backend.domain.mission.repository.MissionAnswerResultRepository;
 import com.aimong.backend.domain.mission.repository.MissionAttemptRepository;
 import com.aimong.backend.domain.mission.repository.MissionDailyProgressRepository;
 import com.aimong.backend.domain.mission.repository.MissionRepository;
@@ -62,6 +64,7 @@ public class SubmitService {
     private final MissionRepository missionRepository;
     private final QuestionBankRepository questionBankRepository;
     private final QuestionAnswerKeyRepository questionAnswerKeyRepository;
+    private final MissionAnswerResultRepository missionAnswerResultRepository;
     private final MissionAttemptRepository missionAttemptRepository;
     private final MissionDailyProgressRepository missionDailyProgressRepository;
     private final ChildProfileRepository childProfileRepository;
@@ -150,30 +153,36 @@ public class SubmitService {
 
         if (isReview) {
             final int reviewScore = score;
-            missionAttemptRepository.save(MissionAttempt.create(
+            MissionAttempt reviewAttempt = missionAttemptRepository.save(MissionAttempt.create(
                     childId,
                     missionId,
                     today,
                     attemptNo,
                     reviewScore,
                     TOTAL_QUESTIONS,
+                    true,
+                    isPassed,
                     0
             ));
+            saveAnswerResults(reviewAttempt.getId(), childId, missionId, true, request.answers(), answerKeysById);
             missionDailyProgressRepository.findWithLockByChildIdAndMissionIdAndProgressDate(childId, missionId, today)
                     .ifPresent(progress -> progress.applyReviewAttempt(reviewScore));
             return buildReviewResponse(score, wrongCount, isPassed, isPerfect, childProfile, ticket, streakRecord, results);
         }
 
         if (!isPassed) {
-            missionAttemptRepository.save(MissionAttempt.create(
+            MissionAttempt failedAttempt = missionAttemptRepository.save(MissionAttempt.create(
                     childId,
                     missionId,
                     today,
                     attemptNo,
                     score,
                     TOTAL_QUESTIONS,
+                    false,
+                    false,
                     0
             ));
+            saveAnswerResults(failedAttempt.getId(), childId, missionId, false, request.answers(), answerKeysById);
             return buildFailureResponse(score, wrongCount, isPerfect, childProfile, ticket, streakRecord, results);
         }
 
@@ -195,15 +204,18 @@ public class SubmitService {
                 xpEarned
         ));
         try {
-            missionAttemptRepository.save(MissionAttempt.create(
+            MissionAttempt passedAttempt = missionAttemptRepository.save(MissionAttempt.create(
                     childId,
                     missionId,
                     today,
                     attemptNo,
                     score,
                     TOTAL_QUESTIONS,
+                    false,
+                    true,
                     xpEarned
             ));
+            saveAnswerResults(passedAttempt.getId(), childId, missionId, false, request.answers(), answerKeysById);
         } catch (RuntimeException exception) {
             throw new AimongException(ErrorCode.SUBMIT_SAVE_FAILED, exception);
         }
@@ -361,6 +373,31 @@ public class SubmitService {
 
     private boolean isCompletedToday(StreakRecord streakRecord, LocalDate today) {
         return today.equals(streakRecord.getLastCompletedDate()) && streakRecord.getTodayMissionCount() > 0;
+    }
+
+    private void saveAnswerResults(
+            UUID attemptId,
+            UUID childId,
+            UUID missionId,
+            boolean isReview,
+            List<SubmitRequest.AnswerRequest> answers,
+            Map<UUID, QuestionAnswerKey> answerKeysById
+    ) {
+        List<MissionAnswerResult> results = new ArrayList<>();
+        for (SubmitRequest.AnswerRequest answer : answers) {
+            UUID questionId = parseQuestionId(answer.questionId());
+            QuestionAnswerKey answerKey = answerKeysById.get(questionId);
+            boolean isCorrect = answerKey != null && parseAnswerPayload(answerKey.getAnswerPayload()).equals(answer.selected());
+            results.add(MissionAnswerResult.create(
+                    attemptId,
+                    childId,
+                    missionId,
+                    questionId,
+                    isReview,
+                    isCorrect
+            ));
+        }
+        missionAnswerResultRepository.saveAll(results);
     }
 
     private List<SubmitResponse.RewardResponse> applyLevelRewards(int previousLevel, int currentLevel, Ticket ticket, StreakRecord streakRecord) {

@@ -1,6 +1,7 @@
 package com.aimong.backend.domain.mission.service.question;
 
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.argThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -24,7 +25,32 @@ class AsyncMissionRefillServiceTest {
     private DynamicQuestionGenerationPort dynamicQuestionGenerationPort;
 
     @Test
-    void enqueuesAndProcessesLowPoolMission() {
+    void enqueuesAndProcessesSoftThresholdMission() {
+        AsyncMissionRefillService service = new AsyncMissionRefillService(
+                metricsCollector,
+                dynamicQuestionGenerationPort,
+                new QuestionGenerationProperties(60, 6, 10, 36, 18, 10, 30000L, 10, 2),
+                new MissionQuestionProperties(10, 30, true)
+        );
+
+        UUID missionId = UUID.randomUUID();
+        when(metricsCollector.collect(missionId))
+                .thenReturn(new QuestionPoolMetricsCollector.QuestionPoolMetrics(missionId, 30, 2, 18, 8, 4, List.of((short) 1, (short) 2)))
+                .thenReturn(new QuestionPoolMetricsCollector.QuestionPoolMetrics(missionId, 30, 2, 18, 8, 4, List.of((short) 1, (short) 2)));
+
+        service.enqueueIfNeeded(missionId);
+        service.processQueuedMissions();
+
+        verify(dynamicQuestionGenerationPort).generateQuestions(
+                org.mockito.ArgumentMatchers.eq(missionId),
+                argThat(details -> details.lowMissing() == 10 && details.mediumMissing() == 0 && details.highMissing() == 0),
+                org.mockito.ArgumentMatchers.eq(new UUID(0L, 0L)),
+                org.mockito.ArgumentMatchers.eq(false)
+        );
+    }
+
+    @Test
+    void processesCriticalMissionImmediatelyAtHardThreshold() {
         AsyncMissionRefillService service = new AsyncMissionRefillService(
                 metricsCollector,
                 dynamicQuestionGenerationPort,
@@ -38,9 +64,13 @@ class AsyncMissionRefillServiceTest {
                 .thenReturn(new QuestionPoolMetricsCollector.QuestionPoolMetrics(missionId, 18, 1, 10, 6, 2, List.of((short) 1)));
 
         service.enqueueIfNeeded(missionId);
-        service.processQueuedMissions();
 
-        verify(dynamicQuestionGenerationPort).generateQuestions(missionId, 10, new UUID(0L, 0L), false);
+        verify(dynamicQuestionGenerationPort).generateQuestions(
+                org.mockito.ArgumentMatchers.eq(missionId),
+                argThat(details -> details.lowMissing() == 10 && details.mediumMissing() == 0 && details.highMissing() == 0),
+                org.mockito.ArgumentMatchers.eq(new UUID(0L, 0L)),
+                org.mockito.ArgumentMatchers.eq(false)
+        );
     }
 
     @Test
@@ -56,6 +86,11 @@ class AsyncMissionRefillServiceTest {
         service.processQueuedMissions();
 
         verify(metricsCollector, never()).collect(org.mockito.ArgumentMatchers.any());
-        verify(dynamicQuestionGenerationPort, never()).generateQuestions(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyInt(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyBoolean());
+        verify(dynamicQuestionGenerationPort, never()).generateQuestions(
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.anyBoolean()
+        );
     }
 }

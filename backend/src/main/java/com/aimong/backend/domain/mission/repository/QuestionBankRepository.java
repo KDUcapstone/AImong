@@ -18,7 +18,11 @@ public interface QuestionBankRepository extends JpaRepository<QuestionBank, UUID
 
     List<QuestionBank> findAllByMissionIdAndIsActiveTrueAndPackNoOrderByCreatedAtAsc(UUID missionId, Short packNo);
 
+    java.util.Optional<QuestionBank> findByIdAndMissionIdAndIsActiveTrue(UUID id, UUID missionId);
+
     List<QuestionBank> findAllByIdIn(Collection<UUID> ids);
+
+    long countByIsActiveTrue();
 
     long countByMissionIdAndIsActiveTrue(UUID missionId);
 

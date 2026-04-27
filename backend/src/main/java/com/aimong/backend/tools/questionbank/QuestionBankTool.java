@@ -13,7 +13,7 @@ public final class QuestionBankTool {
 
     public static void main(String[] args) throws Exception {
         if (args.length < 3) {
-            throw new IllegalArgumentException("usage: QuestionBankTool <generate|validate|review|sql|full> <input> <output>");
+            throw new IllegalArgumentException("usage: QuestionBankTool <generate|validate|review|sql|serve-sql|full> <input> <output>");
         }
 
         ObjectMapper objectMapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
@@ -21,6 +21,7 @@ public final class QuestionBankTool {
         QuestionBankValidator validator = new QuestionBankValidator();
         QuestionBankReviewWriter reviewWriter = new QuestionBankReviewWriter();
         QuestionBankSqlExporter sqlExporter = new QuestionBankSqlExporter(objectMapper);
+        QuestionBankAuditLoader auditLoader = new QuestionBankAuditLoader(objectMapper);
 
         String command = args[0];
         Path input = Path.of(args[1]);
@@ -51,6 +52,11 @@ public final class QuestionBankTool {
                 QuestionBankDraft draft = objectMapper.readValue(Files.readString(input), QuestionBankDraft.class);
                 writeParent(output);
                 Files.writeString(output, sqlExporter.export(draft));
+            }
+            case "serve-sql" -> {
+                AuditQuestionBank bank = auditLoader.load(input);
+                writeParent(output);
+                Files.writeString(output, sqlExporter.exportServeBank(bank));
             }
             case "full" -> {
                 Path base = output;

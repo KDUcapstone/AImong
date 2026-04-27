@@ -6,19 +6,13 @@ server:
 spring:
   config:
     import: optional:file:.env[.properties]
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
   application:
     name: backend
 
-  datasource:
-    url: ${SUPABASE_DB_URL:${DB_URL:jdbc:postgresql://localhost:5432/aimong}}
-    username: ${SUPABASE_DB_USERNAME:${DB_USERNAME:aimong}}
-    password: ${SUPABASE_DB_PASSWORD:${DB_PASSWORD:aimong}}
-    driver-class-name: org.postgresql.Driver
-
   data:
     redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
       timeout: 3s
 
   jpa:
@@ -39,6 +33,11 @@ spring:
 
 firebase:
   service-account-path: ${FIREBASE_SERVICE_ACCOUNT_PATH:}
+
+openai:
+  api-key: ${OPENAI_API_KEY:}
+  base-url: ${OPENAI_BASE_URL:https://api.openai.com/v1}
+  responses-path: ${OPENAI_RESPONSES_PATH:/responses}
 
 jwt:
   secret: ${JWT_SECRET}
@@ -65,5 +64,6 @@ aimong:
       default-model: gpt-5-mini
       escalated-model: gpt-5.4-mini
     seed:
+      enabled: false
       auto-run: false
       persist: false

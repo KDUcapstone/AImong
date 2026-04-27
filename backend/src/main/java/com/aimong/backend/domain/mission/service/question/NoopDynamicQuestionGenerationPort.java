@@ -9,7 +9,12 @@ import org.springframework.stereotype.Component;
 public class NoopDynamicQuestionGenerationPort implements DynamicQuestionGenerationPort {
 
     @Override
-    public List<QuestionBank> generateQuestions(UUID missionId, int shortage, UUID childId, boolean isReview) {
+    public List<QuestionBank> generateQuestions(
+            UUID missionId,
+            RecompositionSelector.ShortageDetails shortageDetails,
+            UUID childId,
+            boolean isReview
+    ) {
         return List.of();
     }
 }

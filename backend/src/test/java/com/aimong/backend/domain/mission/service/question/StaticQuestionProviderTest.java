@@ -7,6 +7,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.aimong.backend.domain.mission.config.MissionQuestionProperties;
+import com.aimong.backend.domain.mission.entity.DifficultyBand;
 import com.aimong.backend.domain.mission.entity.QuestionBank;
 import com.aimong.backend.domain.mission.entity.QuestionPoolStatus;
 import com.aimong.backend.domain.mission.entity.QuizAttempt;
@@ -33,90 +34,93 @@ class StaticQuestionProviderTest {
 
     @Test
     void normalModePrefersUnusedIntactPack() {
-        MissionQuestionProperties properties = new MissionQuestionProperties(10, 30, false);
         StaticQuestionProvider provider = new StaticQuestionProvider(
                 questionBankRepository,
                 quizAttemptRepository,
-                properties,
+                new MissionQuestionProperties(10, 30, false),
                 objectMapper
         );
 
         UUID missionId = UUID.randomUUID();
         UUID childId = UUID.randomUUID();
-        List<QuestionBank> packQuestions = createQuestions(10);
+        List<QuestionBank> packQuestions = createQuestions(5, 3, 2);
 
         when(quizAttemptRepository.findAllByChildIdAndMissionIdAndSubmittedAtIsNotNull(childId, missionId))
                 .thenReturn(List.of());
-        when(questionBankRepository.findIntactPackNumbers(missionId, 10))
-                .thenReturn(List.of((short) 1));
+        when(questionBankRepository.findIntactPackNumbers(missionId, 10)).thenReturn(List.of((short) 1));
         when(questionBankRepository.findAllByMissionIdAndIsActiveTrueAndPackNoOrderByCreatedAtAsc(missionId, (short) 1))
                 .thenReturn(packQuestions);
 
-        List<QuestionBank> selected = provider.findApprovedQuestions(missionId, childId, false);
+        List<QuestionBank> selected = provider.findIntactUnusedPack(missionId, childId, false).orElseThrow();
 
         assertThat(selected).containsExactlyElementsOf(packQuestions);
         verify(questionBankRepository, never()).findAllByMissionIdAndIsActiveTrueAndQuestionPoolStatus(missionId, QuestionPoolStatus.ACTIVE);
     }
 
     @Test
-    void normalModeExcludesSolvedQuestionsWhenRecomposingPool() {
-        MissionQuestionProperties properties = new MissionQuestionProperties(10, 30, false);
+    void normalModeExcludesSolvedQuestionsFromCandidatePool() {
         StaticQuestionProvider provider = new StaticQuestionProvider(
                 questionBankRepository,
                 quizAttemptRepository,
-                properties,
+                new MissionQuestionProperties(10, 30, false),
                 objectMapper
         );
 
         UUID missionId = UUID.randomUUID();
         UUID childId = UUID.randomUUID();
-        List<QuestionBank> poolQuestions = createQuestions(4);
-        for (QuestionBank question : poolQuestions) {
-            when(question.getId()).thenReturn(UUID.randomUUID());
-        }
-        UUID solvedId = poolQuestions.get(0).getId();
+        List<QuestionBank> poolQuestions = createQuestions(5, 3, 2);
+        UUID solvedId = poolQuestions.getFirst().getId();
 
         when(quizAttemptRepository.findAllByChildIdAndMissionIdAndSubmittedAtIsNotNull(childId, missionId))
                 .thenReturn(List.of(createAttempt(childId, missionId, List.of(solvedId))));
-        lenient().when(questionBankRepository.findIntactPackNumbers(missionId, 10))
-                .thenReturn(List.of());
         lenient().when(questionBankRepository.findAllByMissionIdAndIsActiveTrueAndQuestionPoolStatus(missionId, QuestionPoolStatus.ACTIVE))
                 .thenReturn(poolQuestions);
+        lenient().when(questionBankRepository.findIntactPackNumbers(missionId, 10)).thenReturn(List.of());
 
-        List<QuestionBank> selected = provider.findApprovedQuestions(missionId, childId, false);
+        ApprovedQuestionProvider.ApprovedQuestionPool selected = provider.findApprovedQuestionPool(missionId, childId, false);
 
-        assertThat(selected).extracting(QuestionBank::getId).doesNotContain(solvedId);
+        assertThat(selected.questions()).extracting(QuestionBank::getId).doesNotContain(solvedId);
+        assertThat(selected.excludedBySolved()).isEqualTo(1);
     }
 
     @Test
     void reviewModeAllowsReuseOfSolvedQuestions() {
-        MissionQuestionProperties properties = new MissionQuestionProperties(10, 30, false);
         StaticQuestionProvider provider = new StaticQuestionProvider(
                 questionBankRepository,
                 quizAttemptRepository,
-                properties,
+                new MissionQuestionProperties(10, 30, false),
                 objectMapper
         );
 
         UUID missionId = UUID.randomUUID();
         UUID childId = UUID.randomUUID();
-        List<QuestionBank> poolQuestions = createQuestions(3);
+        List<QuestionBank> poolQuestions = createQuestions(5, 3, 2);
 
-        when(questionBankRepository.findIntactPackNumbers(missionId, 10))
-                .thenReturn(List.of());
         when(questionBankRepository.findAllByMissionIdAndIsActiveTrueAndQuestionPoolStatus(missionId, QuestionPoolStatus.ACTIVE))
                 .thenReturn(poolQuestions);
 
-        List<QuestionBank> selected = provider.findApprovedQuestions(missionId, childId, true);
+        ApprovedQuestionProvider.ApprovedQuestionPool selected = provider.findApprovedQuestionPool(missionId, childId, true);
 
-        assertThat(selected).hasSize(3);
+        assertThat(selected.questions()).hasSize(10);
+        assertThat(selected.excludedBySolved()).isZero();
         verify(quizAttemptRepository, never()).findAllByChildIdAndMissionIdAndSubmittedAtIsNotNull(childId, missionId);
     }
 
-    private List<QuestionBank> createQuestions(int count) {
+    private List<QuestionBank> createQuestions(int lowCount, int mediumCount, int highCount) {
+        List<QuestionBank> questions = new java.util.ArrayList<>();
+        questions.addAll(createQuestions(lowCount, DifficultyBand.LOW));
+        questions.addAll(createQuestions(mediumCount, DifficultyBand.MEDIUM));
+        questions.addAll(createQuestions(highCount, DifficultyBand.HIGH));
+        return List.copyOf(questions);
+    }
+
+    private List<QuestionBank> createQuestions(int count, DifficultyBand band) {
         return java.util.stream.IntStream.range(0, count)
                 .mapToObj(index -> {
-                    return org.mockito.Mockito.mock(QuestionBank.class);
+                    QuestionBank question = org.mockito.Mockito.mock(QuestionBank.class);
+                    lenient().when(question.getId()).thenReturn(UUID.randomUUID());
+                    lenient().when(question.getDifficultyBand()).thenReturn(band);
+                    return question;
                 })
                 .toList();
     }

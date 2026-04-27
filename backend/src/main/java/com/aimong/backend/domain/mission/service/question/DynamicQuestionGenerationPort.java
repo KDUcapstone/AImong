@@ -6,5 +6,10 @@ import java.util.UUID;
 
 public interface DynamicQuestionGenerationPort {
 
-    List<QuestionBank> generateQuestions(UUID missionId, int shortage, UUID childId, boolean isReview);
+    List<QuestionBank> generateQuestions(
+            UUID missionId,
+            RecompositionSelector.ShortageDetails shortageDetails,
+            UUID childId,
+            boolean isReview
+    );
 }
