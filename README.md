@@ -150,8 +150,10 @@ AI 코딩 도구용 참고 문서입니다.
 
 ### 스펙과 코드 차이 메모
 
-- **Java 버전**: Java 21로 통일되었습니다. (`build.gradle`, `context-be.md` 모두 Java 21 기준)
-- **OpenAI 모델**: `gpt-5-mini`로 통일되었습니다. (`OpenAiClient.java`, `context-be.md` 모두 동일)
+- 기능 명세서에는 백엔드 스택이 Java 17로 적혀 있지만, 현재 저장소의 `backend/build.gradle`은 Java 21 toolchain으로 설정되어 있습니다.
+- 기능 명세서에는 OpenAI 모델이 `gpt-5-mini`로 적혀 있지만, 현재 코드 주석에는 `gpt-4o-mini`가 보입니다.
+
+작업 시작 전에는 "명세를 따를지, 현재 코드 설정을 따를지"를 한 번 정리하고 들어가는 것을 권장합니다.
 
 ## 5. 빠른 시작
 

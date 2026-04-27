@@ -3,14 +3,14 @@ spring:
     name: backend
 
   datasource:
-    url: ${SPRING_DATASOURCE_URL:}
-    username: ${SPRING_DATASOURCE_USERNAME:}
-    password: ${SUPABASE_DB_PASSWORD}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/aimong}
+    username: ${SPRING_DATASOURCE_USERNAME:aimong}
+    password: ${SPRING_DATASOURCE_PASSWORD:aimong}
     driver-class-name: org.postgresql.Driver
 
   jpa:
     hibernate:
-      ddl-auto: none          # 테이블은 Supabase에서 직접 관리
+      ddl-auto: none
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect

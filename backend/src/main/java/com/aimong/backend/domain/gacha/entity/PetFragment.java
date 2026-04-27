@@ -2,25 +2,34 @@ package com.aimong.backend.domain.gacha.entity;
 
 import com.aimong.backend.domain.auth.entity.ChildProfile;
 import com.aimong.backend.global.enums.PetGrade;
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.EmbeddedId;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.MapsId;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
 import java.time.OffsetDateTime;
 
-/**
- * 조각 보유량 — PK: (child_id, grade)
- * 중복 펫 뽑기 시 조각 지급: NORMAL+1 / RARE+3 / EPIC+8 / LEGEND+20
- * 교환 기준: NORMAL 10개→펫1 / RARE 30개 / EPIC 80개 / LEGEND 200개
- */
 @Entity
-@Table(name = "fragments")
+@Table(name = "pet_fragments")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
-public class Fragment {
+public class PetFragment {
 
     @EmbeddedId
-    private FragmentId id;
+    private PetFragmentId id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("childId")

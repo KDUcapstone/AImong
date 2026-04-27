@@ -1,17 +1,26 @@
 package com.aimong.backend.domain.mission.entity;
 
 import com.aimong.backend.domain.auth.entity.ChildProfile;
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
-/**
- * 문제 세션.
- * GET /missions/{missionId}/questions 호출 시 생성되고,
- * 정확히 10문항에 대한 제출 정합성을 보장한다.
- */
 @Entity
 @Table(
     name = "quiz_attempts",

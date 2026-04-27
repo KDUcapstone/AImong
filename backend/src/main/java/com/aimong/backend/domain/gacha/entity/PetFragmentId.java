@@ -18,7 +18,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode
-public class FragmentId implements Serializable {
+public class PetFragmentId implements Serializable {
 
     @Column(name = "child_id", columnDefinition = "uuid", nullable = false)
     private UUID childId;

@@ -1,17 +1,36 @@
 package com.aimong.backend.domain.gacha.entity;
 
 import com.aimong.backend.domain.auth.entity.ChildProfile;
-import jakarta.persistence.*;
-import lombok.*;
+import com.aimong.backend.global.enums.TicketType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
-/**
- * 티켓 보유량 — 자녀당 1행(child_id PK)
- * normal(일반) / rare(희귀) / epic(영웅) 각 등급별 보유 수량
- */
 @Entity
-@Table(name = "tickets")
+@Table(
+    name = "tickets",
+    indexes = {
+        @Index(name = "idx_tickets_child_unused", columnList = "child_id, ticket_type")
+    }
+)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -19,40 +38,32 @@ import java.util.UUID;
 public class Ticket {
 
     @Id
-    @Column(name = "child_id", columnDefinition = "uuid", nullable = false)
-    private UUID childId;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "ticket_id", columnDefinition = "uuid", updatable = false, nullable = false)
+    private UUID ticketId;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @MapsId
-    @JoinColumn(name = "child_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "child_id", nullable = false)
     private ChildProfile child;
 
-    @Column(name = "normal", nullable = false)
-    @Builder.Default
-    private Integer normal = 0;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "ticket_type", nullable = false, columnDefinition = "ticket_type_enum")
+    private TicketType ticketType;
 
-    @Column(name = "rare", nullable = false)
-    @Builder.Default
-    private Integer rare = 0;
+    @Column(name = "used_at")
+    private OffsetDateTime usedAt;
 
-    @Column(name = "epic", nullable = false)
-    @Builder.Default
-    private Integer epic = 0;
-
-    @Column(name = "updated_at", nullable = false)
-    private OffsetDateTime updatedAt;
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private OffsetDateTime createdAt;
 
     @PrePersist
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = OffsetDateTime.now();
+    protected void onCreate() {
+        if (createdAt == null) {
+            createdAt = OffsetDateTime.now();
+        }
     }
 
-    public void addNormal(int count) { this.normal += count; }
-    public void addRare(int count)   { this.rare += count; }
-    public void addEpic(int count)   { this.epic += count; }
-
-    public void useNormal() { this.normal--; }
-    public void useRare()   { this.rare--; }
-    public void useEpic()   { this.epic--; }
+    public void markUsed() {
+        this.usedAt = OffsetDateTime.now();
+    }
 }

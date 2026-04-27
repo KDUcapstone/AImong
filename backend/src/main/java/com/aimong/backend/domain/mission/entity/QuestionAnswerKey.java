@@ -17,10 +17,6 @@ import lombok.NoArgsConstructor;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
-/**
- * private.question_answer_keys - 정답/해설 저장용 엔티티.
- * 문제 본문과 정답 데이터를 분리해 클라이언트 직접 노출을 피한다.
- */
 @Entity
 @Table(name = "question_answer_keys", schema = "private")
 @Getter

@@ -1,16 +1,26 @@
 package com.aimong.backend.domain.streak.entity;
 
 import com.aimong.backend.domain.auth.entity.ChildProfile;
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.MapsId;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
-/**
- * 스트릭 기록 — 자녀당 1행(child_id PK)
- * 스케줄러가 매일 00:00 KST에 today_mission_count 0으로 초기화
- */
 @Entity
 @Table(name = "streak_records")
 @Getter
@@ -39,7 +49,6 @@ public class StreakRecord {
     @Builder.Default
     private Integer todayMissionCount = 0;
 
-    /** 스트릭 방패 보유 수 — 하루 미완료 시 차감하여 연속일 유지 */
     @Column(name = "shield_count", nullable = false)
     @Builder.Default
     private Integer shieldCount = 0;

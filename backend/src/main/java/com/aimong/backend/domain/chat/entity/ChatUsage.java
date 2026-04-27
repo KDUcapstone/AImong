@@ -1,16 +1,25 @@
 package com.aimong.backend.domain.chat.entity;
 
 import com.aimong.backend.domain.auth.entity.ChildProfile;
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.EmbeddedId;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.MapsId;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.Check;
 
 import java.time.OffsetDateTime;
 
-/**
- * 챗봇 일일 사용량.
- * child_id + usage_date 기준으로 하루 최대 20회 제한을 추적한다.
- */
 @Entity
 @Table(name = "chat_usage")
 @Check(constraints = "count BETWEEN 0 AND 20")

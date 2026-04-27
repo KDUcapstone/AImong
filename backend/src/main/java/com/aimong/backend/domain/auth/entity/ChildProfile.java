@@ -1,8 +1,24 @@
 package com.aimong.backend.domain.auth.entity;
 
 import com.aimong.backend.global.enums.ProfileImageType;
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -23,8 +39,8 @@ public class ChildProfile {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(columnDefinition = "uuid", updatable = false, nullable = false)
-    private UUID id;
+    @Column(name = "child_id", columnDefinition = "uuid", updatable = false, nullable = false)
+    private UUID childId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id", nullable = false)
@@ -33,7 +49,7 @@ public class ChildProfile {
     @Column(name = "nickname", nullable = false)
     private String nickname;
 
-    @Column(name = "code", nullable = false, unique = true)
+    @Column(name = "code", nullable = false, unique = true, length = 6)
     private String code;
 
     @Column(name = "starter_issued", nullable = false)
@@ -60,10 +76,17 @@ public class ChildProfile {
     @Builder.Default
     private Integer srMissCount = 0;
 
+    @Column(name = "shield_count", nullable = false)
+    @Builder.Default
+    private Integer shieldCount = 0;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "profile_image_type", nullable = false, columnDefinition = "profile_image_type_enum")
     @Builder.Default
     private ProfileImageType profileImageType = ProfileImageType.DEFAULT;
+
+    @Column(name = "equipped_pet_id", columnDefinition = "uuid")
+    private UUID equippedPetId;
 
     @Column(name = "session_version", nullable = false)
     @Builder.Default
@@ -74,6 +97,9 @@ public class ChildProfile {
 
     @Column(name = "weekly_xp_week_start")
     private LocalDate weeklyXpWeekStart;
+
+    @Column(name = "fcm_token")
+    private String fcmToken;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;

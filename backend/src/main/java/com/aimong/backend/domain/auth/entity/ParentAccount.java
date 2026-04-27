@@ -1,9 +1,17 @@
 package com.aimong.backend.domain.auth.entity;
 
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
 import java.time.OffsetDateTime;
-import java.util.UUID;
 
 @Entity
 @Table(name = "parent_accounts")
@@ -14,21 +22,22 @@ import java.util.UUID;
 public class ParentAccount {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(columnDefinition = "uuid", updatable = false, nullable = false)
-    private UUID id;
-
-    @Column(name = "firebase_uid", nullable = false, unique = true)
-    private String firebaseUid;
+    @Column(name = "parent_id", nullable = false, updatable = false)
+    private String parentId;
 
     @Column(name = "email")
     private String email;
+
+    @Column(name = "fcm_token")
+    private String fcmToken;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 
     @PrePersist
     protected void onCreate() {
-        if (createdAt == null) createdAt = OffsetDateTime.now();
+        if (createdAt == null) {
+            createdAt = OffsetDateTime.now();
+        }
     }
 }

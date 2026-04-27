@@ -1,19 +1,21 @@
 package com.aimong.backend.domain.mission.entity;
 
 import com.aimong.backend.domain.auth.entity.ChildProfile;
-import jakarta.persistence.*;
-import lombok.*;
-import org.hibernate.annotations.Check;
+import jakarta.persistence.EmbeddedId;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.MapsId;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-import java.time.OffsetDateTime;
-
-/**
- * 당일 미션 진행 요약.
- * 최초 시도 시각, 최고 점수, 첫 적립 XP, 복습 횟수를 API 조회용으로 유지한다.
- */
 @Entity
 @Table(name = "mission_daily_progress")
-@Check(constraints = "best_score <= total")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -32,28 +34,4 @@ public class MissionDailyProgress {
     @MapsId("missionId")
     @JoinColumn(name = "mission_id", nullable = false)
     private Mission mission;
-
-    @Column(name = "first_attempt_at", nullable = false)
-    private OffsetDateTime firstAttemptAt;
-
-    @Column(name = "best_score", nullable = false)
-    private Integer bestScore;
-
-    @Column(name = "total", nullable = false)
-    private Integer total;
-
-    @Column(name = "first_xp_earned", nullable = false)
-    private Integer firstXpEarned;
-
-    @Column(name = "review_attempt_count", nullable = false)
-    @Builder.Default
-    private Integer reviewAttemptCount = 0;
-
-    public void updateBestScore(int score) {
-        this.bestScore = Math.max(this.bestScore, score);
-    }
-
-    public void incrementReviewAttemptCount() {
-        this.reviewAttemptCount++;
-    }
 }

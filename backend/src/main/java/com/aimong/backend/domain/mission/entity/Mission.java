@@ -1,7 +1,17 @@
 package com.aimong.backend.domain.mission.entity;
 
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
 import java.util.UUID;
 
 @Entity
@@ -17,7 +27,6 @@ public class Mission {
     @Column(columnDefinition = "uuid", updatable = false, nullable = false)
     private UUID id;
 
-    /** 미션 단계: 1(입문) / 2(심화) / 3(전문가) */
     @Column(name = "stage", nullable = false)
     private Short stage;
 

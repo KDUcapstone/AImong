@@ -1,19 +1,24 @@
 package com.aimong.backend.domain.streak.entity;
 
 import com.aimong.backend.domain.auth.entity.ChildProfile;
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.MapsId;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
-/**
- * 공동 스트릭 연결 (MVP: 1인 1파트너)
- *
- * 연결 시 A→B, B→A 두 행을 하나의 트랜잭션으로 동시 insert
- * child_id PK  → A는 파트너 1명만 가능 (DB 레벨 보장)
- * partner_child_id UNIQUE → B도 동시에 다른 파트너 불가
- * 파트너 탈퇴 시 ON DELETE CASCADE로 두 행 자동 삭제
- */
 @Entity
 @Table(name = "friend_streaks")
 @Getter
@@ -39,6 +44,8 @@ public class FriendStreak {
 
     @PrePersist
     protected void onCreate() {
-        if (connectedAt == null) connectedAt = OffsetDateTime.now();
+        if (connectedAt == null) {
+            connectedAt = OffsetDateTime.now();
+        }
     }
 }
