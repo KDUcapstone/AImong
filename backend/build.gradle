@@ -20,10 +20,18 @@ repositories {
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.9'
+	implementation 'com.google.firebase:firebase-admin:9.4.3'
+	implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+	implementation 'org.flywaydb:flyway-core'
+	implementation 'org.flywaydb:flyway-database-postgresql'
 	compileOnly 'org.projectlombok:lombok'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
+	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
 	runtimeOnly 'org.postgresql:postgresql'
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
@@ -35,4 +43,91 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+tasks.named('bootRun') {
+	// Keep Gradle bootRun as a single-process launch.
+	// Devtools can switch execution onto restartedMain and make port conflicts harder to diagnose.
+	systemProperty 'spring.devtools.restart.enabled', 'false'
+	systemProperty 'spring.devtools.livereload.enabled', 'false'
+	systemProperty 'spring.devtools.add-properties', 'false'
+}
+
+tasks.register('generateKerisQuestionBank', JavaExec) {
+	group = 'aimong'
+	description = 'Generate KERIS elementary AI question bank JSON, review, validation, and SQL artifacts.'
+	classpath = sourceSets.main.runtimeClasspath
+	mainClass = 'com.aimong.backend.tools.questionbank.QuestionBankTool'
+	args = [
+		'full',
+		'src/main/resources/question-bank/keris-elementary-ai-curriculum.json',
+		'build/generated/question-bank/keris-elementary-ai'
+	]
+}
+
+tasks.register('generateKeris16MissionQuestionBank', JavaExec) {
+	group = 'aimong'
+	description = 'Generate the 16-mission KERIS elementary AI question bank artifacts.'
+	classpath = sourceSets.main.runtimeClasspath
+	mainClass = 'com.aimong.backend.tools.questionbank.QuestionBankTool'
+	args = [
+		'full',
+		'src/main/resources/question-bank/keris-elementary-ai-16-mission-curriculum.json',
+		'build/generated/question-bank/keris-elementary-ai-16-mission'
+	]
+}
+
+tasks.register('runValidationAudit', JavaExec) {
+	group = 'aimong'
+	description = 'Run validation audit and batch evaluation for the v4 question bank.'
+	classpath = sourceSets.main.runtimeClasspath + sourceSets.test.runtimeClasspath
+	mainClass = 'com.aimong.backend.tools.questionbank.ValidationEvalRunner'
+	args = [
+		'_generated/question-bank/question-bank-960-diversified-v4.json',
+		'private-docs/question-bank-v2.json',
+		'src/test/resources/questionbank/validation-synthetic-negatives.json',
+		'_generated/reports/validation-audit-report.md',
+		'_generated/reports/validation-audit-report.json',
+		'_generated/reports/question-bank-v4-batch-report'
+	]
+}
+
+tasks.register('runQuestionBankPolish', JavaExec) {
+	group = 'aimong'
+	description = 'Polish the v4 question bank warnings into _generated/question-bank while keeping the original unchanged.'
+	classpath = sourceSets.main.runtimeClasspath + sourceSets.test.runtimeClasspath
+	mainClass = 'com.aimong.backend.tools.questionbank.QuestionBankPolishTool'
+	args = [
+		'_generated/question-bank/question-bank-960-diversified-v4.json',
+		'_generated/question-bank/question-bank-960-diversified-v4-polished.json',
+		'_generated/reports/question-bank-v4-polish-report.md',
+		'_generated/reports/question-bank-v4-polish-report.json'
+	]
+}
+
+tasks.register('runPolishedValidationAudit', JavaExec) {
+	group = 'aimong'
+	description = 'Run validation audit and batch evaluation for the polished v4 question bank.'
+	classpath = sourceSets.main.runtimeClasspath + sourceSets.test.runtimeClasspath
+	mainClass = 'com.aimong.backend.tools.questionbank.ValidationEvalRunner'
+	args = [
+		'_generated/question-bank/question-bank-960-diversified-v4-polished.json',
+		'private-docs/question-bank-v2.json',
+		'src/test/resources/questionbank/validation-synthetic-negatives.json',
+		'_generated/reports/question-bank-v4-polished-validation-report.md',
+		'_generated/reports/question-bank-v4-polished-validation-report.json',
+		'_generated/reports/question-bank-v4-polished-batch-report'
+	]
+}
+
+tasks.register('exportV4ServeSql', JavaExec) {
+	group = 'aimong'
+	description = 'Export the polished v4 question bank into service-ready SQL with pack/difficulty metadata.'
+	classpath = sourceSets.main.runtimeClasspath
+	mainClass = 'com.aimong.backend.tools.questionbank.QuestionBankTool'
+	args = [
+		'serve-sql',
+		'_generated/question-bank/question-bank-960-diversified-v4-polished.json',
+		'_generated/question-bank/question-bank-960-diversified-v4-polished-serve.sql'
+	]
 }
