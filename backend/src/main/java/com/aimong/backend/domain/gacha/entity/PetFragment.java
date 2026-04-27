@@ -1,6 +1,7 @@
-package com.aimong.backend.domain.chat.entity;
+package com.aimong.backend.domain.gacha.entity;
 
 import com.aimong.backend.domain.auth.entity.ChildProfile;
+import com.aimong.backend.global.enums.PetGrade;
 import jakarta.persistence.Column;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
@@ -16,21 +17,19 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.Check;
 
 import java.time.OffsetDateTime;
 
 @Entity
-@Table(name = "chat_usage")
-@Check(constraints = "count BETWEEN 0 AND 20")
+@Table(name = "pet_fragments")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
-public class ChatUsage {
+public class PetFragment {
 
     @EmbeddedId
-    private ChatUsageId id;
+    private PetFragmentId id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("childId")
@@ -50,7 +49,11 @@ public class ChatUsage {
         updatedAt = OffsetDateTime.now();
     }
 
-    public void increment() {
-        this.count++;
+    public void add(int amount) {
+        this.count += amount;
+    }
+
+    public PetGrade getGrade() {
+        return id.getGrade();
     }
 }
