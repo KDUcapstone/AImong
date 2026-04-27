@@ -1,10 +1,18 @@
 package com.aimong.backend.domain.mission.service.question;
 
+import com.aimong.backend.domain.mission.config.MissionQuestionProperties;
 import com.aimong.backend.domain.mission.entity.QuestionBank;
+import com.aimong.backend.domain.mission.entity.QuestionPoolStatus;
+import com.aimong.backend.domain.mission.entity.QuizAttempt;
 import com.aimong.backend.domain.mission.repository.QuestionBankRepository;
+import com.aimong.backend.domain.mission.repository.QuizAttemptRepository;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -14,11 +22,59 @@ import org.springframework.stereotype.Component;
 public class StaticQuestionProvider implements ApprovedQuestionProvider {
 
     private final QuestionBankRepository questionBankRepository;
+    private final QuizAttemptRepository quizAttemptRepository;
+    private final MissionQuestionProperties missionQuestionProperties;
+    private final ObjectMapper objectMapper;
 
     @Override
     public List<QuestionBank> findApprovedQuestions(UUID missionId, UUID childId, boolean isReview) {
-        List<QuestionBank> questions = new ArrayList<>(questionBankRepository.findAllByMissionIdAndIsActiveTrue(missionId));
+        Set<UUID> solvedQuestionIds = isReview ? Set.of() : findSolvedQuestionIds(childId, missionId);
+        List<Short> intactPackNumbers = questionBankRepository.findIntactPackNumbers(
+                missionId,
+                missionQuestionProperties.setSize()
+        );
+
+        for (Short packNo : intactPackNumbers) {
+            List<QuestionBank> packQuestions = questionBankRepository.findAllByMissionIdAndIsActiveTrueAndPackNoOrderByCreatedAtAsc(
+                    missionId,
+                    packNo
+            );
+            if (packQuestions.size() != missionQuestionProperties.setSize()) {
+                continue;
+            }
+            if (!isReview && packQuestions.stream().anyMatch(question -> solvedQuestionIds.contains(question.getId()))) {
+                continue;
+            }
+            return packQuestions;
+        }
+
+        List<QuestionBank> questions = new ArrayList<>(
+                questionBankRepository.findAllByMissionIdAndIsActiveTrueAndQuestionPoolStatus(missionId, QuestionPoolStatus.ACTIVE)
+        );
+        if (questions.isEmpty()) {
+            questions = new ArrayList<>(questionBankRepository.findAllByMissionIdAndIsActiveTrue(missionId));
+        }
+        if (!isReview) {
+            questions.removeIf(question -> solvedQuestionIds.contains(question.getId()));
+        }
         Collections.shuffle(questions);
         return questions;
+    }
+
+    private Set<UUID> findSolvedQuestionIds(UUID childId, UUID missionId) {
+        Set<UUID> solvedQuestionIds = new LinkedHashSet<>();
+        for (QuizAttempt attempt : quizAttemptRepository.findAllByChildIdAndMissionIdAndSubmittedAtIsNotNull(childId, missionId)) {
+            solvedQuestionIds.addAll(readQuestionIds(attempt.getQuestionIdsJson()));
+        }
+        return solvedQuestionIds;
+    }
+
+    private List<UUID> readQuestionIds(String questionIdsJson) {
+        try {
+            return objectMapper.readValue(questionIdsJson, new TypeReference<>() {
+            });
+        } catch (Exception exception) {
+            return List.of();
+        }
     }
 }

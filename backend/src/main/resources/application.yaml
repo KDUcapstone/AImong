@@ -51,3 +51,19 @@ aimong:
       set-size: 10
       attempt-ttl-minutes: 30
       dynamic-generation-enabled: false
+    generation:
+      target-pool-per-mission: 60
+      target-packs-per-mission: 6
+      questions-per-pack: 10
+      soft-refill-trigger: 36
+      hard-refill-trigger: 18
+      async-generate-batch: 10
+      async-refill-fixed-delay-ms: 30000
+      sync-generate-batch: 10
+      mini-max-retry: 2
+    model-routing:
+      default-model: gpt-5-mini
+      escalated-model: gpt-5.4-mini
+    seed:
+      auto-run: false
+      persist: false

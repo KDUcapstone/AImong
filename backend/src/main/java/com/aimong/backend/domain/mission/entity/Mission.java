@@ -24,6 +24,9 @@ public class Mission {
     @Column(nullable = false)
     private String title;
 
+    @Column(name = "mission_code", length = 16)
+    private String missionCode;
+
     @Column
     private String description;
 

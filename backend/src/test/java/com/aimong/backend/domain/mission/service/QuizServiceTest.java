@@ -16,6 +16,7 @@ import com.aimong.backend.domain.mission.repository.MissionDailyProgressReposito
 import com.aimong.backend.domain.mission.repository.MissionAttemptRepository;
 import com.aimong.backend.domain.mission.repository.MissionRepository;
 import com.aimong.backend.domain.mission.repository.QuizAttemptRepository;
+import com.aimong.backend.domain.mission.service.question.AsyncMissionRefillService;
 import com.aimong.backend.domain.mission.service.question.MissionQuestionSetFactory;
 import com.aimong.backend.global.util.KstDateUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -51,6 +52,9 @@ class QuizServiceTest {
     @Mock
     private MissionQuestionSetFactory missionQuestionSetFactory;
 
+    @Mock
+    private AsyncMissionRefillService asyncMissionRefillService;
+
     private final MissionQuestionProperties missionQuestionProperties = new MissionQuestionProperties(10, 30, false);
 
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -65,6 +69,7 @@ class QuizServiceTest {
                 childActivityService,
                 missionService,
                 missionQuestionSetFactory,
+                asyncMissionRefillService,
                 missionQuestionProperties,
                 objectMapper
         );

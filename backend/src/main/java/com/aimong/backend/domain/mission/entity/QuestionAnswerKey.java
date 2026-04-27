@@ -31,4 +31,17 @@ public class QuestionAnswerKey {
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
+
+    public static QuestionAnswerKey create(
+            UUID questionId,
+            String answerPayload,
+            String explanation
+    ) {
+        QuestionAnswerKey questionAnswerKey = new QuestionAnswerKey();
+        questionAnswerKey.questionId = questionId;
+        questionAnswerKey.answerPayload = answerPayload;
+        questionAnswerKey.explanation = explanation;
+        questionAnswerKey.createdAt = Instant.now();
+        return questionAnswerKey;
+    }
 }

@@ -25,6 +25,10 @@ public class MissionQuestionSetFactory {
         );
 
         int requiredCount = missionQuestionProperties.setSize();
+        if (pool.size() == requiredCount) {
+            return List.copyOf(pool);
+        }
+
         int shortage = requiredCount - pool.size();
         if (shortage > 0 && missionQuestionProperties.dynamicGenerationEnabled()) {
             pool.addAll(dynamicQuestionGenerationPort.generateQuestions(missionId, shortage, childId, isReview));

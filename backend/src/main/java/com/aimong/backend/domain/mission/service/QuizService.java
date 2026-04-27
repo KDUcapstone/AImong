@@ -12,6 +12,7 @@ import com.aimong.backend.domain.mission.repository.MissionDailyProgressReposito
 import com.aimong.backend.domain.mission.repository.MissionAttemptRepository;
 import com.aimong.backend.domain.mission.repository.MissionRepository;
 import com.aimong.backend.domain.mission.repository.QuizAttemptRepository;
+import com.aimong.backend.domain.mission.service.question.AsyncMissionRefillService;
 import com.aimong.backend.domain.mission.service.question.MissionQuestionSetFactory;
 import com.aimong.backend.global.exception.AimongException;
 import com.aimong.backend.global.exception.ErrorCode;
@@ -38,6 +39,7 @@ public class QuizService {
     private final ChildActivityService childActivityService;
     private final MissionService missionService;
     private final MissionQuestionSetFactory missionQuestionSetFactory;
+    private final AsyncMissionRefillService asyncMissionRefillService;
     private final MissionQuestionProperties missionQuestionProperties;
     private final ObjectMapper objectMapper;
 
@@ -60,6 +62,7 @@ public class QuizService {
         ).isPresent();
 
         List<QuestionBank> selectedQuestions = missionQuestionSetFactory.create(missionId, childId, isReview);
+        asyncMissionRefillService.enqueueIfNeeded(missionId);
         List<UUID> selectedQuestionIds = selectedQuestions.stream()
                 .map(QuestionBank::getId)
                 .toList();
