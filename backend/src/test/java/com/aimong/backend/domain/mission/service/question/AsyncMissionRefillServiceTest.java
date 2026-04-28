@@ -29,7 +29,7 @@ class AsyncMissionRefillServiceTest {
         AsyncMissionRefillService service = new AsyncMissionRefillService(
                 metricsCollector,
                 dynamicQuestionGenerationPort,
-                new QuestionGenerationProperties(60, 6, 10, 36, 18, 10, 30000L, 10, 2),
+                new QuestionGenerationProperties(60, 10, 36, 18, 10, 30000L, 10, 2),
                 new MissionQuestionProperties(10, 30, true)
         );
 
@@ -54,7 +54,7 @@ class AsyncMissionRefillServiceTest {
         AsyncMissionRefillService service = new AsyncMissionRefillService(
                 metricsCollector,
                 dynamicQuestionGenerationPort,
-                new QuestionGenerationProperties(60, 6, 10, 36, 18, 10, 30000L, 10, 2),
+                new QuestionGenerationProperties(60, 10, 36, 18, 10, 30000L, 10, 2),
                 new MissionQuestionProperties(10, 30, true)
         );
 
@@ -78,7 +78,7 @@ class AsyncMissionRefillServiceTest {
         AsyncMissionRefillService service = new AsyncMissionRefillService(
                 metricsCollector,
                 dynamicQuestionGenerationPort,
-                new QuestionGenerationProperties(60, 6, 10, 36, 18, 10, 30000L, 10, 2),
+                new QuestionGenerationProperties(60, 10, 36, 18, 10, 30000L, 10, 2),
                 new MissionQuestionProperties(10, 30, false)
         );
 

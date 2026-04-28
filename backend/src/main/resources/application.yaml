@@ -52,7 +52,6 @@ aimong:
       dynamic-generation-enabled: false
     generation:
       target-pool-per-mission: 60
-      target-packs-per-mission: 6
       questions-per-pack: 10
       soft-refill-trigger: 36
       hard-refill-trigger: 18
@@ -63,7 +62,3 @@ aimong:
     model-routing:
       default-model: gpt-5-mini
       escalated-model: gpt-5.4-mini
-    seed:
-      enabled: false
-      auto-run: false
-      persist: false

@@ -215,7 +215,7 @@ class ValidatedDynamicQuestionGenerationPortTest {
                 ),
                 missionCodeResolver,
                 new RuntimeRefillPlanner(),
-                new QuestionGenerationProperties(60, 6, 10, 36, 18, 10, 30_000L, 10, 2)
+                new QuestionGenerationProperties(60, 10, 36, 18, 10, 30_000L, 10, 2)
         );
     }
 

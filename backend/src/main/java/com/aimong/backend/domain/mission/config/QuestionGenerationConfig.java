@@ -7,8 +7,7 @@ import org.springframework.context.annotation.Configuration;
 @EnableConfigurationProperties({
         MissionQuestionProperties.class,
         QuestionGenerationProperties.class,
-        ModelRoutingProperties.class,
-        SeedJobProperties.class
+        ModelRoutingProperties.class
 })
 public class QuestionGenerationConfig {
 }

@@ -5,7 +5,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "aimong.mission.generation")
 public record QuestionGenerationProperties(
         int targetPoolPerMission,
-        int targetPacksPerMission,
         int questionsPerPack,
         int softRefillTrigger,
         int hardRefillTrigger,
@@ -18,9 +17,6 @@ public record QuestionGenerationProperties(
     public QuestionGenerationProperties {
         if (targetPoolPerMission <= 0) {
             targetPoolPerMission = 60;
-        }
-        if (targetPacksPerMission <= 0) {
-            targetPacksPerMission = 6;
         }
         if (questionsPerPack <= 0) {
             questionsPerPack = 10;

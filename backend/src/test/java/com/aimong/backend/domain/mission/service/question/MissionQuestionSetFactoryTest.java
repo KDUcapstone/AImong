@@ -41,7 +41,7 @@ class MissionQuestionSetFactoryTest {
                 approvedQuestionProvider,
                 dynamicQuestionGenerationPort,
                 new MissionQuestionProperties(10, 30, true),
-                new QuestionGenerationProperties(60, 6, 10, 36, 18, 10, 2_000L, 10, 2),
+                new QuestionGenerationProperties(60, 10, 36, 18, 10, 2_000L, 10, 2),
                 recompositionSelector
         );
 
@@ -64,7 +64,7 @@ class MissionQuestionSetFactoryTest {
                 approvedQuestionProvider,
                 dynamicQuestionGenerationPort,
                 new MissionQuestionProperties(10, 30, false),
-                new QuestionGenerationProperties(60, 6, 10, 36, 18, 10, 2_000L, 10, 2),
+                new QuestionGenerationProperties(60, 10, 36, 18, 10, 2_000L, 10, 2),
                 recompositionSelector
         );
 
@@ -90,7 +90,7 @@ class MissionQuestionSetFactoryTest {
                 approvedQuestionProvider,
                 dynamicQuestionGenerationPort,
                 new MissionQuestionProperties(10, 30, true),
-                new QuestionGenerationProperties(60, 6, 10, 36, 18, 10, 2_000L, 10, 2),
+                new QuestionGenerationProperties(60, 10, 36, 18, 10, 2_000L, 10, 2),
                 recompositionSelector
         );
 
@@ -125,7 +125,7 @@ class MissionQuestionSetFactoryTest {
                 approvedQuestionProvider,
                 dynamicQuestionGenerationPort,
                 new MissionQuestionProperties(10, 30, true),
-                new QuestionGenerationProperties(60, 6, 10, 36, 18, 10, 2_000L, 10, 2),
+                new QuestionGenerationProperties(60, 10, 36, 18, 10, 2_000L, 10, 2),
                 recompositionSelector
         );
 
@@ -153,7 +153,7 @@ class MissionQuestionSetFactoryTest {
                 approvedQuestionProvider,
                 dynamicQuestionGenerationPort,
                 new MissionQuestionProperties(10, 30, true),
-                new QuestionGenerationProperties(60, 6, 10, 36, 18, 10, 2_000L, 10, 3),
+                new QuestionGenerationProperties(60, 10, 36, 18, 10, 2_000L, 10, 3),
                 recompositionSelector
         );
 
