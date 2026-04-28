@@ -40,7 +40,7 @@ ALTER TABLE public.question_bank
 
 ALTER TABLE public.question_bank
     ADD CONSTRAINT chk_question_bank_pool_status
-        CHECK (question_pool_status IN ('ACTIVE', 'RETIRED'));
+        CHECK (question_pool_status IN ('ACTIVE', 'QUARANTINED', 'RETIRED'));
 
 ALTER TABLE public.question_bank
     DROP CONSTRAINT IF EXISTS chk_question_bank_difficulty;
@@ -62,7 +62,9 @@ CREATE INDEX IF NOT EXISTS idx_question_bank_mission_active_pack
 CREATE INDEX IF NOT EXISTS idx_question_bank_mission_active_band
     ON public.question_bank (mission_id, is_active, difficulty_band);
 
-CREATE OR REPLACE VIEW public.question_bank_safe AS
+DROP VIEW IF EXISTS public.question_bank_safe;
+
+CREATE VIEW public.question_bank_safe AS
 SELECT
     id,
     mission_id,
