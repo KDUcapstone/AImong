@@ -6,7 +6,10 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public record MissionQuestionProperties(
         int setSize,
         int attemptTtlMinutes,
-        boolean dynamicGenerationEnabled
+        boolean dynamicGenerationEnabled,
+        boolean asyncRefillEnabled,
+        boolean servingAutoQuarantineEnabled,
+        boolean reportAutoDeactivateEnabled
 ) {
 
     public MissionQuestionProperties {
@@ -16,5 +19,9 @@ public record MissionQuestionProperties(
         if (attemptTtlMinutes <= 0) {
             attemptTtlMinutes = 30;
         }
+        dynamicGenerationEnabled = dynamicGenerationEnabled;
+        asyncRefillEnabled = asyncRefillEnabled;
+        servingAutoQuarantineEnabled = servingAutoQuarantineEnabled;
+        reportAutoDeactivateEnabled = reportAutoDeactivateEnabled;
     }
 }

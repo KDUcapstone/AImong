@@ -35,6 +35,8 @@ import com.aimong.backend.domain.mission.service.generation.Step3VocabularyCeili
 import com.aimong.backend.domain.mission.service.generation.StructureRuleValidator;
 import com.aimong.backend.domain.mission.service.generation.StructuredQuestionSchema;
 import com.aimong.backend.domain.mission.service.generation.ValidationDecision;
+import com.aimong.backend.domain.mission.service.question.postmvp.RuntimeRefillPlanner;
+import com.aimong.backend.domain.mission.service.question.postmvp.ValidatedDynamicQuestionGenerationPort;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.Optional;
@@ -90,9 +92,7 @@ class ValidatedDynamicQuestionGenerationPortTest {
                         1,
                         1,
                         1,
-                        0,
-                        "INSUFFICIENT_DIFFICULTY_BAND_POOL",
-                        new RecompositionSelector.CandidatePoolCounts(7, 4, 2, 1)
+                        "INSUFFICIENT_DIFFICULTY_BAND_POOL"
                 ),
                 UUID.randomUUID(),
                 false
@@ -136,9 +136,7 @@ class ValidatedDynamicQuestionGenerationPortTest {
                         1,
                         0,
                         0,
-                        0,
-                        "INSUFFICIENT_DIFFICULTY_BAND_POOL",
-                        new RecompositionSelector.CandidatePoolCounts(9, 4, 3, 2)
+                        "INSUFFICIENT_DIFFICULTY_BAND_POOL"
                 ),
                 UUID.randomUUID(),
                 false
@@ -183,9 +181,7 @@ class ValidatedDynamicQuestionGenerationPortTest {
                         1,
                         0,
                         0,
-                        0,
-                        "INSUFFICIENT_DIFFICULTY_BAND_POOL",
-                        new RecompositionSelector.CandidatePoolCounts(9, 4, 3, 2)
+                        "INSUFFICIENT_DIFFICULTY_BAND_POOL"
                 ),
                 UUID.randomUUID(),
                 false

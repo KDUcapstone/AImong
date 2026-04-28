@@ -32,8 +32,8 @@ public class BatchDistributionValidator {
             if (candidate.type() != null) {
                 typeCounts.merge(candidate.type(), 1, Integer::sum);
             }
-            if (candidate.difficultyBand() != null) {
-                bandCounts.merge(candidate.difficultyBand(), 1, Integer::sum);
+            if (candidate.effectiveDifficulty() != null) {
+                bandCounts.merge(candidate.effectiveDifficulty(), 1, Integer::sum);
             }
         }
 

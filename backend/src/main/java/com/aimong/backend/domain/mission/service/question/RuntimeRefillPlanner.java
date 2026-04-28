@@ -1,8 +1,9 @@
-package com.aimong.backend.domain.mission.service.question;
+package com.aimong.backend.domain.mission.service.question.postmvp;
 
 import com.aimong.backend.domain.mission.entity.DifficultyBand;
 import com.aimong.backend.domain.mission.entity.QuestionType;
 import com.aimong.backend.domain.mission.service.generation.QuestionGenerationService;
+import com.aimong.backend.domain.mission.service.question.RecompositionSelector;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
@@ -10,6 +11,7 @@ import java.util.Map;
 import org.springframework.stereotype.Component;
 
 @Component
+// Post-MVP planner for runtime generation and refill. Not used by the MVP serving path.
 public class RuntimeRefillPlanner {
 
     private static final Map<DifficultyBand, List<QuestionType>> TYPE_PREFERENCES = Map.of(

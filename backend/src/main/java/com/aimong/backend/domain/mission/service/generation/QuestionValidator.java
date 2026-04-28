@@ -31,11 +31,8 @@ public class QuestionValidator {
         if (candidate.missionCode() == null || candidate.missionCode().isBlank()) {
             errors.add("missing missionCode");
         }
-        if (candidate.packNo() < 1 || candidate.packNo() > 6) {
-            errors.add("packNo must be 1..6");
-        }
-        if (candidate.difficultyBand() == null) {
-            errors.add("missing difficultyBand");
+        if (candidate.effectiveDifficulty() == null) {
+            errors.add("missing difficulty");
         }
         if (candidate.type() == null) {
             errors.add("missing type");
@@ -69,7 +66,7 @@ public class QuestionValidator {
                     if (candidate.curriculumRef() == null || candidate.curriculumRef().isBlank()) {
                         errors.add("missing curriculumRef");
                     }
-                    if (violatesDifficultyRange(rule.stage(), candidate.difficultyBand(), candidate.difficulty())) {
+                    if (violatesDifficultyRange(rule.stage(), candidate.effectiveDifficulty(), candidate.difficulty())) {
                         errors.add("difficulty out of stage range");
                     }
                     if (containsBannedConcept(rule.bannedConcepts(), candidate.question(), candidate.explanation())) {

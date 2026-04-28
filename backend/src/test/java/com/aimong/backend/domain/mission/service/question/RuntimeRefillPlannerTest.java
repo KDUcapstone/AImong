@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.aimong.backend.domain.mission.entity.DifficultyBand;
 import com.aimong.backend.domain.mission.entity.QuestionType;
+import com.aimong.backend.domain.mission.service.question.postmvp.RuntimeRefillPlanner;
 import org.junit.jupiter.api.Test;
 
 class RuntimeRefillPlannerTest {
@@ -19,9 +20,7 @@ class RuntimeRefillPlannerTest {
                         2,
                         1,
                         1,
-                        3,
-                        "INSUFFICIENT_DIFFICULTY_BAND_POOL",
-                        new RecompositionSelector.CandidatePoolCounts(6, 3, 2, 1)
+                        "INSUFFICIENT_DIFFICULTY_BAND_POOL"
                 ),
                 java.util.List.of()
         );

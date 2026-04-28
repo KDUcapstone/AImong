@@ -3,9 +3,7 @@ package com.aimong.backend.domain.mission.service.question;
 import com.aimong.backend.domain.mission.entity.Mission;
 import com.aimong.backend.domain.mission.entity.QuestionAnswerKey;
 import com.aimong.backend.domain.mission.entity.QuestionBank;
-import com.aimong.backend.domain.mission.entity.QuestionPoolStatus;
 import com.aimong.backend.domain.mission.repository.QuestionAnswerKeyRepository;
-import com.aimong.backend.domain.mission.repository.QuestionBankRepository;
 import com.aimong.backend.domain.mission.service.generation.QuestionValidationReport;
 import com.aimong.backend.domain.mission.service.generation.QuestionValidationService;
 import com.aimong.backend.domain.mission.service.generation.StructuredQuestionSchema;
@@ -25,7 +23,6 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class QuestionServingQualityGuard {
 
-    private final QuestionBankRepository questionBankRepository;
     private final QuestionAnswerKeyRepository questionAnswerKeyRepository;
     private final QuestionValidationService questionValidationService;
     private final QuestionQualityReviewService questionQualityReviewService;
@@ -40,38 +37,30 @@ public class QuestionServingQualityGuard {
                         selectedQuestions.stream().map(QuestionBank::getId).toList()
                 ).stream()
                 .collect(Collectors.toMap(QuestionAnswerKey::getQuestionId, Function.identity()));
-        List<QuestionBank> missionPool = questionBankRepository.findAllByMissionIdAndIsActiveTrueAndQuestionPoolStatus(
-                mission.getId(),
-                QuestionPoolStatus.ACTIVE
-        );
 
         List<QuestionBank> validQuestions = new ArrayList<>();
-        List<UUID> quarantinedQuestionIds = new ArrayList<>();
+        List<UUID> invalidQuestionIds = new ArrayList<>();
 
         for (QuestionBank question : selectedQuestions) {
             QuestionAnswerKey answerKey = answerKeys.get(question.getId());
             if (answerKey == null) {
-                questionQualityReviewService.quarantineForServingFailure(
+                questionQualityReviewService.recordServingFailure(
                         mission,
                         question,
                         "MISSING_ANSWER_KEY",
                         "Serving-time revalidation failed because the answer key was missing.",
                         null
                 );
-                quarantinedQuestionIds.add(question.getId());
+                invalidQuestionIds.add(question.getId());
                 continue;
             }
 
             try {
                 StructuredQuestionSchema schema = reconstruct(mission, question, answerKey);
-                List<String> existingMissionPrompts = missionPool.stream()
-                        .filter(candidate -> !candidate.getId().equals(question.getId()))
-                        .map(QuestionBank::getPrompt)
-                        .toList();
                 QuestionValidationReport report = questionValidationService.validate(
                         new QuestionValidationService.ValidationRequest(
                                 schema,
-                                existingMissionPrompts,
+                                List.of(),
                                 List.of()
                         )
                 );
@@ -80,27 +69,27 @@ public class QuestionServingQualityGuard {
                     continue;
                 }
 
-                questionQualityReviewService.quarantineForServingFailure(
+                questionQualityReviewService.recordServingFailure(
                         mission,
                         question,
                         "SERVING_VALIDATION_REJECTED",
                         "Serving-time revalidation rejected the persisted question.",
                         report
                 );
-                quarantinedQuestionIds.add(question.getId());
+                invalidQuestionIds.add(question.getId());
             } catch (IllegalStateException exception) {
-                questionQualityReviewService.quarantineForServingFailure(
+                questionQualityReviewService.recordServingFailure(
                         mission,
                         question,
                         "SERVING_RECONSTRUCTION_FAILED",
                         exception.getMessage(),
                         null
                 );
-                quarantinedQuestionIds.add(question.getId());
+                invalidQuestionIds.add(question.getId());
             }
         }
 
-        return new ServingValidationResult(List.copyOf(validQuestions), List.copyOf(quarantinedQuestionIds));
+        return new ServingValidationResult(List.copyOf(validQuestions), List.copyOf(invalidQuestionIds));
     }
 
     private StructuredQuestionSchema reconstruct(
@@ -110,8 +99,8 @@ public class QuestionServingQualityGuard {
     ) {
         return new StructuredQuestionSchema(
                 mission.getMissionCode(),
-                question.getPackNo() == null ? 1 : question.getPackNo(),
-                question.getDifficultyBand(),
+                question.getPackNo() == null ? 0 : question.getPackNo(),
+                question.getDifficulty(),
                 question.getQuestionType(),
                 question.getPrompt(),
                 readOptions(question.getOptionsJson()),
@@ -119,7 +108,8 @@ public class QuestionServingQualityGuard {
                 answerKey.getExplanation(),
                 readStringList(question.getContentTagsJson()),
                 question.getCurriculumRef(),
-                question.getDifficulty() == null ? 1 : question.getDifficulty()
+                question.getLegacyNumericDifficulty() == null ? 0 : question.getLegacyNumericDifficulty(),
+                question.getDifficulty()
         );
     }
 
@@ -152,7 +142,7 @@ public class QuestionServingQualityGuard {
 
     public record ServingValidationResult(
             List<QuestionBank> validQuestions,
-            List<UUID> quarantinedQuestionIds
+            List<UUID> invalidQuestionIds
     ) {
     }
 }

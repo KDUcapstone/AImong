@@ -26,9 +26,9 @@ public class QuestionPoolMetricsCollector {
                 missionId,
                 activeCount,
                 intactPackNumbers.size(),
-                questionBankRepository.countByMissionIdAndIsActiveTrueAndDifficultyBand(missionId, DifficultyBand.LOW),
-                questionBankRepository.countByMissionIdAndIsActiveTrueAndDifficultyBand(missionId, DifficultyBand.MEDIUM),
-                questionBankRepository.countByMissionIdAndIsActiveTrueAndDifficultyBand(missionId, DifficultyBand.HIGH),
+                questionBankRepository.countByMissionIdAndIsActiveTrueAndDifficulty(missionId, DifficultyBand.LOW),
+                questionBankRepository.countByMissionIdAndIsActiveTrueAndDifficulty(missionId, DifficultyBand.MEDIUM),
+                questionBankRepository.countByMissionIdAndIsActiveTrueAndDifficulty(missionId, DifficultyBand.HIGH),
                 intactPackNumbers
         );
     }

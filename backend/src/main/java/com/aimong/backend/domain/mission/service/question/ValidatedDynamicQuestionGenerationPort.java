@@ -1,8 +1,9 @@
-package com.aimong.backend.domain.mission.service.question;
+package com.aimong.backend.domain.mission.service.question.postmvp;
 
 import com.aimong.backend.domain.mission.entity.GenerationPhase;
 import com.aimong.backend.domain.mission.entity.Mission;
 import com.aimong.backend.domain.mission.entity.QuestionBank;
+import com.aimong.backend.domain.mission.service.question.RecompositionSelector;
 import com.aimong.backend.domain.mission.repository.MissionRepository;
 import com.aimong.backend.domain.mission.repository.QuestionBankRepository;
 import com.aimong.backend.domain.mission.service.generation.GeneratedQuestionPersistenceService;
@@ -25,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Primary
 @RequiredArgsConstructor
 @ConditionalOnProperty(prefix = "aimong.mission.question", name = "dynamic-generation-enabled", havingValue = "true")
+// Post-MVP runtime generation adapter. MVP question serving never calls this bean.
 public class ValidatedDynamicQuestionGenerationPort implements DynamicQuestionGenerationPort {
 
     private static final Logger log = LoggerFactory.getLogger(ValidatedDynamicQuestionGenerationPort.class);

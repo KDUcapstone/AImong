@@ -2,12 +2,11 @@ package com.aimong.backend.domain.mission.service.question;
 
 import com.aimong.backend.domain.mission.dto.QuestionReportRequest;
 import com.aimong.backend.domain.mission.dto.QuestionReportResponse;
+import com.aimong.backend.domain.mission.config.MissionQuestionProperties;
 import com.aimong.backend.domain.mission.entity.Mission;
 import com.aimong.backend.domain.mission.entity.QuestionBank;
-import com.aimong.backend.domain.mission.entity.QuestionPoolStatus;
 import com.aimong.backend.domain.mission.entity.QuestionQualityIssue;
 import com.aimong.backend.domain.mission.entity.QuestionQualityIssueSource;
-import com.aimong.backend.domain.mission.entity.QuestionQualityIssueStatus;
 import com.aimong.backend.domain.mission.repository.QuestionBankRepository;
 import com.aimong.backend.domain.mission.repository.QuestionQualityIssueRepository;
 import com.aimong.backend.domain.mission.service.generation.QuestionValidationReport;
@@ -26,10 +25,9 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class QuestionQualityReviewService {
 
-    private static final int USER_REPORT_QUARANTINE_THRESHOLD = 2;
-
     private final QuestionBankRepository questionBankRepository;
     private final QuestionQualityIssueRepository questionQualityIssueRepository;
+    private final MissionQuestionProperties missionQuestionProperties;
     private final ObjectMapper objectMapper;
 
     @Transactional
@@ -51,16 +49,10 @@ public class QuestionQualityReviewService {
         );
         questionQualityIssueRepository.save(issue);
 
-        long activeReportCount = questionQualityIssueRepository.countByQuestionIdAndIssueSourceAndIssueStatusIn(
-                questionId,
-                QuestionQualityIssueSource.USER_REPORT,
-                List.of(QuestionQualityIssueStatus.OPEN, QuestionQualityIssueStatus.QUARANTINED)
-        );
-        boolean shouldQuarantine = isSafetyReason(issue.getReasonCode())
-                || question.getQuestionPoolStatus() == QuestionPoolStatus.QUARANTINED
-                || activeReportCount >= USER_REPORT_QUARANTINE_THRESHOLD;
-        if (shouldQuarantine) {
-            question.quarantine();
+        boolean shouldDeactivate = missionQuestionProperties.reportAutoDeactivateEnabled()
+                && isSafetyReason(issue.getReasonCode());
+        if (shouldDeactivate) {
+            question.deactivate();
             issue.markQuarantined();
             questionBankRepository.save(question);
         }
@@ -69,23 +61,18 @@ public class QuestionQualityReviewService {
                 questionId,
                 issue.getId(),
                 issue.getIssueStatus().name(),
-                question.isQuarantined()
+                !question.isActive()
         );
     }
 
     @Transactional
-    public void quarantineForServingFailure(
+    public void recordServingFailure(
             Mission mission,
             QuestionBank question,
             String reasonCode,
             String detailText,
             QuestionValidationReport report
     ) {
-        if (!question.isQuarantined()) {
-            question.quarantine();
-            questionBankRepository.save(question);
-        }
-
         questionQualityIssueRepository.save(QuestionQualityIssue.createServingRevalidationIssue(
                 question.getId(),
                 mission.getId(),

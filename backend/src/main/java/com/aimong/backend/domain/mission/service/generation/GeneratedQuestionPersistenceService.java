@@ -55,10 +55,10 @@ public class GeneratedQuestionPersistenceService {
                     writeJson(candidate.options()),
                     writeJson(candidate.contentTags()),
                     candidate.curriculumRef(),
-                    (short) candidate.difficulty(),
+                    candidate.effectiveDifficulty(),
                     sourceType,
                     generationPhase,
-                    (short) candidate.packNo(),
+                    candidate.packNo() <= 0 ? null : (short) candidate.packNo(),
                     candidate.difficultyBand(),
                     QuestionPoolStatus.ACTIVE
             );

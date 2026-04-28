@@ -1,19 +1,23 @@
-package com.aimong.backend.domain.mission.service.question;
+package com.aimong.backend.domain.mission.service.question.postmvp;
 
 import com.aimong.backend.domain.mission.config.MissionQuestionProperties;
 import com.aimong.backend.domain.mission.config.QuestionGenerationProperties;
 import com.aimong.backend.domain.mission.service.QuestionPoolMetricsCollector;
+import com.aimong.backend.domain.mission.service.question.RecompositionSelector;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 @Component
+@ConditionalOnProperty(prefix = "aimong.mission.question", name = "async-refill-enabled", havingValue = "true")
 @RequiredArgsConstructor
+// Post-MVP async refill. The MVP serving path does not enqueue or trigger this service.
 public class AsyncMissionRefillService {
 
     private static final Logger log = LoggerFactory.getLogger(AsyncMissionRefillService.class);
@@ -28,7 +32,7 @@ public class AsyncMissionRefillService {
     private final Set<UUID> processingMissionIds = ConcurrentHashMap.newKeySet();
 
     public void enqueueIfNeeded(UUID missionId) {
-        if (!missionQuestionProperties.dynamicGenerationEnabled()) {
+        if (!missionQuestionProperties.dynamicGenerationEnabled() || !missionQuestionProperties.asyncRefillEnabled()) {
             return;
         }
 
@@ -69,7 +73,7 @@ public class AsyncMissionRefillService {
 
     @Scheduled(fixedDelayString = "${aimong.mission.generation.async-refill-fixed-delay-ms:30000}")
     public void processQueuedMissions() {
-        if (!missionQuestionProperties.dynamicGenerationEnabled()) {
+        if (!missionQuestionProperties.dynamicGenerationEnabled() || !missionQuestionProperties.asyncRefillEnabled()) {
             return;
         }
 
@@ -108,14 +112,7 @@ public class AsyncMissionRefillService {
                         lowRequest,
                         mediumRequest,
                         highRequest,
-                        0,
-                        "ASYNC_POOL_REFILL",
-                        new RecompositionSelector.CandidatePoolCounts(
-                                (int) metrics.activeCount(),
-                                (int) metrics.lowBandCount(),
-                                (int) metrics.mediumBandCount(),
-                                (int) metrics.highBandCount()
-                        )
+                        "ASYNC_POOL_REFILL"
                 ),
                 SYSTEM_CHILD_ID,
                 false

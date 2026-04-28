@@ -44,8 +44,12 @@ public class QuestionBank {
     @Column(name = "curriculum_ref")
     private String curriculumRef;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "difficulty")
-    private Short difficulty;
+    private DifficultyBand difficulty;
+
+    @Column(name = "legacy_numeric_difficulty")
+    private Short legacyNumericDifficulty;
 
     @Column(name = "source_type", nullable = false)
     private String sourceType;
@@ -78,7 +82,7 @@ public class QuestionBank {
             String optionsJson,
             String contentTagsJson,
             String curriculumRef,
-            Short difficulty,
+            DifficultyBand difficulty,
             String sourceType,
             GenerationPhase generationPhase,
             Short packNo,
@@ -94,6 +98,7 @@ public class QuestionBank {
         questionBank.contentTagsJson = contentTagsJson;
         questionBank.curriculumRef = curriculumRef;
         questionBank.difficulty = difficulty;
+        questionBank.legacyNumericDifficulty = null;
         questionBank.sourceType = sourceType;
         questionBank.generationPhase = generationPhase;
         questionBank.packNo = packNo;
@@ -104,11 +109,11 @@ public class QuestionBank {
         return questionBank;
     }
 
-    public void quarantine() {
-        this.questionPoolStatus = QuestionPoolStatus.QUARANTINED;
+    public void deactivate() {
+        this.isActive = false;
     }
 
     public boolean isQuarantined() {
-        return questionPoolStatus == QuestionPoolStatus.QUARANTINED;
+        return !isActive || questionPoolStatus == QuestionPoolStatus.QUARANTINED;
     }
 }

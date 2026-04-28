@@ -15,6 +15,40 @@ public record StructuredQuestionSchema(
         String explanation,
         List<String> contentTags,
         String curriculumRef,
-        int difficulty
+        int difficulty,
+        DifficultyBand canonicalDifficulty
 ) {
+
+    public StructuredQuestionSchema(
+            String missionCode,
+            int packNo,
+            DifficultyBand difficultyBand,
+            QuestionType type,
+            String question,
+            List<String> options,
+            Object answer,
+            String explanation,
+            List<String> contentTags,
+            String curriculumRef,
+            int difficulty
+    ) {
+        this(
+                missionCode,
+                packNo,
+                difficultyBand,
+                type,
+                question,
+                options,
+                answer,
+                explanation,
+                contentTags,
+                curriculumRef,
+                difficulty,
+                difficultyBand
+        );
+    }
+
+    public DifficultyBand effectiveDifficulty() {
+        return canonicalDifficulty != null ? canonicalDifficulty : difficultyBand;
+    }
 }

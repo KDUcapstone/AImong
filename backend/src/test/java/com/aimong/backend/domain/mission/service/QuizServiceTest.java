@@ -1,7 +1,9 @@
 package com.aimong.backend.domain.mission.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.times;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -14,23 +16,26 @@ import com.aimong.backend.domain.mission.entity.Mission;
 import com.aimong.backend.domain.mission.entity.MissionDailyProgress;
 import com.aimong.backend.domain.mission.entity.QuestionBank;
 import com.aimong.backend.domain.mission.entity.QuestionType;
-import com.aimong.backend.domain.mission.repository.MissionAttemptRepository;
 import com.aimong.backend.domain.mission.repository.MissionDailyProgressRepository;
 import com.aimong.backend.domain.mission.repository.MissionRepository;
 import com.aimong.backend.domain.mission.repository.QuizAttemptRepository;
-import com.aimong.backend.domain.mission.service.question.AsyncMissionRefillService;
 import com.aimong.backend.domain.mission.service.question.MissionQuestionSetFactory;
-import com.aimong.backend.domain.mission.service.question.QuestionServingQualityGuard;
+import com.aimong.backend.domain.mission.service.question.postmvp.AsyncMissionRefillService;
+import com.aimong.backend.domain.mission.service.question.postmvp.ValidatedDynamicQuestionGenerationPort;
+import com.aimong.backend.domain.mission.service.generation.QuestionGenerationService;
+import com.aimong.backend.global.exception.AimongException;
+import com.aimong.backend.global.exception.ErrorCode;
 import com.aimong.backend.global.util.KstDateUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
 @ExtendWith(MockitoExtension.class)
@@ -44,99 +49,95 @@ class QuizServiceTest {
     private QuizAttemptRepository quizAttemptRepository;
 
     @Mock
-    private MissionAttemptRepository missionAttemptRepository;
-
-    @Mock
     private MissionDailyProgressRepository missionDailyProgressRepository;
-
-    @Mock
-    private MissionService missionService;
 
     @Mock
     private ChildActivityService childActivityService;
 
     @Mock
+    private MissionService missionService;
+
+    @Mock
     private MissionQuestionSetFactory missionQuestionSetFactory;
 
-    @Mock
-    private AsyncMissionRefillService asyncMissionRefillService;
-
-    @Mock
-    private QuestionServingQualityGuard questionServingQualityGuard;
-
-    private final MissionQuestionProperties missionQuestionProperties = new MissionQuestionProperties(1, 30, false);
-
+    private final MissionQuestionProperties missionQuestionProperties =
+            new MissionQuestionProperties(10, 30, false, false, false, false);
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
-    void getQuestionsMarksOnlyCompletedMissionAsReview() {
+    void getQuestionsReturnsReviewFlagAndDoesNotExposeAnswerFields() {
         QuizService quizService = quizService();
-
         UUID childId = UUID.randomUUID();
         UUID missionId = UUID.randomUUID();
-        Mission mission = org.mockito.Mockito.mock(Mission.class);
-        QuestionBank question = question("AI can be wrong.");
+        Mission mission = mission(missionId);
+        List<QuestionBank> questions = java.util.stream.IntStream.range(0, 10)
+                .mapToObj(index -> question("Should you share a password? " + index))
+                .toList();
 
         wireUnlockedMission(childId, missionId, mission);
         when(missionDailyProgressRepository.findByChildIdAndMissionIdAndProgressDate(childId, missionId, KstDateUtils.today()))
                 .thenReturn(Optional.of(org.mockito.Mockito.mock(MissionDailyProgress.class)));
-        when(missionQuestionSetFactory.create(missionId, childId, true)).thenReturn(List.of(question));
-        when(questionServingQualityGuard.validateForServing(mission, List.of(question)))
-                .thenReturn(new QuestionServingQualityGuard.ServingValidationResult(List.of(question), List.of()));
+        when(missionQuestionSetFactory.create(missionId, childId, true)).thenReturn(questions);
+        when(quizAttemptRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
-        assertThat(quizService.getQuestions(childId, missionId).isReview()).isTrue();
+        var response = quizService.getQuestions(childId, missionId);
+
+        assertThat(response.isReview()).isTrue();
+        assertThat(response.questions()).hasSize(10);
+        assertThat(response.questions().getFirst().type()).isEqualTo("OX");
+        assertThat(response.questions().getFirst().question()).startsWith("Should you share a password?");
         verify(childActivityService).touchLastActiveAt(childId);
     }
 
     @Test
-    void servingValidationRetrySelectsReplacementQuestion() {
+    void shortageReturnsMissionSetNotReadyWithoutCreatingAttempt() {
         QuizService quizService = quizService();
-
         UUID childId = UUID.randomUUID();
         UUID missionId = UUID.randomUUID();
-        Mission mission = org.mockito.Mockito.mock(Mission.class);
-        QuestionBank rejectedQuestion = question("old question");
-        QuestionBank replacementQuestion = question("replacement question");
-        UUID rejectedQuestionId = rejectedQuestion.getId();
+        Mission mission = mission(missionId);
 
         wireUnlockedMission(childId, missionId, mission);
         when(missionDailyProgressRepository.findByChildIdAndMissionIdAndProgressDate(childId, missionId, KstDateUtils.today()))
                 .thenReturn(Optional.empty());
         when(missionQuestionSetFactory.create(missionId, childId, false))
-                .thenReturn(List.of(rejectedQuestion))
-                .thenReturn(List.of(replacementQuestion));
-        when(questionServingQualityGuard.validateForServing(mission, List.of(rejectedQuestion)))
-                .thenReturn(new QuestionServingQualityGuard.ServingValidationResult(List.of(), List.of(rejectedQuestionId)));
-        when(questionServingQualityGuard.validateForServing(mission, List.of(replacementQuestion)))
-                .thenReturn(new QuestionServingQualityGuard.ServingValidationResult(List.of(replacementQuestion), List.of()));
+                .thenThrow(new AimongException(ErrorCode.MISSION_SET_NOT_READY));
 
-        assertThat(quizService.getQuestions(childId, missionId).questions())
-                .extracting(questionResponse -> questionResponse.question())
-                .containsExactly("replacement question");
-        verify(missionQuestionSetFactory, times(2)).create(missionId, childId, false);
+        assertThatThrownBy(() -> quizService.getQuestions(childId, missionId))
+                .isInstanceOf(AimongException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.MISSION_SET_NOT_READY);
+
+        verify(quizAttemptRepository, never()).save(any());
+    }
+
+    @Test
+    void quizServiceDoesNotDependOnPostMvpGenerationComponents() {
+        List<Class<?>> fieldTypes = Arrays.stream(QuizService.class.getDeclaredFields())
+                .map(java.lang.reflect.Field::getType)
+                .toList();
+
+        assertThat(fieldTypes).doesNotContain(
+                ValidatedDynamicQuestionGenerationPort.class,
+                AsyncMissionRefillService.class,
+                QuestionGenerationService.class
+        );
     }
 
     private QuizService quizService() {
         return new QuizService(
                 missionRepository,
                 quizAttemptRepository,
-                missionAttemptRepository,
                 missionDailyProgressRepository,
                 childActivityService,
                 missionService,
                 missionQuestionSetFactory,
-                asyncMissionRefillService,
                 missionQuestionProperties,
-                questionServingQualityGuard,
                 objectMapper
         );
     }
 
     private void wireUnlockedMission(UUID childId, UUID missionId, Mission mission) {
         when(missionRepository.findById(missionId)).thenReturn(Optional.of(mission));
-        when(mission.isActive()).thenReturn(true);
-        when(mission.getId()).thenReturn(missionId);
-        when(mission.getTitle()).thenReturn("AI Basics");
         StageProgressResponse stageProgress = new StageProgressResponse(0, 0, 0);
         when(missionService.getMissions(childId))
                 .thenReturn(new MissionListResponse(
@@ -146,11 +147,20 @@ class QuizServiceTest {
         when(missionService.isUnlocked(mission, stageProgress)).thenReturn(true);
     }
 
+    private Mission mission(UUID missionId) {
+        Mission mission = org.mockito.Mockito.mock(Mission.class);
+        when(mission.isActive()).thenReturn(true);
+        when(mission.getId()).thenReturn(missionId);
+        when(mission.getTitle()).thenReturn("AI Basics");
+        return mission;
+    }
+
     private QuestionBank question(String prompt) {
         QuestionBank question = org.mockito.Mockito.mock(QuestionBank.class);
         when(question.getId()).thenReturn(UUID.randomUUID());
         when(question.getQuestionType()).thenReturn(QuestionType.OX);
         when(question.getPrompt()).thenReturn(prompt);
+        when(question.getOptionsJson()).thenReturn(null);
         return question;
     }
 }

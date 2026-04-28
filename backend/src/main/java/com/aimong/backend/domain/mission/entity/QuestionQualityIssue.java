@@ -98,7 +98,7 @@ public class QuestionQualityIssue {
         issue.questionId = questionId;
         issue.missionId = missionId;
         issue.issueSource = QuestionQualityIssueSource.SERVING_REVALIDATION;
-        issue.issueStatus = QuestionQualityIssueStatus.QUARANTINED;
+        issue.issueStatus = QuestionQualityIssueStatus.OPEN;
         issue.reasonCode = reasonCode;
         issue.detailText = detailText;
         issue.validationDecision = validationDecision;

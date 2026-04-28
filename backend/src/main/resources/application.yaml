@@ -49,7 +49,11 @@ aimong:
     question:
       set-size: 10
       attempt-ttl-minutes: 30
+      # Post-MVP runtime generation switches. MVP serving path ignores them even if enabled.
       dynamic-generation-enabled: false
+      async-refill-enabled: false
+      serving-auto-quarantine-enabled: false
+      report-auto-deactivate-enabled: false
     generation:
       target-pool-per-mission: 60
       questions-per-pack: 10

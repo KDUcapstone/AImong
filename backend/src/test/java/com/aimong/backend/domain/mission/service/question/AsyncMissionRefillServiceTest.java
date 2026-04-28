@@ -8,6 +8,8 @@ import static org.mockito.Mockito.when;
 import com.aimong.backend.domain.mission.config.MissionQuestionProperties;
 import com.aimong.backend.domain.mission.config.QuestionGenerationProperties;
 import com.aimong.backend.domain.mission.service.QuestionPoolMetricsCollector;
+import com.aimong.backend.domain.mission.service.question.postmvp.AsyncMissionRefillService;
+import com.aimong.backend.domain.mission.service.question.postmvp.DynamicQuestionGenerationPort;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -30,7 +32,7 @@ class AsyncMissionRefillServiceTest {
                 metricsCollector,
                 dynamicQuestionGenerationPort,
                 new QuestionGenerationProperties(60, 10, 36, 18, 10, 30000L, 10, 2),
-                new MissionQuestionProperties(10, 30, true)
+                new MissionQuestionProperties(10, 30, true, true, false, false)
         );
 
         UUID missionId = UUID.randomUUID();
@@ -55,7 +57,7 @@ class AsyncMissionRefillServiceTest {
                 metricsCollector,
                 dynamicQuestionGenerationPort,
                 new QuestionGenerationProperties(60, 10, 36, 18, 10, 30000L, 10, 2),
-                new MissionQuestionProperties(10, 30, true)
+                new MissionQuestionProperties(10, 30, true, true, false, false)
         );
 
         UUID missionId = UUID.randomUUID();
@@ -79,7 +81,7 @@ class AsyncMissionRefillServiceTest {
                 metricsCollector,
                 dynamicQuestionGenerationPort,
                 new QuestionGenerationProperties(60, 10, 36, 18, 10, 30000L, 10, 2),
-                new MissionQuestionProperties(10, 30, false)
+                new MissionQuestionProperties(10, 30, false, false, false, false)
         );
 
         service.enqueueIfNeeded(UUID.randomUUID());

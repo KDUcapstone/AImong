@@ -35,14 +35,11 @@ public class SchemaValidator {
         if (candidate.curriculumRef() == null || candidate.curriculumRef().isBlank()) {
             hardFails.add("schema.missing_curriculum_ref");
         }
-        if (candidate.packNo() < 1 || candidate.packNo() > 6) {
-            hardFails.add("schema.invalid_pack_no");
+        if (candidate.effectiveDifficulty() == null) {
+            hardFails.add("schema.missing_difficulty");
         }
-        if (candidate.difficultyBand() == null) {
-            hardFails.add("schema.missing_difficulty_band");
-        }
-        if (candidate.difficulty() < 1 || candidate.difficulty() > 4) {
-            hardFails.add("schema.invalid_difficulty");
+        if (candidate.difficulty() > 0 && candidate.effectiveDifficulty() == null) {
+            hardFails.add("schema.legacy_numeric_difficulty_requires_conversion");
         }
 
         if (candidate.contentTags() != null) {
@@ -79,7 +76,7 @@ public class SchemaValidator {
 
     private List<String> validateOx(StructuredQuestionSchema candidate) {
         List<String> failures = new ArrayList<>();
-        if (candidate.options() != null) {
+        if (candidate.options() != null && !candidate.options().isEmpty()) {
             failures.add("schema.ox_options_must_be_null");
         }
         if (!(candidate.answer() instanceof Boolean)) {
@@ -104,7 +101,9 @@ public class SchemaValidator {
         if (candidate.options() == null || candidate.options().size() < 4 || candidate.options().size() > 5) {
             failures.add("schema.fill_options_count");
         }
-        if (!(candidate.answer() instanceof List<?> answers) || answers.size() != 1 || !(answers.get(0) instanceof Integer)) {
+        if (!(candidate.answer() instanceof List<?> answers)
+                || answers.isEmpty()
+                || answers.stream().anyMatch(answer -> !(answer instanceof Integer))) {
             failures.add("schema.fill_answer_shape");
         }
         return failures;

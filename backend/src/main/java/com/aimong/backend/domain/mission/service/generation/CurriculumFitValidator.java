@@ -9,10 +9,27 @@ import org.springframework.stereotype.Component;
 @Component
 public class CurriculumFitValidator {
 
-    private static final List<String> STEP1_FORBIDDEN = List.of("출처", "기관", "날짜", "편향", "공정성", "딜레마", "양면성", "팩트체크");
-    private static final List<String> STEP2_FORBIDDEN = List.of("국가 ai 정책", "산업 동향", "편향 이론", "철학", "정책 보고서");
-    private static final List<String> STEP3_FORBIDDEN = List.of("공리주의", "의무론", "법 조문", "정책 원문", "산업 보고서");
-    private static final List<String> DAILY_CONTEXT = List.of("학교", "숙제", "발표", "사진", "목소리", "앱", "친구", "교실", "카메라", "번역", "검색");
+    private static final List<String> STEP1_FORBIDDEN = List.of(
+            "출처", "날짜", "근거 비교", "편향", "공정", "딜레마", "체크리스트"
+    );
+    private static final List<String> STEP2_FORBIDDEN = List.of(
+            "국가 ai 정책", "산업 영향", "산업 보고서", "철학", "법 조문", "정책 보고서"
+    );
+    private static final List<String> STEP3_FORBIDDEN = List.of(
+            "공리주의", "의무론", "법 조문", "정책 보고서", "산업 보고서"
+    );
+    private static final List<String> DAILY_CONTEXT = List.of(
+            "학교", "숙제", "발표", "사진", "목소리", "앱", "친구", "교실", "카메라", "번역", "검색"
+    );
+    private static final List<String> STEP3_VERIFICATION_KEYWORDS = List.of(
+            "확인", "비교", "근거", "출처", "날짜", "편향", "공정", "검증"
+    );
+    private static final List<String> DIRECT_POLICY_THEMES = List.of(
+            "국가 ai 정책", "산업 영향", "국가 전략", "법률", "법안", "정책 보고서", "산업 보고서"
+    );
+    private static final List<String> TEACHER_META = List.of(
+            "교사용", "교사", "평가 기준", "수업 설계", "학습 목표 진술"
+    );
 
     private final KerisCurriculumRegistry kerisCurriculumRegistry;
 
@@ -26,14 +43,18 @@ public class CurriculumFitValidator {
         List<String> warnings = new ArrayList<>();
         List<String> repairHints = new ArrayList<>();
 
-        Optional<KerisCurriculumRegistry.KerisMissionRule> optionalRule = kerisCurriculumRegistry.findMissionRule(candidate.missionCode());
+        Optional<KerisCurriculumRegistry.KerisMissionRule> optionalRule =
+                kerisCurriculumRegistry.findMissionRule(candidate.missionCode());
         if (optionalRule.isEmpty()) {
             curriculumFails.add("curriculum.unknown_mission_code");
             return new CurriculumFitResult(0, 0, curriculumFails, stageFails, warnings, repairHints);
         }
 
         KerisCurriculumRegistry.KerisMissionRule rule = optionalRule.get();
-        String text = ValidationTextUtils.normalize(ValidationTextUtils.joinCandidateText(candidate));
+        String text = ValidationTextUtils.normalize(String.join("\n",
+                candidate.question() == null ? "" : candidate.question(),
+                candidate.explanation() == null ? "" : candidate.explanation()
+        ));
 
         if (!rule.preferredContentTags().isEmpty()
                 && candidate.contentTags() != null
@@ -41,7 +62,7 @@ public class CurriculumFitValidator {
             warnings.add("curriculum.unaligned_content_tags");
             repairHints.add("Align content tags with the mission's preferred focus.");
         }
-        if (violatesDifficultyRange(rule.stage(), candidate.difficultyBand(), candidate.difficulty())) {
+        if (violatesDifficultyRange(rule.stage(), candidate.effectiveDifficulty(), candidate.difficulty())) {
             stageFails.add("curriculum.difficulty_out_of_stage_range");
         }
         if (containsAny(text, rule.bannedConcepts())) {
@@ -74,7 +95,7 @@ public class CurriculumFitValidator {
                 if (containsAny(text, STEP3_FORBIDDEN)) {
                     stageFails.add("curriculum.step3_too_abstract_or_legalistic");
                 }
-                if (!containsAny(text, List.of("확인", "비교", "근거", "출처", "날짜", "기관", "편향", "공정", "팩트"))) {
+                if (!containsAny(text, STEP3_VERIFICATION_KEYWORDS)) {
                     warnings.add("curriculum.step3_weak_verification_signal");
                     repairHints.add("Make Step 3 items explicitly require comparison, verification, or judgment.");
                 }
@@ -109,11 +130,11 @@ public class CurriculumFitValidator {
     }
 
     private boolean containsDirectPolicyTheme(String text) {
-        return containsAny(text, List.of("정책", "산업 동향", "국가 전략", "법률", "법안", "보고서"));
+        return containsAny(text, DIRECT_POLICY_THEMES);
     }
 
     private boolean containsTeacherFacingMeta(String text) {
-        return containsAny(text, List.of("교사용", "교사", "평가 기준", "수업 설계", "학습 목표 진술"));
+        return containsAny(text, TEACHER_META);
     }
 
     private boolean containsAny(String text, List<String> keywords) {

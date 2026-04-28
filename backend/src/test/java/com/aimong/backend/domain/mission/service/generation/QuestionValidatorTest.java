@@ -52,7 +52,6 @@ class QuestionValidatorTest {
         List<String> errors = validator.validate(candidate);
 
         assertThat(errors).isNotEmpty();
-        assertThat(errors).anyMatch(error -> error.contains("packNo"));
         assertThat(errors).anyMatch(error -> error.contains("OX options"));
         assertThat(errors).anyMatch(error -> error.contains("OX answer"));
         assertThat(errors).anyMatch(error -> error.contains("unsupported content tag"));

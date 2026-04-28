@@ -26,8 +26,10 @@ openai:
 aimong:
   mission:
     question:
+      set-size: 10
+      attempt-ttl-minutes: 30
+      # Test profile keeps Post-MVP runtime generation disabled.
       dynamic-generation-enabled: false
-    seed:
-      enabled: false
-      auto-run: false
-      persist: false
+      async-refill-enabled: false
+      serving-auto-quarantine-enabled: false
+      report-auto-deactivate-enabled: false

@@ -14,6 +14,8 @@ public interface QuestionBankRepository extends JpaRepository<QuestionBank, UUID
 
     List<QuestionBank> findAllByMissionIdAndIsActiveTrue(UUID missionId);
 
+    List<QuestionBank> findAllByMissionIdAndIsActiveTrueAndDifficulty(UUID missionId, DifficultyBand difficulty);
+
     List<QuestionBank> findAllByMissionIdAndIsActiveTrueAndQuestionPoolStatus(UUID missionId, QuestionPoolStatus questionPoolStatus);
 
     List<QuestionBank> findAllByMissionIdAndIsActiveTrueAndPackNoOrderByCreatedAtAsc(UUID missionId, Short packNo);
@@ -27,6 +29,8 @@ public interface QuestionBankRepository extends JpaRepository<QuestionBank, UUID
     long countByMissionIdAndIsActiveTrue(UUID missionId);
 
     long countByMissionIdAndIsActiveTrueAndPackNo(UUID missionId, Short packNo);
+
+    long countByMissionIdAndIsActiveTrueAndDifficulty(UUID missionId, DifficultyBand difficulty);
 
     long countByMissionIdAndIsActiveTrueAndDifficultyBand(UUID missionId, DifficultyBand difficultyBand);
 

@@ -18,17 +18,14 @@ public class StructureRuleValidator {
         List<String> warnings = new ArrayList<>();
         List<String> repairHints = new ArrayList<>();
 
-        if (candidate.packNo() < 1 || candidate.packNo() > 6) {
-            hardFails.add("structure.invalid_pack_no");
-        }
         if (candidate.contentTags() != null && (candidate.contentTags().isEmpty() || candidate.contentTags().size() > 3)) {
             hardFails.add("structure.invalid_content_tag_count");
         }
         if (candidate.type() == null) {
             hardFails.add("structure.missing_type");
         }
-        if (candidate.difficultyBand() == null) {
-            hardFails.add("structure.missing_difficulty_band");
+        if (candidate.effectiveDifficulty() == null) {
+            hardFails.add("structure.missing_difficulty");
         }
 
         kerisCurriculumRegistry.findMissionRule(candidate.missionCode()).ifPresent(rule -> {

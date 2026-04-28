@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -97,9 +98,14 @@ public class QuestionValidationService {
                 ValidationTextUtils.normalizeOptions(candidate.options()),
                 candidate.answer(),
                 candidate.explanation() == null ? "" : candidate.explanation().trim().replaceAll("\\s+", " "),
-                candidate.contentTags() == null ? List.of() : candidate.contentTags().stream().map(String::trim).distinct().toList(),
+                candidate.contentTags() == null ? List.of() : candidate.contentTags().stream()
+                        .map(tag -> tag == null ? "" : tag.trim().toUpperCase(Locale.ROOT))
+                        .filter(tag -> !tag.isBlank())
+                        .distinct()
+                        .toList(),
                 candidate.curriculumRef() == null ? "" : candidate.curriculumRef().trim(),
-                candidate.difficulty()
+                candidate.difficulty(),
+                candidate.effectiveDifficulty()
         );
     }
 

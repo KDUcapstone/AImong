@@ -19,6 +19,7 @@ import com.aimong.backend.domain.mission.dto.SubmitResponse;
 import com.aimong.backend.domain.mission.service.MissionService;
 import com.aimong.backend.domain.mission.service.QuizService;
 import com.aimong.backend.domain.mission.service.SubmitService;
+import com.aimong.backend.domain.mission.service.question.QuestionQualityReviewService;
 import com.aimong.backend.global.filter.FirebaseParentAuthFilter;
 import com.aimong.backend.global.filter.JwtAuthFilter;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -53,6 +54,9 @@ class MissionApiIntegrationTest {
 
     @MockitoBean
     private SubmitService submitService;
+
+    @MockitoBean
+    private QuestionQualityReviewService questionQualityReviewService;
 
     @MockitoBean
     private FirebaseParentAuthFilter firebaseParentAuthFilter;
@@ -94,8 +98,12 @@ class MissionApiIntegrationTest {
                 .andExpect(jsonPath("$.data.questionCount").value(10))
                 .andExpect(jsonPath("$.data.questions[0].type").value("OX"))
                 .andExpect(jsonPath("$.data.questions[0].answer").doesNotExist())
+                .andExpect(jsonPath("$.data.questions[0].answerPayload").doesNotExist())
                 .andExpect(jsonPath("$.data.questions[0].answer_payload").doesNotExist())
-                .andExpect(jsonPath("$.data.questions[0].explanation").doesNotExist());
+                .andExpect(jsonPath("$.data.questions[0].explanation").doesNotExist())
+                .andExpect(jsonPath("$.data.questions[0].correctAnswer").doesNotExist())
+                .andExpect(jsonPath("$.data.questions[0].correctIndex").doesNotExist())
+                .andExpect(jsonPath("$.data.questions[0].answerKey").doesNotExist());
     }
 
     @Test
