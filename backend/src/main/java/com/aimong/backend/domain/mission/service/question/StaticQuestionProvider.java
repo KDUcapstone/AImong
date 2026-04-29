@@ -16,9 +16,9 @@ public class StaticQuestionProvider implements ApprovedQuestionProvider {
 
     @Override
     public List<QuestionBank> findActiveQuestionsByMissionIdAndDifficulty(UUID missionId, DifficultyBand difficulty) {
-        List<QuestionBank> questions = questionBankRepository.findAllByMissionIdAndIsActiveTrueAndDifficulty(
+        List<QuestionBank> questions = questionBankRepository.findAllFromSafeViewByMissionIdAndDifficulty(
                 missionId,
-                difficulty
+                difficulty.name()
         );
         return shuffleIfNeeded(questions);
     }

@@ -16,6 +16,33 @@ public interface QuestionBankRepository extends JpaRepository<QuestionBank, UUID
 
     List<QuestionBank> findAllByMissionIdAndIsActiveTrueAndDifficulty(UUID missionId, DifficultyBand difficulty);
 
+    @Query(value = """
+            SELECT
+                id,
+                mission_id,
+                question_type,
+                prompt,
+                options_json,
+                content_tags,
+                curriculum_ref,
+                difficulty,
+                legacy_numeric_difficulty,
+                source_type,
+                generation_phase,
+                pack_no,
+                difficulty_band,
+                question_pool_status,
+                created_at,
+                is_active
+            FROM public.question_bank_safe
+            WHERE mission_id = :missionId
+              AND difficulty = :difficulty
+            """, nativeQuery = true)
+    List<QuestionBank> findAllFromSafeViewByMissionIdAndDifficulty(
+            @Param("missionId") UUID missionId,
+            @Param("difficulty") String difficulty
+    );
+
     List<QuestionBank> findAllByMissionIdAndIsActiveTrueAndQuestionPoolStatus(UUID missionId, QuestionPoolStatus questionPoolStatus);
 
     List<QuestionBank> findAllByMissionIdAndIsActiveTrueAndPackNoOrderByCreatedAtAsc(UUID missionId, Short packNo);

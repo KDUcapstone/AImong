@@ -133,6 +133,7 @@ class CurrentCriteriaQuestionBankAuditTest {
 
     private void writeFixedQuestionBank(ObjectMapper objectMapper) throws Exception {
         ObjectNode root = (ObjectNode) objectMapper.readTree(Files.readString(SOURCE));
+        normalizeDifficultyFields(root);
         for (var node : root.withArray("questions")) {
             ObjectNode questionNode = (ObjectNode) node;
             if ("S0304-P4-06".equals(questionNode.path("externalId").asText())) {
@@ -158,6 +159,34 @@ class CurrentCriteriaQuestionBankAuditTest {
         );
         Files.createDirectories(FIXED_SOURCE.getParent());
         objectMapper.writeValue(FIXED_SOURCE.toFile(), root);
+    }
+
+    private void normalizeDifficultyFields(ObjectNode root) {
+        normalizeDifficultyField(root.withArray("missions"));
+        normalizeDifficultyField(root.withArray("questions"));
+    }
+
+    private void normalizeDifficultyField(ArrayNode nodes) {
+        for (var node : nodes) {
+            if (!(node instanceof ObjectNode objectNode) || !objectNode.has("difficulty")) {
+                continue;
+            }
+            var difficulty = objectNode.get("difficulty");
+            if (!difficulty.isNumber()) {
+                continue;
+            }
+            objectNode.put("difficulty", toDifficultyBand(difficulty.asInt()));
+        }
+    }
+
+    private String toDifficultyBand(int difficulty) {
+        if (difficulty <= 2) {
+            return "LOW";
+        }
+        if (difficulty == 3) {
+            return "MEDIUM";
+        }
+        return "HIGH";
     }
 
     private QuestionResult validate(QuestionValidationService validationService, AuditQuestion question) {

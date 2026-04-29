@@ -11,6 +11,7 @@ import com.aimong.backend.domain.auth.entity.ParentAccount;
 import com.aimong.backend.domain.auth.repository.ChildProfileRepository;
 import com.aimong.backend.domain.auth.repository.ParentAccountRepository;
 import com.aimong.backend.domain.gacha.entity.Ticket;
+import com.aimong.backend.domain.gacha.entity.TicketType;
 import com.aimong.backend.domain.gacha.repository.TicketRepository;
 import com.aimong.backend.domain.gacha.service.GachaPullService;
 import com.aimong.backend.domain.streak.entity.StreakRecord;
@@ -24,6 +25,7 @@ import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseToken;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -54,9 +56,12 @@ public class ParentAuthService {
         ChildProfile childProfile = childProfileRepository.save(
                 ChildProfile.create(parentAccount, request.nickname(), generateUniqueCode())
         );
-        ticketRepository.save(Ticket.create(childProfile.getId(), STARTER_TICKETS));
+        ticketRepository.saveAll(IntStream.range(0, STARTER_TICKETS)
+                .mapToObj(index -> Ticket.issue(childProfile.getId(), TicketType.NORMAL))
+                .toList());
         streakRecordRepository.save(StreakRecord.create(childProfile.getId()));
         gachaPullService.initializeStarterOnboarding(childProfile);
+        childProfile.markStarterIssued();
 
         return new ParentRegisterResponse(
                 childProfile.getId(),

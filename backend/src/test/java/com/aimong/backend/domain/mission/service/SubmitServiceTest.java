@@ -2,6 +2,8 @@ package com.aimong.backend.domain.mission.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -9,7 +11,7 @@ import com.aimong.backend.domain.auth.entity.ChildProfile;
 import com.aimong.backend.domain.auth.entity.ProfileImageType;
 import com.aimong.backend.domain.auth.repository.ChildProfileRepository;
 import com.aimong.backend.domain.auth.service.ChildActivityService;
-import com.aimong.backend.domain.gacha.entity.Ticket;
+import com.aimong.backend.domain.gacha.entity.TicketType;
 import com.aimong.backend.domain.gacha.repository.TicketRepository;
 import com.aimong.backend.domain.mission.dto.MissionListResponse;
 import com.aimong.backend.domain.mission.dto.StageProgressResponse;
@@ -123,6 +125,61 @@ class SubmitServiceTest {
         });
     }
 
+    @Test
+    void submissionAcceptsTextAnswerPayloadFromCurrentQuestionBank960Sql() {
+        SubmitService service = service();
+        Fixture fixture = fixture(false, "\"camera app\"", "camera app");
+
+        SubmitResponse response = service.submit(fixture.childId(), fixture.missionId(), fixture.request());
+
+        assertThat(response.isPassed()).isTrue();
+        assertThat(response.score()).isEqualTo(10);
+    }
+
+    @Test
+    void submissionAcceptsBooleanAnswerPayloadFromCurrentQuestionBank960Sql() {
+        SubmitService service = service();
+        Fixture fixture = fixture(false, "true", "O");
+
+        SubmitResponse response = service.submit(fixture.childId(), fixture.missionId(), fixture.request());
+
+        assertThat(response.isPassed()).isTrue();
+        assertThat(response.score()).isEqualTo(10);
+    }
+
+    @Test
+    void submissionAcceptsStructuredAnswerPayloadForCompatibility() {
+        SubmitService service = service();
+        Fixture fixture = fixture(false, "{\"type\":\"CHOICE\",\"index\":2,\"value\":\"공식 자료로 확인해요\"}", "공식 자료로 확인해요");
+
+        SubmitResponse response = service.submit(fixture.childId(), fixture.missionId(), fixture.request());
+
+        assertThat(response.isPassed()).isTrue();
+        assertThat(response.score()).isEqualTo(10);
+    }
+
+    @Test
+    void submissionAcceptsFillValuesPayloadForCompatibility() {
+        SubmitService service = service();
+        Fixture fixture = fixture(false, "{\"type\":\"FILL\",\"indexes\":[1],\"values\":[\"확인\"]}", "확인");
+
+        SubmitResponse response = service.submit(fixture.childId(), fixture.missionId(), fixture.request());
+
+        assertThat(response.isPassed()).isTrue();
+        assertThat(response.score()).isEqualTo(10);
+    }
+
+    @Test
+    void submissionAcceptsStructuredOxBooleanPayloadAliasesForCompatibility() {
+        SubmitService service = service();
+        Fixture fixture = fixture(false, "{\"type\":\"OX\",\"value\":true}", "O");
+
+        SubmitResponse response = service.submit(fixture.childId(), fixture.missionId(), fixture.request());
+
+        assertThat(response.isPassed()).isTrue();
+        assertThat(response.score()).isEqualTo(10);
+    }
+
     private SubmitService service() {
         return new SubmitService(
                 quizAttemptRepository,
@@ -149,13 +206,16 @@ class SubmitServiceTest {
     }
 
     private Fixture fixture(boolean reviewMode) {
+        return fixture(reviewMode, "\"No\"", reviewMode ? "No" : "Yes");
+    }
+
+    private Fixture fixture(boolean reviewMode, String answerPayload, String selected) {
         UUID childId = UUID.randomUUID();
         UUID missionId = UUID.randomUUID();
         UUID quizAttemptId = UUID.randomUUID();
         StageProgressResponse stageProgress = new StageProgressResponse(0, 0, 0);
         Mission mission = org.mockito.Mockito.mock(Mission.class);
         ChildProfile childProfile = org.mockito.Mockito.mock(ChildProfile.class);
-        Ticket ticket = Ticket.create(childId, 2);
         StreakRecord streakRecord = StreakRecord.create(childId);
 
         when(mission.isActive()).thenReturn(true);
@@ -178,12 +238,12 @@ class SubmitServiceTest {
         when(questionBankRepository.findAllByIdIn(questionIds)).thenReturn(questionBanks);
 
         List<QuestionAnswerKey> answerKeys = questionIds.stream()
-                .map(id -> QuestionAnswerKey.create(id, "\"No\"", "Explanation"))
+                .map(id -> QuestionAnswerKey.create(id, answerPayload, "Explanation"))
                 .toList();
         when(questionAnswerKeyRepository.findAllByQuestionIdIn(questionIds)).thenReturn(answerKeys);
 
         List<SubmitRequest.AnswerRequest> answers = questionIds.stream()
-                .map(id -> new SubmitRequest.AnswerRequest(id.toString(), reviewMode ? "No" : "Yes"))
+                .map(id -> new SubmitRequest.AnswerRequest(id.toString(), selected))
                 .toList();
         SubmitRequest request = new SubmitRequest(quizAttemptId, answers);
 
@@ -205,8 +265,20 @@ class SubmitServiceTest {
 
         when(childProfileRepository.findById(childId)).thenReturn(Optional.of(childProfile));
         when(childProfile.getProfileImageType()).thenReturn(ProfileImageType.DEFAULT);
-        when(ticketRepository.findWithLockByChildId(childId)).thenReturn(Optional.of(ticket));
+        when(ticketRepository.countByChildIdAndTicketTypeAndUsedAtIsNull(childId, TicketType.NORMAL)).thenReturn(2L);
+        when(ticketRepository.countByChildIdAndTicketTypeAndUsedAtIsNull(childId, TicketType.RARE)).thenReturn(0L);
+        when(ticketRepository.countByChildIdAndTicketTypeAndUsedAtIsNull(childId, TicketType.EPIC)).thenReturn(0L);
         when(streakRecordRepository.findWithLockByChildId(childId)).thenReturn(Optional.of(streakRecord));
+        if (!reviewMode && selected.equals("Yes")) {
+            return new Fixture(childId, missionId, request);
+        }
+        if (!reviewMode) {
+            when(petGrowthService.findEquippedPetGrade(childId)).thenReturn(null);
+            when(friendStreakRepository.findById(childId)).thenReturn(Optional.empty());
+            when(missionDailyProgressRepository.save(any(MissionDailyProgress.class))).thenAnswer(invocation -> invocation.getArgument(0));
+            when(petGrowthService.applyMissionReward(eq(childId), anyInt()))
+                    .thenReturn(PetGrowthService.PetGrowthResult.none());
+        }
 
         return new Fixture(childId, missionId, request);
     }

@@ -63,7 +63,7 @@ class ParentAuthServiceTest {
         when(parentAccountRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
         when(childProfileRepository.existsByCode(any())).thenReturn(false);
         when(childProfileRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
-        when(ticketRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(ticketRepository.saveAll(any(Iterable.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(streakRecordRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         ParentRegisterResponse response = parentAuthService.register(
@@ -74,7 +74,7 @@ class ParentAuthServiceTest {
         assertThat(response.nickname()).isEqualTo("민준");
         assertThat(response.code()).matches("\\d{6}");
         assertThat(response.starterTickets()).isEqualTo(3);
-        verify(ticketRepository).save(any());
+        verify(ticketRepository).saveAll(any(Iterable.class));
         verify(streakRecordRepository).save(any());
         verify(gachaPullService).initializeStarterOnboarding(any());
     }

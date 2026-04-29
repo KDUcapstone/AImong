@@ -2,13 +2,14 @@ package com.aimong.backend.domain.gacha.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -16,48 +17,44 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name = "tickets")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class Ticket {
 
     @Id
-    @Column(name = "child_id")
+    private UUID id;
+
+    @Column(name = "child_id", nullable = false)
     private UUID childId;
 
-    @Column(name = "normal", nullable = false)
-    private int normal;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "ticket_type", nullable = false)
+    private TicketType ticketType;
 
-    @Column(name = "rare", nullable = false)
-    private int rare;
+    @Column(name = "used_at")
+    private Instant usedAt;
 
-    @Column(name = "epic", nullable = false)
-    private int epic;
+    @Column(name = "created_at", nullable = false)
+    private Instant createdAt;
 
-    @Column(name = "updated_at", nullable = false)
-    private Instant updatedAt;
-
-    public static Ticket create(UUID childId, int normal) {
-        return new Ticket(childId, normal, 0, 0, null);
+    public static Ticket issue(UUID childId, TicketType ticketType) {
+        Ticket ticket = new Ticket();
+        ticket.id = UUID.randomUUID();
+        ticket.childId = childId;
+        ticket.ticketType = ticketType;
+        ticket.createdAt = Instant.now();
+        return ticket;
     }
 
-    public void addNormal(int count) {
-        normal += count;
-        updatedAt = Instant.now();
-    }
-
-    public void addRare(int count) {
-        rare += count;
-        updatedAt = Instant.now();
-    }
-
-    public void addEpic(int count) {
-        epic += count;
-        updatedAt = Instant.now();
+    public void markUsed() {
+        usedAt = Instant.now();
     }
 
     @PrePersist
     void prePersist() {
-        if (updatedAt == null) {
-            updatedAt = Instant.now();
+        if (id == null) {
+            id = UUID.randomUUID();
+        }
+        if (createdAt == null) {
+            createdAt = Instant.now();
         }
     }
 }

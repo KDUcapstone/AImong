@@ -35,7 +35,7 @@ public final class QuestionBankAuditLoader {
                     text(questionNode, "explanation"),
                     parseOptions(questionNode.get("contentTags")),
                     text(questionNode, "curriculumRef"),
-                    questionNode.path("difficulty").asInt(0),
+                    parseDifficulty(questionNode),
                     parseBand(text(questionNode, "difficultyBand")),
                     parsePackNo(questionNode),
                     text(questionNode, "sourceType")
@@ -57,6 +57,29 @@ public final class QuestionBankAuditLoader {
 
     private DifficultyBand parseBand(String value) {
         return value == null || value.isBlank() ? null : DifficultyBand.valueOf(value);
+    }
+
+    private int parseDifficulty(JsonNode node) {
+        JsonNode difficulty = node.get("difficulty");
+        if (difficulty == null || difficulty.isNull()) {
+            DifficultyBand band = parseBand(text(node, "difficultyBand"));
+            return numericDifficulty(band);
+        }
+        if (difficulty.isNumber()) {
+            return difficulty.asInt();
+        }
+        return numericDifficulty(parseBand(difficulty.asText()));
+    }
+
+    private int numericDifficulty(DifficultyBand band) {
+        if (band == null) {
+            return 0;
+        }
+        return switch (band) {
+            case LOW -> 1;
+            case MEDIUM -> 3;
+            case HIGH -> 4;
+        };
     }
 
     private Integer parsePackNo(JsonNode node) {

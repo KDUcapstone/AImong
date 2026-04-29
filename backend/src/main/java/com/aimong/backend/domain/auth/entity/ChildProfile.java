@@ -88,7 +88,7 @@ public class ChildProfile {
                 parentAccount,
                 nickname,
                 code,
-                true,
+                false,
                 0,
                 0,
                 0,
@@ -107,6 +107,10 @@ public class ChildProfile {
     public void regenerateCode(String newCode) {
         this.code = newCode;
         this.sessionVersion += 1;
+    }
+
+    public void markStarterIssued() {
+        this.starterIssued = true;
     }
 
     public void applyMissionXp(int xpEarned, LocalDate today, LocalDate weekStart) {

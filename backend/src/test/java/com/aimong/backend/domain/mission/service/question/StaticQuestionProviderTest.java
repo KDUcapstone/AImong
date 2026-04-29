@@ -26,13 +26,13 @@ class StaticQuestionProviderTest {
         UUID missionId = UUID.randomUUID();
         List<QuestionBank> questions = List.of(question(DifficultyBand.LOW), question(DifficultyBand.LOW));
 
-        when(questionBankRepository.findAllByMissionIdAndIsActiveTrueAndDifficulty(missionId, DifficultyBand.LOW))
+        when(questionBankRepository.findAllFromSafeViewByMissionIdAndDifficulty(missionId, DifficultyBand.LOW.name()))
                 .thenReturn(questions);
 
         List<QuestionBank> selected = provider.findActiveQuestionsByMissionIdAndDifficulty(missionId, DifficultyBand.LOW);
 
         assertThat(selected).hasSize(2);
-        verify(questionBankRepository).findAllByMissionIdAndIsActiveTrueAndDifficulty(missionId, DifficultyBand.LOW);
+        verify(questionBankRepository).findAllFromSafeViewByMissionIdAndDifficulty(missionId, DifficultyBand.LOW.name());
     }
 
     private QuestionBank question(DifficultyBand difficulty) {

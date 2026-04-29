@@ -1,6 +1,8 @@
 package com.aimong.backend.domain.pet.service;
 
 import com.aimong.backend.domain.gacha.entity.Ticket;
+import com.aimong.backend.domain.gacha.entity.TicketType;
+import com.aimong.backend.domain.gacha.repository.TicketRepository;
 import com.aimong.backend.domain.pet.entity.CrownType;
 import com.aimong.backend.domain.pet.entity.EquippedPet;
 import com.aimong.backend.domain.pet.entity.Pet;
@@ -23,6 +25,7 @@ public class PetGrowthService {
 
     private final EquippedPetRepository equippedPetRepository;
     private final PetRepository petRepository;
+    private final TicketRepository ticketRepository;
 
     @Transactional(readOnly = true)
     public String findEquippedPetGrade(UUID childId) {
@@ -33,7 +36,7 @@ public class PetGrowthService {
     }
 
     @Transactional
-    public PetGrowthResult applyMissionReward(UUID childId, int petXpAmount, Ticket ticket) {
+    public PetGrowthResult applyMissionReward(UUID childId, int petXpAmount) {
         EquippedPet equippedPet = equippedPetRepository.findWithLockByChildId(childId).orElse(null);
         if (equippedPet == null) {
             return PetGrowthResult.none();
@@ -51,7 +54,7 @@ public class PetGrowthService {
             crownUnlocked = true;
             CrownType crownType = crownTypeOf(pet.getGrade());
             pet.unlockCrown(crownType);
-            rewards.addAll(applyAimongRewards(pet.getGrade(), ticket));
+            rewards.addAll(applyAimongRewards(childId, pet.getGrade()));
         }
 
         return new PetGrowthResult(
@@ -65,27 +68,33 @@ public class PetGrowthService {
         );
     }
 
-    private List<PetReward> applyAimongRewards(PetGrade grade, Ticket ticket) {
+    private List<PetReward> applyAimongRewards(UUID childId, PetGrade grade) {
         List<PetReward> rewards = new ArrayList<>();
         switch (grade) {
             case NORMAL -> {
-                ticket.addRare(1);
+                grantTickets(childId, TicketType.RARE, 1);
                 rewards.add(new PetReward("TICKET", "RARE", 1, "AIMONG_REWARD_NORMAL"));
             }
             case RARE -> {
-                ticket.addEpic(1);
+                grantTickets(childId, TicketType.EPIC, 1);
                 rewards.add(new PetReward("TICKET", "EPIC", 1, "AIMONG_REWARD_RARE"));
             }
             case EPIC -> {
-                ticket.addEpic(2);
+                grantTickets(childId, TicketType.EPIC, 2);
                 rewards.add(new PetReward("TICKET", "EPIC", 2, "AIMONG_REWARD_EPIC"));
             }
             case LEGEND -> {
-                ticket.addEpic(3);
+                grantTickets(childId, TicketType.EPIC, 3);
                 rewards.add(new PetReward("TICKET", "EPIC", 3, "AIMONG_REWARD_LEGEND"));
             }
         }
         return rewards;
+    }
+
+    private void grantTickets(UUID childId, TicketType ticketType, int count) {
+        ticketRepository.saveAll(java.util.stream.IntStream.range(0, count)
+                .mapToObj(index -> Ticket.issue(childId, ticketType))
+                .toList());
     }
 
     private CrownType crownTypeOf(PetGrade grade) {

@@ -4,6 +4,7 @@ import com.aimong.backend.domain.auth.entity.ChildProfile;
 import com.aimong.backend.domain.auth.repository.ChildProfileRepository;
 import com.aimong.backend.domain.auth.service.ChildActivityService;
 import com.aimong.backend.domain.gacha.entity.Ticket;
+import com.aimong.backend.domain.gacha.entity.TicketType;
 import com.aimong.backend.domain.gacha.repository.TicketRepository;
 import com.aimong.backend.domain.mission.MissionCompletionPolicy;
 import com.aimong.backend.domain.mission.dto.SubmitRequest;
@@ -36,10 +37,12 @@ import com.aimong.backend.global.exception.AimongException;
 import com.aimong.backend.global.exception.ErrorCode;
 import com.aimong.backend.global.util.KstDateUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -122,7 +125,7 @@ public class SubmitService {
         for (SubmitRequest.AnswerRequest answer : request.answers()) {
             UUID questionId = parseQuestionId(answer.questionId());
             QuestionAnswerKey answerKey = answerKeysById.get(questionId);
-            boolean isCorrect = answerKey != null && parseAnswerPayload(answerKey.getAnswerPayload()).equals(answer.selected());
+            boolean isCorrect = answerKey != null && matchesAnswerPayload(answerKey.getAnswerPayload(), answer.selected());
             if (isCorrect) {
                 score++;
             }
@@ -144,8 +147,6 @@ public class SubmitService {
                 .isPresent();
         ChildProfile childProfile = childProfileRepository.findById(childId)
                 .orElseThrow(() -> new AimongException(ErrorCode.CHILD_NOT_FOUND));
-        Ticket ticket = ticketRepository.findWithLockByChildId(childId)
-                .orElseGet(() -> ticketRepository.save(Ticket.create(childId, 0)));
         StreakRecord streakRecord = streakRecordRepository.findWithLockByChildId(childId)
                 .orElseGet(() -> streakRecordRepository.save(StreakRecord.create(childId)));
 
@@ -167,7 +168,7 @@ public class SubmitService {
             saveAnswerResults(reviewAttempt.getId(), childId, missionId, true, request.answers(), answerKeysById);
             missionDailyProgressRepository.findWithLockByChildIdAndMissionIdAndProgressDate(childId, missionId, today)
                     .ifPresent(progress -> progress.applyReviewAttempt(reviewScore));
-            return buildReviewResponse(score, wrongCount, isPassed, isPerfect, childProfile, ticket, streakRecord, results);
+            return buildReviewResponse(childId, score, wrongCount, isPassed, isPerfect, childProfile, streakRecord, results);
         }
 
         if (!isPassed) {
@@ -183,7 +184,7 @@ public class SubmitService {
                     0
             ));
             saveAnswerResults(failedAttempt.getId(), childId, missionId, false, request.answers(), answerKeysById);
-            return buildFailureResponse(score, wrongCount, isPerfect, childProfile, ticket, streakRecord, results);
+            return buildFailureResponse(childId, score, wrongCount, isPerfect, childProfile, streakRecord, results);
         }
 
         String equippedPetGrade = petGrowthService.findEquippedPetGrade(childId);
@@ -221,19 +222,19 @@ public class SubmitService {
         }
 
         int currentLevel = childProfile.getLevel();
-        List<SubmitResponse.RewardResponse> levelRewards = applyLevelRewards(previousLevel, currentLevel, ticket, streakRecord);
+        List<SubmitResponse.RewardResponse> levelRewards = applyLevelRewards(childId, previousLevel, currentLevel, streakRecord);
 
         dailyQuestService.updateForMissionSuccess(childId, childProfile, today);
         weeklyQuestService.updateForMissionSuccess(childId, childProfile, weekStart);
         achievementService.unlockByTotalXp(childId, childProfile);
 
-        PetGrowthService.PetGrowthResult petGrowthResult = petGrowthService.applyMissionReward(childId, xpEarned, ticket);
+        PetGrowthService.PetGrowthResult petGrowthResult = petGrowthService.applyMissionReward(childId, xpEarned);
 
         streakRecord.recordMissionCompletion(today);
 
         List<SubmitResponse.RewardResponse> rewards = new ArrayList<>(levelRewards);
         rewards.addAll(toRewardResponses(petGrowthResult.rewards()));
-        rewards.addAll(applyFixedStreakRewards(childId, streakRecord, ticket));
+        rewards.addAll(applyFixedStreakRewards(childId, streakRecord));
 
         return new SubmitResponse(
                 MODE_NORMAL,
@@ -257,7 +258,7 @@ public class SubmitService {
                 streakRecord.getTodayMissionCount(),
                 streakBonusApplied,
                 rewards,
-                toRemainingTickets(ticket),
+                toRemainingTickets(childId),
                 childProfile.getProfileImageType().name(),
                 childProfile.getProfileImageType() != com.aimong.backend.domain.auth.entity.ProfileImageType.DEFAULT,
                 false,
@@ -266,12 +267,12 @@ public class SubmitService {
     }
 
     private SubmitResponse buildReviewResponse(
+            UUID childId,
             int score,
             int wrongCount,
             boolean isPassed,
             boolean isPerfect,
             ChildProfile childProfile,
-            Ticket ticket,
             StreakRecord streakRecord,
             List<SubmitResponse.ResultResponse> results
     ) {
@@ -297,7 +298,7 @@ public class SubmitService {
                 streakRecord.getTodayMissionCount(),
                 false,
                 List.of(),
-                toRemainingTickets(ticket),
+                toRemainingTickets(childId),
                 childProfile.getProfileImageType().name(),
                 childProfile.getProfileImageType() != com.aimong.backend.domain.auth.entity.ProfileImageType.DEFAULT,
                 true,
@@ -306,11 +307,11 @@ public class SubmitService {
     }
 
     private SubmitResponse buildFailureResponse(
+            UUID childId,
             int score,
             int wrongCount,
             boolean isPerfect,
             ChildProfile childProfile,
-            Ticket ticket,
             StreakRecord streakRecord,
             List<SubmitResponse.ResultResponse> results
     ) {
@@ -336,7 +337,7 @@ public class SubmitService {
                 streakRecord.getTodayMissionCount(),
                 false,
                 List.of(),
-                toRemainingTickets(ticket),
+                toRemainingTickets(childId),
                 childProfile.getProfileImageType().name(),
                 childProfile.getProfileImageType() != com.aimong.backend.domain.auth.entity.ProfileImageType.DEFAULT,
                 false,
@@ -387,7 +388,7 @@ public class SubmitService {
         for (SubmitRequest.AnswerRequest answer : answers) {
             UUID questionId = parseQuestionId(answer.questionId());
             QuestionAnswerKey answerKey = answerKeysById.get(questionId);
-            boolean isCorrect = answerKey != null && parseAnswerPayload(answerKey.getAnswerPayload()).equals(answer.selected());
+            boolean isCorrect = answerKey != null && matchesAnswerPayload(answerKey.getAnswerPayload(), answer.selected());
             results.add(MissionAnswerResult.create(
                     attemptId,
                     childId,
@@ -400,7 +401,7 @@ public class SubmitService {
         missionAnswerResultRepository.saveAll(results);
     }
 
-    private List<SubmitResponse.RewardResponse> applyLevelRewards(int previousLevel, int currentLevel, Ticket ticket, StreakRecord streakRecord) {
+    private List<SubmitResponse.RewardResponse> applyLevelRewards(UUID childId, int previousLevel, int currentLevel, StreakRecord streakRecord) {
         List<SubmitResponse.RewardResponse> rewards = new ArrayList<>();
         for (int level = previousLevel + 1; level <= currentLevel; level++) {
             if (level % 3 == 0) {
@@ -414,11 +415,11 @@ public class SubmitService {
                 ));
             }
             if (level % 5 == 0) {
-                ticket.addNormal(1);
+                grantTickets(childId, TicketType.NORMAL, 2);
                 rewards.add(new SubmitResponse.RewardResponse(
                         "TICKET",
                         "NORMAL",
-                        1,
+                        2,
                         null,
                         "LEVEL_REWARD_LV" + level
                 ));
@@ -427,10 +428,10 @@ public class SubmitService {
         return rewards;
     }
 
-    private List<SubmitResponse.RewardResponse> applyFixedStreakRewards(UUID childId, StreakRecord streakRecord, Ticket ticket) {
+    private List<SubmitResponse.RewardResponse> applyFixedStreakRewards(UUID childId, StreakRecord streakRecord) {
         List<SubmitResponse.RewardResponse> rewards = new ArrayList<>();
         if (streakRecord.getContinuousDays() == 7 && !milestoneRewardRepository.existsByChildIdAndMilestoneDays(childId, (short) 7)) {
-            ticket.addRare(1);
+            grantTickets(childId, TicketType.RARE, 1);
             milestoneRewardRepository.save(MilestoneReward.create(childId, (short) 7));
             rewards.add(new SubmitResponse.RewardResponse(
                     "TICKET",
@@ -441,7 +442,7 @@ public class SubmitService {
             ));
         }
         if (streakRecord.getContinuousDays() == 30 && !milestoneRewardRepository.existsByChildIdAndMilestoneDays(childId, (short) 30)) {
-            ticket.addEpic(1);
+            grantTickets(childId, TicketType.EPIC, 1);
             milestoneRewardRepository.save(MilestoneReward.create(childId, (short) 30));
             rewards.add(new SubmitResponse.RewardResponse(
                     "TICKET",
@@ -487,19 +488,86 @@ public class SubmitService {
         }
     }
 
-    private String parseAnswerPayload(String answerPayload) {
+    private boolean matchesAnswerPayload(String answerPayload, String selected) {
+        Set<String> expectedValues = parseExpectedAnswerValues(answerPayload);
+        String normalizedSelected = normalizeAnswerText(selected);
+        return expectedValues.stream()
+                .map(this::normalizeAnswerText)
+                .anyMatch(normalizedSelected::equals);
+    }
+
+    private Set<String> parseExpectedAnswerValues(String answerPayload) {
         try {
-            return objectMapper.readValue(answerPayload, String.class);
+            JsonNode root = objectMapper.readTree(answerPayload);
+            Set<String> values = new HashSet<>();
+            collectExpectedAnswerValues(root, values);
+            return values;
         } catch (JsonProcessingException exception) {
             throw new AimongException(ErrorCode.INTERNAL_SERVER_ERROR, exception);
         }
     }
 
-    private SubmitResponse.RemainingTicketsResponse toRemainingTickets(Ticket ticket) {
+    private void collectExpectedAnswerValues(JsonNode node, Set<String> values) {
+        if (node == null || node.isNull()) {
+            return;
+        }
+        if (node.isTextual() || node.isNumber() || node.isBoolean()) {
+            addAnswerValue(values, node.asText());
+            return;
+        }
+        if (node.isArray()) {
+            node.forEach(child -> collectExpectedAnswerValues(child, values));
+            return;
+        }
+        if (node.has("value")) {
+            addAnswerValue(values, node.get("value").asText());
+        }
+        if (node.has("values") && node.get("values").isArray()) {
+            List<String> fillValues = new ArrayList<>();
+            node.get("values").forEach(valueNode -> {
+                String value = valueNode.asText();
+                addAnswerValue(values, value);
+                fillValues.add(value);
+            });
+            if (!fillValues.isEmpty()) {
+                addAnswerValue(values, String.join(",", fillValues));
+                addAnswerValue(values, String.join(" ", fillValues));
+            }
+        }
+        if (node.has("index")) {
+            addAnswerValue(values, node.get("index").asText());
+        }
+    }
+
+    private void addAnswerValue(Set<String> values, String value) {
+        values.add(value);
+        if ("true".equalsIgnoreCase(value)) {
+            values.add("O");
+            values.add("o");
+            values.add("true");
+        }
+        if ("false".equalsIgnoreCase(value)) {
+            values.add("X");
+            values.add("x");
+            values.add("false");
+        }
+    }
+
+    private String normalizeAnswerText(String value) {
+        return value == null ? "" : value.trim();
+    }
+
+    private void grantTickets(UUID childId, TicketType ticketType, int count) {
+        ticketRepository.saveAll(java.util.stream.IntStream.range(0, count)
+                .mapToObj(index -> Ticket.issue(childId, ticketType))
+                .toList());
+    }
+
+    private SubmitResponse.RemainingTicketsResponse toRemainingTickets(UUID childId) {
         return new SubmitResponse.RemainingTicketsResponse(
-                ticket.getNormal(),
-                ticket.getRare(),
-                ticket.getEpic()
+                Math.toIntExact(ticketRepository.countByChildIdAndTicketTypeAndUsedAtIsNull(childId, TicketType.NORMAL)),
+                Math.toIntExact(ticketRepository.countByChildIdAndTicketTypeAndUsedAtIsNull(childId, TicketType.RARE)),
+                Math.toIntExact(ticketRepository.countByChildIdAndTicketTypeAndUsedAtIsNull(childId, TicketType.EPIC))
         );
     }
 }
