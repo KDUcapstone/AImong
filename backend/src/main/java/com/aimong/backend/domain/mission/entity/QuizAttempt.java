@@ -38,16 +38,20 @@ public class QuizAttempt {
     @Column(name = "expires_at", nullable = false)
     private Instant expiresAt;
 
+    @Column(name = "is_review", nullable = false)
+    private boolean isReview;
+
     @Column(name = "submitted_at")
     private Instant submittedAt;
 
-    public static QuizAttempt create(UUID childId, UUID missionId, String questionIdsJson, Instant expiresAt) {
+    public static QuizAttempt create(UUID childId, UUID missionId, String questionIdsJson, Instant expiresAt, boolean isReview) {
         QuizAttempt attempt = new QuizAttempt();
         attempt.id = UUID.randomUUID();
         attempt.childId = childId;
         attempt.missionId = missionId;
         attempt.questionIdsJson = questionIdsJson;
         attempt.expiresAt = expiresAt;
+        attempt.isReview = isReview;
         return attempt;
     }
 

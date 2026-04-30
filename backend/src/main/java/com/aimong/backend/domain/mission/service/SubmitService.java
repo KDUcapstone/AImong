@@ -143,8 +143,7 @@ public class SubmitService {
         LocalDate today = KstDateUtils.today();
         LocalDate weekStart = KstDateUtils.currentWeekStart();
         int attemptNo = Math.toIntExact(missionAttemptRepository.countByChildIdAndMissionIdAndAttemptDate(childId, missionId, today)) + 1;
-        boolean isReview = missionDailyProgressRepository.findByChildIdAndMissionIdAndProgressDate(childId, missionId, today)
-                .isPresent();
+        boolean isReview = quizAttempt.isReview();
         ChildProfile childProfile = childProfileRepository.findById(childId)
                 .orElseThrow(() -> new AimongException(ErrorCode.CHILD_NOT_FOUND));
         StreakRecord streakRecord = streakRecordRepository.findWithLockByChildId(childId)

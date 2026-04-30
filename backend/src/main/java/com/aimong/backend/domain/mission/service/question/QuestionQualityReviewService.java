@@ -82,6 +82,10 @@ public class QuestionQualityReviewService {
                 report == null ? null : writeJson(report.hardFailReasons()),
                 report == null ? null : writeJson(report.repairHints())
         ));
+        if (missionQuestionProperties.servingAutoQuarantineEnabled()) {
+            question.deactivate();
+            questionBankRepository.saveAndFlush(question);
+        }
     }
 
     private boolean isSafetyReason(String reasonCode) {

@@ -12,6 +12,7 @@ import com.aimong.backend.domain.mission.repository.MissionDailyProgressReposito
 import com.aimong.backend.domain.mission.repository.MissionRepository;
 import com.aimong.backend.domain.mission.repository.QuizAttemptRepository;
 import com.aimong.backend.domain.mission.service.question.MissionQuestionSetFactory;
+import com.aimong.backend.domain.mission.service.question.QuestionServingQualityGuard;
 import com.aimong.backend.global.exception.AimongException;
 import com.aimong.backend.global.exception.ErrorCode;
 import com.aimong.backend.global.util.KstDateUtils;
@@ -36,6 +37,7 @@ public class QuizService {
     private final ChildActivityService childActivityService;
     private final MissionService missionService;
     private final MissionQuestionSetFactory missionQuestionSetFactory;
+    private final QuestionServingQualityGuard questionServingQualityGuard;
     private final MissionQuestionProperties missionQuestionProperties;
     private final ObjectMapper objectMapper;
 
@@ -57,7 +59,7 @@ public class QuizService {
                 KstDateUtils.today()
         ).isPresent();
 
-        List<QuestionBank> selectedQuestions = missionQuestionSetFactory.create(mission.getId(), childId, isReview);
+        List<QuestionBank> selectedQuestions = createServingReadyQuestionSet(mission, childId, isReview);
         if (selectedQuestions.size() != missionQuestionProperties.setSize()) {
             throw new AimongException(ErrorCode.MISSION_SET_NOT_READY);
         }
@@ -69,7 +71,8 @@ public class QuizService {
                 childId,
                 missionId,
                 writeQuestionIds(selectedQuestionIds),
-                Instant.now().plus(missionQuestionProperties.attemptTtlMinutes(), ChronoUnit.MINUTES)
+                Instant.now().plus(missionQuestionProperties.attemptTtlMinutes(), ChronoUnit.MINUTES),
+                isReview
         );
         quizAttemptRepository.save(quizAttempt);
 
@@ -82,6 +85,22 @@ public class QuizService {
                 quizAttempt.getExpiresAt(),
                 selectedQuestions.stream().map(this::toQuestionResponse).toList()
         );
+    }
+
+    private List<QuestionBank> createServingReadyQuestionSet(Mission mission, UUID childId, boolean isReview) {
+        if (!missionQuestionProperties.servingAutoQuarantineEnabled()) {
+            return missionQuestionSetFactory.create(mission.getId(), childId, isReview);
+        }
+
+        for (int attempt = 0; attempt < 2; attempt++) {
+            List<QuestionBank> selectedQuestions = missionQuestionSetFactory.create(mission.getId(), childId, isReview);
+            QuestionServingQualityGuard.ServingValidationResult validationResult =
+                    questionServingQualityGuard.validateForServing(mission, selectedQuestions);
+            if (validationResult.validQuestions().size() == missionQuestionProperties.setSize()) {
+                return validationResult.validQuestions();
+            }
+        }
+        throw new AimongException(ErrorCode.MISSION_SET_NOT_READY);
     }
 
     public List<UUID> parseQuestionIds(String questionIdsJson) {

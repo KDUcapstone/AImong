@@ -227,7 +227,7 @@ class SubmitServiceTest {
         List<UUID> questionIds = java.util.stream.IntStream.range(0, 10)
                 .mapToObj(index -> UUID.randomUUID())
                 .toList();
-        QuizAttempt attempt = QuizAttempt.create(childId, missionId, "[]", Instant.now().plusSeconds(600));
+        QuizAttempt attempt = QuizAttempt.create(childId, missionId, "[]", Instant.now().plusSeconds(600), reviewMode);
         setQuizAttemptId(attempt, quizAttemptId);
         when(quizAttemptRepository.findWithLockById(quizAttemptId)).thenReturn(Optional.of(attempt));
         when(quizService.parseQuestionIds("[]")).thenReturn(questionIds);
@@ -254,13 +254,8 @@ class SubmitServiceTest {
 
         if (reviewMode) {
             MissionDailyProgress progress = org.mockito.Mockito.mock(MissionDailyProgress.class);
-            when(missionDailyProgressRepository.findByChildIdAndMissionIdAndProgressDate(any(), any(), any()))
-                    .thenReturn(Optional.of(progress));
             when(missionDailyProgressRepository.findWithLockByChildIdAndMissionIdAndProgressDate(any(), any(), any()))
                     .thenReturn(Optional.of(progress));
-        } else {
-            when(missionDailyProgressRepository.findByChildIdAndMissionIdAndProgressDate(any(), any(), any()))
-                    .thenReturn(Optional.empty());
         }
 
         when(childProfileRepository.findById(childId)).thenReturn(Optional.of(childProfile));

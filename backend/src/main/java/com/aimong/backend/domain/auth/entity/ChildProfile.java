@@ -97,7 +97,7 @@ public class ChildProfile {
                 0,
                 0,
                 ProfileImageType.DEFAULT,
-                1,
+                0,
                 null,
                 null,
                 null

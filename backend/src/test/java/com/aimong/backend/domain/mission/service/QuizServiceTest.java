@@ -20,6 +20,7 @@ import com.aimong.backend.domain.mission.repository.MissionDailyProgressReposito
 import com.aimong.backend.domain.mission.repository.MissionRepository;
 import com.aimong.backend.domain.mission.repository.QuizAttemptRepository;
 import com.aimong.backend.domain.mission.service.question.MissionQuestionSetFactory;
+import com.aimong.backend.domain.mission.service.question.QuestionServingQualityGuard;
 import com.aimong.backend.domain.mission.service.question.postmvp.AsyncMissionRefillService;
 import com.aimong.backend.domain.mission.service.question.postmvp.ValidatedDynamicQuestionGenerationPort;
 import com.aimong.backend.domain.mission.service.generation.QuestionGenerationService;
@@ -59,6 +60,9 @@ class QuizServiceTest {
 
     @Mock
     private MissionQuestionSetFactory missionQuestionSetFactory;
+
+    @Mock
+    private QuestionServingQualityGuard questionServingQualityGuard;
 
     private final MissionQuestionProperties missionQuestionProperties =
             new MissionQuestionProperties(10, 30, false, false, false, false);
@@ -131,6 +135,7 @@ class QuizServiceTest {
                 childActivityService,
                 missionService,
                 missionQuestionSetFactory,
+                questionServingQualityGuard,
                 missionQuestionProperties,
                 objectMapper
         );
