@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/homeFragment"
+        android:icon="@drawable/ic_nav_home_color"
+        android:title="홈" />
+    <item
+        android:id="@+id/learningFragment"
+        android:icon="@drawable/ic_nav_study_color"
+        android:title="학습" />
+    <item
+        android:id="@+id/aiPracticeFragment"
+        android:icon="@drawable/ic_nav_ai_color"
+        android:title="AI실습" />
+    <item
+        android:id="@+id/collectionFragment"
+        android:icon="@drawable/ic_nav_collection_color"
+        android:title="수집" />
+    <item
+        android:id="@+id/myProfileFragment"
+        android:icon="@drawable/ic_nav_my_color"
+        android:title="MY" />
+</menu>
