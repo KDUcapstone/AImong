@@ -22,6 +22,7 @@ import org.hibernate.type.SqlTypes;
 public class Ticket {
 
     @Id
+    @Column(name = "ticket_id")
     private UUID id;
 
     @Column(name = "child_id", nullable = false)

@@ -48,7 +48,7 @@ public class ParentAuthService {
     @Transactional
     public ParentRegisterResponse register(String authorizationHeader, ParentRegisterRequest request) {
         FirebaseToken firebaseToken = verifyFirebaseToken(authorizationHeader);
-        ParentAccount parentAccount = parentAccountRepository.findByFirebaseUid(firebaseToken.getUid())
+        ParentAccount parentAccount = parentAccountRepository.findByParentId(firebaseToken.getUid())
                 .orElseGet(() -> parentAccountRepository.save(
                         ParentAccount.create(firebaseToken.getUid(), firebaseToken.getEmail())
                 ));
@@ -74,13 +74,13 @@ public class ParentAuthService {
     @Transactional
     public RegenerateCodeResponse regenerateCode(String authorizationHeader, String childId) {
         FirebaseToken firebaseToken = verifyFirebaseToken(authorizationHeader);
-        ParentAccount parentAccount = parentAccountRepository.findByFirebaseUid(firebaseToken.getUid())
+        ParentAccount parentAccount = parentAccountRepository.findByParentId(firebaseToken.getUid())
                 .orElseThrow(() -> new AimongException(ErrorCode.UNAUTHORIZED));
 
         ChildProfile childProfile = childProfileRepository.findWithLockById(parseChildId(childId))
                 .orElseThrow(() -> new AimongException(ErrorCode.CHILD_NOT_FOUND));
 
-        if (!childProfile.getParentAccount().getId().equals(parentAccount.getId())) {
+        if (!childProfile.getParentAccount().getParentId().equals(parentAccount.getParentId())) {
             throw new AimongException(ErrorCode.FORBIDDEN);
         }
 
@@ -90,7 +90,7 @@ public class ParentAuthService {
 
     @Transactional
     public FcmTokenResponse registerFcmToken(String firebaseUid, FcmTokenRequest request) {
-        ParentAccount parentAccount = parentAccountRepository.findByFirebaseUid(firebaseUid)
+        ParentAccount parentAccount = parentAccountRepository.findByParentId(firebaseUid)
                 .orElseThrow(() -> new AimongException(ErrorCode.UNAUTHORIZED));
         parentAccount.updateFcmToken(request.fcmToken());
         return new FcmTokenResponse(true);
@@ -98,11 +98,11 @@ public class ParentAuthService {
 
     @Transactional(readOnly = true)
     public ParentChildrenResponse getChildren(String firebaseUid) {
-        ParentAccount parentAccount = parentAccountRepository.findByFirebaseUid(firebaseUid)
+        ParentAccount parentAccount = parentAccountRepository.findByParentId(firebaseUid)
                 .orElseThrow(() -> new AimongException(ErrorCode.UNAUTHORIZED));
 
         return new ParentChildrenResponse(
-                childProfileRepository.findAllByParentAccountIdOrderByCreatedAtAsc(parentAccount.getId()).stream()
+                childProfileRepository.findAllByParentAccountParentIdOrderByCreatedAtAsc(parentAccount.getParentId()).stream()
                         .map(childProfile -> new ParentChildrenResponse.ChildSummary(
                                 childProfile.getId(),
                                 childProfile.getNickname(),

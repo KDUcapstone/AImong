@@ -149,7 +149,7 @@ class QuizServiceTest {
                         List.of(new MissionSummaryResponse(missionId, (short) 1, "AI Basics", null, true, false, null, false)),
                         stageProgress
                 ));
-        when(missionService.isUnlocked(mission, stageProgress)).thenReturn(true);
+        when(missionService.isUnlockedForChild(childId, mission, stageProgress)).thenReturn(true);
     }
 
     private Mission mission(UUID missionId) {

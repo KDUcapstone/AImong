@@ -52,7 +52,7 @@ aimong:
       # Post-MVP runtime generation switches. MVP serving path ignores them even if enabled.
       dynamic-generation-enabled: false
       async-refill-enabled: false
-      serving-auto-quarantine-enabled: true
+      serving-auto-quarantine-enabled: false
       report-auto-deactivate-enabled: false
     generation:
       target-pool-per-mission: 60

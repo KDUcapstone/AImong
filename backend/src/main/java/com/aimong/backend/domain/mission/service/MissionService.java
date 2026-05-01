@@ -48,6 +48,13 @@ public class MissionService {
         };
     }
 
+    public boolean isUnlockedForChild(UUID childId, Mission mission, StageProgressResponse stageProgress) {
+        if (mission.getStage() <= 3) {
+            return isUnlocked(mission, stageProgress);
+        }
+        return countCompletedMissionByStage(childId, (short) (mission.getStage() - 1)) >= 4;
+    }
+
     private MissionSummaryResponse toMissionSummary(UUID childId, Mission mission, StageProgressResponse stageProgress) {
         LocalDate completedAt = missionAttemptRepository.findLatestCompletedAt(
                         childId,
@@ -61,7 +68,7 @@ public class MissionService {
                 mission.getStage(),
                 mission.getTitle(),
                 mission.getDescription(),
-                isUnlocked(mission, stageProgress),
+                isUnlockedForChild(childId, mission, stageProgress),
                 isCompleted,
                 completedAt,
                 isCompleted

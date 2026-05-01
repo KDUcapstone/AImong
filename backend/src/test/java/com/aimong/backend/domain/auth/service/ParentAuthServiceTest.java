@@ -59,7 +59,7 @@ class ParentAuthServiceTest {
         when(firebaseToken.getUid()).thenReturn("firebase-uid");
         when(firebaseToken.getEmail()).thenReturn("parent@example.com");
         when(firebaseToken.getClaims()).thenReturn(Map.of("firebase", Map.of("sign_in_provider", "google.com")));
-        when(parentAccountRepository.findByFirebaseUid("firebase-uid")).thenReturn(Optional.empty());
+        when(parentAccountRepository.findByParentId("firebase-uid")).thenReturn(Optional.empty());
         when(parentAccountRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
         when(childProfileRepository.existsByCode(any())).thenReturn(false);
         when(childProfileRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
@@ -84,7 +84,7 @@ class ParentAuthServiceTest {
         when(firebaseAuth.verifyIdToken("valid-token")).thenReturn(firebaseToken);
         when(firebaseToken.getUid()).thenReturn("firebase-uid");
         when(firebaseToken.getClaims()).thenReturn(Map.of("firebase", Map.of("sign_in_provider", "google.com")));
-        when(parentAccountRepository.findByFirebaseUid("firebase-uid"))
+        when(parentAccountRepository.findByParentId("firebase-uid"))
                 .thenReturn(Optional.of(ParentAccount.create("firebase-uid", "parent@example.com")));
 
         assertThatThrownBy(() -> parentAuthService.regenerateCode("Bearer valid-token", "not-a-uuid"))

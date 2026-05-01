@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -36,9 +37,8 @@ import com.aimong.backend.domain.quest.service.AchievementService;
 import com.aimong.backend.domain.quest.service.DailyQuestService;
 import com.aimong.backend.domain.quest.service.WeeklyQuestService;
 import com.aimong.backend.domain.streak.entity.StreakRecord;
-import com.aimong.backend.domain.streak.repository.FriendStreakRepository;
-import com.aimong.backend.domain.streak.repository.MilestoneRewardRepository;
 import com.aimong.backend.domain.streak.repository.StreakRecordRepository;
+import com.aimong.backend.domain.streak.service.MilestoneService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.lang.reflect.Field;
 import java.time.Instant;
@@ -65,8 +65,7 @@ class SubmitServiceTest {
     @Mock private ChildActivityService childActivityService;
     @Mock private TicketRepository ticketRepository;
     @Mock private StreakRecordRepository streakRecordRepository;
-    @Mock private FriendStreakRepository friendStreakRepository;
-    @Mock private MilestoneRewardRepository milestoneRewardRepository;
+    @Mock private MilestoneService milestoneService;
     @Mock private DailyQuestService dailyQuestService;
     @Mock private WeeklyQuestService weeklyQuestService;
     @Mock private AchievementService achievementService;
@@ -123,6 +122,31 @@ class SubmitServiceTest {
             assertThat(result.isReview()).isTrue();
             assertThat(result.isCorrect()).isTrue();
         });
+    }
+
+    @Test
+    void sameDayCompletedMissionSubmissionIsTreatedAsReviewEvenWhenAttemptWasIssuedAsNormal() {
+        SubmitService service = service();
+        Fixture fixture = fixture(false, true, "\"No\"", "No");
+
+        SubmitResponse response = service.submit(fixture.childId(), fixture.missionId(), fixture.request());
+
+        assertThat(response.mode()).isEqualTo("review");
+        assertThat(response.progressApplied()).isFalse();
+        assertThat(response.xpEarned()).isZero();
+        assertThat(response.rewards()).isEmpty();
+        assertThat(response.isReview()).isTrue();
+
+        ArgumentCaptor<MissionAttempt> attemptCaptor = ArgumentCaptor.forClass(MissionAttempt.class);
+        verify(missionAttemptRepository).save(attemptCaptor.capture());
+        assertThat(attemptCaptor.getValue().isReview()).isTrue();
+        assertThat(attemptCaptor.getValue().getXpEarned()).isZero();
+
+        verify(missionDailyProgressRepository, never()).save(any(MissionDailyProgress.class));
+        verify(petGrowthService, never()).applyMissionReward(any(), anyInt());
+        verify(dailyQuestService, never()).updateForMissionSuccess(any(), any(), any());
+        verify(weeklyQuestService, never()).updateForMissionSuccess(any(), any(), any());
+        verify(achievementService, never()).unlockByTotalXp(any(), any());
     }
 
     @Test
@@ -193,8 +217,7 @@ class SubmitServiceTest {
                 childActivityService,
                 ticketRepository,
                 streakRecordRepository,
-                friendStreakRepository,
-                milestoneRewardRepository,
+                milestoneService,
                 dailyQuestService,
                 weeklyQuestService,
                 achievementService,
@@ -210,6 +233,10 @@ class SubmitServiceTest {
     }
 
     private Fixture fixture(boolean reviewMode, String answerPayload, String selected) {
+        return fixture(reviewMode, false, answerPayload, selected);
+    }
+
+    private Fixture fixture(boolean reviewMode, boolean alreadyCompletedToday, String answerPayload, String selected) {
         UUID childId = UUID.randomUUID();
         UUID missionId = UUID.randomUUID();
         UUID quizAttemptId = UUID.randomUUID();
@@ -222,7 +249,7 @@ class SubmitServiceTest {
         when(mission.getId()).thenReturn(missionId);
         when(missionRepository.findById(missionId)).thenReturn(Optional.of(mission));
         when(missionService.getMissions(childId)).thenReturn(new MissionListResponse(List.of(), stageProgress));
-        when(missionService.isUnlocked(mission, stageProgress)).thenReturn(true);
+        when(missionService.isUnlockedForChild(childId, mission, stageProgress)).thenReturn(true);
 
         List<UUID> questionIds = java.util.stream.IntStream.range(0, 10)
                 .mapToObj(index -> UUID.randomUUID())
@@ -252,7 +279,21 @@ class SubmitServiceTest {
         when(missionAttemptRepository.save(any(MissionAttempt.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(missionAnswerResultRepository.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
-        if (reviewMode) {
+        if (alreadyCompletedToday) {
+            MissionDailyProgress progress = MissionDailyProgress.create(
+                    childId,
+                    missionId,
+                    java.time.LocalDate.now(),
+                    Instant.now(),
+                    10,
+                    10,
+                    10
+            );
+            when(missionDailyProgressRepository.findByChildIdAndMissionIdAndProgressDate(any(), any(), any()))
+                    .thenReturn(Optional.of(progress));
+            when(missionDailyProgressRepository.findWithLockByChildIdAndMissionIdAndProgressDate(any(), any(), any()))
+                    .thenReturn(Optional.of(progress));
+        } else if (reviewMode) {
             MissionDailyProgress progress = org.mockito.Mockito.mock(MissionDailyProgress.class);
             when(missionDailyProgressRepository.findWithLockByChildIdAndMissionIdAndProgressDate(any(), any(), any()))
                     .thenReturn(Optional.of(progress));
@@ -264,15 +305,16 @@ class SubmitServiceTest {
         when(ticketRepository.countByChildIdAndTicketTypeAndUsedAtIsNull(childId, TicketType.RARE)).thenReturn(0L);
         when(ticketRepository.countByChildIdAndTicketTypeAndUsedAtIsNull(childId, TicketType.EPIC)).thenReturn(0L);
         when(streakRecordRepository.findWithLockByChildId(childId)).thenReturn(Optional.of(streakRecord));
-        if (!reviewMode && selected.equals("Yes")) {
+        if (!reviewMode && !alreadyCompletedToday && selected.equals("Yes")) {
             return new Fixture(childId, missionId, request);
         }
-        if (!reviewMode) {
+        if (!reviewMode && !alreadyCompletedToday) {
             when(petGrowthService.findEquippedPetGrade(childId)).thenReturn(null);
-            when(friendStreakRepository.findById(childId)).thenReturn(Optional.empty());
             when(missionDailyProgressRepository.save(any(MissionDailyProgress.class))).thenAnswer(invocation -> invocation.getArgument(0));
             when(petGrowthService.applyMissionReward(eq(childId), anyInt()))
                     .thenReturn(PetGrowthService.PetGrowthResult.none());
+            when(milestoneService.applyStreakRewards(eq(childId), any(StreakRecord.class)))
+                    .thenReturn(List.of());
         }
 
         return new Fixture(childId, missionId, request);

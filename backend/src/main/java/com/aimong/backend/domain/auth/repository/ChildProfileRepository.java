@@ -14,7 +14,7 @@ public interface ChildProfileRepository extends JpaRepository<ChildProfile, UUID
 
     boolean existsByCode(String code);
 
-    List<ChildProfile> findAllByParentAccountIdOrderByCreatedAtAsc(UUID parentAccountId);
+    List<ChildProfile> findAllByParentAccountParentIdOrderByCreatedAtAsc(String parentId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<ChildProfile> findWithLockById(UUID id);

@@ -5,4 +5,8 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface FriendStreakRepository extends JpaRepository<FriendStreak, UUID> {
+
+    boolean existsByPartnerChildId(UUID partnerChildId);
+
+    void deleteByChildIdOrPartnerChildId(UUID childId, UUID partnerChildId);
 }

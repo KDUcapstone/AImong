@@ -33,14 +33,11 @@ public class StreakRecord {
     @Column(name = "today_mission_count", nullable = false)
     private int todayMissionCount;
 
-    @Column(name = "shield_count", nullable = false)
-    private int shieldCount;
-
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
     public static StreakRecord create(UUID childId) {
-        return new StreakRecord(childId, 0, null, 0, 0, null);
+        return new StreakRecord(childId, 0, null, 0, null);
     }
 
     public void recordMissionCompletion(LocalDate today) {
@@ -61,8 +58,14 @@ public class StreakRecord {
         updatedAt = Instant.now();
     }
 
-    public void addShield(int count) {
-        shieldCount += count;
+    public void resetStreak() {
+        continuousDays = 0;
+        todayMissionCount = 0;
+        updatedAt = Instant.now();
+    }
+
+    public void resetTodayMissionCount() {
+        todayMissionCount = 0;
         updatedAt = Instant.now();
     }
 

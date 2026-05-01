@@ -7,7 +7,6 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
-import java.time.Instant;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -18,7 +17,7 @@ import org.hibernate.type.SqlTypes;
 
 @Getter
 @Entity
-@Table(name = "achievements")
+@Table(name = "achievement_progress")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class Achievement {
@@ -34,17 +33,36 @@ public class Achievement {
     @Column(name = "achievement_type", nullable = false)
     private AchievementType achievementType;
 
-    @Column(name = "unlocked_at", nullable = false)
-    private Instant unlockedAt;
+    @Column(name = "current_value", nullable = false)
+    private int currentValue;
 
-    public static Achievement unlock(UUID childId, AchievementType achievementType) {
-        return new Achievement(UUID.randomUUID(), childId, achievementType, null);
+    @Column(name = "completed", nullable = false)
+    private boolean completed;
+
+    @Column(name = "completed_at")
+    private java.time.LocalDate completedAt;
+
+    public static Achievement create(UUID childId, AchievementType achievementType) {
+        return new Achievement(UUID.randomUUID(), childId, achievementType, 0, false, null);
+    }
+
+    public void updateProgress(int currentValue) {
+        this.currentValue = Math.max(this.currentValue, currentValue);
+    }
+
+    public void complete(java.time.LocalDate completedAt) {
+        this.completed = true;
+        this.completedAt = completedAt;
+    }
+
+    public boolean isIncomplete() {
+        return !completed;
     }
 
     @PrePersist
     void prePersist() {
-        if (unlockedAt == null) {
-            unlockedAt = Instant.now();
+        if (completed && completedAt == null) {
+            completedAt = java.time.LocalDate.now();
         }
     }
 }

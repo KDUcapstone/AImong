@@ -34,18 +34,18 @@ public class QuestionBank {
     private String prompt;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "options_json", columnDefinition = "jsonb")
+    @Column(name = "options", columnDefinition = "jsonb")
     private String optionsJson;
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "content_tags", columnDefinition = "jsonb")
     private String contentTagsJson;
 
-    @Column(name = "curriculum_ref")
+    @Column(name = "curriculum_ref", nullable = false)
     private String curriculumRef;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "difficulty")
+    @Column(name = "difficulty", nullable = false)
     private DifficultyBand difficulty;
 
     @Column(name = "legacy_numeric_difficulty")

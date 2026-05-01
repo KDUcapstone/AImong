@@ -20,7 +20,7 @@ import org.hibernate.type.SqlTypes;
 
 @Getter
 @Entity
-@Table(name = "fragments")
+@Table(name = "pet_fragments")
 @IdClass(FragmentId.class)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)

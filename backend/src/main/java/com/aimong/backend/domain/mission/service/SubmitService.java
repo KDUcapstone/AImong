@@ -28,11 +28,9 @@ import com.aimong.backend.domain.pet.service.PetGrowthService;
 import com.aimong.backend.domain.quest.service.AchievementService;
 import com.aimong.backend.domain.quest.service.DailyQuestService;
 import com.aimong.backend.domain.quest.service.WeeklyQuestService;
-import com.aimong.backend.domain.streak.entity.MilestoneReward;
 import com.aimong.backend.domain.streak.entity.StreakRecord;
-import com.aimong.backend.domain.streak.repository.FriendStreakRepository;
-import com.aimong.backend.domain.streak.repository.MilestoneRewardRepository;
 import com.aimong.backend.domain.streak.repository.StreakRecordRepository;
+import com.aimong.backend.domain.streak.service.MilestoneService;
 import com.aimong.backend.global.exception.AimongException;
 import com.aimong.backend.global.exception.ErrorCode;
 import com.aimong.backend.global.util.KstDateUtils;
@@ -74,8 +72,7 @@ public class SubmitService {
     private final ChildActivityService childActivityService;
     private final TicketRepository ticketRepository;
     private final StreakRecordRepository streakRecordRepository;
-    private final FriendStreakRepository friendStreakRepository;
-    private final MilestoneRewardRepository milestoneRewardRepository;
+    private final MilestoneService milestoneService;
     private final DailyQuestService dailyQuestService;
     private final WeeklyQuestService weeklyQuestService;
     private final AchievementService achievementService;
@@ -92,7 +89,7 @@ public class SubmitService {
                 .orElseThrow(() -> new AimongException(ErrorCode.MISSION_NOT_FOUND));
 
         StageProgressResponse stageProgress = missionService.getMissions(childId).stageProgress();
-        if (!missionService.isUnlocked(mission, stageProgress)) {
+        if (!missionService.isUnlockedForChild(childId, mission, stageProgress)) {
             throw new AimongException(ErrorCode.MISSION_LOCKED);
         }
 
@@ -143,7 +140,12 @@ public class SubmitService {
         LocalDate today = KstDateUtils.today();
         LocalDate weekStart = KstDateUtils.currentWeekStart();
         int attemptNo = Math.toIntExact(missionAttemptRepository.countByChildIdAndMissionIdAndAttemptDate(childId, missionId, today)) + 1;
-        boolean isReview = quizAttempt.isReview();
+        boolean alreadyCompletedToday = missionDailyProgressRepository.findByChildIdAndMissionIdAndProgressDate(
+                childId,
+                missionId,
+                today
+        ).isPresent();
+        boolean isReview = quizAttempt.isReview() || alreadyCompletedToday;
         ChildProfile childProfile = childProfileRepository.findById(childId)
                 .orElseThrow(() -> new AimongException(ErrorCode.CHILD_NOT_FOUND));
         StreakRecord streakRecord = streakRecordRepository.findWithLockByChildId(childId)
@@ -188,7 +190,7 @@ public class SubmitService {
 
         String equippedPetGrade = petGrowthService.findEquippedPetGrade(childId);
         int bonusXp = calculatePetBonusXp(equippedPetGrade, wrongCount);
-        boolean streakBonusApplied = hasTodayCompletedPartner(childId, today);
+        boolean streakBonusApplied = false;
         int xpEarned = calculateEarnedXp(bonusXp, streakBonusApplied);
         int previousLevel = childProfile.getLevel();
 
@@ -221,7 +223,7 @@ public class SubmitService {
         }
 
         int currentLevel = childProfile.getLevel();
-        List<SubmitResponse.RewardResponse> levelRewards = applyLevelRewards(childId, previousLevel, currentLevel, streakRecord);
+        List<SubmitResponse.RewardResponse> levelRewards = applyLevelRewards(childId, previousLevel, currentLevel, childProfile);
 
         dailyQuestService.updateForMissionSuccess(childId, childProfile, today);
         weeklyQuestService.updateForMissionSuccess(childId, childProfile, weekStart);
@@ -233,7 +235,7 @@ public class SubmitService {
 
         List<SubmitResponse.RewardResponse> rewards = new ArrayList<>(levelRewards);
         rewards.addAll(toRewardResponses(petGrowthResult.rewards()));
-        rewards.addAll(applyFixedStreakRewards(childId, streakRecord));
+        rewards.addAll(milestoneService.applyStreakRewards(childId, streakRecord));
 
         return new SubmitResponse(
                 MODE_NORMAL,
@@ -364,17 +366,6 @@ public class SubmitService {
         return (int) Math.floor(xpEarned * 1.5d);
     }
 
-    private boolean hasTodayCompletedPartner(UUID childId, LocalDate today) {
-        return friendStreakRepository.findById(childId)
-                .flatMap(friendStreak -> streakRecordRepository.findById(friendStreak.getPartnerChildId()))
-                .map(partnerStreak -> isCompletedToday(partnerStreak, today))
-                .orElse(false);
-    }
-
-    private boolean isCompletedToday(StreakRecord streakRecord, LocalDate today) {
-        return today.equals(streakRecord.getLastCompletedDate()) && streakRecord.getTodayMissionCount() > 0;
-    }
-
     private void saveAnswerResults(
             UUID attemptId,
             UUID childId,
@@ -400,11 +391,11 @@ public class SubmitService {
         missionAnswerResultRepository.saveAll(results);
     }
 
-    private List<SubmitResponse.RewardResponse> applyLevelRewards(UUID childId, int previousLevel, int currentLevel, StreakRecord streakRecord) {
+    private List<SubmitResponse.RewardResponse> applyLevelRewards(UUID childId, int previousLevel, int currentLevel, ChildProfile childProfile) {
         List<SubmitResponse.RewardResponse> rewards = new ArrayList<>();
         for (int level = previousLevel + 1; level <= currentLevel; level++) {
             if (level % 3 == 0) {
-                streakRecord.addShield(1);
+                childProfile.addShield(1);
                 rewards.add(new SubmitResponse.RewardResponse(
                         "SHIELD",
                         null,
@@ -423,33 +414,6 @@ public class SubmitService {
                         "LEVEL_REWARD_LV" + level
                 ));
             }
-        }
-        return rewards;
-    }
-
-    private List<SubmitResponse.RewardResponse> applyFixedStreakRewards(UUID childId, StreakRecord streakRecord) {
-        List<SubmitResponse.RewardResponse> rewards = new ArrayList<>();
-        if (streakRecord.getContinuousDays() == 7 && !milestoneRewardRepository.existsByChildIdAndMilestoneDays(childId, (short) 7)) {
-            grantTickets(childId, TicketType.RARE, 1);
-            milestoneRewardRepository.save(MilestoneReward.create(childId, (short) 7));
-            rewards.add(new SubmitResponse.RewardResponse(
-                    "TICKET",
-                    "RARE",
-                    1,
-                    null,
-                    "STREAK_MILESTONE_DAY7"
-            ));
-        }
-        if (streakRecord.getContinuousDays() == 30 && !milestoneRewardRepository.existsByChildIdAndMilestoneDays(childId, (short) 30)) {
-            grantTickets(childId, TicketType.EPIC, 1);
-            milestoneRewardRepository.save(MilestoneReward.create(childId, (short) 30));
-            rewards.add(new SubmitResponse.RewardResponse(
-                    "TICKET",
-                    "EPIC",
-                    1,
-                    null,
-                    "STREAK_MILESTONE_DAY30"
-            ));
         }
         return rewards;
     }
