@@ -4,13 +4,10 @@ ALTER TABLE public.mission_attempts
     ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT now();
 
 UPDATE public.mission_attempts
-SET is_review = COALESCE(is_review, attempt_no > 1),
-    is_passed = COALESCE(is_passed, score * 10 >= total * 8)
-WHERE is_review IS NULL
-   OR is_passed IS NULL;
+SET is_passed = COALESCE(is_passed, score * 10 >= total * 8)
+WHERE is_passed IS NULL;
 
 ALTER TABLE public.mission_attempts
-    ALTER COLUMN is_review SET NOT NULL,
     ALTER COLUMN is_passed SET NOT NULL;
 
 CREATE INDEX IF NOT EXISTS idx_mission_attempts_child_completed
