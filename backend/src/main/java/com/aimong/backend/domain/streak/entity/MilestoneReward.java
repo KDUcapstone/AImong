@@ -1,44 +1,44 @@
 package com.aimong.backend.domain.streak.entity;
 
-import com.aimong.backend.domain.auth.entity.ChildProfile;
-import jakarta.persistence.*;
-import lombok.*;
-
-import java.time.OffsetDateTime;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
+import java.time.Instant;
 import java.util.UUID;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-@Entity
-@Table(
-    name = "milestone_rewards",
-    uniqueConstraints = {
-        @UniqueConstraint(name = "uk_milestone_rewards_child_days", columnNames = {"child_id", "milestone_days"})
-    }
-)
 @Getter
+@Entity
+@Table(name = "milestone_rewards")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class MilestoneReward {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(columnDefinition = "uuid", updatable = false, nullable = false)
     private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "child_id", nullable = false)
-    private ChildProfile child;
+    @Column(name = "child_id", nullable = false)
+    private UUID childId;
 
     @Column(name = "milestone_days", nullable = false)
-    private Short milestoneDays;
+    private short milestoneDays;
 
-    @Column(name = "rewarded_at", nullable = false, updatable = false)
-    private OffsetDateTime rewardedAt;
+    @Column(name = "rewarded_at", nullable = false)
+    private Instant rewardedAt;
+
+    public static MilestoneReward create(UUID childId, short milestoneDays) {
+        return new MilestoneReward(UUID.randomUUID(), childId, milestoneDays, null);
+    }
 
     @PrePersist
-    protected void onCreate() {
+    void prePersist() {
         if (rewardedAt == null) {
-            rewardedAt = OffsetDateTime.now();
+            rewardedAt = Instant.now();
         }
     }
 }

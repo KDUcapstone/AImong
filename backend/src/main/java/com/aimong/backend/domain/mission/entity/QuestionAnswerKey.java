@@ -2,51 +2,46 @@ package com.aimong.backend.domain.mission.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.MapsId;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
+import java.time.Instant;
+import java.util.UUID;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
-import java.time.OffsetDateTime;
-import java.util.UUID;
-
+@Getter
 @Entity
 @Table(name = "question_answer_keys", schema = "private")
-@Getter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class QuestionAnswerKey {
 
     @Id
-    @Column(name = "question_id", columnDefinition = "uuid", nullable = false)
+    @Column(name = "question_id")
     private UUID questionId;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @MapsId
-    @JoinColumn(name = "question_id")
-    private QuestionBank question;
-
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "answer_payload", nullable = false, columnDefinition = "jsonb")
     private String answerPayload;
 
     @Column(name = "explanation", nullable = false)
     private String explanation;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private OffsetDateTime createdAt;
+    @Column(name = "created_at", nullable = false)
+    private Instant createdAt;
 
-    @PrePersist
-    protected void onCreate() {
-        if (createdAt == null) {
-            createdAt = OffsetDateTime.now();
-        }
+    public static QuestionAnswerKey create(
+            UUID questionId,
+            String answerPayload,
+            String explanation
+    ) {
+        QuestionAnswerKey questionAnswerKey = new QuestionAnswerKey();
+        questionAnswerKey.questionId = questionId;
+        questionAnswerKey.answerPayload = answerPayload;
+        questionAnswerKey.explanation = explanation;
+        questionAnswerKey.createdAt = Instant.now();
+        return questionAnswerKey;
     }
 }

@@ -1,70 +1,91 @@
 package com.aimong.backend.domain.gacha.entity;
 
-import com.aimong.backend.domain.auth.entity.ChildProfile;
-import com.aimong.backend.global.enums.PetGrade;
-import com.aimong.backend.global.enums.TicketType;
-import jakarta.persistence.*;
-import lombok.*;
-import org.hibernate.annotations.Check;
-
-import java.time.OffsetDateTime;
+import com.aimong.backend.domain.pet.entity.PetGrade;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
+import java.time.Instant;
 import java.util.UUID;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
-@Entity
-@Table(
-    name = "gacha_pulls",
-    indexes = {
-        @Index(name = "idx_gacha_pulls_child", columnList = "child_id, pulled_at")
-    }
-)
-@Check(constraints = "(is_new = true AND granted_pet_id IS NOT NULL AND fragments_got = 0) OR (is_new = false AND granted_pet_id IS NULL AND fragments_got > 0)")
 @Getter
+@Entity
+@Table(name = "gacha_pulls")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class GachaPull {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(columnDefinition = "uuid", updatable = false, nullable = false)
     private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "child_id", nullable = false)
-    private ChildProfile child;
+    @Column(name = "child_id", nullable = false)
+    private UUID childId;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "ticket_type", nullable = false, columnDefinition = "ticket_type_enum")
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "ticket_type", nullable = false)
     private TicketType ticketType;
 
     @Column(name = "result_pet_code", nullable = false)
     private String resultPetCode;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "grade", nullable = false, columnDefinition = "pet_grade_enum")
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "grade", nullable = false)
     private PetGrade grade;
 
     @Column(name = "is_new", nullable = false)
-    private Boolean isNew;
+    private boolean isNew;
 
-    @Column(name = "granted_pet_id", columnDefinition = "uuid")
+    @Column(name = "granted_pet_id")
     private UUID grantedPetId;
 
     @Column(name = "fragments_got", nullable = false)
-    @Builder.Default
-    private Integer fragmentsGot = 0;
+    private int fragmentsGot;
 
     @Column(name = "sr_miss_before", nullable = false)
-    @Builder.Default
-    private Integer srMissBefore = 0;
+    private int srMissBefore;
 
-    @Column(name = "pulled_at", nullable = false, updatable = false)
-    private OffsetDateTime pulledAt;
+    @Column(name = "pulled_at", nullable = false)
+    private Instant pulledAt;
+
+    public static GachaPull create(
+            UUID childId,
+            TicketType ticketType,
+            String resultPetCode,
+            PetGrade grade,
+            boolean isNew,
+            UUID grantedPetId,
+            int fragmentsGot,
+            int srMissBefore
+    ) {
+        return new GachaPull(
+                UUID.randomUUID(),
+                childId,
+                ticketType,
+                resultPetCode,
+                grade,
+                isNew,
+                grantedPetId,
+                fragmentsGot,
+                srMissBefore,
+                null
+        );
+    }
 
     @PrePersist
-    protected void onCreate() {
+    void prePersist() {
         if (pulledAt == null) {
-            pulledAt = OffsetDateTime.now();
+            pulledAt = Instant.now();
         }
     }
 }

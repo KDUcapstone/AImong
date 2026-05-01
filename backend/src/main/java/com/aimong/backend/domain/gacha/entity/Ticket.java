@@ -1,69 +1,63 @@
 package com.aimong.backend.domain.gacha.entity;
 
-import com.aimong.backend.domain.auth.entity.ChildProfile;
-import com.aimong.backend.global.enums.TicketType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Index;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import java.time.Instant;
+import java.util.UUID;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
-import java.time.OffsetDateTime;
-import java.util.UUID;
-
-@Entity
-@Table(
-    name = "tickets",
-    indexes = {
-        @Index(name = "idx_tickets_child_unused", columnList = "child_id, ticket_type")
-    }
-)
 @Getter
+@Entity
+@Table(name = "tickets")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@Builder
 public class Ticket {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "ticket_id", columnDefinition = "uuid", updatable = false, nullable = false)
-    private UUID ticketId;
+    private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "child_id", nullable = false)
-    private ChildProfile child;
+    @Column(name = "child_id", nullable = false)
+    private UUID childId;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "ticket_type", nullable = false, columnDefinition = "ticket_type_enum")
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "ticket_type", nullable = false)
     private TicketType ticketType;
 
     @Column(name = "used_at")
-    private OffsetDateTime usedAt;
+    private Instant usedAt;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private OffsetDateTime createdAt;
+    @Column(name = "created_at", nullable = false)
+    private Instant createdAt;
 
-    @PrePersist
-    protected void onCreate() {
-        if (createdAt == null) {
-            createdAt = OffsetDateTime.now();
-        }
+    public static Ticket issue(UUID childId, TicketType ticketType) {
+        Ticket ticket = new Ticket();
+        ticket.id = UUID.randomUUID();
+        ticket.childId = childId;
+        ticket.ticketType = ticketType;
+        ticket.createdAt = Instant.now();
+        return ticket;
     }
 
     public void markUsed() {
-        this.usedAt = OffsetDateTime.now();
+        usedAt = Instant.now();
+    }
+
+    @PrePersist
+    void prePersist() {
+        if (id == null) {
+            id = UUID.randomUUID();
+        }
+        if (createdAt == null) {
+            createdAt = Instant.now();
+        }
     }
 }

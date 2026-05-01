@@ -1,0 +1,35 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: aimong-local-postgres
+    environment:
+      POSTGRES_DB: aimong_local
+      POSTGRES_USER: aimong
+      POSTGRES_PASSWORD: aimong
+    ports:
+      - "54329:5432"
+    volumes:
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+      - aimong-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aimong -d aimong_local"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: aimong-local-redis
+    ports:
+      - "6380:6379"
+    volumes:
+      - aimong-redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  aimong-postgres-data:
+  aimong-redis-data:

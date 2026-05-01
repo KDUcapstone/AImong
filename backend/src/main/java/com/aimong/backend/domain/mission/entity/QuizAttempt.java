@@ -1,76 +1,68 @@
 package com.aimong.backend.domain.mission.entity;
 
-import com.aimong.backend.domain.auth.entity.ChildProfile;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Index;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import java.time.Instant;
+import java.util.UUID;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
-import java.time.OffsetDateTime;
-import java.util.UUID;
-
-@Entity
-@Table(
-    name = "quiz_attempts",
-    indexes = {
-        @Index(name = "idx_quiz_attempts_child", columnList = "child_id, created_at")
-    }
-)
 @Getter
+@Entity
+@Table(name = "quiz_attempts")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@Builder
 public class QuizAttempt {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(columnDefinition = "uuid", updatable = false, nullable = false)
     private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "child_id", nullable = false)
-    private ChildProfile child;
+    @Column(name = "child_id", nullable = false)
+    private UUID childId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "mission_id", nullable = false)
-    private Mission mission;
+    @Column(name = "mission_id", nullable = false)
+    private UUID missionId;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "question_ids_json", nullable = false, columnDefinition = "jsonb")
     private String questionIdsJson;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private OffsetDateTime createdAt;
+    @Column(name = "created_at", nullable = false)
+    private Instant createdAt;
 
     @Column(name = "expires_at", nullable = false)
-    private OffsetDateTime expiresAt;
+    private Instant expiresAt;
+
+    @Column(name = "is_review", nullable = false)
+    private boolean isReview;
 
     @Column(name = "submitted_at")
-    private OffsetDateTime submittedAt;
+    private Instant submittedAt;
+
+    public static QuizAttempt create(UUID childId, UUID missionId, String questionIdsJson, Instant expiresAt, boolean isReview) {
+        QuizAttempt attempt = new QuizAttempt();
+        attempt.id = UUID.randomUUID();
+        attempt.childId = childId;
+        attempt.missionId = missionId;
+        attempt.questionIdsJson = questionIdsJson;
+        attempt.expiresAt = expiresAt;
+        attempt.isReview = isReview;
+        return attempt;
+    }
+
+    public void markSubmitted(Instant submittedAt) {
+        this.submittedAt = submittedAt;
+    }
 
     @PrePersist
-    protected void onCreate() {
+    void prePersist() {
         if (createdAt == null) {
-            createdAt = OffsetDateTime.now();
+            createdAt = Instant.now();
         }
-    }
-
-    public boolean isExpired() {
-        return OffsetDateTime.now().isAfter(expiresAt);
-    }
-
-    public void submit() {
-        this.submittedAt = OffsetDateTime.now();
     }
 }

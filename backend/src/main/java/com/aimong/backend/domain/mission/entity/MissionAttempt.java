@@ -1,77 +1,95 @@
 package com.aimong.backend.domain.mission.entity;
 
-import com.aimong.backend.domain.auth.entity.ChildProfile;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Index;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.UUID;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.Check;
 
-import java.time.OffsetDateTime;
-import java.util.UUID;
-
-@Entity
-@Table(
-    name = "mission_attempts",
-    indexes = {
-        @Index(name = "idx_mission_attempts_child_date", columnList = "child_id, created_at")
-    }
-)
-@Check(constraints = "score <= total")
 @Getter
+@Entity
+@Table(name = "mission_attempts")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@Builder
 public class MissionAttempt {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "attempt_id", columnDefinition = "uuid", updatable = false, nullable = false)
-    private UUID attemptId;
+    private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "child_id", nullable = false)
-    private ChildProfile child;
+    @Column(name = "child_id", nullable = false)
+    private UUID childId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "mission_id", nullable = false)
-    private Mission mission;
+    @Column(name = "mission_id", nullable = false)
+    private UUID missionId;
 
-    @Column(name = "is_review", nullable = false)
-    @Builder.Default
-    private Boolean isReview = false;
+    @Column(name = "attempt_date", nullable = false)
+    private LocalDate attemptDate;
 
-    @Column(name = "is_passed", nullable = false)
-    private Boolean isPassed;
+    @Column(name = "attempt_no", nullable = false)
+    private int attemptNo;
 
     @Column(name = "score", nullable = false)
-    private Integer score;
+    private int score;
 
     @Column(name = "total", nullable = false)
-    private Integer total;
+    private int total;
+
+    @Column(name = "is_review", nullable = false)
+    private boolean review;
+
+    @Column(name = "is_passed", nullable = false)
+    private boolean passed;
 
     @Column(name = "xp_earned", nullable = false)
-    private Integer xpEarned;
+    private int xpEarned;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private OffsetDateTime createdAt;
+    @Column(name = "created_at", nullable = false)
+    private Instant createdAt;
+
+    @Column(name = "submitted_at", nullable = false)
+    private Instant submittedAt;
+
+    public static MissionAttempt create(
+            UUID childId,
+            UUID missionId,
+            LocalDate attemptDate,
+            int attemptNo,
+            int score,
+            int total,
+            boolean isReview,
+            boolean isPassed,
+            int xpEarned
+    ) {
+        MissionAttempt attempt = new MissionAttempt();
+        attempt.id = UUID.randomUUID();
+        attempt.childId = childId;
+        attempt.missionId = missionId;
+        attempt.attemptDate = attemptDate;
+        attempt.attemptNo = attemptNo;
+        attempt.score = score;
+        attempt.total = total;
+        attempt.review = isReview;
+        attempt.passed = isPassed;
+        attempt.xpEarned = xpEarned;
+        return attempt;
+    }
+
+    public boolean isReview() {
+        return review;
+    }
 
     @PrePersist
-    protected void onCreate() {
+    void prePersist() {
         if (createdAt == null) {
-            createdAt = OffsetDateTime.now();
+            createdAt = Instant.now();
+        }
+        if (submittedAt == null) {
+            submittedAt = Instant.now();
         }
     }
 }

@@ -1,89 +1,119 @@
 package com.aimong.backend.domain.mission.entity;
 
-import com.aimong.backend.global.enums.QuestionDifficulty;
-import com.aimong.backend.global.enums.QuestionGenerationPhase;
-import com.aimong.backend.global.enums.QuestionSource;
-import com.aimong.backend.global.enums.QuestionType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import java.time.Instant;
+import java.util.UUID;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
-import java.time.OffsetDateTime;
-import java.util.UUID;
-
+@Getter
 @Entity
 @Table(name = "question_bank")
-@Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@Builder
 public class QuestionBank {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(columnDefinition = "uuid", updatable = false, nullable = false)
     private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "mission_id")
-    private Mission mission;
+    @Column(name = "mission_id", nullable = false)
+    private UUID missionId;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "question_type", nullable = false, columnDefinition = "question_type_enum")
+    @Column(name = "question_type", nullable = false)
     private QuestionType questionType;
 
     @Column(name = "prompt", nullable = false)
     private String prompt;
 
-    @Column(name = "options", columnDefinition = "jsonb")
-    private String options;
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "options_json", columnDefinition = "jsonb")
+    private String optionsJson;
 
-    @Column(name = "content_tags", nullable = false, columnDefinition = "jsonb")
-    @Builder.Default
-    private String contentTags = "[]";
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "content_tags", columnDefinition = "jsonb")
+    private String contentTagsJson;
 
-    @Column(name = "curriculum_ref", nullable = false)
+    @Column(name = "curriculum_ref")
     private String curriculumRef;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "difficulty", nullable = false, columnDefinition = "question_difficulty_enum")
-    private QuestionDifficulty difficulty;
+    @Column(name = "difficulty")
+    private DifficultyBand difficulty;
+
+    @Column(name = "legacy_numeric_difficulty")
+    private Short legacyNumericDifficulty;
+
+    @Column(name = "source_type", nullable = false)
+    private String sourceType;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "source_type", nullable = false, columnDefinition = "question_source_enum")
-    @Builder.Default
-    private QuestionSource sourceType = QuestionSource.STATIC;
+    @Column(name = "generation_phase")
+    private GenerationPhase generationPhase;
+
+    @Column(name = "pack_no")
+    private Short packNo;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "generation_phase", nullable = false, columnDefinition = "question_generation_phase_enum")
-    @Builder.Default
-    private QuestionGenerationPhase generationPhase = QuestionGenerationPhase.PREGENERATED;
+    @Column(name = "difficulty_band", length = 16)
+    private DifficultyBand difficultyBand;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private OffsetDateTime createdAt;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "question_pool_status", length = 16)
+    private QuestionPoolStatus questionPoolStatus;
+
+    @Column(name = "created_at", nullable = false)
+    private Instant createdAt;
 
     @Column(name = "is_active", nullable = false)
-    @Builder.Default
-    private Boolean isActive = true;
+    private boolean isActive;
 
-    @PrePersist
-    protected void onCreate() {
-        if (createdAt == null) {
-            createdAt = OffsetDateTime.now();
-        }
+    public static QuestionBank create(
+            UUID missionId,
+            QuestionType questionType,
+            String prompt,
+            String optionsJson,
+            String contentTagsJson,
+            String curriculumRef,
+            DifficultyBand difficulty,
+            String sourceType,
+            GenerationPhase generationPhase,
+            Short packNo,
+            DifficultyBand difficultyBand,
+            QuestionPoolStatus questionPoolStatus
+    ) {
+        QuestionBank questionBank = new QuestionBank();
+        questionBank.id = UUID.randomUUID();
+        questionBank.missionId = missionId;
+        questionBank.questionType = questionType;
+        questionBank.prompt = prompt;
+        questionBank.optionsJson = optionsJson;
+        questionBank.contentTagsJson = contentTagsJson;
+        questionBank.curriculumRef = curriculumRef;
+        questionBank.difficulty = difficulty;
+        questionBank.legacyNumericDifficulty = null;
+        questionBank.sourceType = sourceType;
+        questionBank.generationPhase = generationPhase;
+        questionBank.packNo = packNo;
+        questionBank.difficultyBand = difficultyBand;
+        questionBank.questionPoolStatus = questionPoolStatus;
+        questionBank.createdAt = Instant.now();
+        questionBank.isActive = true;
+        return questionBank;
+    }
+
+    public void deactivate() {
+        this.isActive = false;
+    }
+
+    public boolean isQuarantined() {
+        return !isActive || questionPoolStatus == QuestionPoolStatus.QUARANTINED;
     }
 }

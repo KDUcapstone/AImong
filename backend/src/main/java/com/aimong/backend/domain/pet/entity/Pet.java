@@ -1,100 +1,113 @@
 package com.aimong.backend.domain.pet.entity;
 
-import com.aimong.backend.domain.auth.entity.ChildProfile;
-import com.aimong.backend.global.enums.CrownType;
-import com.aimong.backend.global.enums.PetGrade;
-import com.aimong.backend.global.enums.PetMood;
-import com.aimong.backend.global.enums.PetStage;
-import jakarta.persistence.*;
-import lombok.*;
-import org.hibernate.annotations.Check;
-
-import java.time.OffsetDateTime;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
+import java.time.Instant;
 import java.util.UUID;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
-@Entity
-@Table(
-    name = "pets",
-    uniqueConstraints = {
-        @UniqueConstraint(name = "uk_pets_child_pet_type", columnNames = {"child_id", "pet_type"})
-    }
-)
-@Check(constraints = "(crown_unlocked = false AND crown_type IS NULL) OR (crown_unlocked = true AND crown_type IS NOT NULL)")
 @Getter
+@Entity
+@Table(name = "pets")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class Pet {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(columnDefinition = "uuid", updatable = false, nullable = false)
     private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "child_id", nullable = false)
-    private ChildProfile child;
+    @Column(name = "child_id", nullable = false)
+    private UUID childId;
 
     @Column(name = "pet_type", nullable = false)
     private String petType;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "grade", nullable = false, columnDefinition = "pet_grade_enum")
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "grade", nullable = false)
     private PetGrade grade;
 
     @Column(name = "xp", nullable = false)
-    @Builder.Default
-    private Integer xp = 0;
+    private int xp;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "stage", nullable = false, columnDefinition = "pet_stage_enum")
-    @Builder.Default
-    private PetStage stage = PetStage.EGG;
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "stage", nullable = false)
+    private PetStage stage;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "mood", nullable = false, columnDefinition = "pet_mood_enum")
-    @Builder.Default
-    private PetMood mood = PetMood.IDLE;
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "mood", nullable = false)
+    private PetMood mood;
 
     @Column(name = "crown_unlocked", nullable = false)
-    @Builder.Default
-    private Boolean crownUnlocked = false;
+    private boolean crownUnlocked;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "crown_type", columnDefinition = "crown_type_enum")
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "crown_type")
     private CrownType crownType;
 
-    @Column(name = "obtained_at", nullable = false, updatable = false)
-    private OffsetDateTime obtainedAt;
+    @Column(name = "obtained_at", nullable = false)
+    private Instant obtainedAt;
 
-    @PrePersist
-    protected void onCreate() {
-        if (obtainedAt == null) {
-            obtainedAt = OffsetDateTime.now();
+    public static Pet create(UUID childId, String petType, PetGrade grade) {
+        return new Pet(
+                UUID.randomUUID(),
+                childId,
+                petType,
+                grade,
+                0,
+                PetStage.EGG,
+                PetMood.IDLE,
+                false,
+                null,
+                null
+        );
+    }
+
+    public boolean addXp(int amount) {
+        if (crownUnlocked) {
+            return false;
         }
-    }
 
-    public void addXp(int amount) {
-        this.xp += amount;
-        updateStage();
-    }
-
-    private void updateStage() {
-        if (this.xp >= 250) {
-            this.stage = PetStage.AIMONG;
-        } else if (this.xp >= 80) {
-            this.stage = PetStage.GROWTH;
-        } else {
-            this.stage = PetStage.EGG;
-        }
-    }
-
-    public void updateMood(PetMood mood) {
-        this.mood = mood;
+        PetStage previousStage = stage;
+        xp += amount;
+        stage = resolveStage(xp);
+        return previousStage != stage;
     }
 
     public void unlockCrown(CrownType crownType) {
-        this.crownUnlocked = true;
+        crownUnlocked = true;
         this.crownType = crownType;
+        stage = PetStage.AIMONG;
+        xp = 0;
+    }
+
+    private PetStage resolveStage(int xp) {
+        if (xp >= 250) {
+            return PetStage.AIMONG;
+        }
+        if (xp >= 80) {
+            return PetStage.GROWTH;
+        }
+        return PetStage.EGG;
+    }
+
+    @PrePersist
+    void prePersist() {
+        if (obtainedAt == null) {
+            obtainedAt = Instant.now();
+        }
     }
 }

@@ -1,68 +1,70 @@
 package com.aimong.backend.domain.mission.entity;
 
-import com.aimong.backend.domain.auth.entity.ChildProfile;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import java.time.Instant;
+import java.util.UUID;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.OffsetDateTime;
-import java.util.UUID;
-
+@Getter
 @Entity
 @Table(name = "mission_answer_results")
-@Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@Builder
 public class MissionAnswerResult {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "result_id", columnDefinition = "uuid", updatable = false, nullable = false)
-    private UUID resultId;
+    @Column(name = "result_id", nullable = false)
+    private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "attempt_id", nullable = false)
-    private MissionAttempt attempt;
+    @Column(name = "attempt_id", nullable = false)
+    private UUID attemptId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "child_id", nullable = false)
-    private ChildProfile child;
+    @Column(name = "child_id", nullable = false)
+    private UUID childId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "mission_id", nullable = false)
-    private Mission mission;
+    @Column(name = "mission_id", nullable = false)
+    private UUID missionId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "question_id", nullable = false)
-    private QuestionBank question;
+    @Column(name = "question_id", nullable = false)
+    private UUID questionId;
 
     @Column(name = "is_review", nullable = false)
-    @Builder.Default
-    private Boolean isReview = false;
+    private boolean review;
 
     @Column(name = "is_correct", nullable = false)
-    private Boolean isCorrect;
+    private boolean correct;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private OffsetDateTime createdAt;
+    @Column(name = "created_at", nullable = false)
+    private Instant createdAt;
+
+    public static MissionAnswerResult create(
+            UUID attemptId,
+            UUID childId,
+            UUID missionId,
+            UUID questionId,
+            boolean isReview,
+            boolean isCorrect
+    ) {
+        MissionAnswerResult result = new MissionAnswerResult();
+        result.id = UUID.randomUUID();
+        result.attemptId = attemptId;
+        result.childId = childId;
+        result.missionId = missionId;
+        result.questionId = questionId;
+        result.review = isReview;
+        result.correct = isCorrect;
+        return result;
+    }
 
     @PrePersist
-    protected void onCreate() {
+    void prePersist() {
         if (createdAt == null) {
-            createdAt = OffsetDateTime.now();
+            createdAt = Instant.now();
         }
     }
 }

@@ -5,25 +5,25 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import java.time.Instant;
+import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.OffsetDateTime;
-
+@Getter
 @Entity
 @Table(name = "parent_accounts")
-@Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class ParentAccount {
 
     @Id
-    @Column(name = "parent_id", nullable = false, updatable = false)
-    private String parentId;
+    private UUID id;
+
+    @Column(name = "firebase_uid", nullable = false, unique = true)
+    private String firebaseUid;
 
     @Column(name = "email")
     private String email;
@@ -32,12 +32,20 @@ public class ParentAccount {
     private String fcmToken;
 
     @Column(name = "created_at", nullable = false, updatable = false)
-    private OffsetDateTime createdAt;
+    private Instant createdAt;
+
+    public static ParentAccount create(String firebaseUid, String email) {
+        return new ParentAccount(UUID.randomUUID(), firebaseUid, email, null, null);
+    }
+
+    public void updateFcmToken(String fcmToken) {
+        this.fcmToken = fcmToken;
+    }
 
     @PrePersist
-    protected void onCreate() {
+    void prePersist() {
         if (createdAt == null) {
-            createdAt = OffsetDateTime.now();
+            createdAt = Instant.now();
         }
     }
 }
