@@ -8,3 +8,5 @@ spring:
     redis:
       host: ${LOCAL_REDIS_HOST:${REDIS_HOST:localhost}}
       port: ${LOCAL_REDIS_PORT:${REDIS_PORT:6380}}
+  flyway:
+    validate-on-migrate: ${LOCAL_FLYWAY_VALIDATE_ON_MIGRATE:false}
