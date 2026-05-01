@@ -1,0 +1,126 @@
+{
+  "sourceTitle": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1",
+  "sourceReference": "C:/Users/mhy78/Downloads/초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1 (1).pdf",
+  "units": [
+    {
+      "unitCode": "U01",
+      "stage": 1,
+      "unitTitle": "AI와 친해지기",
+      "lessons": [
+        { "lessonCode": "L0101", "missionTitle": "AI란 무엇일까요", "studentObjective": "AI의 뜻과 역할을 생활 속 사례로 설명한다", "keyConcept": "AI의 기본 개념", "keywords": ["AI", "도움", "생활"], "promptTip": "초등학생에게 쉬운 말로 설명해 줘", "safetyRule": "개인정보를 넣지 않는다", "verificationHabit": "AI의 설명을 책이나 선생님 자료와 함께 확인한다" },
+        { "lessonCode": "L0102", "missionTitle": "생활 속 AI 찾기", "studentObjective": "우리 주변 서비스에서 AI가 쓰이는 장면을 찾는다", "keyConcept": "생활 속 AI", "keywords": ["음성 인식", "추천", "번역"], "promptTip": "생활 속 예시를 3개만 말해 줘", "safetyRule": "친구의 정보 없이 예시를 만든다", "verificationHabit": "정말 AI 기능인지 제품 설명을 다시 확인한다" },
+        { "lessonCode": "L0103", "missionTitle": "AI와 사람이 다른 점", "studentObjective": "AI와 사람이 잘하는 일을 비교한다", "keyConcept": "사람과 AI의 역할", "keywords": ["판단", "창의성", "계산"], "promptTip": "사람과 AI를 표로 비교해 줘", "safetyRule": "사람을 함부로 평가하지 않는다", "verificationHabit": "비교 기준이 맞는지 발표 전에 점검한다" },
+        { "lessonCode": "L0104", "missionTitle": "AI에게 도움 요청하기", "studentObjective": "AI에게 도움을 받을 수 있는 상황을 말한다", "keyConcept": "AI 활용 장면", "keywords": ["요약", "아이디어", "설명"], "promptTip": "어떤 도움을 원하는지 먼저 써 줘", "safetyRule": "숙제를 그대로 대신 시키지 않는다", "verificationHabit": "도움받은 내용이 과제 조건에 맞는지 확인한다" },
+        { "lessonCode": "L0105", "missionTitle": "AI 사용 약속 세우기", "studentObjective": "교실에서 지킬 AI 사용 약속을 만든다", "keyConcept": "AI 사용 규칙", "keywords": ["약속", "책임", "존중"], "promptTip": "규칙을 4개로 짧게 정리해 줘", "safetyRule": "모두가 지킬 수 있는 규칙만 만든다", "verificationHabit": "규칙이 안전과 예절을 담고 있는지 다시 읽는다" }
+      ]
+    },
+    {
+      "unitCode": "U02",
+      "stage": 1,
+      "unitTitle": "질문을 잘하기",
+      "lessons": [
+        { "lessonCode": "L0201", "missionTitle": "좋은 질문의 조건", "studentObjective": "좋은 질문의 공통된 특징을 찾는다", "keyConcept": "좋은 프롬프트", "keywords": ["목적", "조건", "분명함"], "promptTip": "무엇을 왜 필요한지 함께 써 줘", "safetyRule": "남을 곤란하게 하는 질문은 하지 않는다", "verificationHabit": "질문에 목적이 드러나는지 확인한다" },
+        { "lessonCode": "L0202", "missionTitle": "대상을 정해 질문하기", "studentObjective": "누구를 위한 답인지 정해서 질문한다", "keyConcept": "대상 맞춤 질문", "keywords": ["초등학생", "학부모", "발표"], "promptTip": "대상을 먼저 정하고 설명 수준을 써 줘", "safetyRule": "실제 인물 정보를 넣지 않는다", "verificationHabit": "대상에 맞는 어휘인지 다시 본다" },
+        { "lessonCode": "L0203", "missionTitle": "형식을 정해 질문하기", "studentObjective": "표, 목록, 문단 등 원하는 형식을 요청한다", "keyConcept": "출력 형식 지정", "keywords": ["표", "목록", "문단"], "promptTip": "몇 줄인지와 형식을 함께 써 줘", "safetyRule": "허위 사실을 보기 좋게 포장하지 않는다", "verificationHabit": "형식이 맞아도 내용이 맞는지 따로 확인한다" },
+        { "lessonCode": "L0204", "missionTitle": "더 자세히 다시 묻기", "studentObjective": "첫 답이 부족할 때 후속 질문을 만든다", "keyConcept": "후속 질문", "keywords": ["추가 설명", "예시", "다시"], "promptTip": "무엇이 부족했는지 말하고 다시 요청해 줘", "safetyRule": "짜증 내는 말 대신 예의 있게 다시 묻는다", "verificationHabit": "두 번째 답이 처음보다 나아졌는지 비교한다" },
+        { "lessonCode": "L0205", "missionTitle": "질문 고쳐 쓰기", "studentObjective": "모호한 질문을 구체적으로 바꾼다", "keyConcept": "질문 개선", "keywords": ["수정", "구체", "명확"], "promptTip": "주제와 조건을 빠뜨리지 말고 써 줘", "safetyRule": "비난하거나 차별하는 말은 빼고 고친다", "verificationHabit": "수정 전후 질문을 비교해 본다" }
+      ]
+    },
+    {
+      "unitCode": "U03",
+      "stage": 1,
+      "unitTitle": "AI 답을 확인하기",
+      "lessons": [
+        { "lessonCode": "L0301", "missionTitle": "AI도 틀릴 수 있어요", "studentObjective": "AI가 틀릴 수 있다는 이유를 이해한다", "keyConcept": "AI의 한계", "keywords": ["실수", "오답", "착각"], "promptTip": "틀릴 수 있는 예를 하나 보여 줘", "safetyRule": "틀린 답을 바로 퍼뜨리지 않는다", "verificationHabit": "틀린 부분이 무엇인지 출처와 비교한다" },
+        { "lessonCode": "L0302", "missionTitle": "출처 찾기", "studentObjective": "AI 답을 확인할 출처를 고른다", "keyConcept": "출처 확인", "keywords": ["책", "공식 사이트", "백과"], "promptTip": "출처 종류를 3개 추천해 줘", "safetyRule": "믿을 수 없는 링크를 함부로 누르지 않는다", "verificationHabit": "공식 자료인지 먼저 살펴본다" },
+        { "lessonCode": "L0303", "missionTitle": "날짜와 숫자 점검하기", "studentObjective": "날짜, 이름, 숫자 정보를 다시 확인한다", "keyConcept": "세부 사실 확인", "keywords": ["날짜", "이름", "숫자"], "promptTip": "중요한 숫자를 굵게 표시해 줘", "safetyRule": "틀린 수치를 과장해서 말하지 않는다", "verificationHabit": "날짜와 숫자를 다른 자료와 대조한다" },
+        { "lessonCode": "L0304", "missionTitle": "두 자료 비교하기", "studentObjective": "AI 답과 다른 자료를 비교한다", "keyConcept": "비교 검증", "keywords": ["비교", "차이", "공통점"], "promptTip": "비슷한 점과 다른 점을 나눠 줘", "safetyRule": "한 자료만 보고 모두 맞다고 단정하지 않는다", "verificationHabit": "두 자료의 차이를 표시해 본다" },
+        { "lessonCode": "L0305", "missionTitle": "확인 후 공유하기", "studentObjective": "확인된 정보만 발표와 공유에 사용한다", "keyConcept": "정보 공유 책임", "keywords": ["공유", "발표", "책임"], "promptTip": "발표 전에 확인 목록을 만들어 줘", "safetyRule": "확인 전 정보는 공유하지 않는다", "verificationHabit": "공유 전 마지막으로 근거를 점검한다" }
+      ]
+    },
+    {
+      "unitCode": "U04",
+      "stage": 1,
+      "unitTitle": "개인정보와 안전",
+      "lessons": [
+        { "lessonCode": "L0401", "missionTitle": "개인정보란 무엇일까요", "studentObjective": "개인정보의 뜻과 예를 구분한다", "keyConcept": "개인정보 이해", "keywords": ["이름", "주소", "전화번호"], "promptTip": "개인정보와 아닌 것을 나눠 줘", "safetyRule": "실제 개인정보는 입력하지 않는다", "verificationHabit": "예시가 개인정보에 해당하는지 다시 따져 본다" },
+        { "lessonCode": "L0402", "missionTitle": "사진과 음성도 정보예요", "studentObjective": "사진과 음성도 개인정보가 될 수 있음을 안다", "keyConcept": "디지털 개인정보", "keywords": ["사진", "음성", "영상"], "promptTip": "사진 정보가 왜 중요한지 설명해 줘", "safetyRule": "다른 사람 사진을 허락 없이 쓰지 않는다", "verificationHabit": "사진 사용 허락이 있는지 확인한다" },
+        { "lessonCode": "L0403", "missionTitle": "비밀번호 지키기", "studentObjective": "비밀번호와 계정 정보를 안전하게 지킨다", "keyConcept": "계정 보안", "keywords": ["비밀번호", "계정", "보안"], "promptTip": "안전한 비밀번호 규칙을 알려 줘", "safetyRule": "비밀번호를 AI에 입력하지 않는다", "verificationHabit": "보안 규칙이 실제로 지켜지는지 점검한다" },
+        { "lessonCode": "L0404", "missionTitle": "채팅 예절과 안전", "studentObjective": "온라인 대화에서 지켜야 할 예절과 안전 규칙을 안다", "keyConcept": "온라인 예절", "keywords": ["존중", "예절", "대화"], "promptTip": "예절 규칙을 쉬운 문장으로 정리해 줘", "safetyRule": "상처 주는 말과 놀림을 하지 않는다", "verificationHabit": "보내기 전에 말이 적절한지 다시 읽는다" },
+        { "lessonCode": "L0405", "missionTitle": "위험한 요청 거절하기", "studentObjective": "불안전한 요청을 구분하고 거절한다", "keyConcept": "위험 신호 파악", "keywords": ["거절", "도움 요청", "위험"], "promptTip": "거절하는 말 예시를 알려 줘", "safetyRule": "위험한 요청은 어른에게 바로 알린다", "verificationHabit": "불편하거나 이상한 요청인지 다시 생각한다" }
+      ]
+    },
+    {
+      "unitCode": "U05",
+      "stage": 2,
+      "unitTitle": "생성형 AI 이해",
+      "lessons": [
+        { "lessonCode": "L0501", "missionTitle": "생성형 AI는 무엇을 하나요", "studentObjective": "생성형 AI가 만들 수 있는 결과를 안다", "keyConcept": "생성형 AI 기능", "keywords": ["글", "그림", "소리"], "promptTip": "결과 종류를 3가지로 나눠 줘", "safetyRule": "남의 작품을 자기 것처럼 내지 않는다", "verificationHabit": "생성 결과가 과제 목적에 맞는지 확인한다" },
+        { "lessonCode": "L0502", "missionTitle": "AI 그림 살펴보기", "studentObjective": "AI 그림의 특징과 주의점을 말한다", "keyConcept": "AI 이미지", "keywords": ["그림", "이미지", "표현"], "promptTip": "그림의 분위기와 대상 조건을 함께 써 줘", "safetyRule": "초상권과 저작권을 생각한다", "verificationHabit": "그림 설명과 실제 그림이 맞는지 본다" },
+        { "lessonCode": "L0503", "missionTitle": "AI 글쓰기 도우미", "studentObjective": "AI를 글쓰기 보조 도구로 활용한다", "keyConcept": "글쓰기 보조", "keywords": ["초안", "문장", "수정"], "promptTip": "글의 목적과 분량을 정해 줘", "safetyRule": "완성본을 그대로 제출하지 않는다", "verificationHabit": "내 생각이 반영되었는지 고쳐 본다" },
+        { "lessonCode": "L0504", "missionTitle": "AI 요약 도우미", "studentObjective": "긴 글을 요약할 때 AI를 활용한다", "keyConcept": "요약", "keywords": ["핵심", "중요", "짧게"], "promptTip": "몇 문장으로 요약할지 써 줘", "safetyRule": "원문 의미가 바뀌지 않게 확인한다", "verificationHabit": "요약에서 빠진 내용이 없는지 본다" },
+        { "lessonCode": "L0505", "missionTitle": "AI와 함께 아이디어 내기", "studentObjective": "AI를 활용해 아이디어를 넓힌다", "keyConcept": "브레인스토밍", "keywords": ["아이디어", "생각", "확장"], "promptTip": "주제와 조건을 적고 여러 개를 요청해 줘", "safetyRule": "친구 생각을 비웃지 않고 함께 고른다", "verificationHabit": "아이디어가 실제 가능한지 검토한다" }
+      ]
+    },
+    {
+      "unitCode": "U06",
+      "stage": 2,
+      "unitTitle": "데이터와 AI",
+      "lessons": [
+        { "lessonCode": "L0601", "missionTitle": "데이터는 왜 필요할까요", "studentObjective": "AI가 데이터를 바탕으로 학습함을 이해한다", "keyConcept": "데이터의 역할", "keywords": ["데이터", "학습", "패턴"], "promptTip": "데이터가 필요한 이유를 예로 설명해 줘", "safetyRule": "허락 없이 데이터를 모으지 않는다", "verificationHabit": "예시 데이터가 알맞은지 본다" },
+        { "lessonCode": "L0602", "missionTitle": "좋은 데이터와 나쁜 데이터", "studentObjective": "좋은 데이터의 조건을 찾는다", "keyConcept": "데이터 품질", "keywords": ["정확", "다양", "균형"], "promptTip": "좋은 데이터 조건을 표로 정리해 줘", "safetyRule": "틀린 데이터를 일부러 섞지 않는다", "verificationHabit": "데이터가 치우치지 않았는지 살핀다" },
+        { "lessonCode": "L0603", "missionTitle": "분류 활동 해 보기", "studentObjective": "간단한 기준으로 데이터를 분류한다", "keyConcept": "분류", "keywords": ["기준", "분류", "묶기"], "promptTip": "분류 기준을 먼저 제안해 줘", "safetyRule": "사람을 함부로 차별하는 기준은 쓰지 않는다", "verificationHabit": "분류 기준이 일관적인지 확인한다" },
+        { "lessonCode": "L0604", "missionTitle": "패턴 찾기", "studentObjective": "자료에서 반복되는 패턴을 찾는다", "keyConcept": "패턴 인식", "keywords": ["반복", "규칙", "예측"], "promptTip": "반복되는 특징을 찾아 줘", "safetyRule": "적은 예만 보고 함부로 일반화하지 않는다", "verificationHabit": "정말 반복되는지 여러 예를 본다" },
+        { "lessonCode": "L0605", "missionTitle": "데이터로 예측하기", "studentObjective": "간단한 자료를 보고 예측해 본다", "keyConcept": "예측", "keywords": ["예측", "근거", "가능성"], "promptTip": "예측 이유를 함께 말해 줘", "safetyRule": "예측을 사실처럼 단정하지 않는다", "verificationHabit": "예측 근거가 충분한지 확인한다" }
+      ]
+    },
+    {
+      "unitCode": "U07",
+      "stage": 2,
+      "unitTitle": "공정성과 편향",
+      "lessons": [
+        { "lessonCode": "L0701", "missionTitle": "공정한 AI란 무엇일까요", "studentObjective": "공정성의 뜻을 AI와 연결해 생각한다", "keyConcept": "공정성", "keywords": ["공정", "차별", "균형"], "promptTip": "공정함을 예시로 설명해 줘", "safetyRule": "특정 사람을 놀리거나 차별하지 않는다", "verificationHabit": "결과가 한쪽으로 치우치지 않았는지 본다" },
+        { "lessonCode": "L0702", "missionTitle": "편향된 예시 찾기", "studentObjective": "편향된 문장과 그림 예시를 찾아본다", "keyConcept": "편향", "keywords": ["편향", "한쪽", "고정관념"], "promptTip": "편향된 표현을 고쳐 줘", "safetyRule": "고정관념을 그대로 따라 쓰지 않는다", "verificationHabit": "누군가에게 불공평한지 다시 생각한다" },
+        { "lessonCode": "L0703", "missionTitle": "다양한 사례 넣기", "studentObjective": "더 다양한 예시가 필요한 이유를 안다", "keyConcept": "다양성", "keywords": ["다양", "여러 관점", "포함"], "promptTip": "여러 사례를 균형 있게 보여 줘", "safetyRule": "한 사람만 대표처럼 내세우지 않는다", "verificationHabit": "여러 관점이 들어갔는지 확인한다" },
+        { "lessonCode": "L0704", "missionTitle": "공정하게 표현 고치기", "studentObjective": "불공정한 표현을 공정하게 바꾼다", "keyConcept": "표현 수정", "keywords": ["수정", "존중", "배려"], "promptTip": "존중하는 말로 바꿔 줘", "safetyRule": "차별 표현을 반복하지 않는다", "verificationHabit": "바꾼 문장이 더 공정한지 비교한다" },
+        { "lessonCode": "L0705", "missionTitle": "AI 결과를 비판적으로 보기", "studentObjective": "AI 결과를 비판적으로 검토한다", "keyConcept": "비판적 사고", "keywords": ["검토", "질문", "근거"], "promptTip": "의심할 점을 2개 찾아 줘", "safetyRule": "무조건 믿거나 무조건 비난하지 않는다", "verificationHabit": "근거와 표현을 함께 점검한다" }
+      ]
+    },
+    {
+      "unitCode": "U08",
+      "stage": 2,
+      "unitTitle": "창의 프로젝트",
+      "lessons": [
+        { "lessonCode": "L0801", "missionTitle": "이야기 만들기", "studentObjective": "AI와 함께 짧은 이야기를 만든다", "keyConcept": "이야기 생성", "keywords": ["등장인물", "배경", "사건"], "promptTip": "등장인물과 배경을 먼저 정해 줘", "safetyRule": "친구 실명을 등장인물로 쓰지 않는다", "verificationHabit": "이야기 흐름이 자연스러운지 읽어 본다" },
+        { "lessonCode": "L0802", "missionTitle": "광고 문구 만들기", "studentObjective": "목적에 맞는 짧은 문구를 만든다", "keyConcept": "문구 만들기", "keywords": ["광고", "핵심", "대상"], "promptTip": "누구에게 보여 줄지 함께 써 줘", "safetyRule": "거짓 정보를 넣지 않는다", "verificationHabit": "문구가 사실과 맞는지 확인한다" },
+        { "lessonCode": "L0803", "missionTitle": "포스터 문안 쓰기", "studentObjective": "포스터에 들어갈 문안을 정리한다", "keyConcept": "문안 구성", "keywords": ["제목", "설명", "강조"], "promptTip": "제목과 설명을 나눠 써 달라고 해 줘", "safetyRule": "불필요한 개인정보를 넣지 않는다", "verificationHabit": "포스터 목적에 맞게 핵심만 남겼는지 본다" },
+        { "lessonCode": "L0804", "missionTitle": "발표 대본 다듬기", "studentObjective": "발표 대본을 더 이해하기 쉽게 고친다", "keyConcept": "발표 대본", "keywords": ["발표", "대본", "정리"], "promptTip": "초등학생 말투로 다듬어 달라고 해 줘", "safetyRule": "발표를 전부 대신 쓰게 하지 않는다", "verificationHabit": "내가 이해하고 말할 수 있는지 읽어 본다" },
+        { "lessonCode": "L0805", "missionTitle": "팀 프로젝트 역할 나누기", "studentObjective": "AI 도움을 받아 역할을 나눈다", "keyConcept": "협업", "keywords": ["팀", "역할", "계획"], "promptTip": "팀 인원과 할 일을 먼저 알려 줘", "safetyRule": "팀원 정보를 자세히 입력하지 않는다", "verificationHabit": "역할 분담이 공정한지 확인한다" }
+      ]
+    },
+    {
+      "unitCode": "U09",
+      "stage": 3,
+      "unitTitle": "문제 해결과 의사결정",
+      "lessons": [
+        { "lessonCode": "L0901", "missionTitle": "문제 정의하기", "studentObjective": "해결할 문제를 분명히 말한다", "keyConcept": "문제 정의", "keywords": ["문제", "목표", "상황"], "promptTip": "문제와 목표를 한 문장씩 써 줘", "safetyRule": "문제를 사람 탓으로만 돌리지 않는다", "verificationHabit": "문제가 분명히 드러나는지 점검한다" },
+        { "lessonCode": "L0902", "missionTitle": "해결 방법 여러 개 생각하기", "studentObjective": "한 가지가 아닌 여러 해결 방법을 찾는다", "keyConcept": "대안 탐색", "keywords": ["대안", "선택", "비교"], "promptTip": "방법을 3개 제시해 달라고 해 줘", "safetyRule": "위험한 방법은 제외한다", "verificationHabit": "각 방법의 장단점을 비교한다" },
+        { "lessonCode": "L0903", "missionTitle": "장단점 비교하기", "studentObjective": "해결 방법의 장단점을 정리한다", "keyConcept": "비교 평가", "keywords": ["장점", "단점", "비교"], "promptTip": "장단점을 표로 정리해 줘", "safetyRule": "한쪽 의견만 좋다고 몰아가지 않는다", "verificationHabit": "비교 기준이 공정한지 본다" },
+        { "lessonCode": "L0904", "missionTitle": "가장 알맞은 선택하기", "studentObjective": "근거를 들어 선택한다", "keyConcept": "근거 있는 선택", "keywords": ["근거", "선택", "이유"], "promptTip": "이유를 두 가지 함께 써 줘", "safetyRule": "근거 없는 선택을 강요하지 않는다", "verificationHabit": "선택 이유가 목표와 맞는지 본다" },
+        { "lessonCode": "L0905", "missionTitle": "선택 결과 돌아보기", "studentObjective": "선택한 결과를 돌아보고 개선점을 찾는다", "keyConcept": "성찰", "keywords": ["결과", "되돌아보기", "개선"], "promptTip": "잘된 점과 고칠 점을 나눠 줘", "safetyRule": "실수를 숨기지 않고 배움으로 연결한다", "verificationHabit": "다음에는 무엇을 바꿀지 적어 본다" }
+      ]
+    },
+    {
+      "unitCode": "U10",
+      "stage": 3,
+      "unitTitle": "책임 있는 AI 시민",
+      "lessons": [
+        { "lessonCode": "L1001", "missionTitle": "저작권과 출처 표시", "studentObjective": "AI 활용 결과에도 출처와 저작권을 생각한다", "keyConcept": "저작권", "keywords": ["출처", "저작권", "표시"], "promptTip": "출처 표시 예시를 보여 줘", "safetyRule": "남의 글과 그림을 내 것처럼 쓰지 않는다", "verificationHabit": "출처 표시가 빠지지 않았는지 확인한다" },
+        { "lessonCode": "L1002", "missionTitle": "AI를 책임 있게 쓰기", "studentObjective": "AI를 책임 있게 사용하는 태도를 말한다", "keyConcept": "책임 있는 사용", "keywords": ["책임", "태도", "배려"], "promptTip": "책임 있는 태도를 4가지로 정리해 줘", "safetyRule": "편리함보다 안전과 책임을 먼저 생각한다", "verificationHabit": "내 행동이 책임 있는지 스스로 점검한다" },
+        { "lessonCode": "L1003", "missionTitle": "AI와 사회", "studentObjective": "AI가 사회에 주는 영향을 생각한다", "keyConcept": "사회적 영향", "keywords": ["사회", "변화", "영향"], "promptTip": "좋은 영향과 걱정되는 점을 함께 써 줘", "safetyRule": "한쪽 의견만 옳다고 단정하지 않는다", "verificationHabit": "좋은 점과 걱정되는 점을 모두 살핀다" },
+        { "lessonCode": "L1004", "missionTitle": "우리 반 AI 선언문", "studentObjective": "우리 반 AI 선언문을 만든다", "keyConcept": "공동 규칙", "keywords": ["선언문", "약속", "실천"], "promptTip": "선언문 문장을 짧고 분명하게 써 줘", "safetyRule": "모두를 존중하는 문장만 넣는다", "verificationHabit": "실천 가능한 약속인지 다시 읽는다" },
+        { "lessonCode": "L1005", "missionTitle": "AI 학습 돌아보기", "studentObjective": "지금까지의 AI 학습을 정리하고 다짐한다", "keyConcept": "학습 성찰", "keywords": ["정리", "성찰", "다짐"], "promptTip": "배운 점과 앞으로의 다짐을 나눠 써 줘", "safetyRule": "배운 규칙을 앞으로도 계속 지킨다", "verificationHabit": "내가 실제로 실천할 행동을 적어 본다" }
+      ]
+    }
+  ]
+}

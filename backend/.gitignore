@@ -35,3 +35,19 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### Environment File ###
+.env
+.env.*
+!.env.example
+firebase_key.json
+google-services.json
+
+### Private Docs And Generated Artifacts ###
+private-docs/
+_generated/
+Doc/
+
+### Local Development Overrides ###
+docker-compose.override.yml
+docker-compose.*.override.yml

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 기본 시스템 색상 (themes.xml 참조용) -->
+    <color name="aimong_primary">#7C4DFF</color>
+    <color name="aimong_primary_variant">#5E35B1</color>
+    <color name="aimong_secondary">#03DAC6</color>
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+
+    <!-- 홈 화면 (시안 v1.3) 전용 다크 테마 색상 -->
+    <color name="home_card_stroke">#3A538C</color> <!-- 더 밝은 외곽선 색상 -->
+    <color name="home_bg">#0A1633</color>
+    <color name="home_card_bg">#1A2B52</color>
+    <color name="home_card_bg_active">#243B70</color>
+
+    <!-- 포인트 컬러 -->
+    <color name="point_purple">#7C4DFF</color>
+    <color name="point_pink">#E040FB</color>
+    <color name="point_orange">#FF6D00</color>
+    <color name="point_gold">#FFD600</color>
+    <color name="point_green">#4CAF50</color>
+
+    <!-- 텍스트 -->
+    <color name="text_white">#FFFFFF</color>
+    <color name="text_grey">#9E9E9E</color>
+    <color name="text_sub_grey">#757575</color>
+</resources>

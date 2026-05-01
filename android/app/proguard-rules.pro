@@ -1,4 +1,4 @@
 # Add project specific ProGuard rules here.
 -keepattributes Signature
 -keepattributes *Annotation*
--keep class com.aimong.android.** { *; }
+-keep class com.kduniv.aimong.** { *; }
