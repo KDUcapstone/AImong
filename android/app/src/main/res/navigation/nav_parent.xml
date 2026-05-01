@@ -1,10 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/nav_parent">
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_parent"
+    app:startDestination="@id/parentDashboardFragment">
 
-    <!-- TODO: 부모 화면 NavGraph -->
-    <!-- ParentLoginFragment → ParentDashboardFragment -->
-    <!-- ParentDashboardFragment ↔ PrivacyLogFragment -->
+    <fragment
+        android:id="@+id/parentDashboardFragment"
+        android:name="com.kduniv.aimong.feature.parent.presentation.ParentDashboardFragment"
+        android:label="Parent Dashboard"
+        tools:layout="@layout/fragment_role_select">
+        <action
+            android:id="@+id/action_parentDashboardFragment_to_privacyLogFragment"
+            app:destination="@id/privacyLogFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/privacyLogFragment"
+        android:name="com.kduniv.aimong.feature.parent.presentation.PrivacyLogFragment"
+        android:label="Privacy Log"
+        tools:layout="@layout/fragment_role_select" />
 
 </navigation>

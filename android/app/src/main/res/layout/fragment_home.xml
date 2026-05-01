@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/home_bg"
+    android:fitsSystemWindows="true"
+    tools:context=".feature.home.presentation.HomeFragment">
+
+    <!-- 상단 상태바 (듀오링고 스타일) -->
+    <LinearLayout
+        android:id="@+id/layout_top_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="20dp"
+        android:paddingVertical="12dp"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:id="@+id/tv_streak_count"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🔥 7"
+            android:textColor="#FF6D00"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tv_user_level"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:background="@drawable/bg_home_level"
+            android:gravity="center"
+            android:paddingHorizontal="10dp"
+            android:paddingVertical="4dp"
+            android:text="🔍 Lv.7 AI탐험가"
+            android:textColor="@color/text_white"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <TextView
+            android:id="@+id/tv_energy_count"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="⚡ 5"
+            android:textColor="#E040FB"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tv_ticket_count"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:text="🎟 3"
+            android:textColor="@color/point_gold"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/layout_top_bar">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:paddingBottom="40dp">
+
+            <!-- 펫 말풍선 영역 -->
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp">
+
+                <TextView
+                    android:id="@+id/tv_pet_message"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_home_card"
+                    android:paddingHorizontal="20dp"
+                    android:paddingVertical="10dp"
+                    android:text="오늘도 같이 공부해요! 😊"
+                    android:textColor="@color/text_white"
+                    android:textSize="14sp"
+                    app:layout_constraintBottom_toTopOf="@+id/view_tail"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent" />
+
+                <View
+                    android:id="@+id/view_tail"
+                    android:layout_width="12dp"
+                    android:layout_height="12dp"
+                    android:layout_marginStart="24dp"
+                    android:layout_marginTop="-6dp"
+                    android:background="@drawable/bg_speech_bubble_tail"
+                    app:layout_constraintStart_toStartOf="@+id/tv_pet_message"
+                    app:layout_constraintTop_toBottomOf="@+id/tv_pet_message" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <!-- 캐릭터 영역 -->
+            <com.airbnb.lottie.LottieAnimationView
+                android:id="@+id/lottie_pet"
+                android:layout_width="200dp"
+                android:layout_height="200dp"
+                android:layout_marginTop="0dp"
+                app:lottie_autoPlay="true"
+                app:lottie_loop="true"
+                app:lottie_rawRes="@raw/pet_idle" />
+
+            <TextView
+                android:id="@+id/tv_pet_name_level"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="팩트봇 Lv.3"
+                android:textColor="#A5D6A7"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <!-- EXP 바 (외곽선 포함) -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="24dp"
+                android:layout_marginTop="24dp"
+                android:background="@drawable/bg_home_card"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="✨ 경험치"
+                        android:textColor="@color/text_sub_grey"
+                        android:textSize="12sp" />
+                    <TextView
+                        android:id="@+id/tv_pet_xp_label"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:text="340 / 500 EXP"
+                        android:textColor="@color/text_sub_grey"
+                        android:textSize="12sp" />
+                </RelativeLayout>
+
+                <ProgressBar
+                    android:id="@+id/pb_xp"
+                    style="@android:style/Widget.ProgressBar.Horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="12dp"
+                    android:progressDrawable="@drawable/progress_xp_gradient" />
+            </LinearLayout>
+
+            <!-- 오늘의 퀘스트 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginTop="32dp"
+                android:orientation="vertical">
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="📅 오늘의 퀘스트"
+                        android:textColor="@color/text_white"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+                    <TextView
+                        android:id="@+id/tv_quest_progress_badge"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:background="@drawable/bg_home_card"
+                        android:backgroundTint="#243B70"
+                        android:paddingHorizontal="12dp"
+                        android:paddingVertical="4dp"
+                        android:text="2/3 완료"
+                        android:textColor="#90CAF9"
+                        android:textSize="12sp" />
+                </RelativeLayout>
+
+                <LinearLayout
+                    android:id="@+id/layout_quest_list"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+            </LinearLayout>
+
+            <!-- 가챠 배너 -->
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/layout_gacha_banner"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginTop="20dp"
+                android:background="@drawable/bg_gacha_card"
+                android:padding="16dp">
+
+                <TextView
+                    android:id="@+id/tv_gacha_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="🎰 가챠 티켓 3장 보유!"
+                    android:textColor="#FFD700"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <TextView
+                    android:id="@+id/tv_gacha_desc"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="레전드 확률 4% (Lv.7)"
+                    android:textColor="#827717"
+                    android:textSize="12sp"
+                    app:layout_constraintStart_toStartOf="@+id/tv_gacha_title"
+                    app:layout_constraintTop_toBottomOf="@+id/tv_gacha_title" />
+
+                <TextView
+                    android:id="@+id/btn_gacha"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_button_gacha_gradient"
+                    android:paddingHorizontal="24dp"
+                    android:paddingVertical="10dp"
+                    android:text="뽑기  ➜"
+                    android:textColor="#000000"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+        </LinearLayout>
+    </ScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

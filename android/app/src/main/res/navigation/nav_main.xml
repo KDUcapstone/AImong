@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_main"
+    app:startDestination="@id/roleSelectFragment">
+
+    <fragment
+        android:id="@+id/roleSelectFragment"
+        android:name="com.kduniv.aimong.feature.auth.RoleSelectFragment"
+        android:label="Role Selection"
+        tools:layout="@layout/fragment_role_select">
+        <action
+            android:id="@+id/action_roleSelectFragment_to_parentLoginFragment"
+            app:destination="@id/parentLoginFragment" />
+        <action
+            android:id="@+id/action_roleSelectFragment_to_childCodeFragment"
+            app:destination="@id/childCodeFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/parentLoginFragment"
+        android:name="com.kduniv.aimong.feature.auth.presentation.ParentLoginFragment"
+        android:label="Parent Login"
+        tools:layout="@layout/fragment_parent_login" />
+
+    <fragment
+        android:id="@+id/childCodeFragment"
+        android:name="com.kduniv.aimong.feature.auth.presentation.ChildCodeFragment"
+        android:label="Child Login"
+        tools:layout="@layout/fragment_child_code">
+        <action
+            android:id="@+id/action_childCodeFragment_to_childNicknameFragment"
+            app:destination="@id/childNicknameFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/childNicknameFragment"
+        android:name="com.kduniv.aimong.feature.auth.presentation.ChildNicknameFragment"
+        android:label="Child Nickname"
+        tools:layout="@layout/fragment_child_nickname" />
+
+</navigation>
