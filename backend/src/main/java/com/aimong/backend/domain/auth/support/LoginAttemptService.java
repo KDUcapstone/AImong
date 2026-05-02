@@ -1,11 +1,14 @@
 package com.aimong.backend.domain.auth.support;
 
+import com.aimong.backend.domain.auth.entity.LoginAttempt;
+import com.aimong.backend.domain.auth.repository.LoginAttemptRepository;
 import com.aimong.backend.global.exception.AimongException;
 import com.aimong.backend.global.exception.ErrorCode;
 import java.time.Duration;
+import java.time.Instant;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 @Component
 @RequiredArgsConstructor
@@ -13,74 +16,70 @@ public class LoginAttemptService {
 
     private static final int MAX_FAILURE_COUNT = 3;
     private static final Duration LOCK_DURATION = Duration.ofSeconds(30);
-    private static final String IP_FAIL_PREFIX = "login_fail:ip:";
-    private static final String CODE_FAIL_PREFIX = "login_fail:code:";
-    private static final String IP_LOCK_PREFIX = "login_lock:ip:";
-    private static final String CODE_LOCK_PREFIX = "login_lock:code:";
+    private static final String IP_PREFIX = "login:ip:";
+    private static final String CODE_PREFIX = "login:code:";
 
-    private final StringRedisTemplate redisTemplate;
+    private final LoginAttemptRepository loginAttemptRepository;
 
+    @Transactional(readOnly = true)
     public void validateNotLocked(String clientIp, String code) {
-        Long ipLockSeconds = redisTemplate.getExpire(ipLockKey(clientIp));
-        Long codeLockSeconds = redisTemplate.getExpire(codeLockKey(code));
-        long remainingSeconds = Math.max(normalizeTtl(ipLockSeconds), normalizeTtl(codeLockSeconds));
+        long ipRemaining = remainingLockSeconds(ipKey(clientIp));
+        long codeRemaining = remainingLockSeconds(codeKey(code));
+        long remaining = Math.max(ipRemaining, codeRemaining);
 
-        if (remainingSeconds > 0) {
+        if (remaining > 0) {
             throw new AimongException(
                     ErrorCode.TOO_MANY_REQUESTS,
-                    "잠시 후 다시 시도해주세요 (" + remainingSeconds + "초 남음)"
+                    "잠시 후 다시 시도해주세요 (" + remaining + "초 남음)"
             );
         }
     }
 
+    @Transactional
     public void recordFailure(String clientIp, String code) {
-        registerFailure(ipFailKey(clientIp), ipLockKey(clientIp));
-        registerFailure(codeFailKey(code), codeLockKey(code));
+        registerFailure(ipKey(clientIp));
+        registerFailure(codeKey(code));
     }
 
+    @Transactional
     public void recordSuccess(String clientIp, String code) {
-        redisTemplate.delete(ipFailKey(clientIp));
-        redisTemplate.delete(codeFailKey(code));
-        redisTemplate.delete(ipLockKey(clientIp));
-        redisTemplate.delete(codeLockKey(code));
+        loginAttemptRepository.deleteById(ipKey(clientIp));
+        loginAttemptRepository.deleteById(codeKey(code));
     }
 
-    private void registerFailure(String failureKey, String lockKey) {
-        Long failureCount = redisTemplate.opsForValue().increment(failureKey);
-        if (failureCount == null) {
+    private long remainingLockSeconds(String key) {
+        return loginAttemptRepository.findById(key)
+                .filter(a -> !a.isExpired())
+                .map(LoginAttempt::remainingLockSeconds)
+                .orElse(0L);
+    }
+
+    private void registerFailure(String key) {
+        Instant expiresAt = Instant.now().plus(LOCK_DURATION);
+
+        LoginAttempt attempt = loginAttemptRepository.findById(key)
+                .filter(a -> !a.isExpired())
+                .orElse(null);
+
+        if (attempt == null) {
+            loginAttemptRepository.save(LoginAttempt.create(key, expiresAt));
             return;
         }
 
-        if (failureCount == 1L) {
-            redisTemplate.expire(failureKey, LOCK_DURATION);
+        attempt.incrementFailure(expiresAt);
+
+        if (attempt.getFailureCount() >= MAX_FAILURE_COUNT) {
+            attempt.lock(expiresAt);
         }
 
-        if (failureCount >= MAX_FAILURE_COUNT) {
-            redisTemplate.opsForValue().set(lockKey, "1", LOCK_DURATION);
-            redisTemplate.delete(failureKey);
-        }
+        loginAttemptRepository.save(attempt);
     }
 
-    private String ipFailKey(String clientIp) {
-        return IP_FAIL_PREFIX + clientIp;
+    private String ipKey(String clientIp) {
+        return IP_PREFIX + clientIp;
     }
 
-    private String codeFailKey(String code) {
-        return CODE_FAIL_PREFIX + code;
-    }
-
-    private String ipLockKey(String clientIp) {
-        return IP_LOCK_PREFIX + clientIp;
-    }
-
-    private String codeLockKey(String code) {
-        return CODE_LOCK_PREFIX + code;
-    }
-
-    private long normalizeTtl(Long ttlSeconds) {
-        if (ttlSeconds == null || ttlSeconds < 0) {
-            return 0;
-        }
-        return ttlSeconds;
+    private String codeKey(String code) {
+        return CODE_PREFIX + code;
     }
 }
