@@ -5,10 +5,6 @@ spring:
     url: ${TEST_DB_URL:jdbc:postgresql://localhost:54329/aimong_test}
     username: ${TEST_DB_USERNAME:${DB_USERNAME:aimong}}
     password: ${TEST_DB_PASSWORD:${DB_PASSWORD:aimong}}
-  data:
-    redis:
-      host: ${TEST_REDIS_HOST:${REDIS_HOST:localhost}}
-      port: ${TEST_REDIS_PORT:${REDIS_PORT:6380}}
   flyway:
     enabled: true
 

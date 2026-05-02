@@ -4,7 +4,3 @@ spring:
     username: ${LOCAL_DB_USERNAME:${DB_USERNAME:aimong}}
     password: ${LOCAL_DB_PASSWORD:${DB_PASSWORD:aimong}}
     driver-class-name: org.postgresql.Driver
-  data:
-    redis:
-      host: ${LOCAL_REDIS_HOST:${REDIS_HOST:localhost}}
-      port: ${LOCAL_REDIS_PORT:${REDIS_PORT:6380}}

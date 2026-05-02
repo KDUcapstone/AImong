@@ -11,10 +11,6 @@ spring:
   application:
     name: backend
 
-  data:
-    redis:
-      timeout: 3s
-
   jpa:
     hibernate:
       ddl-auto: none

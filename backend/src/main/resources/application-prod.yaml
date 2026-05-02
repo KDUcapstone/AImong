@@ -7,7 +7,3 @@ spring:
     username: ${SUPABASE_DB_USERNAME:${DB_USERNAME}}
     password: ${SUPABASE_DB_PASSWORD:${DB_PASSWORD}}
     driver-class-name: org.postgresql.Driver
-  data:
-    redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}

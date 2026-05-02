@@ -13,14 +13,10 @@ SPRING_PROFILES_ACTIVE=local
 LOCAL_DB_URL=jdbc:postgresql://localhost:54329/aimong_local
 LOCAL_DB_USERNAME=aimong
 LOCAL_DB_PASSWORD=aimong
-LOCAL_REDIS_HOST=localhost
-LOCAL_REDIS_PORT=6380
 
 TEST_DB_URL=jdbc:postgresql://localhost:54329/aimong_test
 TEST_DB_USERNAME=aimong
 TEST_DB_PASSWORD=aimong
-TEST_REDIS_HOST=localhost
-TEST_REDIS_PORT=6380
 ```
 
 Production:
@@ -30,8 +26,6 @@ SPRING_PROFILES_ACTIVE=prod
 SUPABASE_DB_URL=jdbc:postgresql://db.your-project.supabase.co:5432/postgres
 SUPABASE_DB_USERNAME=postgres
 SUPABASE_DB_PASSWORD=your-password
-REDIS_HOST=localhost
-REDIS_PORT=6379
 ```
 
 ## Local Development
