@@ -1,3 +1,68 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
 spring:
+  config:
+    import: optional:file:.env[.properties]
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
   application:
     name: backend
+
+  data:
+    redis:
+      timeout: 3s
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        default_schema: public
+    show-sql: false
+    open-in-view: false
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 0
+
+firebase:
+  service-account-path: ${FIREBASE_SERVICE_ACCOUNT_PATH:}
+
+openai:
+  api-key: ${OPENAI_API_KEY:}
+  base-url: ${OPENAI_BASE_URL:https://api.openai.com/v1}
+  responses-path: ${OPENAI_RESPONSES_PATH:/responses}
+
+jwt:
+  secret: ${JWT_SECRET}
+  issuer: aimong-backend
+  child-session-expiration: 2592000000
+
+aimong:
+  mission:
+    question:
+      set-size: 10
+      attempt-ttl-minutes: 30
+      # Post-MVP runtime generation switches. MVP serving path ignores them even if enabled.
+      dynamic-generation-enabled: false
+      async-refill-enabled: false
+      serving-auto-quarantine-enabled: true
+      report-auto-deactivate-enabled: false
+    generation:
+      target-pool-per-mission: 60
+      questions-per-pack: 10
+      soft-refill-trigger: 36
+      hard-refill-trigger: 18
+      async-generate-batch: 10
+      async-refill-fixed-delay-ms: 30000
+      sync-generate-batch: 10
+      mini-max-retry: 2
+    model-routing:
+      default-model: gpt-5-mini
+      escalated-model: gpt-5.4-mini

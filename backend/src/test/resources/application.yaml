@@ -1,0 +1,35 @@
+spring:
+  config:
+    import: optional:file:.env[.properties]
+  datasource:
+    url: ${TEST_DB_URL:jdbc:postgresql://localhost:54329/aimong_test}
+    username: ${TEST_DB_USERNAME:${DB_USERNAME:aimong}}
+    password: ${TEST_DB_PASSWORD:${DB_PASSWORD:aimong}}
+  data:
+    redis:
+      host: ${TEST_REDIS_HOST:${REDIS_HOST:localhost}}
+      port: ${TEST_REDIS_PORT:${REDIS_PORT:6380}}
+  flyway:
+    enabled: true
+
+firebase:
+  service-account-path: ""
+
+jwt:
+  secret: ${JWT_SECRET:test-jwt-secret-for-local-db}
+  issuer: aimong-backend
+  child-session-expiration: 2592000000
+
+openai:
+  api-key: ""
+
+aimong:
+  mission:
+    question:
+      set-size: 10
+      attempt-ttl-minutes: 30
+      # Test profile keeps Post-MVP runtime generation disabled.
+      dynamic-generation-enabled: false
+      async-refill-enabled: false
+      serving-auto-quarantine-enabled: false
+      report-auto-deactivate-enabled: false

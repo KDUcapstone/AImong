@@ -1,4 +1,12 @@
 package com.aimong.backend.domain.mission.dto;
-// TODO: { id, type(OX|MULTIPLE|FILL|SITUATION), question, options }
-//       ⚠️ answer, explanation 절대 미포함
-public class QuestionResponse {}
+
+import java.util.List;
+import java.util.UUID;
+
+public record QuestionResponse(
+        UUID id,
+        String type,
+        String question,
+        List<String> options
+) {
+}
