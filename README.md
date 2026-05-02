@@ -39,13 +39,14 @@
 
 ```text
 AImong/
-├─ android/   # Android 앱 (Kotlin, 단일 :app 모듈)
+├─ frontend/
+│  └─ android/   # Android 앱 (Kotlin, 단일 :app 모듈)
 ├─ backend/   # Spring Boot API 서버
 ├─ prompts/   # AI 코딩 컨텍스트 문서
 └─ README.md
 ```
 
-### `android/`
+### `frontend/android/`
 
 Android 앱 프로젝트입니다.
 
@@ -57,7 +58,7 @@ Android 앱 프로젝트입니다.
 대략적인 구조:
 
 ```text
-android/app/src/main/java/com/aimong/android/
+frontend/android/app/src/main/java/com/kduniv/aimong/
 ├─ core/         # 공통 모듈 (network, local, ui, privacy, fcm, util)
 ├─ feature/      # 기능별 data / domain / presentation
 ├─ navigation/   # 네비게이션 관련 코드
@@ -177,19 +178,19 @@ AI 코딩 도구용 참고 문서입니다.
 ## Android 실행
 
 ```bash
-cd android
+cd frontend/android
 ./gradlew.bat assembleDebug
 ```
 
 권장 실행 방법:
 
-1. Android Studio에서 `android/` 폴더를 연다.
+1. Android Studio에서 `frontend/android/` 폴더를 연다.
 2. Gradle Sync를 완료한다.
 3. `app` 모듈을 선택해 에뮬레이터 또는 실기기에서 실행한다.
 
 확인 포인트:
 
-- `google-services.json`은 `.gitignore` 대상이라 별도로 받아서 `android/app/` 또는 프로젝트 요구 위치에 배치해야 합니다.
+- `google-services.json`은 `.gitignore` 대상이라 별도로 받아서 `frontend/android/app/` 또는 프로젝트 요구 위치에 배치해야 합니다.
 - Firebase/ML Kit/FCM 관련 초기화 코드는 아직 TODO 주석이 남아 있는 부분이 있습니다.
 
 ## Backend 실행
@@ -275,8 +276,8 @@ https://api.aimong.app/api
 
 ## 주요 진입점
 
-- Android 앱 시작점: `android/app/src/main/java/com/aimong/android/MainActivity.kt`
-- Android 앱 클래스: `android/app/src/main/java/com/aimong/android/AimongApp.kt`
+- Android 앱 시작점: `frontend/android/app/src/main/java/com/kduniv/aimong/MainActivity.kt`
+- Android 앱 클래스: `frontend/android/app/src/main/java/com/kduniv/aimong/AimongApp.kt`
 - Backend 시작점: `backend/src/main/java/com/aimong/backend/BackendApplication.java`
 - Backend 설정 파일: `backend/src/main/resources/application.yaml`
 
@@ -307,9 +308,9 @@ https://api.aimong.app/api
 
 새 팀원이 처음 시작할 때는 아래 순서로 확인하면 됩니다.
 
-- 저장소 클론 후 `android/`, `backend/`가 각각 독립 빌드 프로젝트라는 점 이해하기
+- 저장소 클론 후 `frontend/android/`, `backend/`가 각각 독립 빌드 프로젝트라는 점 이해하기
 - 기술문서 3종 최신 버전 확인하기
-- Android Studio에서 `android/` 열기
+- Android Studio에서 `frontend/android/` 열기
 - 백엔드 로컬 설정값 정리하기
 - Firebase / Supabase / OpenAI 관련 키 수급하기
 - 명세와 현재 코드 차이 메모 남기기

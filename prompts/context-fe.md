@@ -2,7 +2,7 @@
 
 ## 프로젝트 정보
 - **플랫폼**: Android (Kotlin, minSdk 26)
-- **패키지**: `com.aimong.android`
+- **패키지**: `com.kduniv.aimong`
 - **아키텍처**: MVVM + Clean Architecture (Presentation → Domain → Data)
 - **DI**: Hilt
 - **네트워크**: Retrofit + OkHttp
@@ -19,7 +19,7 @@
 
 ## 패키지 구조
 ```
-com.aimong.android/
+com.kduniv.aimong/
 ├── core/         # 공통 기반 (network, local, ui, privacy, fcm, util)
 ├── feature/      # 기능별 (auth, home, mission, chat, gacha, streak, quest, parent)
 │   └── {feature}/
