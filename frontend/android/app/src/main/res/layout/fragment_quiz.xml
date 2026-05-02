@@ -28,7 +28,7 @@
         app:layout_constraintBottom_toBottomOf="@id/iv_back"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_of="@id/iv_back" />
+        app:layout_constraintTop_toTopOf="@id/iv_back" />
 
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/card_review_badge"
