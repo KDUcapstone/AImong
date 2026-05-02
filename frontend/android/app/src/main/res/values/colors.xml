@@ -13,11 +13,20 @@
     <color name="home_card_bg">#1A2B52</color>
     <color name="home_card_bg_active">#243B70</color>
 
-    <!-- 포인트 컬러 -->
+    <!-- 퀴즈 전용 색상 (사진 기준 보완) -->
+    <color name="quiz_bg">#0A1633</color>
+    <color name="quiz_card_bg">#1A2B52</color>
+    <color name="quiz_mint">#00FFB2</color>
+    <color name="quiz_purple">#9C27B0</color>
+    <color name="quiz_red">#FF4B4B</color>
+    <color name="quiz_grey_heart">#24335A</color>
+    <color name="quiz_text_grey">#8A96AD</color>
+    <color name="quiz_option_default_stroke">#243B70</color>
     <color name="point_purple">#7C4DFF</color>
     <color name="point_pink">#E040FB</color>
     <color name="point_orange">#FF6D00</color>
     <color name="point_gold">#FFD600</color>
+    <color name="point_yellow">#FFEB3B</color>
     <color name="point_green">#4CAF50</color>
 
     <!-- 텍스트 -->

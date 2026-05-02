@@ -1,30 +1,44 @@
 package com.kduniv.aimong.core.network
 
-// TODO: Retrofit 인터페이스 — 전체 API 엔드포인트 정의
+import com.kduniv.aimong.feature.mission.data.model.MissionListResponse
+import com.kduniv.aimong.feature.quiz.data.model.QuizQuestionsResponse
+import com.kduniv.aimong.feature.quiz.data.model.QuizSubmitRequest
+import com.kduniv.aimong.feature.quiz.data.model.QuizSubmitResponse
+import retrofit2.http.Body
+import retrofit2.http.GET
+import retrofit2.http.POST
+import retrofit2.http.Path
+
 interface AimongApiService {
-    // AUTH
-    // @POST("parent/register") suspend fun registerParent(...)
-    // @POST("child/login") suspend fun loginChild(...)
-
     // MISSION
-    // @GET("missions/{id}/questions") suspend fun getQuestions(...)
-    // @POST("missions/{id}/submit") suspend fun submitAnswers(...)
+    @GET("missions")
+    suspend fun getMissions(): ApiResponse<MissionListResponse>
 
-    // PET
-    // @GET("pet") suspend fun getPet(...)
+    @GET("missions/{missionId}/questions")
+    suspend fun getQuestions(
+        @Path("missionId") missionId: String
+    ): ApiResponse<QuizQuestionsResponse>
 
-    // GACHA
-    // @POST("gacha/pull") suspend fun pullGacha(...)
-
-    // STREAK
-    // @GET("streak") suspend fun getStreak(...)
-
-    // QUEST
-    // @GET("quests/daily") suspend fun getDailyQuests(...)
+    @POST("missions/{missionId}/submit")
+    suspend fun submitQuiz(
+        @Path("missionId") missionId: String,
+        @Body request: QuizSubmitRequest
+    ): ApiResponse<QuizSubmitResponse>
 
     // CHAT
-    // @POST("chat/send") suspend fun sendChat(...)
-
-    // PARENT
-    // @GET("parent/child/{id}/summary") suspend fun getChildSummary(...)
+    @POST("chat/send")
+    suspend fun sendChatMessage(
+        @Body request: ChatMessageRequest
+    ): ApiResponse<ChatMessageResponse>
 }
+
+data class ChatMessageRequest(
+    val message: String,
+    val timestamp: Long = System.currentTimeMillis()
+)
+
+data class ChatMessageResponse(
+    val reply: String,
+    val conversationId: String,
+    val xpEarned: Int? = 0
+)

@@ -1,8 +1,14 @@
 package com.kduniv.aimong.core.network
 
-// TODO: sealed class — 네트워크 응답 래퍼
-sealed class ApiResponse<out T> {
-    data class Success<T>(val data: T) : ApiResponse<T>()
-    data class Error(val code: Int, val message: String) : ApiResponse<Nothing>()
-    object Loading : ApiResponse<Nothing>()
-}
+import com.google.gson.annotations.SerializedName
+
+data class ApiResponse<T>(
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("data") val data: T,
+    @SerializedName("error") val error: ApiError? = null
+)
+
+data class ApiError(
+    @SerializedName("code") val code: String,
+    @SerializedName("message") val message: String
+)
