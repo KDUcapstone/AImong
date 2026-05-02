@@ -30,6 +30,10 @@ class MissionListFragment : BaseFragment<FragmentMissionListBinding>(FragmentMis
         binding.btnDummyPreview.setOnClickListener {
             findNavController().navigate(MissionListFragmentDirections.actionLearningFragmentToDummyQuizFragment())
         }
+
+        binding.btnDummyQuiz.setOnClickListener {
+            findNavController().navigate(MissionListFragmentDirections.actionLearningFragmentToDummyQuizFragment())
+        }
     }
 
     private fun initRecyclerView() {

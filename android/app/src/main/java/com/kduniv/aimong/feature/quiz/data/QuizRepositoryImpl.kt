@@ -136,7 +136,10 @@ class QuizRepositoryImpl @Inject constructor(
                                 isCorrect = it.isCorrect,
                                 explanation = it.explanation
                             )
-                        }
+                        },
+                        currentLevel = data.currentLevel ?: 1,
+                        currentXp = data.currentXp ?: 0,
+                        nextLevelXp = data.nextLevelXp ?: 100
                     )
                 )
             } else {

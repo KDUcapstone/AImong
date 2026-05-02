@@ -45,7 +45,10 @@ data class QuizSubmitResponse(
     @SerializedName("streakDays") val streakDays: Int,
     @SerializedName("todayMissionCount") val todayMissionCount: Int,
     @SerializedName("rewards") val rewards: List<RewardResponse>,
-    @SerializedName("results") val results: List<QuestionResultResponse>
+    @SerializedName("results") val results: List<QuestionResultResponse>,
+    @SerializedName("currentLevel") val currentLevel: Int?,
+    @SerializedName("currentXp") val currentXp: Int?,
+    @SerializedName("nextLevelXp") val nextLevelXp: Int?
 )
 
 data class RewardResponse(

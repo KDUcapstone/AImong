@@ -31,7 +31,10 @@ data class QuizResult(
     val petEvolved: Boolean,
     val streakDays: Int,
     val rewards: List<QuizReward> = emptyList(),
-    val results: List<QuestionResult>
+    val results: List<QuestionResult>,
+    val currentLevel: Int = 1,
+    val currentXp: Int = 0,
+    val nextLevelXp: Int = 100
 )
 
 data class QuizReward(
