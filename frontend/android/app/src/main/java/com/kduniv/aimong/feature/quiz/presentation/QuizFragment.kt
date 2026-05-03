@@ -72,9 +72,6 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             animateSelection(it)
             handleOptionClick("X") 
         }
-        binding.fabToDummy.setOnClickListener {
-            findNavController().navigate(QuizFragmentDirections.actionQuizFragmentToDummyQuizFragment())
-        }
     }
 
     override fun initObserver() {

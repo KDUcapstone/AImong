@@ -239,7 +239,7 @@
 
             <!-- 옵션 1 -->
             <com.google.android.material.card.MaterialCardView
-                android:id="@+id/btn_dummy_opt1"
+                android:id="@+id/btn_quiz_mult_opt1"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:minHeight="64dp"
@@ -286,7 +286,7 @@
 
             <!-- 옵션 2 -->
             <com.google.android.material.card.MaterialCardView
-                android:id="@+id/btn_dummy_opt2"
+                android:id="@+id/btn_quiz_mult_opt2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:minHeight="64dp"
@@ -333,7 +333,7 @@
 
             <!-- 옵션 3 -->
             <com.google.android.material.card.MaterialCardView
-                android:id="@+id/btn_dummy_opt3"
+                android:id="@+id/btn_quiz_mult_opt3"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:minHeight="64dp"
@@ -380,7 +380,7 @@
 
             <!-- 옵션 4 -->
             <com.google.android.material.card.MaterialCardView
-                android:id="@+id/btn_dummy_opt4"
+                android:id="@+id/btn_quiz_mult_opt4"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:minHeight="64dp"
@@ -610,19 +610,7 @@
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fab_to_dummy"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        android:src="@drawable/ic_launcher_foreground"
-        app:backgroundTint="#1A2B52"
-        app:fabSize="mini"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:tint="@color/white" />
-
-    <!-- 결과 오버레이 (더미 스타일로 완전 교체) -->
+    <!-- 결과 오버레이 -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/layout_quiz_result"
         android:layout_width="match_parent"

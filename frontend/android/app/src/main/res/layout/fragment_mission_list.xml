@@ -87,20 +87,6 @@
                 </androidx.constraintlayout.widget.ConstraintLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_dummy_quiz"
-                android:layout_width="match_parent"
-                android:layout_height="64dp"
-                android:layout_marginTop="12dp"
-                android:layout_marginBottom="24dp"
-                android:text="🎮 더미 문제 풀기 (테스트용)"
-                android:backgroundTint="#243B70"
-                android:textColor="#FFD600"
-                android:textStyle="bold"
-                app:cornerRadius="16dp"
-                app:strokeColor="#FFD600"
-                app:strokeWidth="1dp" />
-
             <!-- 문제 풀기 미션 섹션 -->
             <TextView
                 android:layout_width="wrap_content"
@@ -137,18 +123,6 @@
                         android:layout_height="wrap_content"
                         android:text="진행 가능한 미션이 없습니다."
                         android:textColor="#8A96AD" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btn_dummy_preview"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
-                        android:text="더미 퀴즈 시작하기"
-                        android:backgroundTint="#243B70"
-                        android:textColor="#00FFB2"
-                        app:cornerRadius="12dp"
-                        app:strokeColor="#00FFB2"
-                        app:strokeWidth="1dp" />
                 </LinearLayout>
 
                 <ProgressBar

@@ -21,24 +21,14 @@ class MissionListFragment : BaseFragment<FragmentMissionListBinding>(FragmentMis
 
     override fun initView() {
         initRecyclerView()
-        
+
         binding.cardAiChat.setOnClickListener {
-            // AI 챗봇 화면으로 이동
             findNavController().navigate(MissionListFragmentDirections.actionLearningFragmentToChatFragment())
-        }
-
-        binding.btnDummyPreview.setOnClickListener {
-            findNavController().navigate(MissionListFragmentDirections.actionLearningFragmentToDummyQuizFragment())
-        }
-
-        binding.btnDummyQuiz.setOnClickListener {
-            findNavController().navigate(MissionListFragmentDirections.actionLearningFragmentToDummyQuizFragment())
         }
     }
 
     private fun initRecyclerView() {
         missionAdapter = MissionListAdapter { mission ->
-            // 미션 클릭 시 퀴즈 화면으로 이동
             val action = MissionListFragmentDirections.actionLearningFragmentToQuizFragment(mission.id)
             findNavController().navigate(action)
         }
@@ -56,19 +46,20 @@ class MissionListFragment : BaseFragment<FragmentMissionListBinding>(FragmentMis
                         is MissionListUiState.Loading -> {
                             binding.pbLoading.visibility = View.VISIBLE
                             binding.rvMissions.visibility = View.GONE
-                            binding.tvEmptyMessage.visibility = View.GONE
+                            binding.layoutEmptyState.visibility = View.GONE
                         }
                         is MissionListUiState.Success -> {
                             binding.pbLoading.visibility = View.GONE
-                            val missions = if (state.missions.isEmpty()) {
-                                createDummyMissions()
+                            val missions = state.missions
+                            if (missions.isEmpty()) {
+                                binding.rvMissions.visibility = View.GONE
+                                binding.layoutEmptyState.visibility = View.VISIBLE
+                                missionAdapter.submitList(emptyList())
                             } else {
-                                state.missions
+                                binding.rvMissions.visibility = View.VISIBLE
+                                binding.layoutEmptyState.visibility = View.GONE
+                                missionAdapter.submitList(missions)
                             }
-                            
-                            binding.rvMissions.visibility = View.VISIBLE
-                            binding.layoutEmptyState.visibility = View.GONE
-                            missionAdapter.submitList(missions)
                         }
                         is MissionListUiState.Error -> {
                             binding.pbLoading.visibility = View.GONE
@@ -78,30 +69,5 @@ class MissionListFragment : BaseFragment<FragmentMissionListBinding>(FragmentMis
                 }
             }
         }
-    }
-
-    private fun createDummyMissions(): List<com.kduniv.aimong.feature.mission.domain.model.Mission> {
-        return listOf(
-            com.kduniv.aimong.feature.mission.domain.model.Mission(
-                "1", 1, "AI가 뭐예요?", "AI의 개념과 환각 현상을 배워요",
-                isUnlocked = true, isCompleted = true, completedAt = "2024-03-20", isReviewable = true
-            ),
-            com.kduniv.aimong.feature.mission.domain.model.Mission(
-                "2", 2, "개인정보 보호", "소중한 내 정보를 지키는 방법",
-                isUnlocked = true, isCompleted = false, completedAt = null, isReviewable = false
-            ),
-            com.kduniv.aimong.feature.mission.domain.model.Mission(
-                "3", 3, "프롬프트 마스터", "AI와 대화하는 멋진 방법",
-                isUnlocked = false, isCompleted = false, completedAt = null, isReviewable = false
-            ),
-            com.kduniv.aimong.feature.mission.domain.model.Mission(
-                "4", 4, "디지털 예절", "온라인에서 지켜야 할 약속",
-                isUnlocked = false, isCompleted = false, completedAt = null, isReviewable = false
-            ),
-            com.kduniv.aimong.feature.mission.domain.model.Mission(
-                "5", 5, "팩트체크의 중요성", "진짜와 가짜를 구별해봐요",
-                isUnlocked = false, isCompleted = false, completedAt = null, isReviewable = false
-            )
-        )
     }
 }
