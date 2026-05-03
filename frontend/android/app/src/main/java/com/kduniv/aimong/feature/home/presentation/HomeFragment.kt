@@ -53,8 +53,11 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
             tvTicketCount.text = "🎟 ${state.normalTickets}"
             
             // 2. 캐릭터 및 메시지
-            tvPetMessage.text = state.petMessage
-            tvPetNameLevel.text = "${state.petName} Lv.${state.petLevel}"
+            tvPetMessage.text = state.petMessage.ifBlank {
+                getString(R.string.home_message_until_loaded)
+            }
+            val petLabel = state.petName.ifBlank { getString(R.string.home_pet_name_default) }
+            tvPetNameLevel.text = "$petLabel Lv.${state.petLevel}"
             
             // 3. 경험치 바 (그라데이션 적용됨)
             tvPetXpLabel.text = "${state.petXp} / ${state.petMaxXp} EXP"
@@ -68,8 +71,10 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
             setupQuestList(state.quests)
             
             // 6. 가챠 배너
-            tvGachaTitle.text = "가챠 티켓 ${state.normalTickets}장 보유!"
-            tvGachaDesc.text = state.gachaDescription
+            tvGachaTitle.text = getString(R.string.home_gacha_ticket_title, state.normalTickets)
+            tvGachaDesc.text = state.gachaDescription.ifBlank {
+                getString(R.string.home_gacha_until_loaded)
+            }
             
             if (!lottiePet.isAnimating) lottiePet.playAnimation()
         }

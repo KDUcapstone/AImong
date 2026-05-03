@@ -23,7 +23,7 @@
             android:id="@+id/tv_streak_count"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="🔥 7"
+            android:text="🔥 0"
             android:textColor="#FF6D00"
             android:textSize="16sp"
             android:textStyle="bold" />
@@ -37,7 +37,7 @@
             android:gravity="center"
             android:paddingHorizontal="10dp"
             android:paddingVertical="4dp"
-            android:text="🔍 Lv.7 AI탐험가"
+            android:text="🔍 Lv.1 AI 입문자"
             android:textColor="@color/text_white"
             android:textSize="11sp"
             android:textStyle="bold" />
@@ -51,7 +51,7 @@
             android:id="@+id/tv_energy_count"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="⚡ 5"
+            android:text="⚡ 0"
             android:textColor="#E040FB"
             android:textSize="16sp"
             android:textStyle="bold" />
@@ -61,7 +61,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
-            android:text="🎟 3"
+            android:text="🎟 0"
             android:textColor="@color/point_gold"
             android:textSize="16sp"
             android:textStyle="bold" />
@@ -93,7 +93,7 @@
                     android:background="@drawable/bg_home_card"
                     android:paddingHorizontal="20dp"
                     android:paddingVertical="10dp"
-                    android:text="오늘도 같이 공부해요! 😊"
+                    android:text="@string/home_message_until_loaded"
                     android:textColor="@color/text_white"
                     android:textSize="14sp"
                     app:layout_constraintBottom_toTopOf="@+id/view_tail"
@@ -125,7 +125,7 @@
                 android:id="@+id/tv_pet_name_level"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="팩트봇 Lv.3"
+                android:text="펫 Lv.1"
                 android:textColor="#A5D6A7"
                 android:textSize="18sp"
                 android:textStyle="bold" />
@@ -155,7 +155,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_alignParentEnd="true"
-                        android:text="340 / 500 EXP"
+                        android:text="0 / 500 EXP"
                         android:textColor="@color/text_sub_grey"
                         android:textSize="12sp" />
                 </RelativeLayout>
@@ -196,7 +196,7 @@
                         android:backgroundTint="#243B70"
                         android:paddingHorizontal="12dp"
                         android:paddingVertical="4dp"
-                        android:text="2/3 완료"
+                        android:text="0/0 완료"
                         android:textColor="#90CAF9"
                         android:textSize="12sp" />
                 </RelativeLayout>
@@ -222,7 +222,7 @@
                     android:id="@+id/tv_gacha_title"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="🎰 가챠 티켓 3장 보유!"
+                    android:text="🎰 가챠 티켓 0장 보유!"
                     android:textColor="#FFD700"
                     android:textSize="14sp"
                     android:textStyle="bold"
@@ -234,7 +234,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="레전드 확률 4% (Lv.7)"
+                    android:text="@string/home_gacha_until_loaded"
                     android:textColor="#827717"
                     android:textSize="12sp"
                     app:layout_constraintStart_toStartOf="@+id/tv_gacha_title"

@@ -1,7 +1,6 @@
 package com.kduniv.aimong.feature.quiz.presentation
 
 import android.animation.ObjectAnimator
-import android.animation.PropertyValuesHolder
 import android.animation.ValueAnimator
 import android.graphics.Color
 import android.graphics.Typeface
@@ -33,6 +32,7 @@ import com.kduniv.aimong.feature.quiz.domain.model.QuizResult
 import com.kduniv.aimong.feature.quiz.domain.model.QuizReward
 import com.kduniv.aimong.feature.quiz.domain.model.QuizQuestions
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
@@ -97,6 +97,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                             binding.tvExpInfo.text = "복습 시 EXP 50% 획득"
                             binding.tvExpInfo.setTextColor(Color.parseColor("#FFD600"))
                         }
+                        updateQuizModeBanner()
                     }
                 }
                 launch {
@@ -296,7 +297,11 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         result.rewards.forEach { reward ->
             addRewardIcon(reward)
         }
-        
+
+        if (viewModel.strictSingleLifeRetry.value && !result.isPassed) {
+            updateHearts(0, forceReset = true)
+        }
+
         binding.tvWrongCount.text = "오답: ${result.total - result.score}개"
     }
 
@@ -362,9 +367,30 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             val fullText = "[$typeLabel] ${question.question}"
             setHighlightedText(binding.tvQuizQuestion, fullText)
             binding.tvQuizQuestion.setTextColor(Color.WHITE)
-            
-            updateHearts(3) // TODO: 실제 라이프 데이터 연동 필요 시 수정
+
+            binding.layoutHearts.visibility = View.VISIBLE
+            val maxLives = if (viewModel.strictSingleLifeRetry.value) 1 else 3
+            updateHearts(maxLives, forceReset = true)
+            updateQuizModeBanner()
             setupOptions(question)
+        }
+    }
+
+    /** 재도전(strict) 시 제목 아래 안내. 복습 미션이면 '복습 · 다시 도전하기'. */
+    private fun updateQuizModeBanner() {
+        val strict = viewModel.strictSingleLifeRetry.value
+        val review = viewModel.isReviewMode.value
+        val banner = binding.tvQuizModeBanner
+        when {
+            strict && review -> {
+                banner.text = getString(R.string.quiz_mode_review_and_retry)
+                banner.visibility = View.VISIBLE
+            }
+            strict -> {
+                banner.text = getString(R.string.quiz_mode_retry_challenge)
+                banner.visibility = View.VISIBLE
+            }
+            else -> banner.visibility = View.GONE
         }
     }
 
@@ -409,34 +435,19 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         view.text = spannable
     }
 
-    private fun updateHearts(newLives: Int) {
+    private fun updateHearts(newLives: Int, forceReset: Boolean = false) {
         val hearts = listOf(binding.ivHeart1, binding.ivHeart2, binding.ivHeart3)
-        
-        if (newLives < lives) {
-            // 하트 소실 애니메이션
-            val indexToAnimate = lives - 1
-            if (indexToAnimate in 0..2) {
-                val heartView = hearts[indexToAnimate]
-                ObjectAnimator.ofPropertyValuesHolder(
-                    heartView, 
-                    PropertyValuesHolder.ofFloat("scaleX", 1.2f, 0f), 
-                    PropertyValuesHolder.ofFloat("scaleY", 1.2f, 0f)
-                ).apply {
-                    duration = 400
-                    start()
-                }
-                shakeView(binding.layoutHearts)
-            }
-        } else {
-            // 초기화 또는 복구
-            hearts.forEachIndexed { index, imageView ->
-                val isFilled = index < newLives
-                imageView.setImageResource(if (isFilled) R.drawable.ic_heart_filled else R.drawable.ic_heart_empty)
-                imageView.scaleX = 1f
-                imageView.scaleY = 1f
-            }
+        val capped = newLives.coerceIn(0, 3)
+        if (!forceReset && capped < lives) {
+            shakeView(binding.layoutHearts)
         }
-        lives = newLives
+        hearts.forEachIndexed { index, imageView ->
+            val isFilled = index < capped
+            imageView.setImageResource(if (isFilled) R.drawable.ic_heart_filled else R.drawable.ic_heart_empty)
+            imageView.scaleX = 1f
+            imageView.scaleY = 1f
+        }
+        lives = capped
     }
 
     private fun shakeView(v: View) {
@@ -628,11 +639,14 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
 
         disableOptions()
         viewModel.selectAnswer(question.id, answer)
-        
-        // v1.3 준수: 퀴즈 도중에는 피드백 없이 0.5초 후 다음 문제로 자동 이동
+
+        // v1.3: 일반 모드는 0.5초 후 다음 문항. strict 재도전은 문항마다 제출 후 정오에 따라 종료/진행.
         if (!viewModel.isSolutionMode.value) {
             viewLifecycleOwner.lifecycleScope.launch {
-                kotlinx.coroutines.delay(500)
+                delay(500)
+                if (viewModel.strictSingleLifeRetry.value) {
+                    if (viewModel.submitCurrentStepForStrictLife()) return@launch
+                }
                 viewModel.nextQuestion()
             }
         }

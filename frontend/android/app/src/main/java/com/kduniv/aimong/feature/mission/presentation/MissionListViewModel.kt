@@ -45,6 +45,9 @@ class MissionListViewModel @Inject constructor(
 
     fun refreshMissions() {
         viewModelScope.launch {
+            if (_uiState.value is MissionListUiState.Error) {
+                _uiState.value = MissionListUiState.Loading
+            }
             try {
                 // 최대 5초 대기 후 타임아웃 처리하여 무한 로딩 방지
                 withTimeout(5000) {

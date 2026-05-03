@@ -2,6 +2,11 @@
 <resources>
     <string name="app_name">AImong</string>
 
+    <string name="home_message_until_loaded">학습 탭에서 미션을 확인해 보세요.</string>
+    <string name="home_pet_name_default">펫</string>
+    <string name="home_gacha_ticket_title">가챠 티켓 %1$d장 보유!</string>
+    <string name="home_gacha_until_loaded">가챠 안내는 데이터 연동 후 표시됩니다.</string>
+
     <!-- Quiz Result -->
     <string name="quiz_result_success">미션 성공!</string>
     <string name="quiz_result_fail">미션 실패</string>
@@ -27,4 +32,15 @@
 
     <string name="quiz_stage_label">%1$d단계</string>
     <string name="quiz_count_format">%1$d / %2$d 문제</string>
+
+    <string name="quiz_mode_retry_challenge">다시 도전하기</string>
+    <string name="quiz_mode_review_and_retry">복습 · 다시 도전하기</string>
+
+    <!-- Mission list -->
+    <string name="mission_stage_progress_title">단계별 완료 수</string>
+    <string name="mission_stage_progress_subtitle">복습 제외 첫 클리어만 집계됩니다.</string>
+    <string name="mission_stage_progress_counts">1단계 %1$d · 2단계 %2$d · 3단계 %3$d</string>
+    <string name="mission_stage_unlock_hint">2단계: 1단계 3개 이상 클리어 시 · 3단계: 2단계 4개 이상 클리어 시 잠금 해제</string>
+    <string name="mission_badge_review">복습</string>
+    <string name="mission_error_retry">다시 시도</string>
 </resources>

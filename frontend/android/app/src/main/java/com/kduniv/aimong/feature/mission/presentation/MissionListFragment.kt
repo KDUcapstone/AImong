@@ -10,6 +10,8 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.kduniv.aimong.core.ui.BaseFragment
 import com.kduniv.aimong.databinding.FragmentMissionListBinding
+import com.kduniv.aimong.feature.mission.domain.model.MissionProgress
+import com.kduniv.aimong.R
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -24,6 +26,10 @@ class MissionListFragment : BaseFragment<FragmentMissionListBinding>(FragmentMis
 
         binding.cardAiChat.setOnClickListener {
             findNavController().navigate(MissionListFragmentDirections.actionLearningFragmentToChatFragment())
+        }
+        binding.btnRetryMissions.setOnClickListener {
+            binding.layoutErrorState.visibility = View.GONE
+            viewModel.refreshMissions()
         }
     }
 
@@ -47,9 +53,12 @@ class MissionListFragment : BaseFragment<FragmentMissionListBinding>(FragmentMis
                             binding.pbLoading.visibility = View.VISIBLE
                             binding.rvMissions.visibility = View.GONE
                             binding.layoutEmptyState.visibility = View.GONE
+                            binding.layoutErrorState.visibility = View.GONE
                         }
                         is MissionListUiState.Success -> {
                             binding.pbLoading.visibility = View.GONE
+                            binding.layoutErrorState.visibility = View.GONE
+                            bindStageProgress(state.progress)
                             val missions = state.missions
                             if (missions.isEmpty()) {
                                 binding.rvMissions.visibility = View.GONE
@@ -63,11 +72,25 @@ class MissionListFragment : BaseFragment<FragmentMissionListBinding>(FragmentMis
                         }
                         is MissionListUiState.Error -> {
                             binding.pbLoading.visibility = View.GONE
+                            binding.rvMissions.visibility = View.GONE
+                            binding.layoutEmptyState.visibility = View.GONE
+                            binding.layoutErrorState.visibility = View.VISIBLE
+                            binding.tvErrorMessage.text = state.message
+                            bindStageProgress(MissionProgress(0, 0, 0))
                             Toast.makeText(requireContext(), state.message, Toast.LENGTH_SHORT).show()
                         }
                     }
                 }
             }
         }
+    }
+
+    private fun bindStageProgress(progress: MissionProgress) {
+        binding.tvStageProgressCounts.text = getString(
+            R.string.mission_stage_progress_counts,
+            progress.stage1Completed,
+            progress.stage2Completed,
+            progress.stage3Completed
+        )
     }
 }

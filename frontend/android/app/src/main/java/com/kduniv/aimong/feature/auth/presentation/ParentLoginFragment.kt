@@ -45,7 +45,7 @@ class ParentLoginFragment : BaseFragment<FragmentParentLoginBinding>(FragmentPar
 
     private fun saveRoleAndRestart(role: String) {
         viewLifecycleOwner.lifecycleScope.launch {
-            sessionManager.saveSession(role, 1, "parent_test_token")
+            sessionManager.saveSession(role, 1, "")
             val intent = android.content.Intent(requireContext(), com.kduniv.aimong.MainActivity::class.java).apply {
                 addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK)
                 putExtra("IS_RESTART", true)

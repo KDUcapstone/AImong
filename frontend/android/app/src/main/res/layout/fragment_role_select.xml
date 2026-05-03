@@ -153,20 +153,4 @@
 
     </LinearLayout>
 
-    <TextView
-        android:id="@+id/btn_bypass_login"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="32dp"
-        android:text="로그인 없이 홈 화면 둘러보기"
-        android:textColor="#607090"
-        android:textSize="14sp"
-        android:padding="8dp"
-        android:background="?attr/selectableItemBackground"
-        android:clickable="true"
-        android:focusable="true"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
-
 </androidx.constraintlayout.widget.ConstraintLayout>

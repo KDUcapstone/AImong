@@ -46,6 +46,10 @@ class QuizViewModel @Inject constructor(
     private val _isSolutionMode = MutableStateFlow(false)
     val isSolutionMode: StateFlow<Boolean> = _isSolutionMode
 
+    /** 결과 화면에서 재도전 시 1하트·문항마다 제출로 정오 판정 */
+    val strictSingleLifeRetry: StateFlow<Boolean> =
+        savedStateHandle.getStateFlow("strictSingleLifeRetry", false)
+
     private var quizResult: QuizResult? = null
 
     init {
@@ -157,11 +161,47 @@ class QuizViewModel @Inject constructor(
     }
 
     fun retryQuiz() {
+        savedStateHandle["strictSingleLifeRetry"] = true
         userAnswers.clear()
         savedStateHandle["userAnswers"] = userAnswers
         savedStateHandle["currentIndex"] = 0
         _isSolutionMode.value = false
         fetchQuestions()
+    }
+
+    /**
+     * strict 재도전: 현재까지의 답안으로 제출해 방금 문항의 정오를 확인한다.
+     * @return true면 이후 [nextQuestion]을 호출하지 말 것(이미 종료/에러 상태로 전이).
+     */
+    suspend fun submitCurrentStepForStrictLife(): Boolean {
+        if (!strictSingleLifeRetry.value || _isSolutionMode.value) return false
+        val qs = cachedQuestions ?: return false
+        val questions = qs.questions
+        val idx = currentQuestionIndex.value
+        val q = questions.getOrNull(idx) ?: return false
+        if (!userAnswers.containsKey(q.id)) return false
+
+        val res = quizRepository.submitQuiz(missionId, qs.quizAttemptId, userAnswers.toMap())
+        return if (res.isSuccess) {
+            val result = res.getOrNull()!!
+            quizResult = result
+            val step = result.results.find { it.questionId == q.id }
+            when {
+                step == null -> false
+                !step.isCorrect -> {
+                    _uiState.value = QuizUiState.Finished(result)
+                    true
+                }
+                idx >= questions.lastIndex -> {
+                    _uiState.value = QuizUiState.Finished(result)
+                    true
+                }
+                else -> false
+            }
+        } else {
+            _uiState.value = QuizUiState.Error(res.exceptionOrNull()?.message ?: "채점 실패")
+            true
+        }
     }
 
     fun syncOffline() {

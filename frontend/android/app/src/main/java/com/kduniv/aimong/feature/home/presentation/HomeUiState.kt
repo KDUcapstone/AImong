@@ -1,8 +1,6 @@
 package com.kduniv.aimong.feature.home.presentation
 
-/**
- * 홈 화면 UI 상태 (디자인 시안 v1.3 반영)
- */
+/** 홈 화면 UI 상태 (API 연동 전 기본값은 비어 있음) */
 data class HomeUiState(
     val nickname: String = "",
     val totalXp: Int = 0,
@@ -17,7 +15,7 @@ data class HomeUiState(
     val petLevel: Int = 1,
     val petStage: String = "EGG",
     val homeState: HomeState = HomeState.IDLE,
-    val petMessage: String = "오늘도 같이 공부해요! 😊",
+    val petMessage: String = "",
     
     // 에너지 및 재화 현황
     val normalTickets: Int = 0,
@@ -26,10 +24,10 @@ data class HomeUiState(
     
     // 가챠 관련
     val srBonus: Int = 0,
-    val gachaDescription: String = "레전드 확률 4% (Lv.7)",
-    
+    val gachaDescription: String = "",
+
     // 오늘의 퀘스트
-    val todayQuestProgress: String = "0/3",
+    val todayQuestProgress: String = "0/0",
     val quests: List<QuestItemUiState> = emptyList()
 )
 

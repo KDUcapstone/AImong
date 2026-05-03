@@ -32,6 +32,25 @@
             tools:text="1단계" />
 
         <TextView
+            android:id="@+id/tv_review_badge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/bg_stage_badge"
+            android:backgroundTint="#FFD600"
+            android:paddingHorizontal="6dp"
+            android:paddingVertical="2dp"
+            android:text="@string/mission_badge_review"
+            android:textColor="#0A1633"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@id/tv_stage"
+            app:layout_constraintStart_toEndOf="@id/tv_stage"
+            app:layout_constraintTop_toTopOf="@id/tv_stage"
+            tools:visibility="visible" />
+
+        <TextView
             android:id="@+id/tv_title"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
