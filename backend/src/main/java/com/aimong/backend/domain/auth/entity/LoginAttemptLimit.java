@@ -2,74 +2,55 @@ package com.aimong.backend.domain.auth.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.time.Instant;
-import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Getter
 @Entity
-@Table(name = "login_attempt_limits")
+@Table(name = "login_attempts")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class LoginAttemptLimit {
 
     @Id
-    @Column(name = "id")
-    private UUID id;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "target_type", nullable = false)
-    private LoginAttemptTargetType targetType;
-
-    @Column(name = "target_value", nullable = false)
-    private String targetValue;
+    @Column(name = "key", nullable = false, length = 255)
+    private String attemptKey;
 
     @Column(name = "failure_count", nullable = false)
     private int failureCount;
 
-    @Column(name = "window_expires_at", nullable = false)
-    private Instant windowExpiresAt;
-
     @Column(name = "locked_until")
     private Instant lockedUntil;
 
-    @Column(name = "updated_at", nullable = false)
-    private Instant updatedAt;
+    @Column(name = "expires_at", nullable = false)
+    private Instant expiresAt;
 
     public static LoginAttemptLimit firstFailure(
-            LoginAttemptTargetType targetType,
-            String targetValue,
-            Instant now,
-            Instant windowExpiresAt
+            String attemptKey,
+            Instant expiresAt
     ) {
         LoginAttemptLimit limit = new LoginAttemptLimit();
-        limit.id = UUID.randomUUID();
-        limit.targetType = targetType;
-        limit.targetValue = targetValue;
+        limit.attemptKey = attemptKey;
         limit.failureCount = 1;
-        limit.windowExpiresAt = windowExpiresAt;
-        limit.updatedAt = now;
+        limit.expiresAt = expiresAt;
         return limit;
     }
 
-    public void recordFailure(Instant now, Instant windowExpiresAt, int maxFailureCount) {
-        if (!this.windowExpiresAt.isAfter(now)) {
+    public void recordFailure(Instant now, Instant expiresAt, int maxFailureCount) {
+        if (!this.expiresAt.isAfter(now)) {
             failureCount = 1;
-            this.windowExpiresAt = windowExpiresAt;
+            this.expiresAt = expiresAt;
             lockedUntil = null;
         } else {
             failureCount += 1;
         }
 
-        updatedAt = now;
         if (failureCount >= maxFailureCount) {
-            lockedUntil = windowExpiresAt;
+            lockedUntil = expiresAt;
             failureCount = 0;
         }
     }
@@ -80,11 +61,8 @@ public class LoginAttemptLimit {
 
     @PrePersist
     void prePersist() {
-        if (id == null) {
-            id = UUID.randomUUID();
-        }
-        if (updatedAt == null) {
-            updatedAt = Instant.now();
+        if (expiresAt == null) {
+            expiresAt = Instant.now();
         }
     }
 }

@@ -44,7 +44,7 @@ public class StreakService {
                 streak.getLastCompletedDate(),
                 todayMissionCountForToday(streak, today),
                 profile.getShieldCount(),
-                null
+                findPartner(childId, today)
         );
     }
 
@@ -56,16 +56,16 @@ public class StreakService {
                 .orElseThrow(() -> new AimongException(ErrorCode.CHILD_CODE_NOT_FOUND));
         UUID partnerChildId = partner.getId();
         if (childId.equals(partnerChildId)) {
-            throw new AimongException(ErrorCode.BAD_REQUEST, "Cannot connect your own child code.");
+            throw new AimongException(ErrorCode.BAD_REQUEST, "본인의 코드는 입력할 수 없어요");
         }
 
         lockProfilesInStableOrder(childId, partnerChildId);
 
         if (friendStreakRepository.existsById(childId) || friendStreakRepository.existsByPartnerChildId(childId)) {
-            throw new AimongException(ErrorCode.CONFLICT, "Already connected to a streak partner.");
+            throw new AimongException(ErrorCode.CONFLICT, "이미 친구와 연결되어 있어요");
         }
         if (friendStreakRepository.existsById(partnerChildId) || friendStreakRepository.existsByPartnerChildId(partnerChildId)) {
-            throw new AimongException(ErrorCode.CONFLICT, "Partner is already connected to another child.");
+            throw new AimongException(ErrorCode.CONFLICT, "친구가 이미 다른 친구와 연결되어 있어요");
         }
 
         friendStreakRepository.save(FriendStreak.create(childId, partnerChildId));
@@ -81,7 +81,7 @@ public class StreakService {
     public PartnerDisconnectResponse disconnectPartner(UUID childId) {
         childActivityService.touchLastActiveAt(childId);
         friendStreakRepository.findById(childId)
-                .orElseThrow(() -> new AimongException(ErrorCode.NOT_FOUND, "No streak partner is connected."));
+                .orElseThrow(() -> new AimongException(ErrorCode.NOT_FOUND, "연결된 친구가 없어요"));
 
         friendStreakRepository.deleteByChildIdOrPartnerChildId(childId, childId);
         return new PartnerDisconnectResponse(true);

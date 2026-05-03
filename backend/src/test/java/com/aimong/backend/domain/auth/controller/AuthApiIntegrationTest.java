@@ -20,6 +20,8 @@ import com.aimong.backend.domain.auth.dto.ParentRegisterResponse;
 import com.aimong.backend.domain.auth.dto.RegenerateCodeResponse;
 import com.aimong.backend.domain.auth.service.ChildAuthService;
 import com.aimong.backend.domain.auth.service.ParentAuthService;
+import com.aimong.backend.global.exception.AimongException;
+import com.aimong.backend.global.exception.ErrorCode;
 import com.aimong.backend.global.filter.FirebaseParentAuthFilter;
 import com.aimong.backend.global.filter.JwtAuthFilter;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -123,6 +125,9 @@ class AuthApiIntegrationTest {
 
     @Test
     void childLoginValidationFailureReturnsSpecMessage() throws Exception {
+        given(childAuthService.login(any(ChildLoginRequest.class), any()))
+                .willThrow(new AimongException(ErrorCode.CHILD_CODE_INVALID_FORMAT));
+
         mockMvc.perform(post("/child/login")
                         .contentType(APPLICATION_JSON)
                         .content(objectMapper.writeValueAsBytes(new ChildLoginRequest("12"))))
@@ -131,7 +136,7 @@ class AuthApiIntegrationTest {
                 .andExpect(jsonPath("$.data").doesNotExist())
                 .andExpect(jsonPath("$.requestId").exists())
                 .andExpect(jsonPath("$.error.code").value("BAD_REQUEST"))
-                .andExpect(jsonPath("$.error.message").value("올바른 형식의 코드를 입력해주세요"));
+                .andExpect(jsonPath("$.error.message").value("올바른 형식의 코드를 입력해 주세요."));
     }
 
     @Test

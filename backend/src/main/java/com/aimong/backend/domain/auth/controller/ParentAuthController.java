@@ -38,7 +38,7 @@ public class ParentAuthController {
 
     @Operation(
             summary = "부모 온보딩",
-            description = "Google 로그인 후 자녀 프로필 생성, 6자리 코드 발급, 스타터 티켓 3장 지급",
+            description = "Google 로그인 후 자녀 프로필 생성, 6자리 코드 발급, 스타터 티켓 3장 지급. 부모 계정당 자녀는 최대 3명까지 등록할 수 있습니다.",
             security = @SecurityRequirement(name = PARENT_SECURITY)
     )
     @io.swagger.v3.oas.annotations.parameters.RequestBody(

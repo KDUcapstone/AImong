@@ -3,6 +3,7 @@ package com.aimong.backend.domain.mission.service.question;
 import com.aimong.backend.domain.mission.entity.Mission;
 import com.aimong.backend.domain.mission.entity.QuestionAnswerKey;
 import com.aimong.backend.domain.mission.entity.QuestionBank;
+import com.aimong.backend.domain.mission.entity.DifficultyBand;
 import com.aimong.backend.domain.mission.repository.QuestionAnswerKeyRepository;
 import com.aimong.backend.domain.mission.service.generation.QuestionValidationReport;
 import com.aimong.backend.domain.mission.service.generation.QuestionValidationService;
@@ -104,13 +105,25 @@ public class QuestionServingQualityGuard {
                 question.getQuestionType(),
                 question.getPrompt(),
                 readOptions(question.getOptionsJson()),
-                readAnswer(answerKey.getAnswerPayload()),
+                readAnswer(question, answerKey.getAnswerPayload()),
                 answerKey.getExplanation(),
                 readStringList(question.getContentTagsJson()),
                 question.getCurriculumRef(),
-                question.getLegacyNumericDifficulty() == null ? 0 : question.getLegacyNumericDifficulty(),
+                resolveNumericDifficulty(mission, question),
                 question.getDifficulty()
         );
+    }
+
+    private int resolveNumericDifficulty(Mission mission, QuestionBank question) {
+        if (question.getLegacyNumericDifficulty() != null && question.getLegacyNumericDifficulty() > 0) {
+            return question.getLegacyNumericDifficulty();
+        }
+        return switch (mission.getStage()) {
+            case 1 -> question.getDifficulty() == DifficultyBand.LOW ? 1 : 2;
+            case 2 -> question.getDifficulty() == DifficultyBand.LOW ? 2 : 3;
+            case 3 -> question.getDifficulty() == DifficultyBand.LOW ? 3 : 4;
+            default -> 1;
+        };
     }
 
     private List<String> readStringList(String json) {
@@ -132,12 +145,65 @@ public class QuestionServingQualityGuard {
         return readStringList(json);
     }
 
-    private Object readAnswer(String json) {
+    private Object readAnswer(QuestionBank question, String json) {
         try {
-            return objectMapper.readValue(json, Object.class);
+            Object answer = objectMapper.readValue(json, Object.class);
+            List<String> options = readOptions(question.getOptionsJson());
+            return normalizePersistedAnswer(question, options, answer);
         } catch (JsonProcessingException exception) {
             throw new IllegalStateException("Failed to deserialize persisted answer payload", exception);
         }
+    }
+
+    private Object normalizePersistedAnswer(QuestionBank question, List<String> options, Object answer) {
+        return switch (question.getQuestionType()) {
+            case OX -> answer;
+            case MULTIPLE, SITUATION -> normalizeSingleChoiceAnswer(options, answer);
+            case FILL -> normalizeFillAnswer(options, answer);
+        };
+    }
+
+    private Object normalizeSingleChoiceAnswer(List<String> options, Object answer) {
+        if (answer instanceof Integer) {
+            return answer;
+        }
+        if (answer instanceof String text) {
+            Integer index = optionIndex(options, text);
+            return index == null ? answer : index;
+        }
+        return answer;
+    }
+
+    private Object normalizeFillAnswer(List<String> options, Object answer) {
+        if (answer instanceof List<?> answers) {
+            List<Integer> indexes = answers.stream()
+                    .map(value -> value instanceof Integer index ? index : optionIndex(options, String.valueOf(value)))
+                    .filter(java.util.Objects::nonNull)
+                    .toList();
+            return indexes.isEmpty() ? answer : indexes;
+        }
+        if (answer instanceof String text) {
+            Integer index = optionIndex(options, text);
+            return index == null ? answer : List.of(index);
+        }
+        return answer;
+    }
+
+    private Integer optionIndex(List<String> options, String answerText) {
+        if (options == null || answerText == null) {
+            return null;
+        }
+        String normalizedAnswer = normalizeAnswerText(answerText);
+        for (int index = 0; index < options.size(); index++) {
+            if (normalizeAnswerText(options.get(index)).equals(normalizedAnswer)) {
+                return index;
+            }
+        }
+        return null;
+    }
+
+    private String normalizeAnswerText(String value) {
+        return value == null ? "" : value.replaceAll("\\s+", "").trim();
     }
 
     public record ServingValidationResult(

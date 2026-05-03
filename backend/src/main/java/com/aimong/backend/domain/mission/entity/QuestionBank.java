@@ -27,6 +27,7 @@ public class QuestionBank {
     private UUID missionId;
 
     @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(name = "question_type", nullable = false)
     private QuestionType questionType;
 
@@ -45,16 +46,20 @@ public class QuestionBank {
     private String curriculumRef;
 
     @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(name = "difficulty", nullable = false)
     private DifficultyBand difficulty;
 
     @Column(name = "legacy_numeric_difficulty")
     private Short legacyNumericDifficulty;
 
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(name = "source_type", nullable = false)
-    private String sourceType;
+    private QuestionSourceType sourceType;
 
     @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(name = "generation_phase")
     private GenerationPhase generationPhase;
 
@@ -62,10 +67,12 @@ public class QuestionBank {
     private Short packNo;
 
     @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(name = "difficulty_band", length = 16)
     private DifficultyBand difficultyBand;
 
     @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(name = "question_pool_status", length = 16)
     private QuestionPoolStatus questionPoolStatus;
 
@@ -99,7 +106,7 @@ public class QuestionBank {
         questionBank.curriculumRef = curriculumRef;
         questionBank.difficulty = difficulty;
         questionBank.legacyNumericDifficulty = null;
-        questionBank.sourceType = sourceType;
+        questionBank.sourceType = QuestionSourceType.from(sourceType);
         questionBank.generationPhase = generationPhase;
         questionBank.packNo = packNo;
         questionBank.difficultyBand = difficultyBand;

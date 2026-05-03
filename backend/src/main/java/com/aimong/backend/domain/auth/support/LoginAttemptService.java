@@ -45,12 +45,12 @@ public class LoginAttemptService {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void recordSuccess(String clientIp, String code) {
-        loginAttemptLimitRepository.deleteByTargetTypeAndTargetValue(LoginAttemptTargetType.IP, clientIp);
-        loginAttemptLimitRepository.deleteByTargetTypeAndTargetValue(LoginAttemptTargetType.CODE, code);
+        loginAttemptLimitRepository.deleteByAttemptKeyIfExists(attemptKey(LoginAttemptTargetType.IP, clientIp));
+        loginAttemptLimitRepository.deleteByAttemptKeyIfExists(attemptKey(LoginAttemptTargetType.CODE, code));
     }
 
     private long remainingLockSeconds(LoginAttemptTargetType targetType, String targetValue, Instant now) {
-        return loginAttemptLimitRepository.findByTargetTypeAndTargetValue(targetType, targetValue)
+        return loginAttemptLimitRepository.findById(attemptKey(targetType, targetValue))
                 .filter(limit -> limit.isLockedAt(now))
                 .map(limit -> Duration.between(now, limit.getLockedUntil()).getSeconds())
                 .filter(seconds -> seconds > 0)
@@ -58,16 +58,24 @@ public class LoginAttemptService {
     }
 
     private void registerFailure(LoginAttemptTargetType targetType, String targetValue, Instant now) {
-        Instant windowExpiresAt = now.plus(LOCK_DURATION);
+        Instant expiresAt = now.plus(LOCK_DURATION);
+        String key = attemptKey(targetType, targetValue);
         LoginAttemptLimit limit = loginAttemptLimitRepository
-                .findWithLockByTargetTypeAndTargetValue(targetType, targetValue)
+                .findWithLockByAttemptKey(key)
                 .orElse(null);
 
         if (limit == null) {
-            loginAttemptLimitRepository.save(LoginAttemptLimit.firstFailure(targetType, targetValue, now, windowExpiresAt));
+            loginAttemptLimitRepository.save(LoginAttemptLimit.firstFailure(key, expiresAt));
             return;
         }
 
-        limit.recordFailure(now, windowExpiresAt, MAX_FAILURE_COUNT);
+        limit.recordFailure(now, expiresAt, MAX_FAILURE_COUNT);
+    }
+
+    private String attemptKey(LoginAttemptTargetType targetType, String targetValue) {
+        return switch (targetType) {
+            case IP -> "login:ip:" + targetValue;
+            case CODE -> "login:code:" + targetValue;
+        };
     }
 }

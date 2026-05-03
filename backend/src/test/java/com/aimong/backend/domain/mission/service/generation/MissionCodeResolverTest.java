@@ -32,7 +32,7 @@ class MissionCodeResolverTest {
         Mission mission4 = mission((short) 1, null, "broken-4");
         Mission mission5 = mission((short) 1, null, "broken-5");
 
-        when(missionRepository.findAllByIsActiveTrueOrderByStageAscIdAsc())
+        when(missionRepository.findAllByIsActiveTrueOrderByStageAscMissionCodeAscIdAsc())
                 .thenReturn(List.of(mission1, mission2, mission3, mission4, mission5));
 
         assertThat(resolver.resolve(mission1)).contains("S0101");

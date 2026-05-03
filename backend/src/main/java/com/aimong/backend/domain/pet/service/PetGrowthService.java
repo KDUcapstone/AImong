@@ -8,6 +8,7 @@ import com.aimong.backend.domain.gacha.repository.TicketRepository;
 import com.aimong.backend.domain.pet.entity.CrownType;
 import com.aimong.backend.domain.pet.entity.Pet;
 import com.aimong.backend.domain.pet.entity.PetGrade;
+import com.aimong.backend.domain.pet.entity.PetMood;
 import com.aimong.backend.domain.pet.entity.PetStage;
 import com.aimong.backend.domain.pet.repository.PetRepository;
 import com.aimong.backend.global.exception.AimongException;
@@ -48,6 +49,7 @@ public class PetGrowthService {
 
         PetStage previousStage = pet.getStage();
         boolean evolved = pet.addXp(petXpAmount);
+        pet.updateMood(PetMood.HAPPY);
         boolean crownUnlocked = false;
         List<PetReward> rewards = new ArrayList<>();
 

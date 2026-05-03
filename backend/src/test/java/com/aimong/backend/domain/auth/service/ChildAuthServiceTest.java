@@ -84,4 +84,30 @@ class ChildAuthServiceTest {
         verify(loginAttemptService).validateNotLocked("127.0.0.1", "000000");
         verify(loginAttemptService).recordFailure("127.0.0.1", "000000");
     }
+
+    @Test
+    void loginRecordsFailureWhenCodeFormatIsInvalid() {
+        when(httpServletRequest.getRemoteAddr()).thenReturn("127.0.0.1");
+
+        assertThatThrownBy(() -> childAuthService.login(new ChildLoginRequest("abc12"), httpServletRequest))
+                .isInstanceOf(AimongException.class)
+                .extracting(exception -> ((AimongException) exception).getErrorCode())
+                .isEqualTo(ErrorCode.CHILD_CODE_INVALID_FORMAT);
+
+        verify(loginAttemptService).validateNotLocked("127.0.0.1", "abc12");
+        verify(loginAttemptService).recordFailure("127.0.0.1", "abc12");
+    }
+
+    @Test
+    void loginRecordsFailureWhenCodeIsBlank() {
+        when(httpServletRequest.getRemoteAddr()).thenReturn("127.0.0.1");
+
+        assertThatThrownBy(() -> childAuthService.login(new ChildLoginRequest(" "), httpServletRequest))
+                .isInstanceOf(AimongException.class)
+                .extracting(exception -> ((AimongException) exception).getErrorCode())
+                .isEqualTo(ErrorCode.CHILD_CODE_REQUIRED);
+
+        verify(loginAttemptService).validateNotLocked("127.0.0.1", "<blank>");
+        verify(loginAttemptService).recordFailure("127.0.0.1", "<blank>");
+    }
 }

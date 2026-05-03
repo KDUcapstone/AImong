@@ -29,7 +29,7 @@ public class MissionCodeResolver {
             return byTitle;
         }
 
-        List<Mission> stageMissions = missionRepository.findAllByIsActiveTrueOrderByStageAscIdAsc().stream()
+        List<Mission> stageMissions = missionRepository.findAllByIsActiveTrueOrderByStageAscMissionCodeAscIdAsc().stream()
                 .filter(activeMission -> activeMission.getStage() == mission.getStage())
                 .toList();
         int index = indexOf(stageMissions, mission.getId());
@@ -50,7 +50,7 @@ public class MissionCodeResolver {
     }
 
     public Map<UUID, String> resolveAllActiveMissionCodes() {
-        return missionRepository.findAllByIsActiveTrueOrderByStageAscIdAsc().stream()
+        return missionRepository.findAllByIsActiveTrueOrderByStageAscMissionCodeAscIdAsc().stream()
                 .map(mission -> Map.entry(mission.getId(), resolve(mission).orElse(null)))
                 .filter(entry -> entry.getValue() != null)
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));

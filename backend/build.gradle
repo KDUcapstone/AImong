@@ -130,3 +130,54 @@ tasks.register('exportV4ServeSql', JavaExec) {
 		'_generated/question-bank/question-bank-960-diversified-v4-polished-serve.sql'
 	]
 }
+
+tasks.register('resetSupabaseTestDatabase') {
+	group = 'aimong'
+	description = 'Dangerous: drop and recreate public/private schemas in the configured Supabase test database.'
+
+	doLast {
+		if (System.getenv('AIMONG_ALLOW_DB_RESET') != 'true') {
+			throw new GradleException('Refusing to reset DB. Set AIMONG_ALLOW_DB_RESET=true explicitly.')
+		}
+
+		def url = System.getenv('SUPABASE_DB_URL') ?: System.getenv('DB_URL')
+		def username = System.getenv('SUPABASE_DB_USERNAME') ?: System.getenv('DB_USERNAME')
+		def password = System.getenv('SUPABASE_DB_PASSWORD') ?: System.getenv('DB_PASSWORD')
+		if (!url || !username || !password) {
+			throw new GradleException('Missing SUPABASE_DB_URL/SUPABASE_DB_USERNAME/SUPABASE_DB_PASSWORD.')
+		}
+
+		def loader = new URLClassLoader(
+				configurations.runtimeClasspath.files.collect { it.toURI().toURL() } as URL[],
+				ClassLoader.getPlatformClassLoader()
+		)
+		def driver = loader.loadClass('org.postgresql.Driver').getDeclaredConstructor().newInstance()
+		def props = new Properties()
+		props.setProperty('user', username)
+		props.setProperty('password', password)
+
+		def connection = driver.connect(url, props)
+		try {
+			connection.autoCommit = false
+			def statement = connection.createStatement()
+			try {
+				statement.execute('DROP SCHEMA IF EXISTS private CASCADE')
+				statement.execute('DROP SCHEMA IF EXISTS public CASCADE')
+				statement.execute('CREATE SCHEMA public')
+				statement.execute('CREATE SCHEMA private')
+				statement.execute('GRANT ALL ON SCHEMA public TO postgres')
+				statement.execute('GRANT ALL ON SCHEMA public TO public')
+				statement.execute('GRANT ALL ON SCHEMA private TO postgres')
+			} finally {
+				statement.close()
+			}
+			connection.commit()
+			logger.lifecycle('Supabase test database reset completed: public/private schemas recreated.')
+		} catch (Throwable throwable) {
+			connection.rollback()
+			throw throwable
+		} finally {
+			connection.close()
+		}
+	}
+}

@@ -12,6 +12,8 @@ public interface PetRepository extends JpaRepository<Pet, UUID> {
 
     List<Pet> findByChildId(UUID childId);
 
+    List<Pet> findByChildIdOrderByObtainedAtDesc(UUID childId);
+
     boolean existsByChildIdAndPetType(UUID childId, String petType);
 
     Optional<Pet> findByIdAndChildId(UUID id, UUID childId);

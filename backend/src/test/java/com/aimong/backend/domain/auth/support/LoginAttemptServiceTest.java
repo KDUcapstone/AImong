@@ -6,7 +6,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.aimong.backend.domain.auth.entity.LoginAttemptLimit;
-import com.aimong.backend.domain.auth.entity.LoginAttemptTargetType;
 import com.aimong.backend.domain.auth.repository.LoginAttemptLimitRepository;
 import com.aimong.backend.global.exception.AimongException;
 import com.aimong.backend.global.exception.ErrorCode;
@@ -29,17 +28,11 @@ class LoginAttemptServiceTest {
 
     @Test
     void recordFailureLocksIpAndCodeAfterThirdFailure() {
-        LoginAttemptLimit ipLimit = secondFailure(LoginAttemptTargetType.IP, "127.0.0.1");
-        LoginAttemptLimit codeLimit = secondFailure(LoginAttemptTargetType.CODE, "000000");
+        LoginAttemptLimit ipLimit = secondFailure("login:ip:127.0.0.1");
+        LoginAttemptLimit codeLimit = secondFailure("login:code:000000");
 
-        when(loginAttemptLimitRepository.findWithLockByTargetTypeAndTargetValue(
-                LoginAttemptTargetType.IP,
-                "127.0.0.1"
-        )).thenReturn(Optional.of(ipLimit));
-        when(loginAttemptLimitRepository.findWithLockByTargetTypeAndTargetValue(
-                LoginAttemptTargetType.CODE,
-                "000000"
-        )).thenReturn(Optional.of(codeLimit));
+        when(loginAttemptLimitRepository.findWithLockByAttemptKey("login:ip:127.0.0.1")).thenReturn(Optional.of(ipLimit));
+        when(loginAttemptLimitRepository.findWithLockByAttemptKey("login:code:000000")).thenReturn(Optional.of(codeLimit));
 
         loginAttemptService.recordFailure("127.0.0.1", "000000");
 
@@ -51,12 +44,12 @@ class LoginAttemptServiceTest {
 
     @Test
     void validateNotLockedThrowsWhenEitherTargetIsLocked() {
-        LoginAttemptLimit ipLimit = secondFailure(LoginAttemptTargetType.IP, "127.0.0.1");
+        LoginAttemptLimit ipLimit = secondFailure("login:ip:127.0.0.1");
         ipLimit.recordFailure(Instant.now(), Instant.now().plusSeconds(30), 3);
 
-        when(loginAttemptLimitRepository.findByTargetTypeAndTargetValue(LoginAttemptTargetType.IP, "127.0.0.1"))
+        when(loginAttemptLimitRepository.findById("login:ip:127.0.0.1"))
                 .thenReturn(Optional.of(ipLimit));
-        when(loginAttemptLimitRepository.findByTargetTypeAndTargetValue(LoginAttemptTargetType.CODE, "000000"))
+        when(loginAttemptLimitRepository.findById("login:code:000000"))
                 .thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> loginAttemptService.validateNotLocked("127.0.0.1", "000000"))
@@ -69,13 +62,13 @@ class LoginAttemptServiceTest {
     void recordSuccessClearsIpAndCodeLimits() {
         loginAttemptService.recordSuccess("127.0.0.1", "482917");
 
-        verify(loginAttemptLimitRepository).deleteByTargetTypeAndTargetValue(LoginAttemptTargetType.IP, "127.0.0.1");
-        verify(loginAttemptLimitRepository).deleteByTargetTypeAndTargetValue(LoginAttemptTargetType.CODE, "482917");
+        verify(loginAttemptLimitRepository).deleteByAttemptKeyIfExists("login:ip:127.0.0.1");
+        verify(loginAttemptLimitRepository).deleteByAttemptKeyIfExists("login:code:482917");
     }
 
-    private LoginAttemptLimit secondFailure(LoginAttemptTargetType targetType, String targetValue) {
+    private LoginAttemptLimit secondFailure(String key) {
         Instant now = Instant.now();
-        LoginAttemptLimit limit = LoginAttemptLimit.firstFailure(targetType, targetValue, now, now.plusSeconds(60));
+        LoginAttemptLimit limit = LoginAttemptLimit.firstFailure(key, now.plusSeconds(60));
         limit.recordFailure(now.plusSeconds(1), now.plusSeconds(60), 3);
         return limit;
     }

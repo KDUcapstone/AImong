@@ -56,7 +56,7 @@ class StreakServiceTest {
     }
 
     @Test
-    void getStreakReturnsNullPartnerInMvp() {
+    void getStreakReturnsNullPartnerWhenNotConnected() {
         StreakService service = service();
         UUID childId = UUID.randomUUID();
         LocalDate today = KstDateUtils.today();
@@ -73,6 +73,35 @@ class StreakServiceTest {
         assertThat(response.todayMissionCount()).isEqualTo(1);
         assertThat(response.shieldCount()).isEqualTo(2);
         assertThat(response.partner()).isNull();
+    }
+
+    @Test
+    void getStreakReturnsConnectedPartnerStatus() {
+        StreakService service = service();
+        UUID childId = UUID.randomUUID();
+        UUID partnerChildId = UUID.randomUUID();
+        LocalDate today = KstDateUtils.today();
+        StreakRecord streak = StreakRecord.create(childId);
+        streak.recordMissionCompletion(today);
+        StreakRecord partnerStreak = StreakRecord.create(partnerChildId);
+        partnerStreak.recordMissionCompletion(today);
+        ChildProfile child = org.mockito.Mockito.mock(ChildProfile.class);
+        ChildProfile partner = org.mockito.Mockito.mock(ChildProfile.class);
+
+        when(streakRecordRepository.findById(childId)).thenReturn(Optional.of(streak));
+        when(streakRecordRepository.findById(partnerChildId)).thenReturn(Optional.of(partnerStreak));
+        when(childProfileRepository.findById(childId)).thenReturn(Optional.of(child));
+        when(childProfileRepository.findById(partnerChildId)).thenReturn(Optional.of(partner));
+        when(friendStreakRepository.findById(childId)).thenReturn(Optional.of(friendStreak(childId, partnerChildId)));
+        when(partner.getId()).thenReturn(partnerChildId);
+        when(partner.getNickname()).thenReturn("partner");
+
+        var response = service.getStreak(childId);
+
+        assertThat(response.partner()).isNotNull();
+        assertThat(response.partner().childId()).isEqualTo(partnerChildId);
+        assertThat(response.partner().nickname()).isEqualTo("partner");
+        assertThat(response.partner().todayCompleted()).isTrue();
     }
 
     @Test

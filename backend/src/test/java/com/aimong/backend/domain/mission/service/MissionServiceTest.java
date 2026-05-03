@@ -42,7 +42,7 @@ class MissionServiceTest {
         when(missionAttemptRepository.countCompletedMissionByStage(childId, (short) 2)).thenReturn(1L);
         when(missionAttemptRepository.countCompletedMissionByStage(childId, (short) 3)).thenReturn(0L);
         when(missionAttemptRepository.findLatestCompletedAt(childId, missionId)).thenReturn(Optional.of(completedAt));
-        when(missionRepository.findAllByIsActiveTrueOrderByStageAscIdAsc()).thenReturn(List.of(mission));
+        when(missionRepository.findAllByIsActiveTrueOrderByStageAscMissionCodeAscIdAsc()).thenReturn(List.of(mission));
         when(mission.getId()).thenReturn(missionId);
         when(mission.getStage()).thenReturn((short) 2);
         when(mission.getTitle()).thenReturn("Mission");

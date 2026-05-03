@@ -51,6 +51,15 @@ public class Fragment {
         updatedAt = Instant.now();
     }
 
+    public boolean canSpend(int amount) {
+        return count >= amount;
+    }
+
+    public void spend(int amount) {
+        count -= amount;
+        updatedAt = Instant.now();
+    }
+
     @PrePersist
     void prePersist() {
         if (updatedAt == null) {

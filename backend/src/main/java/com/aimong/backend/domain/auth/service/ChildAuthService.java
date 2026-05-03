@@ -14,6 +14,7 @@ import com.aimong.backend.global.util.ClientIpUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +22,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class ChildAuthService {
+
+    private static final Pattern CHILD_LOGIN_CODE_PATTERN = Pattern.compile("^\\d{6}$");
+    private static final String BLANK_LOGIN_ATTEMPT_KEY = "<blank>";
 
     private final ChildProfileRepository childProfileRepository;
     private final JwtProvider jwtProvider;
@@ -30,11 +34,23 @@ public class ChildAuthService {
     @Transactional
     public ChildLoginResponse login(ChildLoginRequest request, HttpServletRequest httpServletRequest) {
         String clientIp = ClientIpUtils.extractClientIp(httpServletRequest);
-        loginAttemptService.validateNotLocked(clientIp, request.code());
+        String code = request == null || request.code() == null ? "" : request.code();
+        String attemptKey = code.isBlank() ? BLANK_LOGIN_ATTEMPT_KEY : code;
+        loginAttemptService.validateNotLocked(clientIp, attemptKey);
 
-        ChildProfile childProfile = childProfileRepository.findByCode(request.code())
+        if (code.isBlank()) {
+            loginAttemptService.recordFailure(clientIp, attemptKey);
+            throw new AimongException(ErrorCode.CHILD_CODE_REQUIRED);
+        }
+
+        if (!CHILD_LOGIN_CODE_PATTERN.matcher(code).matches()) {
+            loginAttemptService.recordFailure(clientIp, attemptKey);
+            throw new AimongException(ErrorCode.CHILD_CODE_INVALID_FORMAT);
+        }
+
+        ChildProfile childProfile = childProfileRepository.findByCode(code)
                 .orElseThrow(() -> {
-                    loginAttemptService.recordFailure(clientIp, request.code());
+                    loginAttemptService.recordFailure(clientIp, attemptKey);
                     return new AimongException(ErrorCode.CHILD_CODE_NOT_FOUND);
                 });
 
@@ -43,7 +59,7 @@ public class ChildAuthService {
                 childProfile.getSessionVersion()
         );
         childProfile.touchLastActiveAt(Instant.now());
-        loginAttemptService.recordSuccess(clientIp, request.code());
+        loginAttemptService.recordSuccess(clientIp, attemptKey);
 
         return new ChildLoginResponse(
                 childProfile.getId(),

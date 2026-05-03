@@ -22,6 +22,7 @@ public class DailyResetScheduler {
     @Transactional
     public void processStreakReset() {
         LocalDate today = KstDateUtils.today();
+        childProfileRepository.resetDailyXp(today);
         streakRecordRepository.findStaleTodayMissionCounts(today)
                 .forEach(StreakRecord::resetTodayMissionCount);
 

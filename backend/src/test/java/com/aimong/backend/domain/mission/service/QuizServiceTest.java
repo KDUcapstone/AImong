@@ -65,7 +65,7 @@ class QuizServiceTest {
     private QuestionServingQualityGuard questionServingQualityGuard;
 
     private final MissionQuestionProperties missionQuestionProperties =
-            new MissionQuestionProperties(10, 30, false, false, false, false);
+            new MissionQuestionProperties(10, 30, false, false, true, false);
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
@@ -82,6 +82,8 @@ class QuizServiceTest {
         when(missionDailyProgressRepository.findByChildIdAndMissionIdAndProgressDate(childId, missionId, KstDateUtils.today()))
                 .thenReturn(Optional.of(org.mockito.Mockito.mock(MissionDailyProgress.class)));
         when(missionQuestionSetFactory.create(missionId, childId, true)).thenReturn(questions);
+        when(questionServingQualityGuard.validateForServing(mission, questions))
+                .thenReturn(new QuestionServingQualityGuard.ServingValidationResult(questions, List.of()));
         when(quizAttemptRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         var response = quizService.getQuestions(childId, missionId);
@@ -91,6 +93,34 @@ class QuizServiceTest {
         assertThat(response.questions().getFirst().type()).isEqualTo("OX");
         assertThat(response.questions().getFirst().question()).startsWith("Should you share a password?");
         verify(childActivityService).touchLastActiveAt(childId);
+    }
+
+    @Test
+    void servingValidationFailureReturnsMissionSetNotReadyWithoutCreatingAttempt() {
+        QuizService quizService = quizService();
+        UUID childId = UUID.randomUUID();
+        UUID missionId = UUID.randomUUID();
+        Mission mission = mission(missionId);
+        List<QuestionBank> questions = java.util.stream.IntStream.range(0, 10)
+                .mapToObj(index -> question("Invalid question " + index))
+                .toList();
+
+        wireUnlockedMission(childId, missionId, mission);
+        when(missionDailyProgressRepository.findByChildIdAndMissionIdAndProgressDate(childId, missionId, KstDateUtils.today()))
+                .thenReturn(Optional.empty());
+        when(missionQuestionSetFactory.create(missionId, childId, false)).thenReturn(questions);
+        List<UUID> invalidQuestionIds = questions.stream()
+                .map(QuestionBank::getId)
+                .toList();
+        when(questionServingQualityGuard.validateForServing(mission, questions))
+                .thenReturn(new QuestionServingQualityGuard.ServingValidationResult(List.of(), invalidQuestionIds));
+
+        assertThatThrownBy(() -> quizService.getQuestions(childId, missionId))
+                .isInstanceOf(AimongException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.MISSION_SET_NOT_READY);
+
+        verify(quizAttemptRepository, never()).save(any());
     }
 
     @Test

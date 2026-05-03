@@ -185,11 +185,15 @@ public class ChildProfile {
 
     public void recordGachaPull(PetGrade grade) {
         gachaPullCount += 1;
-        if (grade == PetGrade.NORMAL) {
+        recordGachaResult(grade);
+    }
+
+    public void recordGachaResult(PetGrade grade) {
+        if (grade == PetGrade.EPIC || grade == PetGrade.LEGEND) {
+            srMissCount = 0;
+        } else {
             srMissCount += 1;
-            return;
         }
-        srMissCount = 0;
     }
 
     @PrePersist

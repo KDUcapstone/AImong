@@ -83,7 +83,10 @@ public class Pet {
 
         PetStage previousStage = stage;
         xp += amount;
-        stage = resolveStage(xp);
+        if (stage != PetStage.AIMONG && xp >= evolutionThreshold()) {
+            stage = nextStage();
+            xp = 0;
+        }
         return previousStage != stage;
     }
 
@@ -94,14 +97,33 @@ public class Pet {
         xp = 0;
     }
 
-    private PetStage resolveStage(int xp) {
-        if (xp >= 250) {
-            return PetStage.AIMONG;
-        }
-        if (xp >= 80) {
-            return PetStage.GROWTH;
-        }
-        return PetStage.EGG;
+    public void updateMood(PetMood mood) {
+        this.mood = mood;
+    }
+
+    private int evolutionThreshold() {
+        return switch (stage) {
+            case EGG -> switch (grade) {
+                case NORMAL -> 10;
+                case RARE -> 12;
+                case EPIC -> 15;
+                case LEGEND -> 20;
+            };
+            case GROWTH -> switch (grade) {
+                case NORMAL -> 30;
+                case RARE -> 36;
+                case EPIC -> 45;
+                case LEGEND -> 60;
+            };
+            case AIMONG -> Integer.MAX_VALUE;
+        };
+    }
+
+    private PetStage nextStage() {
+        return switch (stage) {
+            case EGG -> PetStage.GROWTH;
+            case GROWTH, AIMONG -> PetStage.AIMONG;
+        };
     }
 
     @PrePersist

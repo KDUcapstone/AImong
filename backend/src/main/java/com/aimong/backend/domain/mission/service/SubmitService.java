@@ -29,6 +29,7 @@ import com.aimong.backend.domain.quest.service.AchievementService;
 import com.aimong.backend.domain.quest.service.DailyQuestService;
 import com.aimong.backend.domain.quest.service.WeeklyQuestService;
 import com.aimong.backend.domain.streak.entity.StreakRecord;
+import com.aimong.backend.domain.streak.repository.FriendStreakRepository;
 import com.aimong.backend.domain.streak.repository.StreakRecordRepository;
 import com.aimong.backend.domain.streak.service.MilestoneService;
 import com.aimong.backend.global.exception.AimongException;
@@ -57,6 +58,7 @@ public class SubmitService {
 
     private static final int TOTAL_QUESTIONS = 10;
     private static final int BASE_XP = 10;
+    private static final int PERFECT_BONUS_XP = 10;
     private static final String MODE_NORMAL = "normal";
     private static final String MODE_REVIEW = "review";
     private static final String ATTEMPT_STATE_SUBMITTED = "submitted";
@@ -72,6 +74,7 @@ public class SubmitService {
     private final ChildActivityService childActivityService;
     private final TicketRepository ticketRepository;
     private final StreakRecordRepository streakRecordRepository;
+    private final FriendStreakRepository friendStreakRepository;
     private final MilestoneService milestoneService;
     private final DailyQuestService dailyQuestService;
     private final WeeklyQuestService weeklyQuestService;
@@ -140,20 +143,19 @@ public class SubmitService {
         LocalDate today = KstDateUtils.today();
         LocalDate weekStart = KstDateUtils.currentWeekStart();
         int attemptNo = Math.toIntExact(missionAttemptRepository.countByChildIdAndMissionIdAndAttemptDate(childId, missionId, today)) + 1;
-        boolean alreadyCompletedToday = missionDailyProgressRepository.findByChildIdAndMissionIdAndProgressDate(
-                childId,
-                missionId,
-                today
-        ).isPresent();
-        boolean isReview = quizAttempt.isReview() || alreadyCompletedToday;
+        boolean isReview = quizAttempt.isReview();
         ChildProfile childProfile = childProfileRepository.findById(childId)
                 .orElseThrow(() -> new AimongException(ErrorCode.CHILD_NOT_FOUND));
         StreakRecord streakRecord = streakRecordRepository.findWithLockByChildId(childId)
                 .orElseGet(() -> streakRecordRepository.save(StreakRecord.create(childId)));
+        String equippedPetGrade = petGrowthService.findEquippedPetGrade(childId);
+        int bonusXp = calculatePetBonusXp(equippedPetGrade, wrongCount);
+        int normalModeBaseXp = calculateNormalModeBaseXp(isPerfect, bonusXp);
 
         quizAttempt.markSubmitted(Instant.now());
 
         if (isReview) {
+            int reviewXp = 0;
             final int reviewScore = score;
             MissionAttempt reviewAttempt = missionAttemptRepository.save(MissionAttempt.create(
                     childId,
@@ -164,12 +166,24 @@ public class SubmitService {
                     TOTAL_QUESTIONS,
                     true,
                     isPassed,
-                    0
+                    reviewXp
             ));
             saveAnswerResults(reviewAttempt.getId(), childId, missionId, true, request.answers(), answerKeysById);
             missionDailyProgressRepository.findWithLockByChildIdAndMissionIdAndProgressDate(childId, missionId, today)
                     .ifPresent(progress -> progress.applyReviewAttempt(reviewScore));
-            return buildReviewResponse(childId, score, wrongCount, isPassed, isPerfect, childProfile, streakRecord, results);
+            return buildReviewResponse(
+                    childId,
+                    score,
+                    wrongCount,
+                    isPassed,
+                    isPerfect,
+                    equippedPetGrade,
+                    bonusXp,
+                    reviewXp,
+                    childProfile,
+                    streakRecord,
+                    results
+            );
         }
 
         if (!isPassed) {
@@ -188,10 +202,8 @@ public class SubmitService {
             return buildFailureResponse(childId, score, wrongCount, isPerfect, childProfile, streakRecord, results);
         }
 
-        String equippedPetGrade = petGrowthService.findEquippedPetGrade(childId);
-        int bonusXp = calculatePetBonusXp(equippedPetGrade, wrongCount);
-        boolean streakBonusApplied = false;
-        int xpEarned = calculateEarnedXp(bonusXp, streakBonusApplied);
+        boolean streakBonusApplied = isPartnerCompletedToday(childId, today);
+        int xpEarned = calculateEarnedXp(normalModeBaseXp, streakBonusApplied);
         int previousLevel = childProfile.getLevel();
 
         childProfile.applyMissionXp(xpEarned, today, weekStart);
@@ -273,6 +285,9 @@ public class SubmitService {
             int wrongCount,
             boolean isPassed,
             boolean isPerfect,
+            String equippedPetGrade,
+            int bonusXp,
+            int xpEarned,
             ChildProfile childProfile,
             StreakRecord streakRecord,
             List<SubmitResponse.ResultResponse> results
@@ -286,10 +301,10 @@ public class SubmitService {
                 wrongCount,
                 isPassed,
                 isPerfect,
-                null,
-                null,
-                null,
-                0,
+                isPassed ? equippedPetGrade : null,
+                isPassed ? bonusXp : null,
+                isPassed && bonusXp > 0 ? "PET_RARITY_BONUS" : null,
+                xpEarned,
                 null,
                 null,
                 false,
@@ -351,19 +366,31 @@ public class SubmitService {
             return 0;
         }
         return switch (PetGrade.valueOf(equippedPetGrade)) {
-            case NORMAL -> wrongCount == 0 ? 10 : 0;
+            case NORMAL -> wrongCount == 0 ? 5 : 0;
             case RARE -> wrongCount <= 1 ? 10 : 0;
             case EPIC -> wrongCount <= 2 ? 10 : 0;
             case LEGEND -> wrongCount <= 2 ? 15 : 0;
         };
     }
 
-    private int calculateEarnedXp(int bonusXp, boolean streakBonusApplied) {
-        int xpEarned = BASE_XP + bonusXp;
+    private int calculateNormalModeBaseXp(boolean isPerfect, int bonusXp) {
+        return BASE_XP + (isPerfect ? PERFECT_BONUS_XP : 0) + bonusXp;
+    }
+
+    private int calculateEarnedXp(int normalModeBaseXp, boolean streakBonusApplied) {
+        int xpEarned = normalModeBaseXp;
         if (!streakBonusApplied) {
             return xpEarned;
         }
         return (int) Math.floor(xpEarned * 1.5d);
+    }
+
+    private boolean isPartnerCompletedToday(UUID childId, LocalDate today) {
+        return friendStreakRepository.findById(childId)
+                .flatMap(friendStreak -> streakRecordRepository.findById(friendStreak.getPartnerChildId()))
+                .map(partnerStreak -> today.equals(partnerStreak.getLastCompletedDate())
+                        && partnerStreak.getTodayMissionCount() > 0)
+                .orElse(false);
     }
 
     private void saveAnswerResults(

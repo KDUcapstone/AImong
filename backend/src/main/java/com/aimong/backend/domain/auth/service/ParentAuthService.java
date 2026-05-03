@@ -13,7 +13,6 @@ import com.aimong.backend.domain.auth.repository.ParentAccountRepository;
 import com.aimong.backend.domain.gacha.entity.Ticket;
 import com.aimong.backend.domain.gacha.entity.TicketType;
 import com.aimong.backend.domain.gacha.repository.TicketRepository;
-import com.aimong.backend.domain.gacha.service.GachaPullService;
 import com.aimong.backend.domain.streak.entity.StreakRecord;
 import com.aimong.backend.domain.streak.repository.StreakRecordRepository;
 import com.aimong.backend.global.exception.AimongException;
@@ -37,21 +36,25 @@ public class ParentAuthService {
     private static final String GOOGLE_SIGN_IN_PROVIDER = "google.com";
     private static final int MAX_CODE_RETRY = 5;
     private static final int STARTER_TICKETS = 3;
+    private static final int MAX_CHILDREN_PER_PARENT = 3;
 
     private final FirebaseAuth firebaseAuth;
     private final ParentAccountRepository parentAccountRepository;
     private final ChildProfileRepository childProfileRepository;
     private final TicketRepository ticketRepository;
     private final StreakRecordRepository streakRecordRepository;
-    private final GachaPullService gachaPullService;
 
     @Transactional
     public ParentRegisterResponse register(String authorizationHeader, ParentRegisterRequest request) {
         FirebaseToken firebaseToken = verifyFirebaseToken(authorizationHeader);
-        ParentAccount parentAccount = parentAccountRepository.findByParentId(firebaseToken.getUid())
+        ParentAccount parentAccount = parentAccountRepository.findWithLockByParentId(firebaseToken.getUid())
                 .orElseGet(() -> parentAccountRepository.save(
                         ParentAccount.create(firebaseToken.getUid(), firebaseToken.getEmail())
                 ));
+
+        if (childProfileRepository.countByParentAccountParentId(parentAccount.getParentId()) >= MAX_CHILDREN_PER_PARENT) {
+            throw new AimongException(ErrorCode.CHILD_LIMIT_EXCEEDED);
+        }
 
         ChildProfile childProfile = childProfileRepository.save(
                 ChildProfile.create(parentAccount, request.nickname(), generateUniqueCode())
@@ -60,7 +63,6 @@ public class ParentAuthService {
                 .mapToObj(index -> Ticket.issue(childProfile.getId(), TicketType.NORMAL))
                 .toList());
         streakRecordRepository.save(StreakRecord.create(childProfile.getId()));
-        gachaPullService.initializeStarterOnboarding(childProfile);
         childProfile.markStarterIssued();
 
         return new ParentRegisterResponse(

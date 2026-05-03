@@ -31,7 +31,7 @@ public class MissionService {
                 countCompletedMissionByStage(childId, (short) 3)
         );
 
-        List<MissionSummaryResponse> missions = missionRepository.findAllByIsActiveTrueOrderByStageAscIdAsc()
+        List<MissionSummaryResponse> missions = missionRepository.findAllByIsActiveTrueOrderByStageAscMissionCodeAscIdAsc()
                 .stream()
                 .map(mission -> toMissionSummary(childId, mission, stageProgress))
                 .toList();
