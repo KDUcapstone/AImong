@@ -12,11 +12,26 @@ public class GachaProbabilityService {
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
-    private static final Map<PetGrade, List<String>> PET_POOL = Map.of(
-            PetGrade.NORMAL, List.of("RABBIT", "TURTLE", "HEDGEHOG", "SQUIRREL"),
-            PetGrade.RARE, List.of("FOX", "OWL", "CAT"),
-            PetGrade.EPIC, List.of("DRAGON", "UNICORN"),
-            PetGrade.LEGEND, List.of("PHOENIX")
+    private static final Map<PetGrade, List<PetDefinition>> PET_POOL = Map.of(
+            PetGrade.NORMAL, List.of(
+                    new PetDefinition("pet_normal_001", "토끼몽"),
+                    new PetDefinition("pet_normal_002", "거북몽"),
+                    new PetDefinition("pet_normal_003", "고슴몽"),
+                    new PetDefinition("pet_normal_004", "다람몽"),
+                    new PetDefinition("pet_normal_005", "새싹몽")
+            ),
+            PetGrade.RARE, List.of(
+                    new PetDefinition("pet_rare_001", "여우몽"),
+                    new PetDefinition("pet_rare_002", "부엉몽"),
+                    new PetDefinition("pet_rare_003", "번개몽")
+            ),
+            PetGrade.EPIC, List.of(
+                    new PetDefinition("pet_epic_001", "드래곤몽"),
+                    new PetDefinition("pet_epic_002", "유니콘몽")
+            ),
+            PetGrade.LEGEND, List.of(
+                    new PetDefinition("pet_legend_001", "피닉스몽")
+            )
     );
 
     private static final double[][] NORMAL_TICKET_PROBABILITIES = {
@@ -36,13 +51,23 @@ public class GachaProbabilityService {
     public DrawResult draw(TicketType ticketType, int nextPullCount, int srMissCount) {
         double[] probabilities = probabilitiesFor(ticketType, nextPullCount, srMissCount);
         PetGrade grade = weightedRandom(probabilities);
-        List<String> pool = PET_POOL.get(grade);
-        String petType = pool.get(SECURE_RANDOM.nextInt(pool.size()));
+        List<PetDefinition> pool = PET_POOL.get(grade);
+        String petType = pool.get(SECURE_RANDOM.nextInt(pool.size())).code();
         return new DrawResult(petType, grade, appliedSrBonus(ticketType, nextPullCount, srMissCount));
     }
 
     public boolean isValidPetTypeForGrade(PetGrade grade, String petType) {
-        return PET_POOL.getOrDefault(grade, List.of()).contains(petType);
+        return PET_POOL.getOrDefault(grade, List.of()).stream()
+                .anyMatch(pet -> pet.code().equals(petType));
+    }
+
+    public String petNameOf(String petType) {
+        return PET_POOL.values().stream()
+                .flatMap(List::stream)
+                .filter(pet -> pet.code().equals(petType))
+                .map(PetDefinition::name)
+                .findFirst()
+                .orElse(petType);
     }
 
     private double[] probabilitiesFor(TicketType ticketType, int nextPullCount, int srMissCount) {
@@ -108,6 +133,12 @@ public class GachaProbabilityService {
             String petType,
             PetGrade grade,
             double appliedSrBonus
+    ) {
+    }
+
+    private record PetDefinition(
+            String code,
+            String name
     ) {
     }
 }

@@ -52,7 +52,7 @@ class GachaApiIntegrationTest {
     void pullReturnsGachaResult() throws Exception {
         UUID petId = UUID.randomUUID();
         given(gachaPullService.pull(any(UUID.class), any(TicketType.class))).willReturn(new GachaPullResponse(
-                new GachaPullResponse.Result(petId, "FOX", "FOX", "RARE", true, 0),
+                new GachaPullResponse.Result(petId, "pet_rare_003", "번개몽", "RARE", true, 0),
                 2,
                 0.0d,
                 false,
@@ -66,7 +66,8 @@ class GachaApiIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.result.petId").value(petId.toString()))
-                .andExpect(jsonPath("$.data.result.petType").value("FOX"))
+                .andExpect(jsonPath("$.data.result.petType").value("pet_rare_003"))
+                .andExpect(jsonPath("$.data.result.petName").value("번개몽"))
                 .andExpect(jsonPath("$.data.result.grade").value("RARE"))
                 .andExpect(jsonPath("$.data.result.isNew").value(true))
                 .andExpect(jsonPath("$.data.remainingTickets.normal").value(2));
@@ -92,16 +93,16 @@ class GachaApiIntegrationTest {
     void exchangeReturnsNewPet() throws Exception {
         UUID petId = UUID.randomUUID();
         given(gachaPullService.exchange(any(UUID.class), any(PetGrade.class), any(String.class)))
-                .willReturn(new GachaExchangeResponse(petId, "RABBIT", "NORMAL", "EGG"));
+                .willReturn(new GachaExchangeResponse(petId, "pet_normal_005", "NORMAL", "EGG"));
 
         mockMvc.perform(post("/gacha/exchange")
                         .principal(childPrincipal())
                         .contentType(APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsBytes(new GachaExchangeRequest(PetGrade.NORMAL, "RABBIT"))))
+                        .content(objectMapper.writeValueAsBytes(new GachaExchangeRequest(PetGrade.NORMAL, "pet_normal_005"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.petId").value(petId.toString()))
-                .andExpect(jsonPath("$.data.petType").value("RABBIT"))
+                .andExpect(jsonPath("$.data.petType").value("pet_normal_005"))
                 .andExpect(jsonPath("$.data.grade").value("NORMAL"))
                 .andExpect(jsonPath("$.data.stage").value("EGG"));
     }
