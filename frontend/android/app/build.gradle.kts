@@ -53,7 +53,8 @@ hilt {
 
 dependencies {
     implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.appcompat)
+    // Plain Maven coordinates: Cursor/Kotlin LSP often fails to attach version-catalog deps to the IDE classpath.
+    implementation("androidx.appcompat:appcompat:1.7.0")
     implementation(libs.material)
     implementation(libs.androidx.constraintlayout)
 

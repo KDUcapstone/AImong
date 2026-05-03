@@ -3,6 +3,7 @@ package com.kduniv.aimong.feature.mission.presentation
 import android.animation.ObjectAnimator
 import android.animation.PropertyValuesHolder
 import android.animation.ValueAnimator
+import android.content.res.ColorStateList
 import android.graphics.Color
 import android.text.Spannable
 import android.text.SpannableString
@@ -11,7 +12,6 @@ import android.view.View
 import android.view.animation.CycleInterpolator
 import android.widget.ImageView
 import android.widget.TextView
-import androidx.core.content.ContextCompat
 import androidx.navigation.fragment.findNavController
 import com.kduniv.aimong.R
 import com.kduniv.aimong.core.ui.BaseFragment
@@ -92,22 +92,21 @@ class DummyQuizFragment : BaseFragment<FragmentDummyQuizBinding>(FragmentDummyQu
                     binding.layoutQuizResult.visibility = View.VISIBLE
                 }
             } else {
-                if (lives <= 0) {
-                    showResultOverlay(isSuccess = false)
-                } else if (currentQuestionIndex < totalQuestions - 1) {
-                    currentQuestionIndex++
-                    resetOptions()
-                    binding.layoutFeedbackPanel.visibility = View.GONE
-                    setupQuizUI()
-                } else {
-                    showResultOverlay(isSuccess = true)
+                binding.layoutFeedbackPanel.visibility = View.GONE
+                when {
+                    lives <= 0 -> showResultOverlay(isSuccess = false)
+                    currentQuestionIndex >= totalQuestions - 1 -> showResultOverlay(isSuccess = true)
+                    else -> {
+                        currentQuestionIndex++
+                        resetOptions()
+                        setupQuizUI()
+                    }
                 }
             }
         }
 
         binding.btnFeedbackRetry.setOnClickListener {
             binding.layoutFeedbackPanel.visibility = View.GONE
-            resetOptions()
         }
 
         // 결과 화면 버튼
@@ -184,69 +183,116 @@ class DummyQuizFragment : BaseFragment<FragmentDummyQuizBinding>(FragmentDummyQu
         countDownTimer?.cancel()
 
         val q = questions[currentQuestionIndex]
-        val isCorrect = if (optionIndex == -1) false else optionIndex == q.correctAnswerIndex
-        userAnswers[currentQuestionIndex] = optionIndex
+        val userIdx = optionIndex
+        val isCorrect = userIdx != -1 && userIdx == q.correctAnswerIndex
+
+        userAnswers[currentQuestionIndex] = userIdx
 
         disableOptions()
-        if (optionIndex != -1) {
-            highlightSelectedOption(optionIndex, q.type)
-            if (q.type == "FILL") {
-                val filledQuestion = q.question.replace("[      ]", "[${q.options[optionIndex]}]")
-                setHighlightedText(binding.tvQuizQuestion, filledQuestion)
-            }
+        if (userIdx != -1 && q.type == "FILL") {
+            val filledQuestion = q.question.replace("[      ]", "[${q.options[userIdx]}]")
+            setHighlightedText(binding.tvQuizQuestion, filledQuestion)
         }
 
-        view?.postDelayed({
-            if (!isAdded) return@postDelayed
-            
-            if (!isCorrect) {
-                lives--
-                updateHearts(animate = true)
-                shakeView(binding.layoutHearts)
-                
-                if (lives <= 0) {
-                    showMissionFailure()
-                    return@postDelayed
-                }
-            }
+        applyInstantAnswerHighlights(q, userIdx)
 
-            if (currentQuestionIndex < totalQuestions - 1) {
-                currentQuestionIndex++
-                resetOptions()
-                setupQuizUI()
-            } else {
-                showResultOverlay(isSuccess = true)
-            }
-        }, 600)
+        if (!isCorrect) {
+            lives--
+            updateHearts(animate = true)
+            shakeView(binding.layoutHearts)
+        }
+
+        binding.layoutFeedbackPanel.visibility = View.VISIBLE
+        if (isCorrect) {
+            binding.tvFeedbackTitle.text = getString(R.string.quiz_feedback_correct_xp)
+            binding.tvFeedbackTitle.setTextColor(Color.parseColor("#00FFB2"))
+        } else {
+            binding.tvFeedbackTitle.text =
+                "${getString(R.string.quiz_feedback_wrong)}\n${getString(R.string.quiz_feedback_wrong_hint)}"
+            binding.tvFeedbackTitle.setTextColor(Color.parseColor("#FF6B4B"))
+        }
+        binding.tvFeedbackContent.text = q.feedback
+
+        binding.btnFeedbackRetry.visibility = View.VISIBLE
+
+        binding.btnNextQuestion.text = when {
+            !isCorrect && lives <= 0 -> getString(R.string.quiz_btn_result_confirm)
+            currentQuestionIndex >= totalQuestions - 1 -> getString(R.string.quiz_btn_view_result)
+            else -> getString(R.string.quiz_btn_next)
+        }
     }
 
-    private fun highlightSelectedOption(index: Int, type: String) {
-        when(type) {
-            "OX" -> {
-                val btn = if (index == 0) binding.btnOxO else binding.btnOxX
-                val color = if (index == 0) "#00FFB2" else "#FF4B4B"
-                btn.setCardBackgroundColor(android.content.res.ColorStateList.valueOf(Color.parseColor(color)))
-                btn.setStrokeColor(android.content.res.ColorStateList.valueOf(Color.parseColor(color)))
-                
-                if (index == 0) {
-                    binding.tvOxOIcon.setTextColor(Color.parseColor("#0A1633"))
-                    binding.tvOxOText.setTextColor(Color.parseColor("#0A1633"))
-                } else {
-                    binding.tvOxXIcon.setTextColor(Color.parseColor("#0A1633"))
-                    binding.tvOxXText.setTextColor(Color.parseColor("#0A1633"))
+    /** 문항 단위 피드백: 정답(민트) / 사용자 오답(빨강). userIdx == -1 이면 시간 초과(정답만 표시). */
+    private fun applyInstantAnswerHighlights(q: DummyQuestion, userIdx: Int) {
+        val correctIdx = q.correctAnswerIndex
+        when (q.type) {
+            "OX" -> applyOxHighlights(userIdx, correctIdx)
+            "FILL" -> applyFillHighlights(userIdx, correctIdx)
+            else -> applyStandardHighlights(userIdx, correctIdx)
+        }
+    }
+
+    private fun applyOxHighlights(userIdx: Int, correctIdx: Int) {
+        val density = resources.displayMetrics.density
+        val mint = Color.parseColor("#00FFB2")
+        val red = Color.parseColor("#FF4B4B")
+        val strokeStrong = (8 * density).toInt()
+        val btnO = binding.btnOxO
+        val btnX = binding.btnOxX
+        val correctBtn = if (correctIdx == 0) btnO else btnX
+        correctBtn.strokeWidth = strokeStrong
+        correctBtn.setStrokeColor(ColorStateList.valueOf(mint))
+
+        if (userIdx != -1 && userIdx != correctIdx) {
+            val wrongBtn = if (userIdx == 0) btnO else btnX
+            wrongBtn.strokeWidth = strokeStrong
+            wrongBtn.setStrokeColor(ColorStateList.valueOf(red))
+        }
+    }
+
+    private fun applyFillHighlights(userIdx: Int, correctIdx: Int) {
+        val mint = Color.parseColor("#00FFB2")
+        val red = Color.parseColor("#FF4B4B")
+        val mintBg = Color.parseColor("#00FFB2")
+        val redBg = Color.parseColor("#FF4B4B")
+        for (i in 0 until binding.layoutOptionsChips.childCount) {
+            val card = binding.layoutOptionsChips.getChildAt(i) as? com.google.android.material.card.MaterialCardView ?: continue
+            val tv = card.getChildAt(0) as? TextView
+            when (i) {
+                correctIdx -> {
+                    card.setCardBackgroundColor(ColorStateList.valueOf(mintBg))
+                    card.setStrokeColor(ColorStateList.valueOf(mint))
+                    tv?.setTextColor(Color.parseColor("#0A1633"))
+                }
+                userIdx -> if (userIdx != -1 && userIdx != correctIdx) {
+                    card.setCardBackgroundColor(ColorStateList.valueOf(redBg))
+                    card.setStrokeColor(ColorStateList.valueOf(red))
+                    tv?.setTextColor(Color.WHITE)
                 }
             }
-            "FILL" -> {
-                val card = binding.layoutOptionsChips.getChildAt(index) as? com.google.android.material.card.MaterialCardView
-                card?.setCardBackgroundColor(android.content.res.ColorStateList.valueOf(Color.parseColor("#00FFB2")))
-                card?.setStrokeColor(android.content.res.ColorStateList.valueOf(Color.parseColor("#00FFB2")))
-                (card?.getChildAt(0) as? TextView)?.setTextColor(Color.parseColor("#0A1633"))
-            }
-            else -> {
-                val buttons = listOf(binding.btnDummyOpt1, binding.btnDummyOpt2, binding.btnDummyOpt3, binding.btnDummyOpt4)
-                if (index in buttons.indices) {
-                    buttons[index].isSelected = true
-                    buttons[index].setStrokeColor(android.content.res.ColorStateList.valueOf(Color.parseColor("#00FFB2")))
+        }
+    }
+
+    private fun applyStandardHighlights(userIdx: Int, correctIdx: Int) {
+        val density = resources.displayMetrics.density
+        val strokeEmphasis = (4 * density).toInt()
+        val mint = Color.parseColor("#00FFB2")
+        val red = Color.parseColor("#FF4B4B")
+        val buttons = listOf(binding.btnDummyOpt1, binding.btnDummyOpt2, binding.btnDummyOpt3, binding.btnDummyOpt4)
+        val checks = listOf(binding.ivCheck1, binding.ivCheck2, binding.ivCheck3, binding.ivCheck4)
+        buttons.forEachIndexed { i, btn ->
+            checks[i].visibility = View.GONE
+            when (i) {
+                correctIdx -> {
+                    btn.setStrokeColor(ColorStateList.valueOf(mint))
+                    btn.strokeWidth = strokeEmphasis
+                    checks[i].visibility = View.VISIBLE
+                    checks[i].setImageResource(R.drawable.ic_check_circle)
+                    checks[i].setColorFilter(mint)
+                }
+                userIdx -> if (userIdx != -1 && userIdx != correctIdx) {
+                    btn.setStrokeColor(ColorStateList.valueOf(red))
+                    btn.strokeWidth = strokeEmphasis
                 }
             }
         }
@@ -416,23 +462,19 @@ class DummyQuizFragment : BaseFragment<FragmentDummyQuizBinding>(FragmentDummyQu
         ObjectAnimator.ofFloat(v, "translationX", 0f, 10f).apply { duration = 500; interpolator = CycleInterpolator(3f); start() }
     }
 
-    private fun showMissionFailure() {
-        binding.layoutFeedbackPanel.visibility = View.VISIBLE
-        binding.tvFeedbackTitle.text = "❌ 미션 실패..."
-        binding.tvFeedbackTitle.setTextColor(Color.parseColor("#FF4B4B"))
-        binding.tvFeedbackContent.text = "오답을 3번이나 했어요. 다시 도전해볼까요?"
-        binding.btnNextQuestion.text = "결과 확인하기"
-        binding.btnFeedbackRetry.visibility = View.GONE
-    }
-
     private fun resetOptions() {
+        val density = resources.displayMetrics.density
+        val defaultStrokePx = (1 * density).toInt()
         val defaultStroke = Color.parseColor("#243B70")
         val defaultBg = Color.parseColor("#1A2B52")
 
         listOf(binding.btnDummyOpt1, binding.btnDummyOpt2, binding.btnDummyOpt3, binding.btnDummyOpt4, binding.btnOxO, binding.btnOxX).forEach {
             it.isEnabled = true; it.isSelected = false
-            (it as? com.google.android.material.card.MaterialCardView)?.setStrokeColor(android.content.res.ColorStateList.valueOf(defaultStroke))
-            (it as? com.google.android.material.card.MaterialCardView)?.setCardBackgroundColor(android.content.res.ColorStateList.valueOf(defaultBg))
+            (it as? com.google.android.material.card.MaterialCardView)?.apply {
+                strokeWidth = defaultStrokePx
+                setStrokeColor(ColorStateList.valueOf(defaultStroke))
+                setCardBackgroundColor(ColorStateList.valueOf(defaultBg))
+            }
         }
 
         binding.tvOxOIcon.setTextColor(Color.parseColor("#00FFB2"))
@@ -443,13 +485,14 @@ class DummyQuizFragment : BaseFragment<FragmentDummyQuizBinding>(FragmentDummyQu
         for (i in 0 until binding.layoutOptionsChips.childCount) {
             val card = binding.layoutOptionsChips.getChildAt(i) as? com.google.android.material.card.MaterialCardView
             card?.isEnabled = true
-            card?.setStrokeColor(android.content.res.ColorStateList.valueOf(defaultStroke))
-            card?.setCardBackgroundColor(android.content.res.ColorStateList.valueOf(defaultBg))
+            card?.strokeWidth = defaultStrokePx
+            card?.setStrokeColor(ColorStateList.valueOf(defaultStroke))
+            card?.setCardBackgroundColor(ColorStateList.valueOf(defaultBg))
             (card?.getChildAt(0) as? TextView)?.setTextColor(Color.WHITE)
         }
 
         listOf(binding.ivCheck1, binding.ivCheck2, binding.ivCheck3, binding.ivCheck4).forEach { it.visibility = View.GONE }
-        binding.btnNextQuestion.text = "다음 문제 →"
+        binding.btnNextQuestion.text = getString(R.string.quiz_btn_next)
         binding.layoutFeedbackPanel.visibility = View.GONE
         binding.btnFeedbackRetry.visibility = View.VISIBLE
     }
@@ -464,57 +507,23 @@ class DummyQuizFragment : BaseFragment<FragmentDummyQuizBinding>(FragmentDummyQu
     private fun showSolutionForCurrentQuestion() {
         val q = questions[currentQuestionIndex]
         val userIdx = userAnswers[currentQuestionIndex] ?: -1
-        val correctIdx = q.correctAnswerIndex
-        
         disableOptions()
-        
-        // 정답 및 오답 하이라이트
-        if (q.type == "OX") {
-            if (userIdx == 0) binding.btnOxO.isSelected = true
-            if (userIdx == 1) binding.btnOxX.isSelected = true
-            
-            val correctBtn = if (correctIdx == 0) binding.btnOxO else binding.btnOxX
-            correctBtn.setStrokeColor(android.content.res.ColorStateList.valueOf(Color.parseColor("#00FFB2")))
-            
-            if (userIdx != -1 && userIdx != correctIdx) {
-                val wrongBtn = if (userIdx == 0) binding.btnOxO else binding.btnOxX
-                wrongBtn.setStrokeColor(android.content.res.ColorStateList.valueOf(Color.parseColor("#FF4B4B")))
-            }
-        } else if (q.type == "FILL") {
-            for (i in 0 until binding.layoutOptionsChips.childCount) {
-                val card = binding.layoutOptionsChips.getChildAt(i) as? com.google.android.material.card.MaterialCardView
-                val tv = card?.getChildAt(0) as? TextView
-                if (i == correctIdx) {
-                    card?.setCardBackgroundColor(android.content.res.ColorStateList.valueOf(Color.parseColor("#00FFB2")))
-                    card?.setStrokeColor(android.content.res.ColorStateList.valueOf(Color.parseColor("#00FFB2")))
-                    tv?.setTextColor(Color.parseColor("#0A1633"))
-                } else if (i == userIdx) {
-                    card?.setCardBackgroundColor(android.content.res.ColorStateList.valueOf(Color.parseColor("#FF4B4B")))
-                    card?.setStrokeColor(android.content.res.ColorStateList.valueOf(Color.parseColor("#FF4B4B")))
-                }
-            }
-        } else {
-            val buttons = listOf(binding.btnDummyOpt1, binding.btnDummyOpt2, binding.btnDummyOpt3, binding.btnDummyOpt4)
-            val checks = listOf(binding.ivCheck1, binding.ivCheck2, binding.ivCheck3, binding.ivCheck4)
-            buttons.forEachIndexed { i, btn ->
-                if (i == correctIdx) {
-                    btn.setStrokeColor(android.content.res.ColorStateList.valueOf(Color.parseColor("#00FFB2")))
-                    checks[i].visibility = View.VISIBLE
-                    checks[i].setImageResource(R.drawable.ic_check_circle)
-                    checks[i].setColorFilter(Color.parseColor("#00FFB2"))
-                } else if (i == userIdx) {
-                    btn.setStrokeColor(android.content.res.ColorStateList.valueOf(Color.parseColor("#FF4B4B")))
-                }
-            }
-        }
-        
+        applyInstantAnswerHighlights(q, userIdx)
+
         binding.layoutFeedbackPanel.visibility = View.VISIBLE
-        binding.tvFeedbackTitle.text = if (userIdx == correctIdx) "🎉 정답이에요!" else "😥 아쉬워요!"
-        binding.tvFeedbackTitle.setTextColor(if (userIdx == correctIdx) Color.parseColor("#00FFB2") else Color.parseColor("#FF4B4B"))
+        binding.tvFeedbackTitle.text =
+            if (userIdx == q.correctAnswerIndex) getString(R.string.quiz_feedback_correct)
+            else getString(R.string.quiz_feedback_wrong)
+        binding.tvFeedbackTitle.setTextColor(
+            if (userIdx == q.correctAnswerIndex) Color.parseColor("#00FFB2")
+            else Color.parseColor("#FF4B4B")
+        )
         binding.tvFeedbackContent.text = q.feedback
 
         binding.btnFeedbackRetry.visibility = View.GONE
-        binding.btnNextQuestion.text = if (currentQuestionIndex == lastAttemptedIndex) "결과로 돌아가기" else "다음 풀이 →"
+        binding.btnNextQuestion.text =
+            if (currentQuestionIndex == lastAttemptedIndex) getString(R.string.quiz_btn_finish_solution)
+            else "다음 풀이 →"
     }
 
     override fun initObserver() {}
