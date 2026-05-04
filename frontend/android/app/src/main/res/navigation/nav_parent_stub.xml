@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_parent_stub"
+    app:startDestination="@id/parentDashboardFragment">
+
+    <!-- 실제 화면과 동일(현재도 플레이스홀더) — 목업 그래프에서도 같은 UI 유지 -->
+    <fragment
+        android:id="@+id/parentDashboardFragment"
+        android:name="com.kduniv.aimong.feature.parent.presentation.ParentDashboardFragment"
+        android:label="Parent Dashboard"
+        tools:layout="@layout/fragment_role_select">
+        <action
+            android:id="@+id/action_parentDashboardFragment_to_privacyLogFragment"
+            app:destination="@id/privacyLogFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/privacyLogFragment"
+        android:name="com.kduniv.aimong.feature.parent.presentation.PrivacyLogFragment"
+        android:label="Privacy Log"
+        tools:layout="@layout/fragment_role_select" />
+
+</navigation>

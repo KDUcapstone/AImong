@@ -1,32 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="wrap_content"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:gravity="center_vertical"
-    android:orientation="horizontal"
-    tools:background="@color/home_bg">
+    android:paddingVertical="12dp"
+    android:clipChildren="false"
+    android:clipToPadding="false">
 
     <TextView
-        android:id="@+id/tv_order"
-        android:layout_width="36dp"
-        android:layout_height="36dp"
+        android:id="@+id/btn_node"
+        android:layout_width="68dp"
+        android:layout_height="68dp"
+        android:layout_gravity="center"
         android:background="@drawable/bg_mission_node_circle"
         android:gravity="center"
+        android:text="⭐"
         android:textColor="@color/white"
-        android:textSize="15sp"
-        android:textStyle="bold"
-        tools:text="1" />
-
-    <TextView
-        android:id="@+id/tv_mission_title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="10dp"
-        android:background="@drawable/bg_home_card"
-        android:paddingHorizontal="14dp"
-        android:paddingVertical="8dp"
-        android:textColor="@color/text_white"
-        android:textSize="13sp"
-        tools:text="AI 기초" />
-</LinearLayout>
+        android:textSize="26sp"
+        android:textStyle="bold" />
+</FrameLayout>

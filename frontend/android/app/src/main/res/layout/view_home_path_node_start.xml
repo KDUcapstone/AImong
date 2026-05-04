@@ -1,66 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:gravity="center_horizontal"
-    android:orientation="vertical"
-    android:paddingVertical="12dp">
+    android:paddingVertical="16dp"
+    android:clipChildren="false"
+    android:clipToPadding="false">
 
-    <TextView
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/home_today_mission_label"
-        android:textColor="@color/text_sub_grey"
-        android:textSize="12sp" />
-
-    <TextView
-        android:id="@+id/tv_mission_title"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:gravity="center"
-        android:textColor="@color/text_white"
-        android:textSize="15sp"
-        android:textStyle="bold"
-        tools:text="AI가 뭐예요?" />
-
-    <FrameLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp">
+        android:layout_gravity="center"
+        android:clipChildren="false"
+        android:clipToPadding="false">
 
         <TextView
-            android:id="@+id/btn_start_mission"
-            android:layout_width="88dp"
-            android:layout_height="88dp"
+            android:id="@+id/btn_node"
+            android:layout_width="84dp"
+            android:layout_height="84dp"
             android:background="@drawable/bg_mission_node_start"
-            android:clickable="true"
-            android:focusable="true"
             android:gravity="center"
-            android:text="@string/home_start_mission"
+            android:text="▶"
             android:textColor="@color/white"
-            android:textSize="17sp"
-            android:textStyle="bold" />
-    </FrameLayout>
+            android:textSize="32sp"
+            android:textStyle="bold"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"/>
 
-    <com.airbnb.lottie.LottieAnimationView
-        android:id="@+id/lottie_pet"
-        android:layout_width="160dp"
-        android:layout_height="160dp"
-        android:layout_marginTop="8dp"
-        app:lottie_autoPlay="true"
-        app:lottie_loop="true"
-        app:lottie_rawRes="@raw/pet_idle" />
+        <com.airbnb.lottie.LottieAnimationView
+            android:id="@+id/lottie_pet"
+            android:layout_width="72dp"
+            android:layout_height="72dp"
+            app:layout_constraintEnd_toStartOf="@id/btn_node"
+            app:layout_constraintBottom_toBottomOf="@id/btn_node"
+            android:layout_marginEnd="8dp"
+            app:lottie_autoPlay="true"
+            app:lottie_loop="true"
+            app:lottie_rawRes="@raw/pet_idle" />
 
-    <TextView
-        android:id="@+id/tv_pet_name_level"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:textColor="#A5D6A7"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        tools:text="팩트봇 Lv.3" />
-</LinearLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</FrameLayout>

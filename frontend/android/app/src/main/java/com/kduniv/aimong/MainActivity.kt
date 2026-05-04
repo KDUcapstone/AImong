@@ -9,6 +9,7 @@ import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.NavigationUI
 import androidx.navigation.ui.setupWithNavController
+import com.kduniv.aimong.core.dev.UiMode
 import com.kduniv.aimong.core.local.SessionManager
 import com.kduniv.aimong.feature.auth.domain.RegisterChildFcmTokenUseCase
 import com.kduniv.aimong.feature.auth.domain.RegisterParentFcmTokenUseCase
@@ -68,15 +69,27 @@ class MainActivity : AppCompatActivity() {
             val userRole = sessionManager.userRole.first()
 
             val targetGraphRes = when (userRole) {
-                "CHILD" -> R.navigation.nav_child
-                "PARENT" -> R.navigation.nav_parent
-                else -> R.navigation.nav_main
+                "CHILD" ->
+                    if (UiMode.useStubNav) R.navigation.nav_child_stub
+                    else R.navigation.nav_child
+                "PARENT" ->
+                    if (UiMode.useStubNav) R.navigation.nav_parent_stub
+                    else R.navigation.nav_parent
+                else ->
+                    if (UiMode.useStubNav) R.navigation.nav_main_stub
+                    else R.navigation.nav_main
             }
 
             val targetGraphId = when (userRole) {
-                "CHILD" -> R.id.nav_child
-                "PARENT" -> R.id.nav_parent
-                else -> R.id.nav_main
+                "CHILD" ->
+                    if (UiMode.useStubNav) R.id.nav_child_stub
+                    else R.id.nav_child
+                "PARENT" ->
+                    if (UiMode.useStubNav) R.id.nav_parent_stub
+                    else R.id.nav_parent
+                else ->
+                    if (UiMode.useStubNav) R.id.nav_main_stub
+                    else R.id.nav_main
             }
 
             // [수정] navController.graph에 직접 접근 시 그래프가 없으면 IllegalStateException이 발생하므로 안전하게 처리

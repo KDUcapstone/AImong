@@ -131,7 +131,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                 updateQuestion(viewModel.currentQuestionIndex.value)
             }
             is QuizUiState.AnswerChecked -> {
-                showAnswerFeedback(state.isCorrect, state.explanation)
+                showAnswerFeedback(state.isCorrect, state.explanation, state.userAnswer)
             }
             is QuizUiState.SolutionLoaded -> {
                 showSolution(state)
@@ -233,7 +233,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         disableOptions()
         markCorrectAnswer(state.question, state.userAnswer, state.isCorrect)
         
-        showAnswerFeedback(state.isCorrect, state.explanation)
+        showAnswerFeedback(state.isCorrect, state.explanation, state.userAnswer)
         binding.btnFeedbackRetry.visibility = View.GONE // 풀이 모드에선 다시보기 불필요
         binding.btnNextQuestion.text = if (index == total - 1) "결과로 돌아가기" else "다음 풀이 →"
     }
@@ -294,14 +294,33 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         }
     }
 
-    private fun showAnswerFeedback(isCorrect: Boolean, explanation: String) {
+    private fun showAnswerFeedback(isCorrect: Boolean, explanation: String, userAnswer: String) {
+        val question = getCurrentQuestion() ?: return
+        markCorrectAnswer(question, userAnswer, isCorrect)
+
         binding.layoutFeedbackPanel.visibility = View.VISIBLE
+        
+        // 마지막 문제인 경우 버튼 텍스트 변경
+        val questions = viewModel.uiState.value.let { 
+            if (it is QuizUiState.QuestionLoaded) it.quizQuestions.questions 
+            else (viewModel.uiState.value as? QuizUiState.AnswerChecked)?.let { 
+                // 이 시점에는 QuestionLoaded 정보가 캐시되어 있어야 함
+                null // 실제로는 캐시된 정보를 쓰거나 ViewModel에서 확인 필요
+            }
+        }
+        
+        // ViewModel의 currentQuestionIndex와 cachedQuestions를 직접 참조하는 게 안전함
+        val isLast = (viewModel.currentQuestionIndex.value >= (binding.pbQuizProgress.max - 1))
+        binding.btnNextQuestion.text = if (isLast) getString(R.string.quiz_btn_view_result) else getString(R.string.quiz_btn_next)
+
         if (isCorrect) {
-            binding.tvFeedbackTitle.text = getString(R.string.quiz_feedback_correct)
+            binding.tvFeedbackTitle.text = getString(R.string.quiz_feedback_correct_xp)
             binding.tvFeedbackTitle.setTextColor(Color.parseColor("#00FFB2"))
+            binding.layoutFeedbackPanel.setCardBackgroundColor(android.content.res.ColorStateList.valueOf(Color.parseColor("#0D1D41")))
         } else {
-            binding.tvFeedbackTitle.text = getString(R.string.quiz_feedback_wrong)
+            binding.tvFeedbackTitle.text = "${getString(R.string.quiz_feedback_wrong)} ${getString(R.string.quiz_feedback_wrong_hint)}"
             binding.tvFeedbackTitle.setTextColor(Color.parseColor("#FF4B4B"))
+            binding.layoutFeedbackPanel.setCardBackgroundColor(android.content.res.ColorStateList.valueOf(Color.parseColor("#1A1025")))
         }
         binding.tvFeedbackContent.text = explanation
     }
@@ -739,17 +758,11 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         }
 
         disableOptions()
-        viewModel.selectAnswer(question.id, answer)
-
-        // v1.3: 일반 모드는 0.5초 후 다음 문항. strict 재도전은 문항마다 제출 후 정오에 따라 종료/진행.
+        
         if (!viewModel.isSolutionMode.value) {
-            viewLifecycleOwner.lifecycleScope.launch {
-                delay(500)
-                if (viewModel.strictSingleLifeRetry.value) {
-                    if (viewModel.submitCurrentStepForStrictLife()) return@launch
-                }
-                viewModel.nextQuestion()
-            }
+            viewModel.checkAnswer(question.id, answer)
+        } else {
+            viewModel.selectAnswer(question.id, answer)
         }
     }
 

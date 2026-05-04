@@ -95,4 +95,7 @@
     <string name="auth_firebase_failed">Firebase 인증에 실패했습니다.</string>
     <string name="auth_child_code_invalid">6자리 숫자 코드를 입력해 주세요.</string>
     <string name="auth_child_login_failed">연결에 실패했습니다. 코드를 확인해 주세요.</string>
+
+    <!-- 목업 모드 (UiMode.useStubNav) — 스위치: core/dev/UiMode.kt -->
+    <string name="stub_mock_retry_toast">목업 모드: 새로고침은 실제 화면에서 확인해 주세요.</string>
 </resources>

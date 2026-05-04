@@ -1,21 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginBottom="12dp"
-    android:background="@drawable/bg_quest_item"
+    android:background="@drawable/bg_home_card"
     android:padding="16dp">
 
-    <!-- 이모지 타일 박스 -->
     <TextView
         android:id="@+id/tv_quest_emoji"
         android:layout_width="48dp"
         android:layout_height="48dp"
-        android:background="@drawable/bg_emoji_tile"
+        android:background="@drawable/bg_path_pill"
         android:gravity="center"
         android:text="🎒"
+        android:textColor="@color/text_white"
         android:textSize="24sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -36,7 +35,7 @@
             android:id="@+id/tv_quest_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="AI 퀴즈 3문제 맞히기"
+            android:text="퀘스트"
             android:textColor="@color/text_white"
             android:textSize="15sp"
             android:textStyle="bold" />
@@ -46,12 +45,11 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="+50 EXP · 가챠 티켓 1장"
+            android:text="+50 EXP"
             android:textColor="@color/text_sub_grey"
             android:textSize="12sp" />
     </LinearLayout>
 
-    <!-- 액션 영역 (그라데이션 버튼 또는 체크표시) -->
     <FrameLayout
         android:id="@+id/btn_action_container"
         android:layout_width="wrap_content"
@@ -60,26 +58,16 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <ImageView
-            android:id="@+id/iv_completed"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:src="@drawable/bg_quest_completed_check"
-            android:visibility="gone" />
-
         <TextView
             android:id="@+id/tv_start_btn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:background="@drawable/bg_button_start_gradient"
-            android:drawableStart="@drawable/ic_play_arrow_white"
-            android:drawablePadding="4dp"
-            android:paddingHorizontal="12dp"
-            android:paddingVertical="8dp"
+            android:background="@drawable/bg_btn_primary"
+            android:paddingHorizontal="24dp"
+            android:paddingVertical="10dp"
             android:text="시작"
             android:textColor="@color/text_white"
-            android:textSize="13sp"
+            android:textSize="14sp"
             android:textStyle="bold" />
     </FrameLayout>
-
 </androidx.constraintlayout.widget.ConstraintLayout>

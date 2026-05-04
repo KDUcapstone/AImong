@@ -106,12 +106,52 @@ class QuizViewModel @Inject constructor(
         if (_isSolutionMode.value) return
         userAnswers[questionId] = answer
         savedStateHandle["userAnswers"] = userAnswers // 상태 저장
-        // v1.3 명세 준수: 퀴즈 도중에는 채점하지 않고 저장만 함
+    }
+
+    /**
+     * 한 문항씩 채점하고 해설을 보여주기 위한 함수
+     */
+    fun checkAnswer(questionId: String, answer: String) {
+        viewModelScope.launch {
+            val qs = cachedQuestions ?: return@launch
+            userAnswers[questionId] = answer
+            savedStateHandle["userAnswers"] = userAnswers
+
+            _uiState.value = QuizUiState.Loading
+            quizRepository.submitQuiz(missionId, qs.quizAttemptId, userAnswers.toMap())
+                .onSuccess { result ->
+                    quizResult = result
+                    val currentResult = result.results.find { it.questionId == questionId }
+                    if (currentResult != null) {
+                        _uiState.value = QuizUiState.AnswerChecked(
+                            isCorrect = currentResult.isCorrect,
+                            explanation = currentResult.explanation,
+                            userAnswer = answer
+                        )
+                    } else {
+                        nextQuestion()
+                    }
+                }
+                .onFailure {
+                    _uiState.value = QuizUiState.Error(it.message ?: "채점 실패")
+                }
+        }
     }
 
     fun nextQuestion() {
         val questions = cachedQuestions?.questions ?: return
         val currentIndex = currentQuestionIndex.value
+
+        // 만약 strict 모드에서 오답이 있었다면 결과 화면으로 종료
+        if (strictSingleLifeRetry.value && quizResult != null) {
+            val q = questions.getOrNull(currentIndex)
+            val step = quizResult?.results?.find { it.questionId == q?.id }
+            if (step != null && !step.isCorrect) {
+                _uiState.value = QuizUiState.Finished(quizResult!!)
+                return
+            }
+        }
+
         if (currentIndex < questions.size - 1) {
             savedStateHandle["currentIndex"] = currentIndex + 1 // 인덱스 저장
             if (_isSolutionMode.value) {
@@ -125,7 +165,12 @@ class QuizViewModel @Inject constructor(
                 quizResult?.let { _uiState.value = QuizUiState.Finished(it) }
                 _isSolutionMode.value = false
             } else {
-                submitQuiz(cachedQuestions!!.quizAttemptId)
+                // 모든 문제를 다 푼 경우 결과 화면으로
+                quizResult?.let {
+                    _uiState.value = QuizUiState.Finished(it)
+                } ?: run {
+                    submitQuiz(cachedQuestions!!.quizAttemptId)
+                }
             }
         }
     }
@@ -243,7 +288,11 @@ class QuizViewModel @Inject constructor(
 sealed class QuizUiState {
     object Loading : QuizUiState()
     data class QuestionLoaded(val quizQuestions: QuizQuestions) : QuizUiState()
-    data class AnswerChecked(val isCorrect: Boolean, val explanation: String) : QuizUiState()
+    data class AnswerChecked(
+        val isCorrect: Boolean,
+        val explanation: String,
+        val userAnswer: String
+    ) : QuizUiState()
     data class SolutionLoaded(
         val question: Question,
         val isCorrect: Boolean,

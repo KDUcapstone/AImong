@@ -1,5 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
-<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
-    <solid android:color="@color/point_purple" />
-    <size android:width="88dp" android:height="88dp" />
-</shape>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- soft outer ring -->
+    <item>
+        <shape android:shape="oval">
+            <size android:width="92dp" android:height="92dp" />
+            <solid android:color="#1A2B52" />
+        </shape>
+    </item>
+
+    <!-- main button gradient -->
+    <item android:insetLeft="2dp" android:insetTop="2dp" android:insetRight="2dp" android:insetBottom="2dp">
+        <shape android:shape="oval">
+            <size android:width="88dp" android:height="88dp" />
+            <gradient
+                android:angle="45"
+                android:endColor="@color/point_pink"
+                android:startColor="@color/point_purple"
+                android:type="linear" />
+            <stroke android:width="1.5dp" android:color="#2C3D70" />
+        </shape>
+    </item>
+
+    <!-- highlight -->
+    <item android:insetLeft="10dp" android:insetTop="10dp" android:insetRight="26dp" android:insetBottom="26dp">
+        <shape android:shape="oval">
+            <gradient
+                android:centerX="0.3"
+                android:centerY="0.3"
+                android:endColor="#00FFFFFF"
+                android:startColor="#55FFFFFF"
+                android:type="radial"
+                android:gradientRadius="40dp" />
+        </shape>
+    </item>
+</layer-list>
