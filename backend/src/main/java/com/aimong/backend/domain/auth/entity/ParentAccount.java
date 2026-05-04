@@ -6,7 +6,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.time.Instant;
-import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -20,10 +19,8 @@ import lombok.NoArgsConstructor;
 public class ParentAccount {
 
     @Id
-    private UUID id;
-
-    @Column(name = "firebase_uid", nullable = false, unique = true)
-    private String firebaseUid;
+    @Column(name = "parent_id", nullable = false)
+    private String parentId;
 
     @Column(name = "email")
     private String email;
@@ -35,7 +32,7 @@ public class ParentAccount {
     private Instant createdAt;
 
     public static ParentAccount create(String firebaseUid, String email) {
-        return new ParentAccount(UUID.randomUUID(), firebaseUid, email, null, null);
+        return new ParentAccount(firebaseUid, email, null, null);
     }
 
     public void updateFcmToken(String fcmToken) {

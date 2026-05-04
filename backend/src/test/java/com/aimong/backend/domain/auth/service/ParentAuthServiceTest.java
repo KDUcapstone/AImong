@@ -12,7 +12,6 @@ import com.aimong.backend.domain.auth.entity.ParentAccount;
 import com.aimong.backend.domain.auth.repository.ChildProfileRepository;
 import com.aimong.backend.domain.auth.repository.ParentAccountRepository;
 import com.aimong.backend.domain.gacha.repository.TicketRepository;
-import com.aimong.backend.domain.gacha.service.GachaPullService;
 import com.aimong.backend.domain.streak.repository.StreakRecordRepository;
 import com.aimong.backend.global.exception.AimongException;
 import com.aimong.backend.global.exception.ErrorCode;
@@ -45,9 +44,6 @@ class ParentAuthServiceTest {
     private StreakRecordRepository streakRecordRepository;
 
     @Mock
-    private GachaPullService gachaPullService;
-
-    @Mock
     private FirebaseToken firebaseToken;
 
     @InjectMocks
@@ -59,8 +55,9 @@ class ParentAuthServiceTest {
         when(firebaseToken.getUid()).thenReturn("firebase-uid");
         when(firebaseToken.getEmail()).thenReturn("parent@example.com");
         when(firebaseToken.getClaims()).thenReturn(Map.of("firebase", Map.of("sign_in_provider", "google.com")));
-        when(parentAccountRepository.findByFirebaseUid("firebase-uid")).thenReturn(Optional.empty());
+        when(parentAccountRepository.findWithLockByParentId("firebase-uid")).thenReturn(Optional.empty());
         when(parentAccountRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(childProfileRepository.countByParentAccountParentId("firebase-uid")).thenReturn(0L);
         when(childProfileRepository.existsByCode(any())).thenReturn(false);
         when(childProfileRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
         when(ticketRepository.saveAll(any(Iterable.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -76,7 +73,24 @@ class ParentAuthServiceTest {
         assertThat(response.starterTickets()).isEqualTo(3);
         verify(ticketRepository).saveAll(any(Iterable.class));
         verify(streakRecordRepository).save(any());
-        verify(gachaPullService).initializeStarterOnboarding(any());
+    }
+
+    @Test
+    void registerRejectsWhenParentAlreadyHasThreeChildren() throws Exception {
+        when(firebaseAuth.verifyIdToken("valid-token")).thenReturn(firebaseToken);
+        when(firebaseToken.getUid()).thenReturn("firebase-uid");
+        when(firebaseToken.getClaims()).thenReturn(Map.of("firebase", Map.of("sign_in_provider", "google.com")));
+        when(parentAccountRepository.findWithLockByParentId("firebase-uid"))
+                .thenReturn(Optional.of(ParentAccount.create("firebase-uid", "parent@example.com")));
+        when(childProfileRepository.countByParentAccountParentId("firebase-uid")).thenReturn(3L);
+
+        assertThatThrownBy(() -> parentAuthService.register(
+                "Bearer valid-token",
+                new ParentRegisterRequest("민준")
+        ))
+                .isInstanceOf(AimongException.class)
+                .extracting(exception -> ((AimongException) exception).getErrorCode())
+                .isEqualTo(ErrorCode.CHILD_LIMIT_EXCEEDED);
     }
 
     @Test
@@ -84,7 +98,7 @@ class ParentAuthServiceTest {
         when(firebaseAuth.verifyIdToken("valid-token")).thenReturn(firebaseToken);
         when(firebaseToken.getUid()).thenReturn("firebase-uid");
         when(firebaseToken.getClaims()).thenReturn(Map.of("firebase", Map.of("sign_in_provider", "google.com")));
-        when(parentAccountRepository.findByFirebaseUid("firebase-uid"))
+        when(parentAccountRepository.findByParentId("firebase-uid"))
                 .thenReturn(Optional.of(ParentAccount.create("firebase-uid", "parent@example.com")));
 
         assertThatThrownBy(() -> parentAuthService.regenerateCode("Bearer valid-token", "not-a-uuid"))

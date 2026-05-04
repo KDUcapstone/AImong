@@ -1,72 +1,71 @@
 package com.aimong.backend.domain.streak.entity;
 
-import com.aimong.backend.domain.auth.entity.ChildProfile;
-import jakarta.persistence.*;
-import lombok.*;
-import org.hibernate.annotations.Check;
-
-import java.time.OffsetDateTime;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
+import java.time.Instant;
 import java.util.UUID;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-@Entity
-@Table(
-    name = "streak_milestones",
-    uniqueConstraints = {
-        @UniqueConstraint(name = "uk_streak_milestones_child_target", columnNames = {"child_id", "target_days"})
-    },
-    indexes = {
-        @Index(name = "idx_streak_milestones_child", columnList = "child_id")
-    }
-)
-@Check(constraints = "(reward_claimed = false OR achieved = true) AND ((achieved = false AND achieved_at IS NULL) OR (achieved = true AND achieved_at IS NOT NULL))")
 @Getter
+@Entity
+@Table(name = "streak_milestones")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@Builder
 public class StreakMilestone {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(columnDefinition = "uuid", updatable = false, nullable = false)
     private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "child_id", nullable = false)
-    private ChildProfile child;
+    @Column(name = "child_id", nullable = false)
+    private UUID childId;
 
     @Column(name = "target_days", nullable = false)
-    private Short targetDays;
+    private short targetDays;
 
     @Column(name = "tier", nullable = false)
-    private Short tier;
+    private short tier;
 
     @Column(name = "achieved", nullable = false)
-    @Builder.Default
-    private Boolean achieved = false;
+    private boolean achieved;
 
     @Column(name = "reward_claimed", nullable = false)
-    @Builder.Default
-    private Boolean rewardClaimed = false;
+    private boolean rewardClaimed;
 
     @Column(name = "achieved_at")
-    private OffsetDateTime achievedAt;
+    private Instant achievedAt;
 
     @Column(name = "created_at", nullable = false, updatable = false)
-    private OffsetDateTime createdAt;
+    private Instant createdAt;
+
+    public static StreakMilestone create(UUID childId, short targetDays, short tier) {
+        StreakMilestone milestone = new StreakMilestone();
+        milestone.id = UUID.randomUUID();
+        milestone.childId = childId;
+        milestone.targetDays = targetDays;
+        milestone.tier = tier;
+        milestone.achieved = false;
+        milestone.rewardClaimed = false;
+        milestone.createdAt = Instant.now();
+        return milestone;
+    }
+
+    public void achieveAndClaim() {
+        achieved = true;
+        rewardClaimed = true;
+        achievedAt = Instant.now();
+    }
 
     @PrePersist
-    protected void onCreate() {
-        if (createdAt == null) {
-            createdAt = OffsetDateTime.now();
+    void prePersist() {
+        if (id == null) {
+            id = UUID.randomUUID();
         }
-    }
-
-    public void achieve() {
-        this.achieved = true;
-        this.achievedAt = OffsetDateTime.now();
-    }
-
-    public void claimReward() {
-        this.rewardClaimed = true;
+        if (createdAt == null) {
+            createdAt = Instant.now();
+        }
     }
 }

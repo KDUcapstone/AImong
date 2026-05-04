@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface MissionRepository extends JpaRepository<Mission, UUID> {
 
-    List<Mission> findAllByIsActiveTrueOrderByStageAscIdAsc();
+    List<Mission> findAllByIsActiveTrueOrderByStageAscMissionCodeAscIdAsc();
 
     long countByIsActiveTrue();
 }

@@ -22,7 +22,7 @@ public interface QuestionBankRepository extends JpaRepository<QuestionBank, UUID
                 mission_id,
                 question_type,
                 prompt,
-                options_json,
+                options,
                 content_tags,
                 curriculum_ref,
                 difficulty,
@@ -34,9 +34,11 @@ public interface QuestionBankRepository extends JpaRepository<QuestionBank, UUID
                 question_pool_status,
                 created_at,
                 is_active
-            FROM public.question_bank_safe
+            FROM public.question_bank
             WHERE mission_id = :missionId
-              AND difficulty = :difficulty
+              AND difficulty = CAST(:difficulty AS difficulty_band_enum)
+              AND is_active = TRUE
+              AND question_pool_status = CAST('ACTIVE' AS question_pool_status_enum)
             """, nativeQuery = true)
     List<QuestionBank> findAllFromSafeViewByMissionIdAndDifficulty(
             @Param("missionId") UUID missionId,

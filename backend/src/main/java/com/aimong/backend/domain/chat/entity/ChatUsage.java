@@ -1,56 +1,57 @@
 package com.aimong.backend.domain.chat.entity;
 
-import com.aimong.backend.domain.auth.entity.ChildProfile;
 import jakarta.persistence.Column;
-import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.MapsId;
+import jakarta.persistence.Id;
+import jakarta.persistence.IdClass;
 import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.UUID;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.Check;
 
-import java.time.OffsetDateTime;
-
+@Getter
 @Entity
 @Table(name = "chat_usage")
-@Check(constraints = "count BETWEEN 0 AND 20")
-@Getter
+@IdClass(ChatUsageId.class)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@Builder
 public class ChatUsage {
 
-    @EmbeddedId
-    private ChatUsageId id;
+    @Id
+    @Column(name = "child_id")
+    private UUID childId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("childId")
-    @JoinColumn(name = "child_id", nullable = false)
-    private ChildProfile child;
+    @Id
+    @Column(name = "usage_date")
+    private LocalDate usageDate;
 
     @Column(name = "count", nullable = false)
-    @Builder.Default
-    private Integer count = 0;
+    private int count;
 
     @Column(name = "updated_at", nullable = false)
-    private OffsetDateTime updatedAt;
+    private Instant updatedAt;
 
-    @PrePersist
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = OffsetDateTime.now();
+    public static ChatUsage create(UUID childId, LocalDate usageDate) {
+        ChatUsage chatUsage = new ChatUsage();
+        chatUsage.childId = childId;
+        chatUsage.usageDate = usageDate;
+        chatUsage.count = 0;
+        chatUsage.updatedAt = Instant.now();
+        return chatUsage;
     }
 
     public void increment() {
-        this.count++;
+        count += 1;
+        updatedAt = Instant.now();
+    }
+
+    @PrePersist
+    void prePersist() {
+        if (updatedAt == null) {
+            updatedAt = Instant.now();
+        }
     }
 }

@@ -133,7 +133,6 @@ class CurrentCriteriaQuestionBankAuditTest {
 
     private void writeFixedQuestionBank(ObjectMapper objectMapper) throws Exception {
         ObjectNode root = (ObjectNode) objectMapper.readTree(Files.readString(SOURCE));
-        normalizeDifficultyFields(root);
         for (var node : root.withArray("questions")) {
             ObjectNode questionNode = (ObjectNode) node;
             if ("S0304-P4-06".equals(questionNode.path("externalId").asText())) {

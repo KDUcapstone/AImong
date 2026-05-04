@@ -19,7 +19,7 @@ import org.hibernate.type.SqlTypes;
 
 @Getter
 @Entity
-@Table(name = "daily_quests")
+@Table(name = "daily_quest_progress")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class DailyQuest {
@@ -30,7 +30,7 @@ public class DailyQuest {
     @Column(name = "child_id", nullable = false)
     private UUID childId;
 
-    @Column(name = "quest_date", nullable = false)
+    @Column(name = "date", nullable = false)
     private LocalDate questDate;
 
     @Enumerated(EnumType.STRING)

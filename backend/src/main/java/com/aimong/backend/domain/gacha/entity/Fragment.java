@@ -20,7 +20,7 @@ import org.hibernate.type.SqlTypes;
 
 @Getter
 @Entity
-@Table(name = "fragments")
+@Table(name = "pet_fragments")
 @IdClass(FragmentId.class)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -48,6 +48,15 @@ public class Fragment {
 
     public void add(int amount) {
         count += amount;
+        updatedAt = Instant.now();
+    }
+
+    public boolean canSpend(int amount) {
+        return count >= amount;
+    }
+
+    public void spend(int amount) {
+        count -= amount;
         updatedAt = Instant.now();
     }
 

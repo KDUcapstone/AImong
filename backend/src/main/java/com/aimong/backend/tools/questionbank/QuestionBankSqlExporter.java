@@ -42,7 +42,7 @@ public final class QuestionBankSqlExporter {
         }
         sql.append("ON CONFLICT (id) DO NOTHING;\n\n");
 
-        sql.append("INSERT INTO question_bank (id, mission_id, question_type, prompt, options_json, source_type, is_active) VALUES\n");
+        sql.append("INSERT INTO question_bank (id, mission_id, question_type, prompt, options, source_type, is_active) VALUES\n");
         for (int i = 0; i < draft.questions().size(); i++) {
             QuestionDraft question = draft.questions().get(i);
             sql.append("    ('").append(uuid("question:" + question.externalId())).append("', '")
@@ -108,7 +108,7 @@ public final class QuestionBankSqlExporter {
                 .append(");\n\n");
 
         sql.append("INSERT INTO question_bank (")
-                .append("id, mission_id, question_type, prompt, options_json, content_tags, curriculum_ref, difficulty, ")
+                .append("id, mission_id, question_type, prompt, options, content_tags, curriculum_ref, difficulty, ")
                 .append("source_type, generation_phase, pack_no, difficulty_band, question_pool_status, is_active")
                 .append(") VALUES\n");
         for (int index = 0; index < bank.questions().size(); index++) {
@@ -134,7 +134,7 @@ public final class QuestionBankSqlExporter {
                 .append("    mission_id = EXCLUDED.mission_id,\n")
                 .append("    question_type = EXCLUDED.question_type,\n")
                 .append("    prompt = EXCLUDED.prompt,\n")
-                .append("    options_json = EXCLUDED.options_json,\n")
+                .append("    options = EXCLUDED.options,\n")
                 .append("    content_tags = EXCLUDED.content_tags,\n")
                 .append("    curriculum_ref = EXCLUDED.curriculum_ref,\n")
                 .append("    difficulty = EXCLUDED.difficulty,\n")

@@ -1,14 +1,15 @@
 package com.aimong.backend.domain.pet.service;
 
+import com.aimong.backend.domain.auth.entity.ChildProfile;
+import com.aimong.backend.domain.auth.repository.ChildProfileRepository;
 import com.aimong.backend.domain.gacha.entity.Ticket;
 import com.aimong.backend.domain.gacha.entity.TicketType;
 import com.aimong.backend.domain.gacha.repository.TicketRepository;
 import com.aimong.backend.domain.pet.entity.CrownType;
-import com.aimong.backend.domain.pet.entity.EquippedPet;
 import com.aimong.backend.domain.pet.entity.Pet;
 import com.aimong.backend.domain.pet.entity.PetGrade;
+import com.aimong.backend.domain.pet.entity.PetMood;
 import com.aimong.backend.domain.pet.entity.PetStage;
-import com.aimong.backend.domain.pet.repository.EquippedPetRepository;
 import com.aimong.backend.domain.pet.repository.PetRepository;
 import com.aimong.backend.global.exception.AimongException;
 import com.aimong.backend.global.exception.ErrorCode;
@@ -23,30 +24,32 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class PetGrowthService {
 
-    private final EquippedPetRepository equippedPetRepository;
+    private final ChildProfileRepository childProfileRepository;
     private final PetRepository petRepository;
     private final TicketRepository ticketRepository;
 
     @Transactional(readOnly = true)
     public String findEquippedPetGrade(UUID childId) {
-        return equippedPetRepository.findByChildId(childId)
-                .flatMap(equippedPet -> petRepository.findByIdAndChildId(equippedPet.getPetId(), childId))
+        return childProfileRepository.findById(childId)
+                .map(ChildProfile::getEquippedPetId)
+                .flatMap(petId -> petRepository.findByIdAndChildId(petId, childId))
                 .map(pet -> pet.getGrade().name())
                 .orElse(null);
     }
 
     @Transactional
     public PetGrowthResult applyMissionReward(UUID childId, int petXpAmount) {
-        EquippedPet equippedPet = equippedPetRepository.findWithLockByChildId(childId).orElse(null);
-        if (equippedPet == null) {
+        ChildProfile childProfile = childProfileRepository.findWithLockById(childId).orElse(null);
+        if (childProfile == null || childProfile.getEquippedPetId() == null) {
             return PetGrowthResult.none();
         }
 
-        Pet pet = petRepository.findWithLockByIdAndChildId(equippedPet.getPetId(), childId)
+        Pet pet = petRepository.findWithLockByIdAndChildId(childProfile.getEquippedPetId(), childId)
                 .orElseThrow(() -> new AimongException(ErrorCode.INTERNAL_SERVER_ERROR));
 
         PetStage previousStage = pet.getStage();
         boolean evolved = pet.addXp(petXpAmount);
+        pet.updateMood(PetMood.HAPPY);
         boolean crownUnlocked = false;
         List<PetReward> rewards = new ArrayList<>();
 

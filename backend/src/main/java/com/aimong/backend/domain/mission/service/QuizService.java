@@ -49,7 +49,7 @@ public class QuizService {
                 .orElseThrow(() -> new AimongException(ErrorCode.MISSION_NOT_FOUND));
 
         StageProgressResponse stageProgress = missionService.getMissions(childId).stageProgress();
-        if (!missionService.isUnlocked(mission, stageProgress)) {
+        if (!missionService.isUnlockedForChild(childId, mission, stageProgress)) {
             throw new AimongException(ErrorCode.MISSION_QUESTIONS_LOCKED);
         }
 

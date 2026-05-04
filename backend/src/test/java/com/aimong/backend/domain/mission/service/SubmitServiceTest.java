@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -35,10 +36,12 @@ import com.aimong.backend.domain.pet.service.PetGrowthService;
 import com.aimong.backend.domain.quest.service.AchievementService;
 import com.aimong.backend.domain.quest.service.DailyQuestService;
 import com.aimong.backend.domain.quest.service.WeeklyQuestService;
+import com.aimong.backend.domain.streak.entity.FriendStreak;
 import com.aimong.backend.domain.streak.entity.StreakRecord;
 import com.aimong.backend.domain.streak.repository.FriendStreakRepository;
-import com.aimong.backend.domain.streak.repository.MilestoneRewardRepository;
 import com.aimong.backend.domain.streak.repository.StreakRecordRepository;
+import com.aimong.backend.domain.streak.service.MilestoneService;
+import com.aimong.backend.global.util.KstDateUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.lang.reflect.Field;
 import java.time.Instant;
@@ -66,7 +69,7 @@ class SubmitServiceTest {
     @Mock private TicketRepository ticketRepository;
     @Mock private StreakRecordRepository streakRecordRepository;
     @Mock private FriendStreakRepository friendStreakRepository;
-    @Mock private MilestoneRewardRepository milestoneRewardRepository;
+    @Mock private MilestoneService milestoneService;
     @Mock private DailyQuestService dailyQuestService;
     @Mock private WeeklyQuestService weeklyQuestService;
     @Mock private AchievementService achievementService;
@@ -109,11 +112,13 @@ class SubmitServiceTest {
         assertThat(response.mode()).isEqualTo("review");
         assertThat(response.progressApplied()).isFalse();
         assertThat(response.isReview()).isTrue();
+        assertThat(response.xpEarned()).isZero();
 
         ArgumentCaptor<MissionAttempt> attemptCaptor = ArgumentCaptor.forClass(MissionAttempt.class);
         verify(missionAttemptRepository).save(attemptCaptor.capture());
         assertThat(attemptCaptor.getValue().isReview()).isTrue();
         assertThat(attemptCaptor.getValue().isPassed()).isTrue();
+        assertThat(attemptCaptor.getValue().getXpEarned()).isZero();
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<List<MissionAnswerResult>> resultsCaptor = ArgumentCaptor.forClass(List.class);
@@ -123,6 +128,30 @@ class SubmitServiceTest {
             assertThat(result.isReview()).isTrue();
             assertThat(result.isCorrect()).isTrue();
         });
+    }
+
+    @Test
+    void submitUsesReviewModeStoredOnQuizAttemptOnly() {
+        SubmitService service = service();
+        Fixture fixture = fixture(false, true, "\"No\"", "No");
+
+        SubmitResponse response = service.submit(fixture.childId(), fixture.missionId(), fixture.request());
+
+        assertThat(response.mode()).isEqualTo("normal");
+        assertThat(response.progressApplied()).isTrue();
+        assertThat(response.xpEarned()).isEqualTo(20);
+        assertThat(response.isReview()).isFalse();
+
+        ArgumentCaptor<MissionAttempt> attemptCaptor = ArgumentCaptor.forClass(MissionAttempt.class);
+        verify(missionAttemptRepository).save(attemptCaptor.capture());
+        assertThat(attemptCaptor.getValue().isReview()).isFalse();
+        assertThat(attemptCaptor.getValue().getXpEarned()).isEqualTo(20);
+
+        verify(missionDailyProgressRepository).save(any(MissionDailyProgress.class));
+        verify(petGrowthService).applyMissionReward(fixture.childId(), 20);
+        verify(dailyQuestService).updateForMissionSuccess(any(), any(), any());
+        verify(weeklyQuestService).updateForMissionSuccess(any(), any(), any());
+        verify(achievementService).unlockByTotalXp(any(), any());
     }
 
     @Test
@@ -180,6 +209,36 @@ class SubmitServiceTest {
         assertThat(response.score()).isEqualTo(10);
     }
 
+    @Test
+    void normalPetPerfectBonusFollowsApiSpec() {
+        SubmitService service = service();
+        Fixture fixture = fixture(false, "\"No\"", "No", "NORMAL");
+
+        SubmitResponse response = service.submit(fixture.childId(), fixture.missionId(), fixture.request());
+
+        assertThat(response.bonusXp()).isEqualTo(5);
+        assertThat(response.xpEarned()).isEqualTo(25);
+        verify(petGrowthService).applyMissionReward(fixture.childId(), 25);
+    }
+
+    @Test
+    void normalSubmissionAppliesPartnerStreakXpBonusWhenPartnerCompletedToday() {
+        SubmitService service = service();
+        Fixture fixture = fixture(false, "\"No\"", "No");
+        UUID partnerChildId = UUID.randomUUID();
+        StreakRecord partnerStreak = StreakRecord.create(partnerChildId);
+        partnerStreak.recordMissionCompletion(KstDateUtils.today());
+        when(friendStreakRepository.findById(fixture.childId()))
+                .thenReturn(Optional.of(FriendStreak.create(fixture.childId(), partnerChildId)));
+        when(streakRecordRepository.findById(partnerChildId)).thenReturn(Optional.of(partnerStreak));
+
+        SubmitResponse response = service.submit(fixture.childId(), fixture.missionId(), fixture.request());
+
+        assertThat(response.streakBonusApplied()).isTrue();
+        assertThat(response.xpEarned()).isEqualTo(30);
+        verify(petGrowthService).applyMissionReward(fixture.childId(), 30);
+    }
+
     private SubmitService service() {
         return new SubmitService(
                 quizAttemptRepository,
@@ -194,7 +253,7 @@ class SubmitServiceTest {
                 ticketRepository,
                 streakRecordRepository,
                 friendStreakRepository,
-                milestoneRewardRepository,
+                milestoneService,
                 dailyQuestService,
                 weeklyQuestService,
                 achievementService,
@@ -210,6 +269,18 @@ class SubmitServiceTest {
     }
 
     private Fixture fixture(boolean reviewMode, String answerPayload, String selected) {
+        return fixture(reviewMode, answerPayload, selected, null);
+    }
+
+    private Fixture fixture(boolean reviewMode, String answerPayload, String selected, String equippedPetGrade) {
+        return fixture(reviewMode, false, answerPayload, selected, equippedPetGrade);
+    }
+
+    private Fixture fixture(boolean reviewMode, boolean alreadyCompletedToday, String answerPayload, String selected) {
+        return fixture(reviewMode, alreadyCompletedToday, answerPayload, selected, null);
+    }
+
+    private Fixture fixture(boolean reviewMode, boolean alreadyCompletedToday, String answerPayload, String selected, String equippedPetGrade) {
         UUID childId = UUID.randomUUID();
         UUID missionId = UUID.randomUUID();
         UUID quizAttemptId = UUID.randomUUID();
@@ -222,7 +293,7 @@ class SubmitServiceTest {
         when(mission.getId()).thenReturn(missionId);
         when(missionRepository.findById(missionId)).thenReturn(Optional.of(mission));
         when(missionService.getMissions(childId)).thenReturn(new MissionListResponse(List.of(), stageProgress));
-        when(missionService.isUnlocked(mission, stageProgress)).thenReturn(true);
+        when(missionService.isUnlockedForChild(childId, mission, stageProgress)).thenReturn(true);
 
         List<UUID> questionIds = java.util.stream.IntStream.range(0, 10)
                 .mapToObj(index -> UUID.randomUUID())
@@ -268,11 +339,12 @@ class SubmitServiceTest {
             return new Fixture(childId, missionId, request);
         }
         if (!reviewMode) {
-            when(petGrowthService.findEquippedPetGrade(childId)).thenReturn(null);
-            when(friendStreakRepository.findById(childId)).thenReturn(Optional.empty());
+            when(petGrowthService.findEquippedPetGrade(childId)).thenReturn(equippedPetGrade);
             when(missionDailyProgressRepository.save(any(MissionDailyProgress.class))).thenAnswer(invocation -> invocation.getArgument(0));
             when(petGrowthService.applyMissionReward(eq(childId), anyInt()))
                     .thenReturn(PetGrowthService.PetGrowthResult.none());
+            when(milestoneService.applyStreakRewards(eq(childId), any(StreakRecord.class)))
+                    .thenReturn(List.of());
         }
 
         return new Fixture(childId, missionId, request);

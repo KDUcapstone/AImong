@@ -2,13 +2,9 @@ spring:
   config:
     import: optional:file:.env[.properties]
   datasource:
-    url: ${TEST_DB_URL:jdbc:postgresql://localhost:54329/aimong_test}
-    username: ${TEST_DB_USERNAME:${DB_USERNAME:aimong}}
-    password: ${TEST_DB_PASSWORD:${DB_PASSWORD:aimong}}
-  data:
-    redis:
-      host: ${TEST_REDIS_HOST:${REDIS_HOST:localhost}}
-      port: ${TEST_REDIS_PORT:${REDIS_PORT:6380}}
+    url: ${TEST_DB_URL:${SUPABASE_DB_URL:${DB_URL}}}
+    username: ${TEST_DB_USERNAME:${SUPABASE_DB_USERNAME:${DB_USERNAME}}}
+    password: ${TEST_DB_PASSWORD:${SUPABASE_DB_PASSWORD:${DB_PASSWORD}}}
   flyway:
     enabled: true
 

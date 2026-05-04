@@ -1,13 +1,15 @@
 package com.aimong.backend.domain.auth.support;
 
-import com.aimong.backend.domain.auth.entity.LoginAttempt;
-import com.aimong.backend.domain.auth.repository.LoginAttemptRepository;
+import com.aimong.backend.domain.auth.entity.LoginAttemptLimit;
+import com.aimong.backend.domain.auth.entity.LoginAttemptTargetType;
+import com.aimong.backend.domain.auth.repository.LoginAttemptLimitRepository;
 import com.aimong.backend.global.exception.AimongException;
 import com.aimong.backend.global.exception.ErrorCode;
 import java.time.Duration;
 import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Component
@@ -16,70 +18,64 @@ public class LoginAttemptService {
 
     private static final int MAX_FAILURE_COUNT = 3;
     private static final Duration LOCK_DURATION = Duration.ofSeconds(30);
-    private static final String IP_PREFIX = "login:ip:";
-    private static final String CODE_PREFIX = "login:code:";
 
-    private final LoginAttemptRepository loginAttemptRepository;
+    private final LoginAttemptLimitRepository loginAttemptLimitRepository;
 
     @Transactional(readOnly = true)
     public void validateNotLocked(String clientIp, String code) {
-        long ipRemaining = remainingLockSeconds(ipKey(clientIp));
-        long codeRemaining = remainingLockSeconds(codeKey(code));
-        long remaining = Math.max(ipRemaining, codeRemaining);
+        Instant now = Instant.now();
+        long ipLockSeconds = remainingLockSeconds(LoginAttemptTargetType.IP, clientIp, now);
+        long codeLockSeconds = remainingLockSeconds(LoginAttemptTargetType.CODE, code, now);
+        long remainingSeconds = Math.max(ipLockSeconds, codeLockSeconds);
 
-        if (remaining > 0) {
+        if (remainingSeconds > 0) {
             throw new AimongException(
                     ErrorCode.TOO_MANY_REQUESTS,
-                    "잠시 후 다시 시도해주세요 (" + remaining + "초 남음)"
+                    "잠시 후 다시 시도해주세요 (" + remainingSeconds + "초 남음)"
             );
         }
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void recordFailure(String clientIp, String code) {
-        registerFailure(ipKey(clientIp));
-        registerFailure(codeKey(code));
+        Instant now = Instant.now();
+        registerFailure(LoginAttemptTargetType.IP, clientIp, now);
+        registerFailure(LoginAttemptTargetType.CODE, code, now);
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void recordSuccess(String clientIp, String code) {
-        loginAttemptRepository.deleteById(ipKey(clientIp));
-        loginAttemptRepository.deleteById(codeKey(code));
+        loginAttemptLimitRepository.deleteByAttemptKeyIfExists(attemptKey(LoginAttemptTargetType.IP, clientIp));
+        loginAttemptLimitRepository.deleteByAttemptKeyIfExists(attemptKey(LoginAttemptTargetType.CODE, code));
     }
 
-    private long remainingLockSeconds(String key) {
-        return loginAttemptRepository.findById(key)
-                .filter(a -> !a.isExpired())
-                .map(LoginAttempt::remainingLockSeconds)
+    private long remainingLockSeconds(LoginAttemptTargetType targetType, String targetValue, Instant now) {
+        return loginAttemptLimitRepository.findById(attemptKey(targetType, targetValue))
+                .filter(limit -> limit.isLockedAt(now))
+                .map(limit -> Duration.between(now, limit.getLockedUntil()).getSeconds())
+                .filter(seconds -> seconds > 0)
                 .orElse(0L);
     }
 
-    private void registerFailure(String key) {
-        Instant expiresAt = Instant.now().plus(LOCK_DURATION);
-
-        LoginAttempt attempt = loginAttemptRepository.findById(key)
-                .filter(a -> !a.isExpired())
+    private void registerFailure(LoginAttemptTargetType targetType, String targetValue, Instant now) {
+        Instant expiresAt = now.plus(LOCK_DURATION);
+        String key = attemptKey(targetType, targetValue);
+        LoginAttemptLimit limit = loginAttemptLimitRepository
+                .findWithLockByAttemptKey(key)
                 .orElse(null);
 
-        if (attempt == null) {
-            loginAttemptRepository.save(LoginAttempt.create(key, expiresAt));
+        if (limit == null) {
+            loginAttemptLimitRepository.save(LoginAttemptLimit.firstFailure(key, expiresAt));
             return;
         }
 
-        attempt.incrementFailure(expiresAt);
-
-        if (attempt.getFailureCount() >= MAX_FAILURE_COUNT) {
-            attempt.lock(expiresAt);
-        }
-
-        loginAttemptRepository.save(attempt);
+        limit.recordFailure(now, expiresAt, MAX_FAILURE_COUNT);
     }
 
-    private String ipKey(String clientIp) {
-        return IP_PREFIX + clientIp;
-    }
-
-    private String codeKey(String code) {
-        return CODE_PREFIX + code;
+    private String attemptKey(LoginAttemptTargetType targetType, String targetValue) {
+        return switch (targetType) {
+            case IP -> "login:ip:" + targetValue;
+            case CODE -> "login:code:" + targetValue;
+        };
     }
 }

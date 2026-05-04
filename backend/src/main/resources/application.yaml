@@ -7,13 +7,9 @@ spring:
   config:
     import: optional:file:.env[.properties]
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:local}
+    active: ${SPRING_PROFILES_ACTIVE:supabase}
   application:
     name: backend
-
-  data:
-    redis:
-      timeout: 3s
 
   jpa:
     hibernate:

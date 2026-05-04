@@ -29,6 +29,7 @@ import org.hibernate.type.SqlTypes;
 public class ChildProfile {
 
     @Id
+    @Column(name = "child_id")
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -65,6 +66,12 @@ public class ChildProfile {
     @Column(name = "sr_miss_count", nullable = false)
     private int srMissCount;
 
+    @Column(name = "shield_count", nullable = false)
+    private int shieldCount;
+
+    @Column(name = "equipped_pet_id")
+    private UUID equippedPetId;
+
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(name = "profile_image_type", nullable = false)
@@ -96,6 +103,8 @@ public class ChildProfile {
                 null,
                 0,
                 0,
+                0,
+                null,
                 ProfileImageType.DEFAULT,
                 0,
                 null,
@@ -158,13 +167,33 @@ public class ChildProfile {
         this.fcmToken = fcmToken;
     }
 
+    public void addShield(int count) {
+        shieldCount += count;
+    }
+
+    public boolean consumeShieldIfAvailable() {
+        if (shieldCount <= 0) {
+            return false;
+        }
+        shieldCount -= 1;
+        return true;
+    }
+
+    public void equipPet(UUID petId) {
+        this.equippedPetId = petId;
+    }
+
     public void recordGachaPull(PetGrade grade) {
         gachaPullCount += 1;
-        if (grade == PetGrade.NORMAL) {
+        recordGachaResult(grade);
+    }
+
+    public void recordGachaResult(PetGrade grade) {
+        if (grade == PetGrade.EPIC || grade == PetGrade.LEGEND) {
+            srMissCount = 0;
+        } else {
             srMissCount += 1;
-            return;
         }
-        srMissCount = 0;
     }
 
     @PrePersist

@@ -19,7 +19,7 @@ import org.hibernate.type.SqlTypes;
 
 @Getter
 @Entity
-@Table(name = "weekly_quests")
+@Table(name = "weekly_quest_progress")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class WeeklyQuest {

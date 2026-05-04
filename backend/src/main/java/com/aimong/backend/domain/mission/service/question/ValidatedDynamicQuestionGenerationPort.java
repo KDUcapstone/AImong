@@ -84,7 +84,7 @@ public class ValidatedDynamicQuestionGenerationPort implements DynamicQuestionGe
                 List<QuestionBank> persisted = persistenceService.persistCandidates(
                         missionId,
                         batchResult.accepted(),
-                        GenerationPhase.RUNTIME,
+                        GenerationPhase.PREGENERATED,
                         "GPT"
                 );
                 saved.addAll(persisted);

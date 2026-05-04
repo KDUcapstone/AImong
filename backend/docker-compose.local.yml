@@ -17,19 +17,5 @@ services:
       timeout: 5s
       retries: 10
 
-  redis:
-    image: redis:7-alpine
-    container_name: aimong-local-redis
-    ports:
-      - "6380:6379"
-    volumes:
-      - aimong-redis-data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
 volumes:
   aimong-postgres-data:
-  aimong-redis-data:

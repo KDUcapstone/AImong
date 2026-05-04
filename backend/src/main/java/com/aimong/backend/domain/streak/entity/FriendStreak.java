@@ -27,4 +27,8 @@ public class FriendStreak {
 
     @Column(name = "connected_at", nullable = false)
     private Instant connectedAt;
+
+    public static FriendStreak create(UUID childId, UUID partnerChildId) {
+        return new FriendStreak(childId, partnerChildId, Instant.now());
+    }
 }

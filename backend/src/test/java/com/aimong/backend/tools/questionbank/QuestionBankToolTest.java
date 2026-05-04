@@ -39,7 +39,7 @@ class QuestionBankToolTest {
 
         String sql = Files.readString(output);
         assertThat(sql).contains("INSERT INTO missions (id, stage, title, mission_code, description, unlock_condition, is_active) VALUES");
-        assertThat(sql).contains("INSERT INTO question_bank (id, mission_id, question_type, prompt, options_json, content_tags, curriculum_ref, difficulty, source_type, generation_phase, pack_no, difficulty_band, question_pool_status, is_active) VALUES");
+        assertThat(sql).contains("INSERT INTO question_bank (id, mission_id, question_type, prompt, options, content_tags, curriculum_ref, difficulty, source_type, generation_phase, pack_no, difficulty_band, question_pool_status, is_active) VALUES");
         assertThat(sql).contains("'PREGENERATED'");
         assertThat(sql).contains("'ACTIVE'");
         assertThat(sql).contains("'LOW'");

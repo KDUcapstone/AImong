@@ -1,5 +1,0 @@
-ALTER TABLE child_profiles
-    ALTER COLUMN session_version SET DEFAULT 0;
-
-ALTER TABLE quiz_attempts
-    ADD COLUMN IF NOT EXISTS is_review BOOLEAN NOT NULL DEFAULT FALSE;
