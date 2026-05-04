@@ -83,6 +83,7 @@ data class DailyQuestSummaryDto(
 data class DailyQuestItemDto(
     @SerializedName("questType") val questType: String,
     @SerializedName("label") val label: String,
+    @SerializedName("reward") val reward: String = "",
     @SerializedName("claimType") val claimType: String,
     @SerializedName("completed") val completed: Boolean = false,
     @SerializedName("rewardClaimed") val rewardClaimed: Boolean = false,

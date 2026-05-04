@@ -163,6 +163,8 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             is QuizUiState.Error -> {
                 if (state.message == "세션이 만료되었습니다.") {
                     showFeedback("만료", state.message)
+                } else if (state.message.contains("문제 세트를 준비하는 데 실패했습니다")) {
+                    showMissionSetNotReadyDialog()
                 } else {
                     Toast.makeText(requireContext(), state.message, Toast.LENGTH_SHORT).show()
                 }
@@ -200,7 +202,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
     private fun showQuestionReportDetailDialog(reasonCode: String) {
         val pad = (16 * resources.displayMetrics.density).toInt()
         val input = EditText(requireContext()).apply {
-            hint = getString(R.string.quiz_report_detail_hint)
+            hint = getString(R.string.quiz_report_detail_hint) + "\n*개인정보(이름, 전화번호 등)를 포함하지 않도록 주의해주세요."
             setHintTextColor(Color.parseColor("#8A96AD"))
             setTextColor(Color.WHITE)
             setPadding(pad, pad, pad, pad)
@@ -370,7 +372,11 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             binding.tvFeedbackTitle.setTextColor(Color.parseColor("#00FFB2"))
             binding.layoutFeedbackPanel.setCardBackgroundColor(android.content.res.ColorStateList.valueOf(Color.parseColor("#0D1D41")))
         } else {
-            binding.tvFeedbackTitle.text = "${getString(R.string.quiz_feedback_wrong)} ${getString(R.string.quiz_feedback_wrong_hint)}"
+            if (userAnswer.isEmpty()) {
+                binding.tvFeedbackTitle.text = "시간 초과! ⏱"
+            } else {
+                binding.tvFeedbackTitle.text = "${getString(R.string.quiz_feedback_wrong)} ${getString(R.string.quiz_feedback_wrong_hint)}"
+            }
             binding.tvFeedbackTitle.setTextColor(Color.parseColor("#FF4B4B"))
             binding.layoutFeedbackPanel.setCardBackgroundColor(android.content.res.ColorStateList.valueOf(Color.parseColor("#1A1025")))
         }
@@ -679,44 +685,47 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
     private fun setupChips(question: Question) {
         val density = resources.displayMetrics.density
         val isSituation = question.type == QuestionType.SITUATION
-        
-        if (isSituation) {
-            binding.layoutOptionsChips.chipSpacingVertical = (12 * density).toInt()
-        }
+
+        binding.layoutOptionsChips.chipSpacingVertical = (8 * density).toInt()
+        binding.layoutOptionsChips.chipSpacingHorizontal = (8 * density).toInt()
 
         question.options?.forEach { option ->
             val chip = Chip(requireContext()).apply {
                 text = option
-                textSize = if (isSituation) 16f else 17f
+                textSize = if (isSituation) 14f else 15f
                 typeface = Typeface.create("sans-serif-black", Typeface.BOLD)
+                isSingleLine = false
+                maxLines = 20
+                ellipsize = null
                 isClickable = true
                 isCheckable = false
                 checkedIcon = null
                 textAlignment = View.TEXT_ALIGNMENT_CENTER
                 setTextColor(Color.WHITE)
-                
+                setEnsureMinTouchTargetSize(false)
+
                 if (isSituation) {
                     layoutParams = LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT, 
+                        LinearLayout.LayoutParams.MATCH_PARENT,
                         LinearLayout.LayoutParams.WRAP_CONTENT
                     ).apply {
-                        setMargins(0, 0, 0, (12 * density).toInt())
+                        setMargins(0, 0, 0, (8 * density).toInt())
                     }
-                    minHeight = (88 * density).toInt()
-                    chipStartPadding = 24 * density
-                    chipEndPadding = 24 * density
+                    minHeight = (60 * density).toInt()
+                    chipStartPadding = 20 * density
+                    chipEndPadding = 20 * density
                     setChipBackgroundColorResource(android.R.color.transparent)
                     setBackgroundResource(R.drawable.bg_situation_card)
                     chipStrokeWidth = 0f
                 } else {
-                    minHeight = 56 * density.toInt()
-                    chipStartPadding = 20 * density
-                    chipEndPadding = 20 * density
+                    minHeight = (48 * density).toInt()
+                    chipStartPadding = 16 * density
+                    chipEndPadding = 16 * density
                     setChipBackgroundColorResource(R.color.home_card_bg)
                     setChipStrokeColorResource(R.color.home_card_stroke)
                     chipStrokeWidth = 3f * density
                 }
-                
+
                 shapeAppearanceModel = shapeAppearanceModel.toBuilder()
                     .setAllCornerSizes(if (isSituation) 16 * density else 28 * density)
                     .build()
@@ -758,10 +767,10 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
             ).apply {
-                setMargins(0, 0, 0, (12 * density).toInt())
+                setMargins(0, 0, 0, (8 * density).toInt())
             }
             setBackgroundResource(R.drawable.home_card_bg_selector)
-            setPadding((18 * density).toInt(), (18 * density).toInt(), (18 * density).toInt(), (18 * density).toInt())
+            setPadding((14 * density).toInt(), (12 * density).toInt(), (14 * density).toInt(), (12 * density).toInt())
             isClickable = true
             isFocusable = true
         }
@@ -775,7 +784,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             }
             this.text = "${index + 1}  $text"
             setTextColor(Color.WHITE)
-            textSize = 15f
+            textSize = 13f
         }
 
         val imageView = ImageView(requireContext()).apply {
@@ -880,6 +889,30 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             lavEvolution.playAnimation()
         } catch (e: Exception) {
             Toast.makeText(requireContext(), "축하합니다! 아이몽이 진화했습니다!", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun showMissionSetNotReadyDialog() {
+        try {
+            val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_mission_not_ready, null)
+            val dialog = androidx.appcompat.app.AlertDialog.Builder(requireContext(), R.style.TransparentDialog)
+                .setView(dialogView)
+                .setCancelable(false)
+                .create()
+
+            val btnClose = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btn_mission_not_ready_close)
+            btnClose?.setOnClickListener {
+                dialog.dismiss()
+                findNavController().popBackStack()
+            }
+
+            dialog.show()
+            
+            val lavEffect = dialogView.findViewById<com.airbnb.lottie.LottieAnimationView>(R.id.lav_mission_not_ready_effect)
+            lavEffect?.playAnimation()
+        } catch (e: Exception) {
+            Toast.makeText(requireContext(), "문제 세트를 준비하는 데 실패했습니다. 잠시 후 다시 시도해주세요.", Toast.LENGTH_LONG).show()
+            findNavController().popBackStack()
         }
     }
 }

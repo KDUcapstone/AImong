@@ -9,6 +9,10 @@ import com.kduniv.aimong.feature.quiz.data.model.QuizQuestionsResponse
 import com.kduniv.aimong.core.network.model.ChildLoginRequest
 import com.kduniv.aimong.core.network.model.ParentRegisterRequest
 import com.kduniv.aimong.core.network.model.ParentRegisterResponse
+import com.kduniv.aimong.feature.quest.data.model.DailyQuestsResponseData
+import com.kduniv.aimong.feature.quest.data.model.QuestClaimRequest
+import com.kduniv.aimong.feature.quest.data.model.QuestClaimResponseData
+import com.kduniv.aimong.feature.quest.data.model.WeeklyQuestsResponseData
 import com.kduniv.aimong.feature.quiz.data.model.QuizSubmitRequest
 import com.kduniv.aimong.feature.quiz.data.model.QuizSubmitResponse
 import com.kduniv.aimong.core.network.model.ChildLoginResponse
@@ -62,6 +66,17 @@ interface AimongApiService {
     suspend fun getStreakCalendar(
         @Query("yearMonth") yearMonth: String? = null
     ): ApiResponse<StreakCalendarData>
+
+    @GET("quests/daily")
+    suspend fun getDailyQuests(): ApiResponse<DailyQuestsResponseData>
+
+    @GET("quests/weekly")
+    suspend fun getWeeklyQuests(): ApiResponse<WeeklyQuestsResponseData>
+
+    @POST("quests/claim")
+    suspend fun claimQuest(
+        @Body body: QuestClaimRequest
+    ): ApiResponse<QuestClaimResponseData>
 
     // MISSION
     @GET("missions")

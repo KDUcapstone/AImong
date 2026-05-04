@@ -2,12 +2,17 @@ package com.kduniv.aimong.feature.dev.mock
 
 import android.animation.ObjectAnimator
 import android.graphics.Color
+import android.graphics.Typeface
 import android.os.CountDownTimer
 import android.view.View
+import android.widget.EditText
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.chip.Chip
+import com.kduniv.aimong.R
 import com.kduniv.aimong.core.ui.BaseFragment
 import com.kduniv.aimong.databinding.FragmentQuizBinding
 
@@ -46,7 +51,7 @@ class DummyQuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding:
         binding.btnResFinish.setOnClickListener { findNavController().popBackStack() }
         
         binding.btnReportQuestion.setOnClickListener {
-            Toast.makeText(requireContext(), "문제 신고가 접수되었습니다.", Toast.LENGTH_SHORT).show()
+            showQuestionReportReasonDialog()
         }
         
         binding.btnResRetry.setOnClickListener {
@@ -170,20 +175,57 @@ class DummyQuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding:
             }
             "FILL", "SITUATION" -> {
                 binding.layoutOptionsChips.visibility = View.VISIBLE
+                val density = resources.displayMetrics.density
+                val isSituation = q.type == "SITUATION"
+                binding.layoutOptionsChips.chipSpacingVertical = (8 * density).toInt()
+                binding.layoutOptionsChips.chipSpacingHorizontal = (8 * density).toInt()
                 q.options.forEach { optText ->
                     val chip = Chip(requireContext()).apply {
                         text = optText
+                        textSize = if (isSituation) 14f else 15f
+                        typeface = Typeface.create("sans-serif-black", Typeface.BOLD)
+                        isSingleLine = false
+                        maxLines = 20
+                        ellipsize = null
                         isCheckable = false
                         checkedIcon = null
                         isClickable = true
-                        setChipBackgroundColorResource(com.kduniv.aimong.R.color.home_card_bg)
+                        textAlignment = View.TEXT_ALIGNMENT_CENTER
                         setTextColor(Color.WHITE)
-                        chipStrokeColor = android.content.res.ColorStateList.valueOf(Color.parseColor("#243B70"))
-                        chipStrokeWidth = 2f
-                        setOnClickListener { 
-                            setChipBackgroundColorResource(com.kduniv.aimong.R.color.quiz_mint)
-                            setTextColor(Color.BLACK)
-                            checkAnswer(optText) 
+                        setEnsureMinTouchTargetSize(false)
+                        if (isSituation) {
+                            layoutParams = LinearLayout.LayoutParams(
+                                LinearLayout.LayoutParams.MATCH_PARENT,
+                                LinearLayout.LayoutParams.WRAP_CONTENT
+                            ).apply {
+                                setMargins(0, 0, 0, (8 * density).toInt())
+                            }
+                            minHeight = (60 * density).toInt()
+                            chipStartPadding = 20 * density
+                            chipEndPadding = 20 * density
+                            setChipBackgroundColorResource(android.R.color.transparent)
+                            setBackgroundResource(R.drawable.bg_situation_card)
+                            chipStrokeWidth = 0f
+                        } else {
+                            minHeight = (48 * density).toInt()
+                            chipStartPadding = 16 * density
+                            chipEndPadding = 16 * density
+                            setChipBackgroundColorResource(R.color.home_card_bg)
+                            setChipStrokeColorResource(R.color.home_card_stroke)
+                            chipStrokeWidth = 3f * density
+                        }
+                        shapeAppearanceModel = shapeAppearanceModel.toBuilder()
+                            .setAllCornerSizes(if (isSituation) 16 * density else 28 * density)
+                            .build()
+                        setOnClickListener {
+                            if (isSituation) {
+                                setBackgroundResource(R.drawable.bg_situation_card_selected)
+                            } else {
+                                setChipBackgroundColorResource(R.color.quiz_mint)
+                                setChipStrokeColorResource(R.color.quiz_mint)
+                            }
+                            setTextColor(Color.parseColor("#0A1633"))
+                            checkAnswer(optText)
                         }
                     }
                     binding.layoutOptionsChips.addView(chip)
@@ -335,4 +377,60 @@ class DummyQuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding:
     }
 
     override fun initObserver() {}
+
+    private fun showQuestionReportReasonDialog() {
+        val reasons = listOf(
+            "SAFETY" to R.string.quiz_report_reason_safety,
+            "INAPPROPRIATE" to R.string.quiz_report_reason_inappropriate,
+            "DUPLICATE" to R.string.quiz_report_reason_duplicate,
+            "WRONG_ANSWER" to R.string.quiz_report_reason_wrong_answer,
+            "LOW_QUALITY" to R.string.quiz_report_reason_low_quality,
+            "ETC" to R.string.quiz_report_reason_etc
+        )
+        val labels = reasons.map { getString(it.second) }.toTypedArray()
+        AlertDialog.Builder(requireContext())
+            .setTitle(R.string.quiz_report_dialog_title)
+            .setItems(labels) { _, which ->
+                showQuestionReportDetailDialog(reasons[which].first)
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun showQuestionReportDetailDialog(reasonCode: String) {
+        val pad = (16 * resources.displayMetrics.density).toInt()
+        val input = EditText(requireContext()).apply {
+            hint = getString(R.string.quiz_report_detail_hint) + "\n*개인정보(이름, 전화번호 등)를 포함하지 않도록 주의해주세요."
+            setHintTextColor(Color.parseColor("#8A96AD"))
+            setTextColor(Color.WHITE)
+            setPadding(pad, pad, pad, pad)
+        }
+        AlertDialog.Builder(requireContext())
+            .setTitle(R.string.quiz_report_detail_title)
+            .setView(input)
+            .setPositiveButton(R.string.quiz_report_submit) { _, _ ->
+                submitMockReport(reasonCode)
+            }
+            .setNeutralButton(R.string.quiz_report_without_detail) { _, _ ->
+                submitMockReport(reasonCode)
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun submitMockReport(reasonCode: String) {
+        if (reasonCode == "SAFETY" || reasonCode == "INAPPROPRIATE") {
+            Toast.makeText(requireContext(), "신고가 접수되어 해당 문항이 즉시 격리 처리되었습니다 몽!", Toast.LENGTH_LONG).show()
+            // 목업이므로 다음 문제로 스킵하는 로직 연계
+            binding.layoutFeedbackPanel.visibility = View.GONE
+            currentQuestionIndex++
+            if (currentQuestionIndex < questions.size) {
+                showQuestion(currentQuestionIndex)
+            } else {
+                showResult()
+            }
+        } else {
+            Toast.makeText(requireContext(), R.string.quiz_report_success, Toast.LENGTH_SHORT).show()
+        }
+    }
 }

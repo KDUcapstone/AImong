@@ -1,12 +1,14 @@
 package com.kduniv.aimong
 
-import android.content.Intent
 import android.os.Bundle
 import android.view.View
+import androidx.activity.OnBackPressedCallback
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.NavigationUI
 import androidx.navigation.ui.setupWithNavController
 import com.kduniv.aimong.core.dev.UiMode
@@ -24,6 +26,11 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 
+    companion object {
+        /** 로그인·세션 저장 직후 `MainActivity`를 다시 띄울 때 넣는 플래그(백스택·그래프 초기화). */
+        const val EXTRA_IS_RESTART = "IS_RESTART"
+    }
+
     @Inject
     lateinit var sessionManager: SessionManager
 
@@ -38,6 +45,8 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var navController: NavController
+    private var mainBackPressedCallback: OnBackPressedCallback? = null
+    private var exitConfirmDialog: AlertDialog? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,18 +57,14 @@ class MainActivity : AppCompatActivity() {
             .findFragmentById(R.id.nav_host_fragment) as? NavHostFragment
         if (navHostFragment != null) {
             navController = navHostFragment.navController
-            setupNavigation()
+            setupNavigation(savedInstanceState)
         }
     }
 
-    private fun setupNavigation() {
+    private fun setupNavigation(savedInstanceState: Bundle?) {
         if (!::navController.isInitialized) return
         lifecycleScope.launch {
-            // [임시 추가] 앱 시작 시 항상 로그인 화면을 보기 위해 세션 초기화
-            // sessionManager.clearSession()
-            
-            // 디버깅/목업 확인을 위해 항상 null(초기 상태)로 인식하게 임시 처리
-            val userRole: String? = null // sessionManager.userRole.first()
+            val userRole: String? = sessionManager.userRole.first()
 
             val targetGraphRes = when (userRole) {
                 "CHILD" ->
@@ -92,8 +97,13 @@ class MainActivity : AppCompatActivity() {
                 null
             }
 
-            if (currentGraphId != targetGraphId) {
+            val forceGraphFromSessionRestart =
+                savedInstanceState == null && intent.getBooleanExtra(EXTRA_IS_RESTART, false)
+            if (forceGraphFromSessionRestart || currentGraphId != targetGraphId) {
                 navController.setGraph(targetGraphRes)
+            }
+            if (forceGraphFromSessionRestart) {
+                intent.removeExtra(EXTRA_IS_RESTART)
             }
 
             // 목업 모드(useStubNav)일 때는 서버 통신 UseCase를 호출하지 않음
@@ -138,6 +148,47 @@ class MainActivity : AppCompatActivity() {
             } else {
                 binding.bottomNav.visibility = View.GONE
             }
+
+            installMainBackNavigation(userRole)
         }
+    }
+
+    private fun installMainBackNavigation(userRole: String?) {
+        val topLevelDestinations = when (userRole) {
+            "CHILD" -> setOf(
+                R.id.homeFragment,
+                R.id.learningFragment,
+                R.id.chatFragment,
+                R.id.gachaFragment,
+                R.id.myProfileFragment,
+            )
+            "PARENT" -> setOf(R.id.parentDashboardFragment)
+            else -> setOf(R.id.roleSelectFragment)
+        }
+        val appBarConfig = AppBarConfiguration(topLevelDestinations)
+        mainBackPressedCallback?.remove()
+        mainBackPressedCallback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (NavigationUI.navigateUp(navController, appBarConfig)) return
+                showExitConfirmDialog()
+            }
+        }.also { onBackPressedDispatcher.addCallback(this, it) }
+    }
+
+    private fun showExitConfirmDialog() {
+        exitConfirmDialog?.dismiss()
+        exitConfirmDialog = AlertDialog.Builder(this)
+            .setTitle(R.string.app_exit_confirm_title)
+            .setMessage(R.string.app_exit_confirm_message)
+            .setPositiveButton(R.string.app_exit_confirm_positive) { _, _ -> finish() }
+            .setNegativeButton(R.string.app_exit_confirm_negative) { d, _ -> d.dismiss() }
+            .setOnDismissListener { exitConfirmDialog = null }
+            .show()
+    }
+
+    override fun onDestroy() {
+        exitConfirmDialog?.dismiss()
+        exitConfirmDialog = null
+        super.onDestroy()
     }
 }

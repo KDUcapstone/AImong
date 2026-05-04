@@ -60,4 +60,10 @@
         android:label="Gacha"
         tools:layout="@layout/fragment_gacha" />
 
+    <fragment
+        android:id="@+id/myProfileFragment"
+        android:name="com.kduniv.aimong.feature.home.presentation.ChildMyProfilePlaceholderFragment"
+        android:label="MY"
+        tools:layout="@layout/fragment_child_my_profile_placeholder" />
+
 </navigation>

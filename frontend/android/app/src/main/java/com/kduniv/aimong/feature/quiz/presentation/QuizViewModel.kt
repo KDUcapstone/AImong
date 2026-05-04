@@ -122,24 +122,27 @@ class QuizViewModel @Inject constructor(
             if (UiMode.useStubNav) {
                 // 목업 모드: 서버 요청 없이 로컬에서 즉시 피드백 생성
                 delay(300) // 실제 느낌을 위해 약간의 지연
+                val isAnswerCorrect = answer.isNotEmpty() // 빈 문자열(시간 초과)은 오답 처리
                 _uiState.value = QuizUiState.AnswerChecked(
-                    isCorrect = true, // 목업에서는 일단 정답으로 처리
-                    explanation = "목업 모드 해설: 이 문항에 대한 상세 설명입니다.",
+                    isCorrect = isAnswerCorrect,
+                    explanation = if (isAnswerCorrect) "목업 모드 해설: 정답입니다!" else "목업 모드 해설: 시간 초과 또는 오답입니다.",
                     userAnswer = answer
                 )
                 // 결과 객체가 필요하므로 가상의 결과 생성
                 if (quizResult == null) {
                     quizResult = QuizResult(
-                        score = qs.questions.size,
+                        score = qs.questions.size - 1, // 가상의 점수
                         total = qs.questions.size,
-                        wrongCount = 0,
+                        wrongCount = 1,
                         isPassed = true,
-                        isPerfect = true,
+                        isPerfect = false,
                         xpEarned = 50,
                         petEvolved = false,
                         streakDays = 7,
                         results = qs.questions.map { 
                             QuestionResult(it.id, true, "목업 해설")
+                        }.toMutableList().apply {
+                            this[0] = QuestionResult(qs.questions[0].id, isAnswerCorrect, "목업 해설")
                         },
                         mode = if (_isReviewMode.value) "review" else "normal",
                         equippedPetGrade = "LEGENDARY",

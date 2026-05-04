@@ -51,7 +51,8 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
     }
 
     private fun openQuestList() {
-        QuestListBottomSheet.newInstance().show(parentFragmentManager, "quest_list")
+        QuestListBottomSheet.newInstance(canStartMission = viewModel.uiState.value.canStartMission)
+            .show(parentFragmentManager, "quest_list")
     }
 
     private fun openStreakSheet() {

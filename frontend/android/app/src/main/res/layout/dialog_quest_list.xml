@@ -10,15 +10,40 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="📝 퀘스트"
+        android:layout_marginBottom="12dp"
+        android:text="@string/quest_sheet_title"
         android:textColor="@color/text_white"
         android:textSize="20sp"
-        android:textStyle="bold"
-        android:layout_marginBottom="16dp" />
+        android:textStyle="bold" />
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rv_quests"
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/tab_quest_period"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:overScrollMode="never" />
+        android:layout_marginBottom="12dp"
+        app:tabGravity="fill"
+        app:tabIndicatorColor="@color/quiz_mint"
+        app:tabMode="fixed"
+        app:tabSelectedTextColor="@color/text_white"
+        app:tabTextColor="@color/text_sub_grey" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="120dp">
+
+        <ProgressBar
+            android:id="@+id/pb_quest_loading"
+            style="?android:attr/progressBarStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:visibility="gone" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rv_quests"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:overScrollMode="never" />
+    </FrameLayout>
 </LinearLayout>

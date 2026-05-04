@@ -55,7 +55,7 @@ class MockChildCodeFragment : BaseFragment<FragmentChildCodeBinding>(FragmentChi
             binding.btnLogin.isEnabled = true
             val intent = Intent(requireContext(), MainActivity::class.java).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-                putExtra("IS_RESTART", true)
+                putExtra(MainActivity.EXTRA_IS_RESTART, true)
             }
             startActivity(intent)
         }

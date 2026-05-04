@@ -12,7 +12,7 @@
         android:id="@+id/iv_back"
         android:layout_width="24dp"
         android:layout_height="24dp"
-        android:layout_margin="20dp"
+        android:layout_margin="16dp"
         android:src="@drawable/ic_back_white"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -23,7 +23,7 @@
         android:layout_height="wrap_content"
         android:text="🧠 AI 퀴즈"
         android:textColor="@color/white"
-        android:textSize="18sp"
+        android:textSize="16sp"
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="@id/iv_back"
         app:layout_constraintEnd_toEndOf="parent"
@@ -37,7 +37,7 @@
         android:layout_marginTop="4dp"
         android:gravity="center"
         android:textColor="#8A96AD"
-        android:textSize="12sp"
+        android:textSize="10sp"
         android:visibility="gone"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -63,7 +63,7 @@
             android:paddingVertical="1dp"
             android:text="복습"
             android:textColor="#0A1633"
-            android:textSize="10sp"
+            android:textSize="9sp"
             android:textStyle="bold" />
     </com.google.android.material.card.MaterialCardView>
 
@@ -106,7 +106,7 @@
         android:layout_marginTop="8dp"
         android:text="1 / 10 문제"
         android:textColor="#8A96AD"
-        android:textSize="13sp"
+        android:textSize="11sp"
         app:layout_goneMarginTop="24dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tv_quiz_mode_banner" />
@@ -118,7 +118,7 @@
         android:layout_marginEnd="20dp"
         android:text="+50 EXP 완료 시"
         android:textColor="#8A96AD"
-        android:textSize="13sp"
+        android:textSize="11sp"
         app:layout_constraintBottom_toBottomOf="@id/tv_question_count"
         app:layout_constraintEnd_toEndOf="parent" />
 
@@ -128,7 +128,7 @@
         android:layout_width="match_parent"
         android:layout_height="10dp"
         android:layout_marginHorizontal="20dp"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="6dp"
         android:max="10"
         android:progress="1"
         android:progressDrawable="@drawable/progress_xp_gradient"
@@ -139,13 +139,13 @@
         android:id="@+id/layout_question_card"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="16dp"
         app:layout_constraintTop_toBottomOf="@id/pb_quiz_progress">
 
         <com.airbnb.lottie.LottieAnimationView
             android:id="@+id/lav_quiz_pet"
-            android:layout_width="140dp"
-            android:layout_height="140dp"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
             android:layout_marginStart="8dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -159,7 +159,7 @@
             android:layout_width="12dp"
             android:layout_height="12dp"
             android:layout_marginStart="-1dp"
-            android:layout_marginTop="30dp"
+            android:layout_marginTop="22dp"
             android:src="@drawable/bg_quiz_bubble_tail"
             app:layout_constraintStart_toEndOf="@id/lav_quiz_pet"
             app:layout_constraintTop_toTopOf="@id/card_question" />
@@ -181,22 +181,28 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="20dp">
+                android:paddingHorizontal="14dp"
+                android:paddingVertical="12dp">
 
                 <TextView
                     android:id="@+id/tv_quiz_question"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:lineSpacingExtra="4dp"
+                    android:lineSpacingExtra="3dp"
+                    android:maxLines="24"
                     android:text="문제를 불러오는 중..."
                     android:textColor="@color/white"
-                    android:textSize="17sp"
-                    android:textStyle="bold" />
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    app:autoSizeMaxTextSize="15sp"
+                    app:autoSizeMinTextSize="11sp"
+                    app:autoSizeStepGranularity="1sp"
+                    app:autoSizeTextType="uniform" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginTop="6dp"
                     android:gravity="center_vertical"
                     android:orientation="horizontal">
 
@@ -206,7 +212,7 @@
                         android:layout_height="wrap_content"
                         android:text="⏱ 25초 남음"
                         android:textColor="#8A96AD"
-                        android:textSize="12sp" />
+                        android:textSize="10sp" />
 
                     <View
                         android:layout_width="4dp"
@@ -219,7 +225,7 @@
                         android:layout_height="wrap_content"
                         android:text="난이도"
                         android:textColor="#8A96AD"
-                        android:textSize="12sp"
+                        android:textSize="10sp"
                         android:layout_marginEnd="4dp"/>
 
                     <ImageView
@@ -244,20 +250,22 @@
                         android:background="?attr/selectableItemBackgroundBorderless"
                         android:padding="4dp"
                         android:text="🚨"
-                        android:textSize="16sp" />
+                        android:textSize="14sp" />
                 </LinearLayout>
             </LinearLayout>
         </androidx.cardview.widget.CardView>
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <!-- 선택지 영역 -->
+    <!-- 선택지 영역: 남은 세로 공간 사용(스크롤 없이 한 화면) -->
     <FrameLayout
         android:id="@+id/layout_options_container"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
         android:layout_marginHorizontal="20dp"
-        android:layout_marginTop="32dp"
-        app:layout_constraintTop_toBottomOf="@id/layout_question_card">
+        android:layout_marginTop="12dp"
+        app:layout_constraintBottom_toTopOf="@id/layout_hint_button"
+        app:layout_constraintTop_toBottomOf="@id/layout_question_card"
+        app:layout_constraintVertical_bias="0.0">
 
         <!-- 일반 객관식 -->
         <LinearLayout
@@ -272,8 +280,8 @@
                 android:id="@+id/btn_quiz_mult_opt1"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:minHeight="64dp"
-                android:layout_marginBottom="12dp"
+                android:minHeight="52dp"
+                android:layout_marginBottom="8dp"
                 android:clickable="true"
                 android:focusable="true"
                 app:cardBackgroundColor="@color/home_card_bg"
@@ -284,14 +292,14 @@
                 <androidx.constraintlayout.widget.ConstraintLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:minHeight="64dp">
+                    android:minHeight="52dp">
                     <TextView
                         android:id="@+id/tv_opt1"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:textColor="@color/white"
-                        android:textSize="16sp"
-                        android:paddingVertical="16dp"
+                        android:textSize="14sp"
+                        android:paddingVertical="10dp"
                         android:paddingStart="20dp"
                         android:paddingEnd="8dp"
                         android:gravity="center_vertical"
@@ -319,8 +327,8 @@
                 android:id="@+id/btn_quiz_mult_opt2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:minHeight="64dp"
-                android:layout_marginBottom="12dp"
+                android:minHeight="52dp"
+                android:layout_marginBottom="8dp"
                 android:clickable="true"
                 android:focusable="true"
                 app:cardBackgroundColor="@color/home_card_bg"
@@ -331,14 +339,14 @@
                 <androidx.constraintlayout.widget.ConstraintLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:minHeight="64dp">
+                    android:minHeight="52dp">
                     <TextView
                         android:id="@+id/tv_opt2"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:textColor="@color/white"
-                        android:textSize="16sp"
-                        android:paddingVertical="16dp"
+                        android:textSize="14sp"
+                        android:paddingVertical="10dp"
                         android:paddingStart="20dp"
                         android:paddingEnd="8dp"
                         android:gravity="center_vertical"
@@ -366,8 +374,8 @@
                 android:id="@+id/btn_quiz_mult_opt3"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:minHeight="64dp"
-                android:layout_marginBottom="12dp"
+                android:minHeight="52dp"
+                android:layout_marginBottom="8dp"
                 android:clickable="true"
                 android:focusable="true"
                 app:cardBackgroundColor="@color/home_card_bg"
@@ -378,14 +386,14 @@
                 <androidx.constraintlayout.widget.ConstraintLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:minHeight="64dp">
+                    android:minHeight="52dp">
                     <TextView
                         android:id="@+id/tv_opt3"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:textColor="@color/white"
-                        android:textSize="16sp"
-                        android:paddingVertical="16dp"
+                        android:textSize="14sp"
+                        android:paddingVertical="10dp"
                         android:paddingStart="20dp"
                         android:paddingEnd="8dp"
                         android:gravity="center_vertical"
@@ -413,8 +421,8 @@
                 android:id="@+id/btn_quiz_mult_opt4"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:minHeight="64dp"
-                android:layout_marginBottom="12dp"
+                android:minHeight="52dp"
+                android:layout_marginBottom="8dp"
                 android:clickable="true"
                 android:focusable="true"
                 app:cardBackgroundColor="@color/home_card_bg"
@@ -425,14 +433,14 @@
                 <androidx.constraintlayout.widget.ConstraintLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:minHeight="64dp">
+                    android:minHeight="52dp">
                     <TextView
                         android:id="@+id/tv_opt4"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:textColor="@color/white"
-                        android:textSize="16sp"
-                        android:paddingVertical="16dp"
+                        android:textSize="14sp"
+                        android:paddingVertical="10dp"
                         android:paddingStart="20dp"
                         android:paddingEnd="8dp"
                         android:gravity="center_vertical"
@@ -468,7 +476,7 @@
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/btn_ox_o"
                 android:layout_width="0dp"
-                android:layout_height="160dp"
+                android:layout_height="120dp"
                 android:layout_marginEnd="12dp"
                 android:layout_weight="1"
                 android:clickable="true"
@@ -489,7 +497,7 @@
                         android:layout_height="wrap_content"
                         android:text="O"
                         android:textColor="@color/quiz_mint"
-                        android:textSize="64sp"
+                        android:textSize="52sp"
                         android:textStyle="bold" />
                     <TextView
                         android:id="@+id/tv_ox_o_text"
@@ -498,7 +506,7 @@
                         android:layout_marginTop="4dp"
                         android:text="맞아요"
                         android:textColor="@color/quiz_mint"
-                        android:textSize="16sp"
+                        android:textSize="14sp"
                         android:textStyle="bold" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -506,7 +514,7 @@
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/btn_ox_x"
                 android:layout_width="0dp"
-                android:layout_height="160dp"
+                android:layout_height="120dp"
                 android:layout_weight="1"
                 android:clickable="true"
                 android:focusable="true"
@@ -526,7 +534,7 @@
                         android:layout_height="wrap_content"
                         android:text="X"
                         android:textColor="@color/quiz_red"
-                        android:textSize="64sp"
+                        android:textSize="52sp"
                         android:textStyle="bold" />
                     <TextView
                         android:id="@+id/tv_ox_x_text"
@@ -535,7 +543,7 @@
                         android:layout_marginTop="4dp"
                         android:text="아니에요"
                         android:textColor="@color/quiz_red"
-                        android:textSize="16sp"
+                        android:textSize="14sp"
                         android:textStyle="bold" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -547,8 +555,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:visibility="gone"
-            app:chipSpacingHorizontal="12dp"
-            app:chipSpacingVertical="12dp"
+            app:chipSpacingHorizontal="8dp"
+            app:chipSpacingVertical="8dp"
             app:singleSelection="true"/>
 
     </FrameLayout>
@@ -558,21 +566,21 @@
         android:id="@+id/layout_hint_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="40dp"
+        android:layout_marginBottom="12dp"
         android:background="@drawable/bg_hint_button"
         android:gravity="center"
-        android:paddingHorizontal="16dp"
-        android:paddingVertical="8dp"
+        android:paddingHorizontal="14dp"
+        android:paddingVertical="6dp"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/layout_options_container">
+        app:layout_constraintStart_toStartOf="parent">
         <TextView
             android:id="@+id/tv_hint"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="💡 힌트 보기"
             android:textColor="#FFD600"
-            android:textSize="14sp"
+            android:textSize="12sp"
             android:textStyle="bold" />
     </LinearLayout>
 

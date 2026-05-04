@@ -32,7 +32,8 @@ class MockHomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::
                 bottomNav.selectedItemId = R.id.learningFragment
             },
             onOpenQuest = {
-                QuestListBottomSheet.newInstance().show(parentFragmentManager, "quest_list")
+                QuestListBottomSheet.newInstance(canStartMission = true)
+                    .show(parentFragmentManager, "quest_list")
             }
         )
 

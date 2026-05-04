@@ -43,6 +43,20 @@ class HomeViewModel @Inject constructor(
         _uiState.update { it.copy(subtleNotice = null) }
     }
 
+    /** 퀘스트 수령 등으로 서버가 준 티켓 보유량만 반영 (전체 홈 재로드 없음) */
+    fun applyRemainingTickets(normal: Int, rare: Int, epic: Int) {
+        _uiState.update { s ->
+            val desc = if (normal == 0 && rare == 0 && epic == 0) ""
+            else "일반 $normal · 레어 $rare · 에픽 $epic"
+            s.copy(
+                normalTickets = normal,
+                srBonus = rare + epic,
+                gachaDescription = desc,
+                topTicketCount = normal + rare + epic
+            )
+        }
+    }
+
     private fun loadHome() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null, subtleNotice = null) }
