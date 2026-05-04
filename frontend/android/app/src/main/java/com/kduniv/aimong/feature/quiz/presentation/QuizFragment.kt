@@ -4,6 +4,7 @@ import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
 import android.graphics.Color
 import android.graphics.Typeface
+import android.os.CountDownTimer
 import android.text.Spannable
 import android.text.SpannableString
 import android.text.style.ForegroundColorSpan
@@ -43,6 +44,40 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
     private val viewModel: QuizViewModel by viewModels()
 
     private var lives = 3
+    private var maxPlayedIndex = 0
+    private var timer: CountDownTimer? = null
+    private var _isAdded = false
+
+    override fun onViewCreated(view: android.view.View, savedInstanceState: android.os.Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        _isAdded = true
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        timer?.cancel()
+        _isAdded = false
+    }
+
+    private fun startTimer() {
+        timer?.cancel()
+        timer = object : CountDownTimer(30000, 1000) {
+            override fun onTick(millisUntilFinished: Long) {
+                binding.tvTimer.text = "⏱ ${millisUntilFinished / 1000}초 남음"
+                if (millisUntilFinished <= 10000) {
+                    binding.tvTimer.setTextColor(Color.RED)
+                } else {
+                    binding.tvTimer.setTextColor(Color.parseColor("#8A96AD"))
+                }
+            }
+            override fun onFinish() {
+                binding.tvTimer.text = "⏱ 0초 남음"
+                if (binding.layoutFeedbackPanel.visibility != View.VISIBLE) {
+                    handleOptionClick("")
+                }
+            }
+        }.start()
+    }
 
     override fun initView() {
         binding.ivBack.setOnClickListener {
@@ -102,20 +137,6 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                             binding.tvExpInfo.setTextColor(Color.parseColor("#FFD600"))
                         }
                         updateQuizModeBanner()
-                    }
-                }
-                launch {
-                    viewModel.timeLeft.collect { millis ->
-                        val seconds = millis / 1000
-                        val minutes = seconds / 60
-                        val remainingSeconds = seconds % 60
-                        binding.tvTimer.text = String.format(java.util.Locale.getDefault(), "⏱ %02d:%02d 남음", minutes, remainingSeconds)
-
-                        if (millis in 1..10000) {
-                            binding.tvTimer.setTextColor(Color.RED)
-                        } else {
-                            binding.tvTimer.setTextColor(Color.parseColor("#8A96AD"))
-                        }
                     }
                 }
             }
@@ -235,7 +256,19 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         
         showAnswerFeedback(state.isCorrect, state.explanation, state.userAnswer)
         binding.btnFeedbackRetry.visibility = View.GONE // 풀이 모드에선 다시보기 불필요
-        binding.btnNextQuestion.text = if (index == total - 1) "결과로 돌아가기" else "다음 풀이 →"
+        
+        val targetSize = if (lives <= 0) maxPlayedIndex else total - 1
+        val isLast = index >= targetSize
+        binding.btnNextQuestion.text = if (isLast) "결과로 돌아가기" else "다음 풀이 →"
+        
+        binding.btnNextQuestion.setOnClickListener {
+            binding.layoutFeedbackPanel.visibility = View.GONE
+            if (isLast) {
+                viewModel.finishQuizEarly() // 결과 화면으로 전환
+            } else {
+                viewModel.nextQuestion()
+            }
+        }
     }
 
     private fun markCorrectAnswer(question: Question, userAnswer: String, isCorrect: Boolean) {
@@ -300,7 +333,13 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
 
         binding.layoutFeedbackPanel.visibility = View.VISIBLE
         
-        // 마지막 문제인 경우 버튼 텍스트 변경
+        if (!isCorrect) {
+            lives--
+            updateHearts(lives)
+            shakeScreen()
+        }
+
+        // 마지막 문제인 경우 또는 라이프가 0인 경우 버튼 텍스트 변경
         val questions = viewModel.uiState.value.let { 
             if (it is QuizUiState.QuestionLoaded) it.quizQuestions.questions 
             else (viewModel.uiState.value as? QuizUiState.AnswerChecked)?.let { 
@@ -309,9 +348,22 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             }
         }
         
-        // ViewModel의 currentQuestionIndex와 cachedQuestions를 직접 참조하는 게 안전함
+        val isFailedByLives = lives <= 0
         val isLast = (viewModel.currentQuestionIndex.value >= (binding.pbQuizProgress.max - 1))
-        binding.btnNextQuestion.text = if (isLast) getString(R.string.quiz_btn_view_result) else getString(R.string.quiz_btn_next)
+        
+        if (isFailedByLives) {
+            binding.btnNextQuestion.text = getString(R.string.quiz_btn_view_result)
+            binding.btnNextQuestion.setOnClickListener {
+                binding.layoutFeedbackPanel.visibility = View.GONE
+                viewModel.finishQuizEarly()
+            }
+        } else {
+            binding.btnNextQuestion.text = if (isLast) getString(R.string.quiz_btn_view_result) else getString(R.string.quiz_btn_next)
+            binding.btnNextQuestion.setOnClickListener {
+                binding.layoutFeedbackPanel.visibility = View.GONE
+                viewModel.nextQuestion()
+            }
+        }
 
         if (isCorrect) {
             binding.tvFeedbackTitle.text = getString(R.string.quiz_feedback_correct_xp)
@@ -490,9 +542,10 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
 
             binding.layoutHearts.visibility = View.VISIBLE
             val maxLives = if (viewModel.strictSingleLifeRetry.value) 1 else 3
-            updateHearts(maxLives, forceReset = true)
+            if (index == 0) updateHearts(maxLives, forceReset = true)
             updateQuizModeBanner()
             setupOptions(question)
+            startTimer()
         }
     }
 
@@ -578,6 +631,15 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         }
     }
 
+    private fun shakeScreen() {
+        val shakeCard = ObjectAnimator.ofFloat(binding.layoutQuestionCard, "translationX", 0f, 25f, -25f, 25f, -25f, 15f, -15f, 6f, -6f, 0f)
+        val shakeOptions = ObjectAnimator.ofFloat(binding.layoutOptionsContainer, "translationX", 0f, 25f, -25f, 25f, -25f, 15f, -15f, 6f, -6f, 0f)
+        shakeCard.duration = 500
+        shakeOptions.duration = 500
+        shakeCard.start()
+        shakeOptions.start()
+    }
+
     private fun setupOptions(question: Question) {
         binding.layoutOptionsStandard.removeAllViews()
         binding.layoutOptionsChips.removeAllViews()
@@ -629,6 +691,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                 typeface = Typeface.create("sans-serif-black", Typeface.BOLD)
                 isClickable = true
                 isCheckable = false
+                checkedIcon = null
                 textAlignment = View.TEXT_ALIGNMENT_CENTER
                 setTextColor(Color.WHITE)
                 
@@ -741,7 +804,13 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
     }
 
     private fun handleOptionClick(answer: String) {
+        timer?.cancel()
         val question = getCurrentQuestion() ?: return
+        
+        val currentIndex = viewModel.currentQuestionIndex.value
+        if (currentIndex > maxPlayedIndex) {
+            maxPlayedIndex = currentIndex
+        }
         
         // FILL 유형 시각적 피드백: 빈칸 채우기 (v2.3 명세 준수 - 즉시 치환)
         if (question.type == QuestionType.FILL) {

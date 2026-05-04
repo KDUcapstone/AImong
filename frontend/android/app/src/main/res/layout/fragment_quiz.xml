@@ -194,7 +194,7 @@
                     android:textStyle="bold" />
 
                 <LinearLayout
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     android:gravity="center_vertical"
@@ -231,18 +231,21 @@
                         android:layout_width="12dp"
                         android:layout_height="12dp"
                         android:src="@drawable/ic_star_filled" />
-                </LinearLayout>
 
-                <TextView
-                    android:id="@+id/btn_report_question"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:background="?attr/selectableItemBackground"
-                    android:paddingVertical="6dp"
-                    android:text="@string/quiz_report_question"
-                    android:textColor="#6B7A99"
-                    android:textSize="12sp" />
+                    <Space
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1" />
+
+                    <TextView
+                        android:id="@+id/btn_report_question"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:padding="4dp"
+                        android:text="🚨"
+                        android:textSize="16sp" />
+                </LinearLayout>
             </LinearLayout>
         </androidx.cardview.widget.CardView>
     </androidx.constraintlayout.widget.ConstraintLayout>
@@ -546,7 +549,6 @@
             android:visibility="gone"
             app:chipSpacingHorizontal="12dp"
             app:chipSpacingVertical="12dp"
-            app:singleLine="false"
             app:singleSelection="true"/>
 
     </FrameLayout>
@@ -715,13 +717,13 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
-                        android:padding="20dp"
-                        android:weightSum="3">
+                        android:padding="20dp">
 
                         <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
+                            android:gravity="center"
                             android:orientation="vertical">
                             <TextView
                                 android:layout_width="wrap_content"
@@ -744,6 +746,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
+                            android:gravity="center"
                             android:orientation="vertical"
                             android:visibility="gone">
                             <TextView
@@ -766,6 +769,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
+                            android:gravity="center"
                             android:orientation="vertical">
                             <TextView
                                 android:layout_width="wrap_content"
@@ -784,9 +788,11 @@
                         </LinearLayout>
 
                         <LinearLayout
+                            android:id="@+id/layout_pet_bonus_stat"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
+                            android:gravity="center"
                             android:orientation="vertical">
                             <TextView
                                 android:layout_width="wrap_content"

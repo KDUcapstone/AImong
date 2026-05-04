@@ -45,28 +45,21 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         val navHostFragment = supportFragmentManager
-            .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
-        navController = navHostFragment.navController
-
-        // [핵심] '재시작' 플래그가 없는 경우(앱을 처음 켰을 때) 세션을 초기화하거나 유지합니다.
-        val isRestart = intent.getBooleanExtra("IS_RESTART", false)
-        
-        if (savedInstanceState == null && !isRestart) {
-            lifecycleScope.launch {
-                // 앱 최초 실행 시 세션 클리어 (필요한 경우에만)
-                // sessionManager.clearSession() 
-                setupNavigation()
-            }
-        } else {
-            // 복원 시에는 이미 그래프가 설정되어 있을 수 있으므로 주의
+            .findFragmentById(R.id.nav_host_fragment) as? NavHostFragment
+        if (navHostFragment != null) {
+            navController = navHostFragment.navController
             setupNavigation()
         }
     }
 
     private fun setupNavigation() {
+        if (!::navController.isInitialized) return
         lifecycleScope.launch {
-            // 현재 저장된 유저 역할을 가져옴
-            val userRole = sessionManager.userRole.first()
+            // [임시 추가] 앱 시작 시 항상 로그인 화면을 보기 위해 세션 초기화
+            // sessionManager.clearSession()
+            
+            // 디버깅/목업 확인을 위해 항상 null(초기 상태)로 인식하게 임시 처리
+            val userRole: String? = null // sessionManager.userRole.first()
 
             val targetGraphRes = when (userRole) {
                 "CHILD" ->
@@ -103,13 +96,19 @@ class MainActivity : AppCompatActivity() {
                 navController.setGraph(targetGraphRes)
             }
 
-            if (userRole == "PARENT") {
-                registerParentFcmTokenUseCase(requireParentSession = true)
-                syncParentChildrenUseCase()
+            // 목업 모드(useStubNav)일 때는 서버 통신 UseCase를 호출하지 않음
+            if (!UiMode.useStubNav) {
+                if (userRole == "PARENT") {
+                    registerParentFcmTokenUseCase(requireParentSession = true)
+                    syncParentChildrenUseCase()
+                }
+
+                if (userRole == "CHILD") {
+                    registerChildFcmTokenUseCase(requireChildSession = true)
+                }
             }
 
             if (userRole == "CHILD") {
-                registerChildFcmTokenUseCase(requireChildSession = true)
                 binding.bottomNav.visibility = View.VISIBLE
                 binding.bottomNav.setupWithNavController(navController)
                 binding.bottomNav.itemIconTintList = null

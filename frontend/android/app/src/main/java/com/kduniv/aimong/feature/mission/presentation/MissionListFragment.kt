@@ -24,9 +24,6 @@ class MissionListFragment : BaseFragment<FragmentMissionListBinding>(FragmentMis
     override fun initView() {
         initRecyclerView()
 
-        binding.cardAiChat.setOnClickListener {
-            findNavController().navigate(MissionListFragmentDirections.actionLearningFragmentToChatFragment())
-        }
         binding.btnRetryMissions.setOnClickListener {
             binding.layoutErrorState.visibility = View.GONE
             viewModel.refreshMissions()
@@ -58,7 +55,6 @@ class MissionListFragment : BaseFragment<FragmentMissionListBinding>(FragmentMis
                         is MissionListUiState.Success -> {
                             binding.pbLoading.visibility = View.GONE
                             binding.layoutErrorState.visibility = View.GONE
-                            bindStageProgress(state.progress)
                             val missions = state.missions
                             if (missions.isEmpty()) {
                                 binding.rvMissions.visibility = View.GONE
@@ -76,7 +72,6 @@ class MissionListFragment : BaseFragment<FragmentMissionListBinding>(FragmentMis
                             binding.layoutEmptyState.visibility = View.GONE
                             binding.layoutErrorState.visibility = View.VISIBLE
                             binding.tvErrorMessage.text = state.message
-                            bindStageProgress(MissionProgress(0, 0, 0))
                             Toast.makeText(requireContext(), state.message, Toast.LENGTH_SHORT).show()
                         }
                     }
@@ -86,11 +81,6 @@ class MissionListFragment : BaseFragment<FragmentMissionListBinding>(FragmentMis
     }
 
     private fun bindStageProgress(progress: MissionProgress) {
-        binding.tvStageProgressCounts.text = getString(
-            R.string.mission_stage_progress_counts,
-            progress.stage1Completed,
-            progress.stage2Completed,
-            progress.stage3Completed
-        )
+        // Mock stage progress functionality removed based on UI update
     }
 }

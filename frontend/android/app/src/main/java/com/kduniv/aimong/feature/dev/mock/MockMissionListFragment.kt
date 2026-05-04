@@ -33,25 +33,13 @@ class MockMissionListFragment : BaseFragment<FragmentMissionListBinding>(Fragmen
         }
         missionAdapter.submitList(mockMissions())
 
-        bindStageProgress(MissionProgress(stage1Completed = 2, stage2Completed = 1, stage3Completed = 0))
-
-        binding.cardAiChat.setOnClickListener {
-            findNavController().navigate(
-                MockMissionListFragmentDirections.actionLearningFragmentToChatFragment()
-            )
-        }
         binding.btnRetryMissions.setOnClickListener {
             Toast.makeText(requireContext(), R.string.stub_mock_retry_toast, Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun bindStageProgress(progress: MissionProgress) {
-        binding.tvStageProgressCounts.text = getString(
-            R.string.mission_stage_progress_counts,
-            progress.stage1Completed,
-            progress.stage2Completed,
-            progress.stage3Completed
-        )
+        // Mock stage progress functionality removed based on UI update
     }
 
     private fun mockMissions(): List<Mission> = listOf(

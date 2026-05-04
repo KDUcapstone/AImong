@@ -3,7 +3,9 @@ package com.kduniv.aimong.feature.quiz.presentation
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.kduniv.aimong.core.dev.UiMode
 import com.kduniv.aimong.feature.quiz.domain.model.Question
+import com.kduniv.aimong.feature.quiz.domain.model.QuestionResult
 import com.kduniv.aimong.feature.quiz.domain.model.QuestionReportResult
 import com.kduniv.aimong.feature.quiz.data.QuizSessionRules
 import com.kduniv.aimong.feature.quiz.domain.model.QuizQuestions
@@ -117,6 +119,40 @@ class QuizViewModel @Inject constructor(
             userAnswers[questionId] = answer
             savedStateHandle["userAnswers"] = userAnswers
 
+            if (UiMode.useStubNav) {
+                // 목업 모드: 서버 요청 없이 로컬에서 즉시 피드백 생성
+                delay(300) // 실제 느낌을 위해 약간의 지연
+                _uiState.value = QuizUiState.AnswerChecked(
+                    isCorrect = true, // 목업에서는 일단 정답으로 처리
+                    explanation = "목업 모드 해설: 이 문항에 대한 상세 설명입니다.",
+                    userAnswer = answer
+                )
+                // 결과 객체가 필요하므로 가상의 결과 생성
+                if (quizResult == null) {
+                    quizResult = QuizResult(
+                        score = qs.questions.size,
+                        total = qs.questions.size,
+                        wrongCount = 0,
+                        isPassed = true,
+                        isPerfect = true,
+                        xpEarned = 50,
+                        petEvolved = false,
+                        streakDays = 7,
+                        results = qs.questions.map { 
+                            QuestionResult(it.id, true, "목업 해설")
+                        },
+                        mode = if (_isReviewMode.value) "review" else "normal",
+                        equippedPetGrade = "LEGENDARY",
+                        bonusXp = 10,
+                        currentXp = 850,
+                        nextLevelXp = 1000,
+                        currentLevel = 5,
+                        remainingTickets = null
+                    )
+                }
+                return@launch
+            }
+
             _uiState.value = QuizUiState.Loading
             quizRepository.submitQuiz(missionId, qs.quizAttemptId, userAnswers.toMap())
                 .onSuccess { result ->
@@ -172,6 +208,15 @@ class QuizViewModel @Inject constructor(
                     submitQuiz(cachedQuestions!!.quizAttemptId)
                 }
             }
+        }
+    }
+
+    fun finishQuizEarly() {
+        quizResult?.let {
+            _uiState.value = QuizUiState.Finished(it)
+        } ?: run {
+            val qs = cachedQuestions ?: return
+            submitQuiz(qs.quizAttemptId)
         }
     }
 
