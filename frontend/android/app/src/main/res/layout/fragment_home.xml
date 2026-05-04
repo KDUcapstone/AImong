@@ -8,134 +8,165 @@
     android:fitsSystemWindows="true"
     tools:context=".feature.home.presentation.HomeFragment">
 
-    <!-- 상단 상태바 (듀오링고 스타일) -->
-    <LinearLayout
-        android:id="@+id/layout_top_bar"
+    <!-- 상단 4칩: 하트 · XP · 티켓 · 스트릭 (API topStatus) -->
+    <HorizontalScrollView
+        android:id="@+id/scroll_top_chips"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingHorizontal="20dp"
-        android:paddingVertical="12dp"
+        android:fillViewport="true"
+        android:paddingHorizontal="12dp"
+        android:paddingVertical="10dp"
+        android:scrollbars="none"
         app:layout_constraintTop_toTopOf="parent">
 
-        <TextView
-            android:id="@+id/tv_streak_count"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="🔥 0"
-            android:textColor="#FF6D00"
-            android:textSize="16sp"
-            android:textStyle="bold" />
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
-        <TextView
-            android:id="@+id/tv_user_level"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:background="@drawable/bg_home_level"
-            android:gravity="center"
-            android:paddingHorizontal="10dp"
-            android:paddingVertical="4dp"
-            android:text="🔍 Lv.1 AI 입문자"
-            android:textColor="@color/text_white"
-            android:textSize="11sp"
-            android:textStyle="bold" />
+            <TextView
+                android:id="@+id/tv_chip_heart"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="4dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_home_status_chip"
+                android:gravity="center"
+                android:minHeight="36dp"
+                android:textColor="@color/text_white"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                tools:text="❤️ 5" />
 
-        <View
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:layout_weight="1" />
+            <TextView
+                android:id="@+id/tv_chip_xp"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="4dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_home_status_chip"
+                android:gravity="center"
+                android:minHeight="36dp"
+                android:textColor="@color/point_purple"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                tools:text="⚡ 240" />
 
-        <TextView
-            android:id="@+id/tv_energy_count"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="⚡ 0"
-            android:textColor="#E040FB"
-            android:textSize="16sp"
-            android:textStyle="bold" />
+            <TextView
+                android:id="@+id/tv_chip_ticket"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="4dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_home_status_chip"
+                android:gravity="center"
+                android:minHeight="36dp"
+                android:textColor="@color/point_gold"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                tools:text="🎟 3" />
 
-        <TextView
-            android:id="@+id/tv_ticket_count"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:text="🎟 0"
-            android:textColor="@color/point_gold"
-            android:textSize="16sp"
-            android:textStyle="bold" />
-    </LinearLayout>
+            <TextView
+                android:id="@+id/tv_chip_streak"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="4dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_home_status_chip"
+                android:gravity="center"
+                android:minHeight="36dp"
+                android:textColor="@color/point_orange"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                tools:text="🔥 5일" />
+        </LinearLayout>
+    </HorizontalScrollView>
 
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/layout_top_bar">
+        app:layout_constraintTop_toBottomOf="@+id/scroll_top_chips">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center_horizontal"
             android:orientation="vertical"
             android:paddingBottom="40dp">
 
-            <!-- 펫 말풍선 영역 -->
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:layout_width="wrap_content"
+            <TextView
+                android:id="@+id/tv_home_brand"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="20dp">
-
-                <TextView
-                    android:id="@+id/tv_pet_message"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:background="@drawable/bg_home_card"
-                    android:paddingHorizontal="20dp"
-                    android:paddingVertical="10dp"
-                    android:text="@string/home_message_until_loaded"
-                    android:textColor="@color/text_white"
-                    android:textSize="14sp"
-                    app:layout_constraintBottom_toTopOf="@+id/view_tail"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toStartOf="parent" />
-
-                <View
-                    android:id="@+id/view_tail"
-                    android:layout_width="12dp"
-                    android:layout_height="12dp"
-                    android:layout_marginStart="24dp"
-                    android:layout_marginTop="-6dp"
-                    android:background="@drawable/bg_speech_bubble_tail"
-                    app:layout_constraintStart_toStartOf="@+id/tv_pet_message"
-                    app:layout_constraintTop_toBottomOf="@+id/tv_pet_message" />
-            </androidx.constraintlayout.widget.ConstraintLayout>
-
-            <!-- 캐릭터 영역 -->
-            <com.airbnb.lottie.LottieAnimationView
-                android:id="@+id/lottie_pet"
-                android:layout_width="200dp"
-                android:layout_height="200dp"
-                android:layout_marginTop="0dp"
-                app:lottie_autoPlay="true"
-                app:lottie_loop="true"
-                app:lottie_rawRes="@raw/pet_idle" />
+                android:gravity="center"
+                android:letterSpacing="0.05"
+                android:paddingTop="4dp"
+                android:text="@string/home_brand"
+                android:textColor="@color/text_sub_grey"
+                android:textSize="12sp" />
 
             <TextView
-                android:id="@+id/tv_pet_name_level"
-                android:layout_width="wrap_content"
+                android:id="@+id/tv_home_title"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="펫 Lv.1"
-                android:textColor="#A5D6A7"
-                android:textSize="18sp"
+                android:gravity="center"
+                android:paddingTop="4dp"
+                android:text="@string/home_title_explore"
+                android:textColor="@color/text_white"
+                android:textSize="22sp"
                 android:textStyle="bold" />
 
-            <!-- EXP 바 (외곽선 포함) -->
+            <TextView
+                android:id="@+id/tv_home_subtitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:paddingTop="6dp"
+                android:textColor="@color/text_sub_grey"
+                android:textSize="13sp"
+                tools:text="Lv.7 AI 탐험가" />
+
+            <TextView
+                android:id="@+id/tv_pet_message"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="24dp"
+                android:layout_marginTop="12dp"
+                android:gravity="center"
+                android:textColor="@color/text_sub_grey"
+                android:textSize="13sp"
+                android:visibility="gone"
+                tools:text="오늘도 같이 공부해요!"
+                tools:visibility="visible" />
+
+            <!-- 학습 경로: 중앙 세로 라인 + 노드 -->
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:minHeight="120dp"
+                android:paddingBottom="8dp">
+
+                <View
+                    android:layout_width="3dp"
+                    android:layout_height="match_parent"
+                    android:layout_gravity="center_horizontal"
+                    android:background="@color/quiz_mint" />
+
+                <LinearLayout
+                    android:id="@+id/layout_mission_path"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+            </FrameLayout>
+
+            <!-- 펫 EXP (장착 펫 기준) -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="24dp"
-                android:layout_marginTop="24dp"
+                android:layout_marginTop="8dp"
                 android:background="@drawable/bg_home_card"
                 android:orientation="vertical"
                 android:padding="16dp">
@@ -144,12 +175,14 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="8dp">
+
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="✨ 경험치"
                         android:textColor="@color/text_sub_grey"
                         android:textSize="12sp" />
+
                     <TextView
                         android:id="@+id/tv_pet_xp_label"
                         android:layout_width="wrap_content"
@@ -168,18 +201,18 @@
                     android:progressDrawable="@drawable/progress_xp_gradient" />
             </LinearLayout>
 
-            <!-- 오늘의 퀘스트 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="20dp"
-                android:layout_marginTop="32dp"
+                android:layout_marginTop="28dp"
                 android:orientation="vertical">
 
                 <RelativeLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="16dp">
+
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -187,6 +220,7 @@
                         android:textColor="@color/text_white"
                         android:textSize="16sp"
                         android:textStyle="bold" />
+
                     <TextView
                         android:id="@+id/tv_quest_progress_badge"
                         android:layout_width="wrap_content"
@@ -208,7 +242,6 @@
                     android:orientation="vertical" />
             </LinearLayout>
 
-            <!-- 가챠 배너 -->
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:id="@+id/layout_gacha_banner"
                 android:layout_width="match_parent"
@@ -255,7 +288,6 @@
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
             </androidx.constraintlayout.widget.ConstraintLayout>
-
         </LinearLayout>
     </ScrollView>
 

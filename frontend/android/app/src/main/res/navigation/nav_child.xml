@@ -19,6 +19,9 @@
         <action
             android:id="@+id/action_homeFragment_to_gachaFragment"
             app:destination="@id/gachaFragment" />
+        <action
+            android:id="@+id/action_homeFragment_to_quizFragment"
+            app:destination="@id/quizFragment" />
     </fragment>
 
     <fragment

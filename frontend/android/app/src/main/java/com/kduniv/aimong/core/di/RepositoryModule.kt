@@ -1,7 +1,13 @@
 package com.kduniv.aimong.core.di
 
+import com.kduniv.aimong.feature.auth.data.AuthRepositoryImpl
+import com.kduniv.aimong.feature.auth.data.AuthRepository
+import com.kduniv.aimong.feature.home.data.HomeRepositoryImpl
+import com.kduniv.aimong.feature.home.domain.repository.HomeRepository
 import com.kduniv.aimong.feature.mission.data.MissionRepositoryImpl
 import com.kduniv.aimong.feature.mission.domain.repository.MissionRepository
+import com.kduniv.aimong.feature.parent.data.ParentRepository
+import com.kduniv.aimong.feature.parent.data.ParentRepositoryImpl
 import com.kduniv.aimong.feature.quiz.data.QuizRepositoryImpl
 import com.kduniv.aimong.feature.quiz.domain.repository.QuizRepository
 import dagger.Binds
@@ -16,6 +22,18 @@ abstract class RepositoryModule {
 
     @Binds
     @Singleton
+    abstract fun bindAuthRepository(
+        authRepositoryImpl: AuthRepositoryImpl
+    ): AuthRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindHomeRepository(
+        homeRepositoryImpl: HomeRepositoryImpl
+    ): HomeRepository
+
+    @Binds
+    @Singleton
     abstract fun bindMissionRepository(
         missionRepositoryImpl: MissionRepositoryImpl
     ): MissionRepository
@@ -25,4 +43,10 @@ abstract class RepositoryModule {
     abstract fun bindQuizRepository(
         quizRepositoryImpl: QuizRepositoryImpl
     ): QuizRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindParentRepository(
+        parentRepositoryImpl: ParentRepositoryImpl
+    ): ParentRepository
 }

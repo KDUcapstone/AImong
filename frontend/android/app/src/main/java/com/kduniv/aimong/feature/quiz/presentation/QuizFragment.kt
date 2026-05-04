@@ -15,12 +15,14 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.RelativeLayout
 import android.widget.TextView
+import android.widget.EditText
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.appcompat.app.AlertDialog
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.chip.Chip
 import com.kduniv.aimong.R
@@ -72,6 +74,8 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             animateSelection(it)
             handleOptionClick("X") 
         }
+        binding.btnReportQuestion.setOnClickListener { showQuestionReportReasonDialog() }
+        updateReportButtonVisibility()
     }
 
     override fun initObserver() {
@@ -142,6 +146,77 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                     Toast.makeText(requireContext(), state.message, Toast.LENGTH_SHORT).show()
                 }
             }
+        }
+        updateReportButtonVisibility()
+    }
+
+    private fun updateReportButtonVisibility() {
+        binding.btnReportQuestion.visibility = when (viewModel.uiState.value) {
+            is QuizUiState.Loading, is QuizUiState.Finished -> View.GONE
+            else -> View.VISIBLE
+        }
+    }
+
+    private fun showQuestionReportReasonDialog() {
+        val reasons = listOf(
+            "SAFETY" to R.string.quiz_report_reason_safety,
+            "INAPPROPRIATE" to R.string.quiz_report_reason_inappropriate,
+            "DUPLICATE" to R.string.quiz_report_reason_duplicate,
+            "WRONG_ANSWER" to R.string.quiz_report_reason_wrong_answer,
+            "LOW_QUALITY" to R.string.quiz_report_reason_low_quality,
+            "ETC" to R.string.quiz_report_reason_etc
+        )
+        val labels = reasons.map { getString(it.second) }.toTypedArray()
+        AlertDialog.Builder(requireContext())
+            .setTitle(R.string.quiz_report_dialog_title)
+            .setItems(labels) { _, which ->
+                showQuestionReportDetailDialog(reasons[which].first)
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun showQuestionReportDetailDialog(reasonCode: String) {
+        val pad = (16 * resources.displayMetrics.density).toInt()
+        val input = EditText(requireContext()).apply {
+            hint = getString(R.string.quiz_report_detail_hint)
+            setHintTextColor(Color.parseColor("#8A96AD"))
+            setTextColor(Color.WHITE)
+            setPadding(pad, pad, pad, pad)
+        }
+        AlertDialog.Builder(requireContext())
+            .setTitle(R.string.quiz_report_detail_title)
+            .setView(input)
+            .setPositiveButton(R.string.quiz_report_submit) { _, _ ->
+                submitQuestionReport(reasonCode, input.text?.toString())
+            }
+            .setNeutralButton(R.string.quiz_report_without_detail) { _, _ ->
+                submitQuestionReport(reasonCode, null)
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun submitQuestionReport(reasonCode: String, detail: String?) {
+        val q = currentQuestionForReport() ?: run {
+            Toast.makeText(requireContext(), R.string.quiz_report_no_question, Toast.LENGTH_SHORT).show()
+            return
+        }
+        lifecycleScope.launch {
+            viewModel.reportQuestion(q.id, reasonCode, detail)
+                .onSuccess {
+                    Toast.makeText(requireContext(), R.string.quiz_report_success, Toast.LENGTH_SHORT).show()
+                }
+                .onFailure {
+                    Toast.makeText(requireContext(), it.message.orEmpty(), Toast.LENGTH_SHORT).show()
+                }
+        }
+    }
+
+    private fun currentQuestionForReport(): Question? {
+        return when (val s = viewModel.uiState.value) {
+            is QuizUiState.SolutionLoaded -> s.question
+            else -> getCurrentQuestion()
         }
     }
 
@@ -242,16 +317,23 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         binding.lavResultPet.setAnimation(R.raw.pet_idle)
         binding.lavResultPet.playAnimation()
 
-        binding.tvResultStatus.text = if (result.isPassed) "미션 성공!" else "조금 더 노력해봐!"
+        val isReviewSubmit = result.mode == "review"
+        binding.tvResultStatus.text = when {
+            isReviewSubmit && result.isPassed -> "복습 완료!"
+            isReviewSubmit -> "복습 결과"
+            result.isPassed -> getString(R.string.quiz_result_success)
+            else -> getString(R.string.quiz_result_fail)
+        }
         binding.tvResultStatus.setTextColor(
             if (result.isPassed) Color.parseColor("#00FFB2")
             else Color.parseColor("#FF4B4B")
         )
 
-        binding.tvResultSub.text = if (result.isPassed) {
-            "정말 대단해! 리터러시 박사가 다 됐는걸?"
-        } else {
-            "아쉽게 탈락했어. 다시 한 번 도전해볼까?"
+        binding.tvResultSub.text = when {
+            isReviewSubmit && result.isPassed -> getString(R.string.quiz_result_review_subtitle_pass)
+            isReviewSubmit -> getString(R.string.quiz_result_review_subtitle_fail)
+            result.isPassed -> "정말 대단해! 리터러시 박사가 다 됐는걸?"
+            else -> "아쉽게 탈락했어. 다시 한 번 도전해볼까?"
         }
         
         binding.tvResCorrectCount.text = "${result.score} / ${result.total}"
@@ -264,7 +346,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         // 오답 통계 표시
         if (!result.isPassed) {
             binding.layoutWrongStat.visibility = View.VISIBLE
-            binding.tvResWrongCount.text = "${result.total - result.score}개"
+            binding.tvResWrongCount.text = "${result.wrongCount}개"
             binding.layoutStatsContainer.weightSum = 4f
             binding.btnResRetry.visibility = View.VISIBLE
             binding.btnResFinish.text = "다음에 하기"
@@ -277,22 +359,41 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             binding.tvResPetBonus.setTextColor(Color.parseColor("#FFD600"))
         }
 
-        // 보너스 정보
-        binding.tvResPetBonus.text = if (result.bonusXp > 0) "+${result.bonusXp} XP" else "+0% XP"
+        // 보너스 정보 (v1.4: 복습은 bonusXp/xpEarned 0, equippedPetGrade 등)
+        binding.tvResPetBonus.text = when {
+            isReviewSubmit -> getString(R.string.quiz_bonus_review_none)
+            result.equippedPetGrade != null && result.bonusXp > 0 ->
+                getString(R.string.quiz_bonus_pet_grade, result.equippedPetGrade, result.bonusXp)
+            result.bonusXp > 0 -> "+${result.bonusXp} XP"
+            else -> "+0% XP"
+        }
         
         // XP 애니메이션
         animateXpGain(result.xpEarned, result.currentXp, result.nextLevelXp, result.currentLevel)
 
-        // 스트릭 정보
-        if (result.streakDays > 0) {
+        // 스트릭·티켓 (remainingTickets는 서버 스냅샷)
+        val streakLine = if (result.streakDays > 0) {
+            "🔥 ${result.streakDays}일 연속 스트릭 유지 중!"
+        } else null
+        val ticketLine = result.remainingTickets?.let {
+            getString(
+                R.string.quiz_remaining_tickets_line,
+                it.normal,
+                it.rare,
+                it.epic
+            )
+        }
+        val streakBlock = listOfNotNull(streakLine, ticketLine).joinToString("\n")
+        if (streakBlock.isNotEmpty()) {
             binding.tvStreakInfo.visibility = View.VISIBLE
-            binding.tvStreakInfo.text = "🔥 ${result.streakDays}일 연속 스트릭 유지 중!"
+            binding.tvStreakInfo.text = streakBlock
         } else {
             binding.tvStreakInfo.visibility = View.GONE
         }
 
         // 보상 아이템 표시
-        binding.layoutRewardsRow.visibility = if (result.isPassed) View.VISIBLE else View.GONE
+        binding.layoutRewardsRow.visibility =
+            if (result.isPassed && result.rewards.isNotEmpty()) View.VISIBLE else View.GONE
         binding.layoutRewardsContainer.removeAllViews()
         result.rewards.forEach { reward ->
             addRewardIcon(reward)
@@ -302,7 +403,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             updateHearts(0, forceReset = true)
         }
 
-        binding.tvWrongCount.text = "오답: ${result.total - result.score}개"
+        binding.tvWrongCount.text = "오답: ${result.wrongCount}개"
     }
 
     private fun animateXpGain(gainedXp: Int, currentXp: Int, maxXp: Int, level: Int) {

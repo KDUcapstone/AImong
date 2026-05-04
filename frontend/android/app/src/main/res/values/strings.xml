@@ -2,6 +2,18 @@
 <resources>
     <string name="app_name">AImong</string>
 
+    <string name="home_notice_server_day_changed">날짜가 바뀌었어요. 오늘 미션·퀘스트를 확인해 보세요.</string>
+
+    <string name="home_brand">AImong</string>
+    <string name="home_title_explore">오늘도 AI 탐험!</string>
+    <string name="home_today_mission_label">오늘의 미션</string>
+    <string name="home_start_mission">시작</string>
+    <string name="home_streak_calendar_title">미션 스트릭</string>
+    <string name="home_streak_summary_fmt">연속 %1$d일 · 완료 기록 %2$d일</string>
+    <string name="home_streak_month_summary_fmt">연속 %1$d일 · 이 달 완료 %2$d일 (%3$s)</string>
+    <string name="home_streak_month_label_fmt">%1$d년 %2$d월</string>
+    <string name="home_streak_today_kst_fmt">오늘(KST): %1$s</string>
+    <string name="home_streak_load_failed">스트릭 캘린더를 불러오지 못했습니다.</string>
     <string name="home_message_until_loaded">학습 탭에서 미션을 확인해 보세요.</string>
     <string name="home_pet_name_default">펫</string>
     <string name="home_gacha_ticket_title">가챠 티켓 %1$d장 보유!</string>
@@ -35,6 +47,27 @@
 
     <string name="quiz_mode_retry_challenge">다시 도전하기</string>
     <string name="quiz_mode_review_and_retry">복습 · 다시 도전하기</string>
+    <string name="quiz_result_review_subtitle_pass">복습으로 제출되었어요. XP·진행도·보상은 적용되지 않았어요.</string>
+    <string name="quiz_result_review_subtitle_fail">복습 결과예요. XP·진행도·보상은 적용되지 않았어요.</string>
+    <string name="quiz_bonus_review_none">복습 · XP·보상 미적용</string>
+    <string name="quiz_bonus_pet_grade">%1$s 등급 보너스 · +%2$d XP</string>
+    <string name="quiz_remaining_tickets_line">남은 티켓 · 일반 %1$d · 레어 %2$d · 에픽 %3$d</string>
+
+    <!-- Question report -->
+    <string name="quiz_report_question">문제 신고</string>
+    <string name="quiz_report_dialog_title">신고 사유를 선택해 주세요</string>
+    <string name="quiz_report_reason_safety">안전 문제 (민감한 개인정보 요구 등)</string>
+    <string name="quiz_report_reason_inappropriate">부적절한 표현·내용</string>
+    <string name="quiz_report_reason_duplicate">같은 문제가 반복되어 나옴</string>
+    <string name="quiz_report_reason_wrong_answer">정답이나 해설이 잘못된 것 같음</string>
+    <string name="quiz_report_reason_low_quality">문제·보기 품질이 낮음</string>
+    <string name="quiz_report_reason_etc">기타 (상세에 적어 주세요)</string>
+    <string name="quiz_report_detail_title">상세 사유 (선택)</string>
+    <string name="quiz_report_detail_hint">내용을 입력해 주세요. 이름·연락처 등 개인정보는 적지 마세요.</string>
+    <string name="quiz_report_submit">신고하기</string>
+    <string name="quiz_report_without_detail">상세 없이 신고</string>
+    <string name="quiz_report_success">신고가 접수되었습니다.</string>
+    <string name="quiz_report_no_question">문항 정보를 찾을 수 없습니다.</string>
 
     <!-- Mission list -->
     <string name="mission_stage_progress_title">단계별 완료 수</string>
@@ -43,4 +76,23 @@
     <string name="mission_stage_unlock_hint">2단계: 1단계 3개 이상 클리어 시 · 3단계: 2단계 4개 이상 클리어 시 잠금 해제</string>
     <string name="mission_badge_review">복습</string>
     <string name="mission_error_retry">다시 시도</string>
+
+    <!-- Auth (Google / parent register / child code) -->
+    <string name="auth_parent_register_title">자녀 프로필 등록</string>
+    <string name="auth_parent_register_hint">자녀 앱에 표시될 닉네임을 입력해 주세요.</string>
+    <string name="auth_nickname_hint">닉네임</string>
+    <string name="auth_parent_register_submit">등록하고 시작하기</string>
+    <string name="auth_error_nickname_empty">닉네임을 입력해 주세요.</string>
+    <string name="auth_error_nickname_length">닉네임은 20자 이내로 입력해 주세요.</string>
+    <string name="auth_register_failed">등록에 실패했습니다. 잠시 후 다시 시도해 주세요.</string>
+    <string name="auth_register_success_title">등록 완료</string>
+    <string name="auth_register_success_message">닉네임: %1$s\n연결 코드: %2$s\n스타터 티켓: %3$d장</string>
+    <string name="auth_confirm">확인</string>
+
+    <string name="default_web_client_id" translatable="false">791420035737-6k6e2kjrqju7i64idfma53n9anmvmv0v.apps.googleusercontent.com</string>
+    <string name="auth_google_token_missing">Google 로그인 토큰을 받지 못했습니다.</string>
+    <string name="auth_google_failed">Google 로그인에 실패했습니다.</string>
+    <string name="auth_firebase_failed">Firebase 인증에 실패했습니다.</string>
+    <string name="auth_child_code_invalid">6자리 숫자 코드를 입력해 주세요.</string>
+    <string name="auth_child_login_failed">연결에 실패했습니다. 코드를 확인해 주세요.</string>
 </resources>

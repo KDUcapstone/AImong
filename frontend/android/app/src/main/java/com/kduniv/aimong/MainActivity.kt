@@ -10,6 +10,9 @@ import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.NavigationUI
 import androidx.navigation.ui.setupWithNavController
 import com.kduniv.aimong.core.local.SessionManager
+import com.kduniv.aimong.feature.auth.domain.RegisterChildFcmTokenUseCase
+import com.kduniv.aimong.feature.auth.domain.RegisterParentFcmTokenUseCase
+import com.kduniv.aimong.feature.parent.domain.SyncParentChildrenUseCase
 import com.kduniv.aimong.databinding.ActivityMainBinding
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.first
@@ -22,6 +25,15 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var sessionManager: SessionManager
+
+    @Inject
+    lateinit var registerParentFcmTokenUseCase: RegisterParentFcmTokenUseCase
+
+    @Inject
+    lateinit var registerChildFcmTokenUseCase: RegisterChildFcmTokenUseCase
+
+    @Inject
+    lateinit var syncParentChildrenUseCase: SyncParentChildrenUseCase
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var navController: NavController
@@ -78,7 +90,13 @@ class MainActivity : AppCompatActivity() {
                 navController.setGraph(targetGraphRes)
             }
 
+            if (userRole == "PARENT") {
+                registerParentFcmTokenUseCase(requireParentSession = true)
+                syncParentChildrenUseCase()
+            }
+
             if (userRole == "CHILD") {
+                registerChildFcmTokenUseCase(requireChildSession = true)
                 binding.bottomNav.visibility = View.VISIBLE
                 binding.bottomNav.setupWithNavController(navController)
                 binding.bottomNav.itemIconTintList = null

@@ -17,10 +17,13 @@ data class HomeUiState(
     val homeState: HomeState = HomeState.IDLE,
     val petMessage: String = "",
     
-    // 에너지 및 재화 현황
+    /** 상단 하트 칩 — topStatus.heartCount */
+    val heartCount: Int = 0,
+    /** 상단 XP 칩 — topStatus.xp */
+    val topStatusXp: Int = 0,
+
     val normalTickets: Int = 0,
     val shieldCount: Int = 0,
-    val energyCount: Int = 0, // 상단 번개 아이콘 대응
     
     // 가챠 관련
     val srBonus: Int = 0,
@@ -28,7 +31,23 @@ data class HomeUiState(
 
     // 오늘의 퀘스트
     val todayQuestProgress: String = "0/0",
-    val quests: List<QuestItemUiState> = emptyList()
+    val quests: List<QuestItemUiState> = emptyList(),
+
+    val isLoading: Boolean = false,
+    val errorMessage: String? = null,
+    /** serverDate(KST)가 직전 저장값과 달라졌을 때 1회 안내 */
+    val subtleNotice: String? = null,
+
+    /** API 원본 보조 (추가 UI·디버그용) */
+    val serverDate: String? = null,
+    /** 상단 고정 티켓 요약(있으면 표시 규칙에 활용) */
+    val topTicketCount: Int = 0,
+    val canStartMission: Boolean = false,
+    val returnRewardPending: Boolean = false,
+    val dailyQuestClaimableCount: Int = 0,
+
+    /** PM 시안 학습 경로 노드 */
+    val pathItems: List<HomePathItem> = emptyList()
 )
 
 data class QuestItemUiState(

@@ -4,6 +4,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kduniv.aimong.feature.quiz.domain.model.Question
+import com.kduniv.aimong.feature.quiz.domain.model.QuestionReportResult
+import com.kduniv.aimong.feature.quiz.data.QuizSessionRules
 import com.kduniv.aimong.feature.quiz.domain.model.QuizQuestions
 import com.kduniv.aimong.feature.quiz.domain.model.QuizResult
 import com.kduniv.aimong.feature.quiz.domain.repository.QuizRepository
@@ -130,8 +132,17 @@ class QuizViewModel @Inject constructor(
 
     private fun submitQuiz(quizAttemptId: String) {
         viewModelScope.launch {
+            val qs = cachedQuestions
+            if (qs == null) {
+                _uiState.value = QuizUiState.Error("문제 정보가 없습니다.")
+                return@launch
+            }
+            if (!isAnswerSetCompleteForFullSubmit(qs)) {
+                _uiState.value = QuizUiState.Error("10개 문항에 모두 답한 뒤 제출할 수 있습니다.")
+                return@launch
+            }
             _uiState.value = QuizUiState.Loading
-            quizRepository.submitQuiz(missionId, quizAttemptId, userAnswers)
+            quizRepository.submitQuiz(missionId, quizAttemptId, userAnswers.toMap())
                 .onSuccess { result ->
                     quizResult = result
                     _uiState.value = QuizUiState.Finished(result)
@@ -140,6 +151,14 @@ class QuizViewModel @Inject constructor(
                     _uiState.value = QuizUiState.Error(it.message ?: "Failed to submit quiz")
                 }
         }
+    }
+
+    /** 최종 제출: 문항 수·questionId 집합이 세션과 일치해야 함 */
+    private fun isAnswerSetCompleteForFullSubmit(qs: QuizQuestions): Boolean {
+        if (userAnswers.size != QuizSessionRules.EXPECTED_QUESTION_COUNT) return false
+        if (qs.questions.size != QuizSessionRules.EXPECTED_QUESTION_COUNT) return false
+        val expected = qs.questions.map { it.id }.toSet()
+        return userAnswers.keys == expected
     }
 
     fun startSolutionMode() {
@@ -208,6 +227,16 @@ class QuizViewModel @Inject constructor(
         viewModelScope.launch {
             quizRepository.syncOfflineMissions()
         }
+    }
+
+    /** 문항 품질 신고 (reasonCode: SAFETY, INAPPROPRIATE, DUPLICATE, WRONG_ANSWER, LOW_QUALITY, ETC) */
+    suspend fun reportQuestion(
+        questionId: String,
+        reasonCode: String,
+        detail: String?
+    ): Result<QuestionReportResult> {
+        val trimmed = detail?.trim()?.takeIf { it.isNotEmpty() }
+        return quizRepository.reportQuestion(missionId, questionId, reasonCode, trimmed)
     }
 }
 

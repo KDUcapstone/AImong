@@ -30,25 +30,36 @@ data class QuizAnswer(
 )
 
 data class QuizSubmitResponse(
+    @SerializedName("mode") val mode: String? = null,
+    @SerializedName("progressApplied") val progressApplied: Boolean? = null,
+    @SerializedName("attemptState") val attemptState: String? = null,
     @SerializedName("score") val score: Int,
     @SerializedName("total") val total: Int,
     @SerializedName("wrongCount") val wrongCount: Int,
     @SerializedName("isPassed") val isPassed: Boolean,
     @SerializedName("isPerfect") val isPerfect: Boolean,
-    @SerializedName("equippedPetGrade") val equippedPetGrade: String?,
-    @SerializedName("bonusXp") val bonusXp: Int,
-    @SerializedName("bonusReason") val bonusReason: String?,
+    @SerializedName("equippedPetGrade") val equippedPetGrade: String? = null,
+    @SerializedName("bonusXp") val bonusXp: Int? = null,
+    @SerializedName("bonusReason") val bonusReason: String? = null,
     @SerializedName("xpEarned") val xpEarned: Int,
-    @SerializedName("equippedPetXp") val equippedPetXp: Int,
-    @SerializedName("petStage") val petStage: String?,
-    @SerializedName("petEvolved") val petEvolved: Boolean,
+    @SerializedName("streakBonusApplied") val streakBonusApplied: Boolean? = null,
+    @SerializedName("equippedPetXp") val equippedPetXp: Int? = null,
+    @SerializedName("petStage") val petStage: String? = null,
+    @SerializedName("petEvolved") val petEvolved: Boolean? = null,
     @SerializedName("streakDays") val streakDays: Int,
-    @SerializedName("todayMissionCount") val todayMissionCount: Int,
-    @SerializedName("rewards") val rewards: List<RewardResponse>,
-    @SerializedName("results") val results: List<QuestionResultResponse>,
-    @SerializedName("currentLevel") val currentLevel: Int?,
-    @SerializedName("currentXp") val currentXp: Int?,
-    @SerializedName("nextLevelXp") val nextLevelXp: Int?
+    @SerializedName("todayMissionCount") val todayMissionCount: Int? = null,
+    @SerializedName("rewards") val rewards: List<RewardResponse>? = null,
+    @SerializedName("remainingTickets") val remainingTickets: RemainingTicketsResponse? = null,
+    @SerializedName("results") val results: List<QuestionResultResponse>? = null,
+    @SerializedName("currentLevel") val currentLevel: Int? = null,
+    @SerializedName("currentXp") val currentXp: Int? = null,
+    @SerializedName("nextLevelXp") val nextLevelXp: Int? = null
+)
+
+data class RemainingTicketsResponse(
+    @SerializedName("normal") val normal: Int = 0,
+    @SerializedName("rare") val rare: Int = 0,
+    @SerializedName("epic") val epic: Int = 0
 )
 
 data class RewardResponse(
