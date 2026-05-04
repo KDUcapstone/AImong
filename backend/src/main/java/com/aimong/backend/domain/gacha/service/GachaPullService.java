@@ -19,12 +19,16 @@ import com.aimong.backend.domain.pet.repository.PetRepository;
 import com.aimong.backend.domain.pet.service.PetService;
 import com.aimong.backend.global.exception.AimongException;
 import com.aimong.backend.global.exception.ErrorCode;
+import com.aimong.backend.infra.fcm.FcmService;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.util.StringUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -51,6 +55,7 @@ public class GachaPullService {
     private final FragmentRepository fragmentRepository;
     private final PetRepository petRepository;
     private final PetService petService;
+    private final FcmService fcmService;
 
     @Transactional
     public GachaPullResponse pull(UUID childId, TicketType ticketType) {
@@ -74,6 +79,7 @@ public class GachaPullService {
             ticketRepository.save(Ticket.issue(childId, TicketType.NORMAL));
             ticketRepository.save(Ticket.issue(childId, TicketType.NORMAL));
             childProfile.addShield(1);
+            sendLevelUpFcmAfterCommit(childProfile.getParentAccount().getFcmToken(), childProfile.getGachaPullCount());
         }
 
         Pet pet = null;
@@ -107,7 +113,7 @@ public class GachaPullService {
                 new GachaPullResponse.Result(
                         pet == null ? null : pet.getId(),
                         drawResult.petType(),
-                        drawResult.petType(),
+                        gachaProbabilityService.petNameOf(drawResult.petType()),
                         drawResult.grade().name(),
                         isNew,
                         fragmentsGot
@@ -161,6 +167,22 @@ public class GachaPullService {
         return beforePullCount < 20 && afterPullCount >= 20
                 || beforePullCount < 50 && afterPullCount >= 50
                 || beforePullCount < 100 && afterPullCount >= 100;
+    }
+
+    private void sendLevelUpFcmAfterCommit(String parentFcmToken, int gachaPullCount) {
+        if (!StringUtils.hasText(parentFcmToken)) {
+            return;
+        }
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            fcmService.sendGachaLevelUpToParent(parentFcmToken, gachaPullCount);
+            return;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                fcmService.sendGachaLevelUpToParent(parentFcmToken, gachaPullCount);
+            }
+        });
     }
 
     private GachaPullResponse.RemainingTickets remainingTickets(UUID childId) {

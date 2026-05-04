@@ -1,3 +1,10 @@
 package com.aimong.backend.infra.fcm;
-// TODO: { title, body, data }
-public class FcmPayload {}
+
+import java.util.Map;
+
+public record FcmPayload(
+        String title,
+        String body,
+        Map<String, String> data
+) {
+}
