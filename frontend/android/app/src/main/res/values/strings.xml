@@ -1,4 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">AImong</string>
+
+    <!-- Quiz Result -->
+    <string name="quiz_result_success">미션 성공!</string>
+    <string name="quiz_result_fail">미션 실패</string>
+    <string name="quiz_result_score">%1$d문제 중 %2$d문제 정답</string>
+    <string name="quiz_result_xp">+%1$d XP 획득!</string>
+    <string name="quiz_wrong_count">오답: %1$d/3</string>
+    <string name="quiz_result_stats">정답 %1$d / 오답 %2$d</string>
+
+    <!-- Quiz Buttons -->
+    <string name="quiz_btn_solution">풀이 보기</string>
+    <string name="quiz_btn_retry">복습하기</string>
+    <string name="quiz_btn_home">홈으로</string>
+
+    <!-- Quiz Feedback -->
+    <string name="quiz_feedback_correct">🎉 정답이에요!</string>
+    <string name="quiz_feedback_wrong">😥 아쉬워요!</string>
+    <string name="quiz_btn_next">다음 문제 →</string>
+    <string name="quiz_btn_finish_solution">결과로 돌아가기</string>
+
+    <string name="quiz_stage_label">%1$d단계</string>
+    <string name="quiz_count_format">%1$d / %2$d 문제</string>
 </resources>

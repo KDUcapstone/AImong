@@ -8,6 +8,7 @@ data class PetEntity(
     @PrimaryKey val id: String,
     val type: String,
     val stage: Int, // 0: EGG, 1: BABY, 2: CHILD, 3: ADULT, 4: GUARDIAN
+    val grade: String, // NORMAL, RARE, EPIC, LEGEND
     val mood: String, // HAPPY, IDLE, SAD_LIGHT, SAD_DEEP
     val isEquipped: Boolean
 )
