@@ -3,22 +3,22 @@
 -- generation version: AImong-KERIS-3step-v7-960-diversified-balanced-polished-current-criteria-fixed
 
 INSERT INTO missions (id, stage, title, mission_code, description, unlock_condition, is_active) VALUES
-    ('86157cba-318c-3d6c-ab8a-580b1323ff7c', 1, 'AI는 어디에 있을까?', 'S0101', 'KERIS-1 Ch2.1 pp.27-29; Ch3.1 pp.83-96; D0qG389 STEP 1', NULL, TRUE),
-    ('47a13864-b7fc-3a8c-ac89-27ae8f5366a7', 1, 'AI와 계산기는 어떻게 다를까?', 'S0102', 'KERIS-1 Ch2.2 pp.39-50; Ch3.2 pp.97-103; D0qG389 STEP 1', NULL, TRUE),
-    ('2e1fdc1a-ff3e-3a9f-a478-7b090d12e5ae', 1, 'AI는 데이터를 보고 배워요', 'S0103', 'KERIS-1 Ch2.1 pp.34-38; Ch3.2 pp.97-103; Ch3.4 pp.119-134', NULL, TRUE),
-    ('c95f477c-ba0b-3613-a0a3-59c6fbb375ce', 1, '딥러닝과 인식', 'S0104', 'KERIS-1 Ch2.1 pp.27-29; Ch2.3 pp.61-80; Ch2.1 pp.28-29', NULL, TRUE),
-    ('1c16001f-ca97-3b9d-a3b3-bed7f2661350', 1, 'AI도 틀릴 수 있어요', 'S0105', 'KERIS-1 Ch2.2 pp.41-43; Ch4.2 p.167; D0qG389 STEP 1', NULL, TRUE),
-    ('2d1960e8-985d-3402-b123-986565bfa3e9', 2, '좋은 질문은 목적이 보여요', 'S0201', 'KERIS-1 Ch3.1 pp.83-96; Ch3.5 pp.135-154; D0qG389 STEP 2; AImong v1.4 TYPE 2/4 prompt examples', NULL, TRUE),
-    ('9aba288d-c43f-3cbb-8ebb-622812c2a9a0', 2, '좋은 질문은 조건이 구체적이에요', 'S0202', 'KERIS-1 Ch3.1 pp.83-96; Ch3.4-3.5 pp.119-154; D0qG389 STEP 2; AImong v1.4', NULL, TRUE),
-    ('46eb38b5-04d9-3ddc-ba12-aa3281d388b7', 2, '개인정보와 생체정보를 지켜요', 'S0203', 'KERIS-1 Ch2.1 pp.27-29; Ch4.2 pp.163-178; D0qG389 STEP 2', NULL, TRUE),
-    ('33a42ea3-e794-3cf7-86b3-523053e97e0b', 2, '사진·음성·데이터를 바르게 모아요', 'S0204', 'KERIS-1 Ch3.4 pp.119-134; Ch3.5 pp.135-154; Ch4.2 pp.167-178', NULL, TRUE),
-    ('bd2cc2f4-b9ed-3512-a772-00548a338ae4', 2, 'AI 도구를 실험하고 고쳐요', 'S0205', 'KERIS-1 Ch3.4 pp.119-134; Ch3.5 pp.135-154', NULL, TRUE),
-    ('ce49ced9-5114-3824-bcaa-be7b102a5465', 2, 'AI 도움을 받고 내 답으로 정리해요', 'S0206', 'KERIS-1 Ch3.1 pp.83-96; Ch3.5 pp.135-154; D0qG389 STEP 2', NULL, TRUE),
-    ('e1f12cc1-ab3c-3e16-97d9-1d584890919b', 3, '팩트체크 첫걸음', 'S0301', 'KERIS-1 Ch4.2 pp.167-178; D0qG389 STEP 3', NULL, TRUE),
-    ('18e08973-00ce-3f59-9362-b05ad1eb2ca3', 3, '출처와 근거를 비교해요', 'S0302', 'KERIS-1 Ch4.1-4.2 pp.157-178; D0qG389 STEP 3', NULL, TRUE),
-    ('ca965f02-d5f7-36c0-960c-f463e53951ff', 3, '편향을 찾아봐요', 'S0303', 'KERIS-1 Ch4.2 pp.163-178; Ch4.4 pp.192-224', NULL, TRUE),
-    ('2e51ec66-f05d-37fe-a76a-2fd8fe62662e', 3, 'AI의 양면성을 생각해요', 'S0304', 'KERIS-1 Ch4.1 pp.157-162', NULL, TRUE),
-    ('5f01b2ce-caf2-3045-8aac-59f35fa5bc55', 3, '딜레마와 공정한 선택', 'S0305', 'KERIS-1 Ch4.3 pp.179-191', NULL, TRUE)
+    ('86157cba-318c-3d6c-ab8a-580b1323ff7c', 1, 'AI는 어디에 있을까?', 'S0101', '생활 속 AI 도구와 AI의 기본 개념을 배워요', NULL, TRUE),
+    ('47a13864-b7fc-3a8c-ac89-27ae8f5366a7', 1, 'AI와 계산기는 어떻게 다를까?', 'S0102', '규칙 기반 도구와 학습 기반 AI의 차이를 배워요', NULL, TRUE),
+    ('2e1fdc1a-ff3e-3a9f-a478-7b090d12e5ae', 1, 'AI는 데이터를 보고 배워요', 'S0103', 'AI가 데이터를 보고 배우는 방식을 배워요', NULL, TRUE),
+    ('c95f477c-ba0b-3613-a0a3-59c6fbb375ce', 1, '딥러닝과 인식', 'S0104', '딥러닝이 이미지와 소리를 인식하는 방식을 배워요', NULL, TRUE),
+    ('1c16001f-ca97-3b9d-a3b3-bed7f2661350', 1, 'AI도 틀릴 수 있어요', 'S0105', 'AI 답변도 틀릴 수 있음을 알고 확인 습관을 배워요', NULL, TRUE),
+    ('2d1960e8-985d-3402-b123-986565bfa3e9', 2, '좋은 질문은 목적이 보여요', 'S0201', '목적이 드러나는 좋은 질문을 만드는 법을 배워요', NULL, TRUE),
+    ('9aba288d-c43f-3cbb-8ebb-622812c2a9a0', 2, '좋은 질문은 조건이 구체적이에요', 'S0202', '조건을 구체적으로 담아 AI에게 질문하는 법을 배워요', NULL, TRUE),
+    ('46eb38b5-04d9-3ddc-ba12-aa3281d388b7', 2, '개인정보와 생체정보를 지켜요', 'S0203', '개인정보와 생체정보를 안전하게 지키는 법을 배워요', NULL, TRUE),
+    ('33a42ea3-e794-3cf7-86b3-523053e97e0b', 2, '사진·음성·데이터를 바르게 모아요', 'S0204', '사진, 음성, 데이터를 바르게 모으고 사용하는 법을 배워요', NULL, TRUE),
+    ('bd2cc2f4-b9ed-3512-a772-00548a338ae4', 2, 'AI 도구를 실험하고 고쳐요', 'S0205', 'AI 도구를 실험하고 결과를 고쳐 보는 법을 배워요', NULL, TRUE),
+    ('ce49ced9-5114-3824-bcaa-be7b102a5465', 2, 'AI 도움을 받고 내 답으로 정리해요', 'S0206', 'AI 도움을 참고해 내 답으로 정리하는 법을 배워요', NULL, TRUE),
+    ('e1f12cc1-ab3c-3e16-97d9-1d584890919b', 3, '팩트체크 첫걸음', 'S0301', 'AI 답변을 바로 믿지 않고 사실을 확인하는 법을 배워요', NULL, TRUE),
+    ('18e08973-00ce-3f59-9362-b05ad1eb2ca3', 3, '출처와 근거를 비교해요', 'S0302', '출처와 근거를 비교해 정보의 믿을 만함을 판단해요', NULL, TRUE),
+    ('ca965f02-d5f7-36c0-960c-f463e53951ff', 3, '편향을 찾아봐요', 'S0303', '데이터와 AI 결과에 숨어 있는 편향을 찾아봐요', NULL, TRUE),
+    ('2e51ec66-f05d-37fe-a76a-2fd8fe62662e', 3, 'AI의 양면성을 생각해요', 'S0304', 'AI 기술의 좋은 점과 조심할 점을 함께 생각해요', NULL, TRUE),
+    ('5f01b2ce-caf2-3045-8aac-59f35fa5bc55', 3, '딜레마와 공정한 선택', 'S0305', 'AI 윤리 딜레마에서 공정한 선택을 고민해요', NULL, TRUE)
 ON CONFLICT (id) DO UPDATE SET
     stage = EXCLUDED.stage,
     title = EXCLUDED.title,

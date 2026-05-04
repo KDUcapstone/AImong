@@ -45,6 +45,8 @@ class QuestionBankToolTest {
         assertThat(sql).contains("'LOW'");
         assertThat(sql).contains("'MEDIUM'");
         assertThat(sql).contains("'HIGH'");
+        assertThat(sql).contains("'생활 속 AI 도구와 AI의 기본 개념을 배워요'");
+        assertThat(sql).doesNotContain("'KERIS-1 Ch2.1 pp.27-29; Ch3.1 pp.83-96; D0qG389 STEP 1', NULL, TRUE");
         assertThat(sql).contains("mission_code = EXCLUDED.mission_code");
         assertThat(sql).contains("UPDATE missions SET is_active = FALSE WHERE mission_code IS NULL OR mission_code NOT IN");
         assertThat(sql).contains("UPDATE question_bank SET is_active = FALSE WHERE mission_id IN (SELECT id FROM missions WHERE is_active = FALSE)");
