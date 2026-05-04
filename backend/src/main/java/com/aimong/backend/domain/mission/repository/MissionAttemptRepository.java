@@ -14,6 +14,12 @@ public interface MissionAttemptRepository extends JpaRepository<MissionAttempt, 
 
     long countByChildIdAndMissionIdAndAttemptDate(UUID childId, UUID missionId, LocalDate attemptDate);
 
+    long countByChildIdAndAttemptDateAndReviewFalseAndPassedTrue(UUID childId, LocalDate attemptDate);
+
+    long countByChildIdAndAttemptDateBetweenAndReviewFalseAndPassedTrue(UUID childId, LocalDate startDate, LocalDate endDate);
+
+    long countByChildIdAndReviewFalseAndPassedTrue(UUID childId);
+
     @Query("""
             select count(distinct ma.missionId)
             from MissionAttempt ma
