@@ -38,6 +38,9 @@ public class WeeklyQuest {
     @Column(name = "quest_type", nullable = false)
     private WeeklyQuestType questType;
 
+    @Column(name = "current_value", nullable = false)
+    private int currentValue;
+
     @Column(name = "completed", nullable = false)
     private boolean completed;
 
@@ -48,7 +51,14 @@ public class WeeklyQuest {
     private Instant completedAt;
 
     public static WeeklyQuest create(UUID childId, LocalDate weekStart, WeeklyQuestType questType) {
-        return new WeeklyQuest(UUID.randomUUID(), childId, weekStart, questType, false, false, null);
+        return new WeeklyQuest(UUID.randomUUID(), childId, weekStart, questType, 0, false, false, null);
+    }
+
+    public void updateProgress(int currentValue, int requiredValue) {
+        this.currentValue = Math.max(0, currentValue);
+        if (this.currentValue >= requiredValue) {
+            complete(false);
+        }
     }
 
     public void complete(boolean autoClaim) {
@@ -68,5 +78,9 @@ public class WeeklyQuest {
         if (completed && completedAt == null) {
             completedAt = Instant.now();
         }
+    }
+
+    public void claimReward() {
+        rewardClaimed = true;
     }
 }
