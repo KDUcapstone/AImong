@@ -44,6 +44,9 @@ public class ChatUsage {
     }
 
     public void increment() {
+        if (count >= 20) {
+            return;
+        }
         count += 1;
         updatedAt = Instant.now();
     }

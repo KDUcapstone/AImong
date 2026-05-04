@@ -13,14 +13,9 @@ public class OpenAiConfig {
 
     @Bean
     RestClient openAiRestClient(OpenAiProperties properties) {
-        RestClient.Builder builder = RestClient.builder()
+        return RestClient.builder()
                 .baseUrl(properties.baseUrl())
-                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
-
-        if (properties.isConfigured()) {
-            builder.defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + properties.apiKey());
-        }
-
-        return builder.build();
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .build();
     }
 }

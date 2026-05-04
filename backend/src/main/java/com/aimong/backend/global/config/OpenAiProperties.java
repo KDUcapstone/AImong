@@ -5,8 +5,11 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "openai")
 public record OpenAiProperties(
         String apiKey,
+        String chatApiKey,
+        String missionsApiKey,
         String baseUrl,
-        String responsesPath
+        String responsesPath,
+        boolean mockEnabled
 ) {
 
     public OpenAiProperties {
@@ -20,5 +23,28 @@ public record OpenAiProperties(
 
     public boolean isConfigured() {
         return apiKey != null && !apiKey.isBlank();
+    }
+
+    public boolean isChatConfigured() {
+        return resolvedChatApiKey() != null && !resolvedChatApiKey().isBlank();
+    }
+
+    public boolean isMissionsConfigured() {
+        return resolvedMissionsApiKey() != null && !resolvedMissionsApiKey().isBlank();
+    }
+
+    public String resolvedChatApiKey() {
+        return firstNonBlank(chatApiKey, apiKey);
+    }
+
+    public String resolvedMissionsApiKey() {
+        return firstNonBlank(missionsApiKey, apiKey);
+    }
+
+    private String firstNonBlank(String primary, String fallback) {
+        if (primary != null && !primary.isBlank()) {
+            return primary;
+        }
+        return fallback;
     }
 }

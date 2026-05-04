@@ -13,6 +13,7 @@ public enum ErrorCode {
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "유효하지 않은 토큰입니다."),
     TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "토큰이 만료되었습니다."),
     TOO_MANY_REQUESTS(HttpStatus.TOO_MANY_REQUESTS, "TOO_MANY_REQUESTS", "잠시 후 다시 시도해 주세요."),
+    GATEWAY_TIMEOUT(HttpStatus.GATEWAY_TIMEOUT, "GATEWAY_TIMEOUT", "외부 API 응답 시간이 초과되었습니다."),
     CHILD_NOT_FOUND(HttpStatus.NOT_FOUND, "NOT_FOUND", "자녀 프로필을 찾을 수 없습니다."),
     CHILD_CODE_NOT_FOUND(HttpStatus.NOT_FOUND, "NOT_FOUND", "코드를 다시 확인해 주세요."),
     CHILD_LIMIT_EXCEEDED(HttpStatus.CONFLICT, "CHILD_LIMIT_EXCEEDED", "자녀는 최대 3명까지 등록할 수 있습니다."),
