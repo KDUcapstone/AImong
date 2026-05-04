@@ -83,9 +83,10 @@ public final class QuestionBankSqlExporter {
         for (int index = 0; index < missions.size(); index++) {
             AuditQuestion question = missions.get(index);
             UUID missionId = missionIds.get(question.missionCode());
-            String description = question.curriculumRef() == null || question.curriculumRef().isBlank()
-                    ? bank.sourceReference()
-                    : question.curriculumRef();
+            String description = MissionDescriptionCatalog.descriptionFor(
+                    question.missionCode(),
+                    question.missionTitle()
+            );
             sql.append("    ('").append(missionId).append("', ")
                     .append(question.stage()).append(", '")
                     .append(escape(question.missionTitle())).append("', '")
