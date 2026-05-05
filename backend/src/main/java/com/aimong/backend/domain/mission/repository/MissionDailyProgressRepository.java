@@ -3,6 +3,7 @@ package com.aimong.backend.domain.mission.repository;
 import com.aimong.backend.domain.mission.entity.MissionDailyProgress;
 import com.aimong.backend.domain.mission.entity.MissionDailyProgress.MissionDailyProgressId;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import jakarta.persistence.LockModeType;
@@ -12,6 +13,14 @@ import org.springframework.data.jpa.repository.Lock;
 public interface MissionDailyProgressRepository extends JpaRepository<MissionDailyProgress, MissionDailyProgressId> {
 
     Optional<MissionDailyProgress> findByChildIdAndMissionIdAndProgressDate(UUID childId, UUID missionId, LocalDate progressDate);
+
+    List<MissionDailyProgress> findAllByChildIdAndProgressDate(UUID childId, LocalDate progressDate);
+
+    List<MissionDailyProgress> findAllByChildIdAndProgressDateBetweenOrderByProgressDateAsc(
+            UUID childId,
+            LocalDate startDate,
+            LocalDate endDate
+    );
 
     long countByChildIdAndProgressDateBetween(UUID childId, LocalDate startDate, LocalDate endDate);
 

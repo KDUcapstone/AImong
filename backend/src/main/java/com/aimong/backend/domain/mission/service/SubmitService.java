@@ -169,8 +169,6 @@ public class SubmitService {
                     reviewXp
             ));
             saveAnswerResults(reviewAttempt.getId(), childId, missionId, true, request.answers(), answerKeysById);
-            missionDailyProgressRepository.findWithLockByChildIdAndMissionIdAndProgressDate(childId, missionId, today)
-                    .ifPresent(progress -> progress.applyReviewAttempt(reviewScore));
             return buildReviewResponse(
                     childId,
                     score,
