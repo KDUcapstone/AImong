@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@Profile("!prod")
+@Profile({"local", "dev", "test"})
 @RequiredArgsConstructor
 @RequestMapping("/dev/missions")
 public class DevMissionController {

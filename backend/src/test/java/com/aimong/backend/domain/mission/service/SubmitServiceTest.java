@@ -323,12 +323,6 @@ class SubmitServiceTest {
         when(missionAttemptRepository.save(any(MissionAttempt.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(missionAnswerResultRepository.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
-        if (reviewMode) {
-            MissionDailyProgress progress = org.mockito.Mockito.mock(MissionDailyProgress.class);
-            when(missionDailyProgressRepository.findWithLockByChildIdAndMissionIdAndProgressDate(any(), any(), any()))
-                    .thenReturn(Optional.of(progress));
-        }
-
         when(childProfileRepository.findById(childId)).thenReturn(Optional.of(childProfile));
         when(childProfile.getProfileImageType()).thenReturn(ProfileImageType.DEFAULT);
         when(ticketRepository.countByChildIdAndTicketTypeAndUsedAtIsNull(childId, TicketType.NORMAL)).thenReturn(2L);

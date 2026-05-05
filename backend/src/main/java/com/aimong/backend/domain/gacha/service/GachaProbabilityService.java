@@ -72,7 +72,7 @@ public class GachaProbabilityService {
 
     private double[] probabilitiesFor(TicketType ticketType, int nextPullCount, int srMissCount) {
         double[] probabilities = baseNormalProbabilities(nextPullCount);
-        double appliedSrBonus = appliedSrBonus(TicketType.NORMAL, nextPullCount, srMissCount);
+        double appliedSrBonus = appliedSrBonus(ticketType, nextPullCount, srMissCount);
         probabilities[0] -= appliedSrBonus;
         probabilities[2] += appliedSrBonus;
 
