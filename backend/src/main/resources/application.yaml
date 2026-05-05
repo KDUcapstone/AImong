@@ -7,7 +7,7 @@ spring:
   config:
     import: optional:file:.env[.properties]
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:supabase}
+    active: ${SPRING_PROFILES_ACTIVE:supabase, local}
   application:
     name: backend
 

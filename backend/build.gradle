@@ -76,61 +76,6 @@ tasks.register('generateKeris16MissionQuestionBank', JavaExec) {
 	]
 }
 
-tasks.register('runValidationAudit', JavaExec) {
-	group = 'aimong'
-	description = 'Run validation audit and batch evaluation for the v4 question bank.'
-	classpath = sourceSets.main.runtimeClasspath + sourceSets.test.runtimeClasspath
-	mainClass = 'com.aimong.backend.tools.questionbank.ValidationEvalRunner'
-	args = [
-		'_generated/question-bank/question-bank-960-diversified-v4.json',
-		'private-docs/question-bank-v2.json',
-		'src/test/resources/questionbank/validation-synthetic-negatives.json',
-		'_generated/reports/validation-audit-report.md',
-		'_generated/reports/validation-audit-report.json',
-		'_generated/reports/question-bank-v4-batch-report'
-	]
-}
-
-tasks.register('runQuestionBankPolish', JavaExec) {
-	group = 'aimong'
-	description = 'Polish the v4 question bank warnings into _generated/question-bank while keeping the original unchanged.'
-	classpath = sourceSets.main.runtimeClasspath + sourceSets.test.runtimeClasspath
-	mainClass = 'com.aimong.backend.tools.questionbank.QuestionBankPolishTool'
-	args = [
-		'_generated/question-bank/question-bank-960-diversified-v4.json',
-		'_generated/question-bank/question-bank-960-diversified-v4-polished.json',
-		'_generated/reports/question-bank-v4-polish-report.md',
-		'_generated/reports/question-bank-v4-polish-report.json'
-	]
-}
-
-tasks.register('runPolishedValidationAudit', JavaExec) {
-	group = 'aimong'
-	description = 'Run validation audit and batch evaluation for the polished v4 question bank.'
-	classpath = sourceSets.main.runtimeClasspath + sourceSets.test.runtimeClasspath
-	mainClass = 'com.aimong.backend.tools.questionbank.ValidationEvalRunner'
-	args = [
-		'_generated/question-bank/question-bank-960-diversified-v4-polished.json',
-		'private-docs/question-bank-v2.json',
-		'src/test/resources/questionbank/validation-synthetic-negatives.json',
-		'_generated/reports/question-bank-v4-polished-validation-report.md',
-		'_generated/reports/question-bank-v4-polished-validation-report.json',
-		'_generated/reports/question-bank-v4-polished-batch-report'
-	]
-}
-
-tasks.register('exportV4ServeSql', JavaExec) {
-	group = 'aimong'
-	description = 'Export the polished v4 question bank into service-ready SQL with pack/difficulty metadata.'
-	classpath = sourceSets.main.runtimeClasspath
-	mainClass = 'com.aimong.backend.tools.questionbank.QuestionBankTool'
-	args = [
-		'serve-sql',
-		'_generated/question-bank/question-bank-960-diversified-v4-polished.json',
-		'_generated/question-bank/question-bank-960-diversified-v4-polished-serve.sql'
-	]
-}
-
 tasks.register('resetSupabaseTestDatabase') {
 	group = 'aimong'
 	description = 'Dangerous: drop and recreate public/private schemas in the configured Supabase test database.'

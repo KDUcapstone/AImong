@@ -23,6 +23,37 @@ public interface MissionAttemptRepository extends JpaRepository<MissionAttempt, 
     @Query("""
             select count(distinct ma.missionId)
             from MissionAttempt ma
+            where ma.childId = :childId
+              and ma.review = false
+              and ma.passed = true
+            """)
+    long countCompletedMission(@Param("childId") UUID childId);
+
+    @Query("""
+            select count(distinct ma.missionId)
+            from MissionAttempt ma
+            where ma.childId = :childId
+              and ma.review = false
+              and ma.passed = true
+              and ma.attemptDate = (
+                  select min(firstAttempt.attemptDate)
+                  from MissionAttempt firstAttempt
+                  where firstAttempt.childId = :childId
+                    and firstAttempt.missionId = ma.missionId
+                    and firstAttempt.review = false
+                    and firstAttempt.passed = true
+              )
+              and ma.attemptDate between :startDate and :endDate
+            """)
+    long countFirstCompletedMissionBetween(
+            @Param("childId") UUID childId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate
+    );
+
+    @Query("""
+            select count(distinct ma.missionId)
+            from MissionAttempt ma
             join Mission m on m.id = ma.missionId
             where ma.childId = :childId
               and ma.review = false

@@ -53,7 +53,14 @@ public class SchemaValidator {
         }
 
         if (candidate.type() != null) {
-            hardFails.addAll(validateByType(candidate));
+            List<String> typeFailures = validateByType(candidate);
+            hardFails.addAll(typeFailures);
+            if (typeFailures.contains("schema.fill_options_count")) {
+                repairHints.add("FILL questions must include 4 or 5 options.");
+            }
+            if (typeFailures.contains("schema.fill_answer_shape")) {
+                repairHints.add("FILL answers must be a single option index array such as [0].");
+            }
         }
 
         if (candidate.question() != null && candidate.question().trim().length() < 8) {

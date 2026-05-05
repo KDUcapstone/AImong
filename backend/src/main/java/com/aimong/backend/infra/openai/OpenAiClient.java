@@ -13,6 +13,7 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestClientResponseException;
 
 @Component
 @RequiredArgsConstructor
@@ -83,32 +84,43 @@ public class OpenAiClient {
                 )
         );
 
-        JsonNode response = openAiRestClient.post()
-                .uri(properties.responsesPath())
-                .contentType(MediaType.APPLICATION_JSON)
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + properties.resolvedMissionsApiKey())
-                .body(payload)
-                .retrieve()
-                .body(JsonNode.class);
+        try {
+            JsonNode response = openAiRestClient.post()
+                    .uri(properties.responsesPath())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + properties.resolvedMissionsApiKey())
+                    .body(payload)
+                    .retrieve()
+                    .body(JsonNode.class);
 
-        if (response == null) {
-            throw new AimongException(ErrorCode.INTERNAL_SERVER_ERROR, "OpenAI response body is empty");
-        }
+            if (response == null) {
+                throw new AimongException(ErrorCode.INTERNAL_SERVER_ERROR, "OpenAI response body is empty");
+            }
 
-        JsonNode outputText = response.path("output_text");
-        if (outputText.isTextual() && !outputText.asText().isBlank()) {
-            return readJson(outputText.asText());
-        }
+            JsonNode outputText = response.path("output_text");
+            if (outputText.isTextual() && !outputText.asText().isBlank()) {
+                return readJson(outputText.asText());
+            }
 
-        for (JsonNode output : response.path("output")) {
-            for (JsonNode content : output.path("content")) {
-                if ("output_text".equals(content.path("type").asText()) && content.path("text").isTextual()) {
-                    return readJson(content.path("text").asText());
+            for (JsonNode output : response.path("output")) {
+                for (JsonNode content : output.path("content")) {
+                    if ("output_text".equals(content.path("type").asText()) && content.path("text").isTextual()) {
+                        return readJson(content.path("text").asText());
+                    }
                 }
             }
-        }
 
-        throw new AimongException(ErrorCode.INTERNAL_SERVER_ERROR, "OpenAI structured output is missing");
+            throw new AimongException(ErrorCode.INTERNAL_SERVER_ERROR, "OpenAI structured output is missing");
+        } catch (AimongException exception) {
+            throw exception;
+        } catch (RestClientResponseException exception) {
+            throw new AimongException(
+                    ErrorCode.INTERNAL_SERVER_ERROR,
+                    "OpenAI mission generation request failed: HTTP " + exception.getStatusCode().value()
+            );
+        } catch (RestClientException exception) {
+            throw new AimongException(ErrorCode.INTERNAL_SERVER_ERROR, "OpenAI mission generation request failed");
+        }
     }
 
     private String extractOutputText(JsonNode response) {

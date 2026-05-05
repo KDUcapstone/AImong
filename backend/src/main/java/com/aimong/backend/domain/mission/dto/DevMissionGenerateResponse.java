@@ -29,7 +29,9 @@ public record DevMissionGenerateResponse(
             String explanation,
             List<String> contentTags,
             String curriculumRef,
-            int difficulty,
+            DifficultyBand difficulty,
+            DifficultyBand difficultyBand,
+            int numericDifficulty,
             QuestionValidationScores scores
     ) {
     }
