@@ -252,7 +252,8 @@ class HomeLayoutBinder(
             
             tooltip.post {
                 tooltip.x = nodeX + nodeView.width / 2f - tooltip.width / 2f
-                tooltip.y = nodeY - tooltip.height - (8 * nodeView.context.resources.displayMetrics.density)
+                // 팝업 방향을 아래로 변경: 노드 Y + 노드 높이 + 8dp 여백
+                tooltip.y = nodeY + nodeView.height + (8 * nodeView.context.resources.displayMetrics.density)
             }
         }
     }

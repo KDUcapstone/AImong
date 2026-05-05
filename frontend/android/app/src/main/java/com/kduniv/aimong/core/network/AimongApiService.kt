@@ -5,6 +5,8 @@ import com.kduniv.aimong.feature.home.data.model.StreakCalendarData
 import com.kduniv.aimong.feature.mission.data.model.MissionListResponse
 import com.kduniv.aimong.feature.quiz.data.model.QuestionReportRequest
 import com.kduniv.aimong.feature.quiz.data.model.QuestionReportResponseData
+import com.kduniv.aimong.feature.quiz.data.model.QuizCheckRequest
+import com.kduniv.aimong.feature.quiz.data.model.QuizCheckResponseData
 import com.kduniv.aimong.feature.quiz.data.model.QuizQuestionsResponse
 import com.kduniv.aimong.core.network.model.ChildLoginRequest
 import com.kduniv.aimong.core.network.model.ParentRegisterRequest
@@ -100,6 +102,13 @@ interface AimongApiService {
         @Path("missionId") missionId: String,
         @Body request: QuizSubmitRequest
     ): ApiResponse<QuizSubmitResponse>
+
+    @POST("missions/{missionId}/questions/{questionId}/check")
+    suspend fun checkQuestionAnswer(
+        @Path("missionId") missionId: String,
+        @Path("questionId") questionId: String,
+        @Body body: QuizCheckRequest
+    ): ApiResponse<QuizCheckResponseData>
 
     @POST("missions/{missionId}/questions/{questionId}/report")
     suspend fun reportQuestion(

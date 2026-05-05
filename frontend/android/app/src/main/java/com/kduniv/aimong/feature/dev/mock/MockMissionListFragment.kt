@@ -31,7 +31,11 @@ class MockMissionListFragment : BaseFragment<FragmentMissionListBinding>(Fragmen
             adapter = missionAdapter
             layoutManager = LinearLayoutManager(requireContext())
         }
-        missionAdapter.submitList(mockMissions())
+        
+        val sortedMockData = mockMissions().sortedBy { m ->
+            m.id.filter { it.isDigit() }.toIntOrNull() ?: Int.MAX_VALUE
+        }
+        missionAdapter.submitList(sortedMockData)
 
         binding.btnRetryMissions.setOnClickListener {
             Toast.makeText(requireContext(), R.string.stub_mock_retry_toast, Toast.LENGTH_SHORT).show()

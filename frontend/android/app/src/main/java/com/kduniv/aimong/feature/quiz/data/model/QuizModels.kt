@@ -29,6 +29,18 @@ data class QuizAnswer(
     @SerializedName("selected") val selected: String
 )
 
+/** POST …/missions/{missionId}/questions/{questionId}/check — 즉시 피드백 전용, 제출/보상 없음 */
+data class QuizCheckRequest(
+    @SerializedName("quizAttemptId") val quizAttemptId: String,
+    @SerializedName("selected") val selected: String
+)
+
+data class QuizCheckResponseData(
+    @SerializedName("questionId") val questionId: String,
+    @SerializedName("isCorrect") val isCorrect: Boolean,
+    @SerializedName("explanation") val explanation: String
+)
+
 data class QuizSubmitResponse(
     @SerializedName("mode") val mode: String? = null,
     @SerializedName("progressApplied") val progressApplied: Boolean? = null,

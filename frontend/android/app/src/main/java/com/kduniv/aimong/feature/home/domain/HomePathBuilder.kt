@@ -25,7 +25,10 @@ object HomePathBuilder {
         // 1단계부터 3단계까지 순차적으로 렌더링
         for (stage in 1..3) {
             val stageMissions = groupedByStage[stage] ?: emptyList()
-            val sortedMissions = stageMissions.sortedWith(compareBy({ it.id }, { it.title }))
+            // id 내 숫자를 추출하여 오름차순(낮은 난이도 순) 정렬
+            val sortedMissions = stageMissions.sortedBy { m ->
+                m.id.filter { it.isDigit() }.toIntOrNull() ?: Int.MAX_VALUE
+            }
             
             val stageTitle = STAGE_TITLES[stage] ?: "단계 $stage"
             items.add(HomePathItem.SectionHeader(stage = stage, title = stageTitle))

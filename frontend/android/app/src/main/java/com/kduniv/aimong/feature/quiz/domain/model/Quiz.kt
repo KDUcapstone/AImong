@@ -74,3 +74,10 @@ data class QuestionResult(
     val isCorrect: Boolean,
     val explanation: String
 )
+
+/** POST …/questions/{questionId}/check 응답 — DB/진행도 미반영 */
+data class QuestionCheckResult(
+    val questionId: String,
+    val isCorrect: Boolean,
+    val explanation: String
+)

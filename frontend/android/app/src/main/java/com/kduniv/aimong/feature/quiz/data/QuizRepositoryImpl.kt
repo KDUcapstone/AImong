@@ -10,10 +10,12 @@ import com.kduniv.aimong.core.network.ApiErrorMapper
 import com.kduniv.aimong.core.network.AimongApiService
 import com.kduniv.aimong.feature.quiz.data.model.QuestionReportRequest
 import com.kduniv.aimong.feature.quiz.data.model.QuizAnswer
+import com.kduniv.aimong.feature.quiz.data.model.QuizCheckRequest
 import com.kduniv.aimong.feature.quiz.data.model.QuizQuestionsResponse
 import com.kduniv.aimong.feature.quiz.data.model.QuizSubmitRequest
 import com.kduniv.aimong.feature.quiz.data.model.QuizSubmitResponse
 import com.kduniv.aimong.feature.quiz.domain.model.Question
+import com.kduniv.aimong.feature.quiz.domain.model.QuestionCheckResult
 import com.kduniv.aimong.feature.quiz.domain.model.QuestionResult
 import com.kduniv.aimong.feature.quiz.domain.model.QuestionReportResult
 import com.kduniv.aimong.feature.quiz.domain.model.QuizQuestions
@@ -136,6 +138,35 @@ class QuizRepositoryImpl @Inject constructor(
             expiresAt = meta.expiresAt,
             questions = questions
         ).getOrNull()
+    }
+
+    override suspend fun checkQuestionAnswer(
+        missionId: String,
+        questionId: String,
+        quizAttemptId: String,
+        selected: String
+    ): kotlin.Result<QuestionCheckResult> {
+        val request = QuizCheckRequest(quizAttemptId = quizAttemptId, selected = selected)
+        return try {
+            val response =
+                apiService.checkQuestionAnswer(missionId = missionId, questionId = questionId, body = request)
+            if (response.success) {
+                val d = response.data
+                kotlin.Result.success(
+                    QuestionCheckResult(
+                        questionId = d.questionId,
+                        isCorrect = d.isCorrect,
+                        explanation = d.explanation
+                    )
+                )
+            } else {
+                kotlin.Result.failure(Exception(ApiErrorMapper.userMessageForApiError(response.error)))
+            }
+        } catch (e: HttpException) {
+            kotlin.Result.failure(Exception(ApiErrorMapper.userMessageForHttpException(e)))
+        } catch (e: Exception) {
+            kotlin.Result.failure(e)
+        }
     }
 
     override suspend fun submitQuiz(

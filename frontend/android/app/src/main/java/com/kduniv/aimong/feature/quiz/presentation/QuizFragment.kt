@@ -54,15 +54,18 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
     }
 
     override fun onDestroyView() {
-        super.onDestroyView()
         timer?.cancel()
+        timer = null
+        super.onDestroyView()
         _isAdded = false
     }
 
     private fun startTimer() {
         timer?.cancel()
+        if (_binding == null) return
         timer = object : CountDownTimer(30000, 1000) {
             override fun onTick(millisUntilFinished: Long) {
+                if (_binding == null) return
                 binding.tvTimer.text = "⏱ ${millisUntilFinished / 1000}초 남음"
                 if (millisUntilFinished <= 10000) {
                     binding.tvTimer.setTextColor(Color.RED)
@@ -71,6 +74,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                 }
             }
             override fun onFinish() {
+                if (_binding == null) return
                 binding.tvTimer.text = "⏱ 0초 남음"
                 if (binding.layoutFeedbackPanel.visibility != View.VISIBLE) {
                     handleOptionClick("")

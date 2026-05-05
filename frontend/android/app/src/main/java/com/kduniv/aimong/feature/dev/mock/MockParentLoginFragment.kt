@@ -28,7 +28,7 @@ class MockParentLoginFragment : BaseFragment<FragmentParentLoginBinding>(Fragmen
         binding.btnGoogleLogin.apply {
             setOnScaleTouchListener()
             setOnClickListener {
-                findNavController().navigate(R.id.action_parentLoginFragment_to_parentRegisterChildFragment)
+                findNavController().navigate(R.id.action_parentLoginFragment_to_parentOnboardingFragment)
             }
         }
     }

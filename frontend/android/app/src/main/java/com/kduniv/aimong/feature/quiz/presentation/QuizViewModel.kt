@@ -5,8 +5,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kduniv.aimong.core.dev.UiMode
 import com.kduniv.aimong.feature.quiz.domain.model.Question
-import com.kduniv.aimong.feature.quiz.domain.model.QuestionResult
+import com.kduniv.aimong.feature.quiz.domain.model.QuestionCheckResult
 import com.kduniv.aimong.feature.quiz.domain.model.QuestionReportResult
+import com.kduniv.aimong.feature.quiz.domain.model.QuestionResult
 import com.kduniv.aimong.feature.quiz.data.QuizSessionRules
 import com.kduniv.aimong.feature.quiz.domain.model.QuizQuestions
 import com.kduniv.aimong.feature.quiz.domain.model.QuizResult
@@ -157,19 +158,18 @@ class QuizViewModel @Inject constructor(
             }
 
             _uiState.value = QuizUiState.Loading
-            quizRepository.submitQuiz(missionId, qs.quizAttemptId, userAnswers.toMap())
-                .onSuccess { result ->
-                    quizResult = result
-                    val currentResult = result.results.find { it.questionId == questionId }
-                    if (currentResult != null) {
-                        _uiState.value = QuizUiState.AnswerChecked(
-                            isCorrect = currentResult.isCorrect,
-                            explanation = currentResult.explanation,
-                            userAnswer = answer
-                        )
-                    } else {
-                        nextQuestion()
-                    }
+            quizRepository.checkQuestionAnswer(
+                missionId = missionId,
+                questionId = questionId,
+                quizAttemptId = qs.quizAttemptId,
+                selected = answer
+            )
+                .onSuccess { check ->
+                    _uiState.value = QuizUiState.AnswerChecked(
+                        isCorrect = check.isCorrect,
+                        explanation = check.explanation,
+                        userAnswer = answer
+                    )
                 }
                 .onFailure {
                     _uiState.value = QuizUiState.Error(it.message ?: "채점 실패")
@@ -282,7 +282,7 @@ class QuizViewModel @Inject constructor(
     }
 
     /**
-     * strict 재도전: 현재까지의 답안으로 제출해 방금 문항의 정오를 확인한다.
+     * strict 재도전: 현재 문항만 v1.9 check로 정오 확인. 마지막 문항까지 정답이면 그때 [submitQuiz].
      * @return true면 이후 [nextQuestion]을 호출하지 말 것(이미 종료/에러 상태로 전이).
      */
     suspend fun submitCurrentStepForStrictLife(): Boolean {
@@ -291,29 +291,70 @@ class QuizViewModel @Inject constructor(
         val questions = qs.questions
         val idx = currentQuestionIndex.value
         val q = questions.getOrNull(idx) ?: return false
-        if (!userAnswers.containsKey(q.id)) return false
+        val answer = userAnswers[q.id] ?: return false
+        if (UiMode.useStubNav) return false
 
-        val res = quizRepository.submitQuiz(missionId, qs.quizAttemptId, userAnswers.toMap())
-        return if (res.isSuccess) {
-            val result = res.getOrNull()!!
-            quizResult = result
-            val step = result.results.find { it.questionId == q.id }
-            when {
-                step == null -> false
-                !step.isCorrect -> {
-                    _uiState.value = QuizUiState.Finished(result)
-                    true
-                }
-                idx >= questions.lastIndex -> {
-                    _uiState.value = QuizUiState.Finished(result)
-                    true
-                }
-                else -> false
+        val res = quizRepository.checkQuestionAnswer(missionId, q.id, qs.quizAttemptId, answer)
+        return when {
+            res.isFailure -> {
+                _uiState.value = QuizUiState.Error(res.exceptionOrNull()?.message ?: "채점 실패")
+                true
             }
-        } else {
-            _uiState.value = QuizUiState.Error(res.exceptionOrNull()?.message ?: "채점 실패")
-            true
+            else -> {
+                val check = res.getOrNull()!!
+                when {
+                    !check.isCorrect -> {
+                        quizResult = quizResultStrictFailedAfterCheck(qs, idx, check)
+                        _uiState.value = QuizUiState.Finished(quizResult!!)
+                        true
+                    }
+                    idx >= questions.lastIndex -> {
+                        val submitRes =
+                            quizRepository.submitQuiz(missionId, qs.quizAttemptId, userAnswers.toMap())
+                        if (submitRes.isSuccess) {
+                            quizResult = submitRes.getOrNull()!!
+                            _uiState.value = QuizUiState.Finished(quizResult!!)
+                        } else {
+                            _uiState.value = QuizUiState.Error(
+                                submitRes.exceptionOrNull()?.message ?: "제출 실패"
+                            )
+                        }
+                        true
+                    }
+                    else -> false
+                }
+            }
         }
+    }
+
+    private fun quizResultStrictFailedAfterCheck(
+        qs: QuizQuestions,
+        failedIndex: Int,
+        check: QuestionCheckResult,
+    ): QuizResult {
+        val results = qs.questions.mapIndexed { index, pq ->
+            when {
+                index < failedIndex -> QuestionResult(pq.id, true, "")
+                index == failedIndex -> QuestionResult(pq.id, check.isCorrect, check.explanation)
+                else -> QuestionResult(pq.id, false, "")
+            }
+        }
+        val score = results.count { it.isCorrect }
+        val wrongCount = results.count { !it.isCorrect }
+        return QuizResult(
+            mode = if (_isReviewMode.value) "review" else "normal",
+            progressApplied = false,
+            attemptState = "in_progress",
+            score = score,
+            total = results.size,
+            wrongCount = wrongCount,
+            isPassed = false,
+            isPerfect = false,
+            xpEarned = 0,
+            petEvolved = false,
+            streakDays = 0,
+            results = results,
+        )
     }
 
     fun syncOffline() {

@@ -24,7 +24,17 @@
         android:label="Parent Login"
         tools:layout="@layout/fragment_parent_login">
         <action
-            android:id="@+id/action_parentLoginFragment_to_parentRegisterChildFragment"
+            android:id="@+id/action_parentLoginFragment_to_parentOnboardingFragment"
+            app:destination="@id/parentOnboardingFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/parentOnboardingFragment"
+        android:name="com.kduniv.aimong.feature.auth.presentation.ParentOnboardingFragment"
+        android:label="Parent Onboarding"
+        tools:layout="@layout/fragment_parent_onboarding">
+        <action
+            android:id="@+id/action_parentOnboardingFragment_to_parentRegisterChildFragment"
             app:destination="@id/parentRegisterChildFragment" />
     </fragment>
 
