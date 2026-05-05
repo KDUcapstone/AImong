@@ -18,6 +18,7 @@ import android.widget.RelativeLayout
 import android.widget.TextView
 import android.widget.EditText
 import android.widget.Toast
+import android.util.Log
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -198,7 +199,9 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                 updateQuestion(viewModel.currentQuestionIndex.value)
             }
             is QuizUiState.AnswerChecked -> {
-                val q = viewModel.getCurrentCachedQuestion()
+                val q =
+                    viewModel.getCurrentCachedQuestion()
+                        ?: viewModel.getCachedQuestionAt(viewModel.currentQuestionIndex.value)
                 if (q != null) {
                     showAnswerFeedback(q, state.isCorrect, state.explanation, state.userAnswer)
                 } else {
@@ -221,7 +224,19 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                 } else if (state.message.contains("문제 세트를 준비하는 데 실패했습니다")) {
                     showMissionSetNotReadyDialog()
                 } else {
-                    Toast.makeText(requireContext(), state.message, Toast.LENGTH_SHORT).show()
+                    // 채점 오류 등에서 옵션이 잠긴 채로 남으면 UX가 '멈춘 것처럼' 보이므로 즉시 복구한다.
+                    Log.e("QuizFragment", "Quiz error state: ${state.message}")
+                    showFeedback("잠시 후 다시 시도해줘", state.message)
+                    binding.btnNextQuestion.text = "다시 시도"
+                    binding.btnNextQuestion.setOnClickListener {
+                        binding.layoutFeedbackPanel.visibility = View.GONE
+                        unlockOptionsForNewQuestion()
+                        // 문항 타이머는 현 문항에서 이어서 진행
+                        if (!viewModel.isSolutionMode.value && binding.layoutQuizResult.visibility != View.VISIBLE) {
+                            if (questionTimeLeftMs > 0) startTimer(reset = false)
+                        }
+                    }
+                    unlockOptionsForNewQuestion()
                 }
             }
         }
@@ -592,7 +607,11 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             val total = state.quizQuestions.questions.size
             binding.tvQuestionCount.text = "${index + 1} / $total 문제"
             
-            val question = state.quizQuestions.questions[index]
+            val question = state.quizQuestions.questions.getOrNull(index)
+                ?: run {
+                    Log.e("QuizFragment", "updateQuestion out of bounds: index=$index total=$total")
+                    return
+                }
             
             // v1.3 + v2.3: 유형 라벨 포함 및 하이라이트 적용
             val typeLabel = when(question.type) {
@@ -862,16 +881,34 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
     private fun applyOxPendingSelection(choice: String) {
         val density = resources.displayMetrics.density
 
-        // 기본값으로 리셋 후 선택만 강조
-        binding.btnOxO.setStrokeColor(android.content.res.ColorStateList.valueOf(Color.parseColor("#243B70")))
-        binding.btnOxO.setStrokeWidth((1 * density).toInt())
-        binding.btnOxX.setStrokeColor(android.content.res.ColorStateList.valueOf(Color.parseColor("#243B70")))
-        binding.btnOxX.setStrokeWidth((1 * density).toInt())
+        // 기본값으로 리셋 후, '내가 고른 보기'는 전면 민트로 통일 (체크 아이콘/스트로크 강조 대신)
+        resetOxButtons()
 
+        val mint = ContextCompat.getColor(requireContext(), R.color.quiz_mint)
         val selected = if (choice == "O") binding.btnOxO else binding.btnOxX
-        val color = if (choice == "O") "#00FFB2" else "#FF4B4B"
-        selected.setStrokeColor(android.content.res.ColorStateList.valueOf(Color.parseColor(color)))
-        selected.setStrokeWidth((6 * density).toInt())
+        selected.setCardBackgroundColor(mint)
+        selected.setStrokeColor(android.content.res.ColorStateList.valueOf(mint))
+        selected.setStrokeWidth((2 * density).toInt())
+
+        // 텍스트 가독성 보강
+        val oIcon = binding.tvOxOIcon
+        val oText = binding.tvOxOText
+        val xIcon = binding.tvOxXIcon
+        val xText = binding.tvOxXText
+
+        val selectedTextColor = Color.WHITE
+        val defaultTextColor = ContextCompat.getColor(requireContext(), R.color.quiz_mint)
+        if (choice == "O") {
+            oIcon.setTextColor(selectedTextColor)
+            oText.setTextColor(selectedTextColor)
+            xIcon.setTextColor(defaultTextColor)
+            xText.setTextColor(defaultTextColor)
+        } else {
+            xIcon.setTextColor(selectedTextColor)
+            xText.setTextColor(selectedTextColor)
+            oIcon.setTextColor(defaultTextColor)
+            oText.setTextColor(defaultTextColor)
+        }
     }
 
     private fun setupChips(question: Question) {
@@ -906,9 +943,10 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                     minHeight = (60 * density).toInt()
                     chipStartPadding = 20 * density
                     chipEndPadding = 20 * density
-                    setChipBackgroundColorResource(android.R.color.transparent)
-                    setBackgroundResource(R.drawable.bg_situation_card)
-                    chipStrokeWidth = 0f
+                    // SITUATION도 '선택 시 전체 민트'가 명확히 보이도록 Chip 기반 스타일로 통일
+                    setChipBackgroundColorResource(R.color.home_card_bg)
+                    setChipStrokeColorResource(R.color.home_card_stroke)
+                    chipStrokeWidth = 3f * density
                 } else {
                     minHeight = (48 * density).toInt()
                     chipStartPadding = 16 * density
@@ -926,13 +964,10 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                     // 시각적 피드백 강화 (애니메이션 및 색상 변경)
                     animateSelection(this)
                     
-                    if (isSituation) {
-                        setBackgroundResource(R.drawable.bg_situation_card_selected)
-                    } else {
-                        setChipBackgroundColorResource(R.color.quiz_mint)
-                        setChipStrokeColorResource(R.color.quiz_mint)
-                    }
-                    setTextColor(Color.parseColor("#0A1633"))
+                    // 체크표시 대신 '선택지 전체 민트'로 통일
+                    setChipBackgroundColorResource(R.color.quiz_mint)
+                    setChipStrokeColorResource(R.color.quiz_mint)
+                    setTextColor(Color.WHITE)
                     
                     handleOptionClick(option)
                 }

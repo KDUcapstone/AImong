@@ -70,6 +70,10 @@ class QuizViewModel @Inject constructor(
                 .onSuccess { questions ->
                     cachedQuestions = questions
                     _isReviewMode.value = questions.isReview
+                    // 프로세스 재생성/복원 등으로 currentIndex가 남아 있을 수 있어, 새 문제 세트 기준으로 안전 보정
+                    val last = (questions.questions.size - 1).coerceAtLeast(0)
+                    val clamped = currentQuestionIndex.value.coerceIn(0, last)
+                    savedStateHandle["currentIndex"] = clamped
                     _uiState.value = QuizUiState.QuestionLoaded(questions)
                     startTimer(questions.expiresAt)
                 }
@@ -202,7 +206,12 @@ class QuizViewModel @Inject constructor(
                     )
                 }
                 .onFailure {
+                    // 채점 실패 시, Fragment에서 잠금 해제 및 재시도를 할 수 있게
+                    // 에러 상태를 올린 뒤, 즉시 현재 문항을 유지한 상태로 되돌린다.
                     _uiState.value = QuizUiState.Error(it.message ?: "채점 실패")
+                    cachedQuestions?.let { stable ->
+                        _uiState.value = QuizUiState.QuestionLoaded(stable)
+                    }
                 }
         }
     }
@@ -331,7 +340,7 @@ class QuizViewModel @Inject constructor(
     private fun showCurrentSolution() {
         val questions = cachedQuestions?.questions ?: return
         val result = quizResult?.results?.getOrNull(currentQuestionIndex.value) ?: return
-        val q = questions[currentQuestionIndex.value]
+        val q = questions.getOrNull(currentQuestionIndex.value) ?: return
         val userAnswer = solutionAnswerSnapshot[q.id] ?: userAnswers[q.id] ?: ""
 
         _uiState.value = QuizUiState.SolutionLoaded(

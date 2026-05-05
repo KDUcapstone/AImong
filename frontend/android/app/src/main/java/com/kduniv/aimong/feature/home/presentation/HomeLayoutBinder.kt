@@ -11,6 +11,7 @@ import com.kduniv.aimong.databinding.ViewHomePathNodeLockedBinding
 import com.kduniv.aimong.databinding.ViewHomePathNodeReviewBinding
 import com.kduniv.aimong.databinding.ViewHomePathNodeStartBinding
 import com.kduniv.aimong.core.util.setOnScaleTouchListener
+import androidx.core.content.ContextCompat
 import kotlin.math.abs
 import kotlin.math.sin
 
@@ -104,11 +105,12 @@ class HomeLayoutBinder(
                     // 리스트 렌더링에서 제외
                 }
                 is HomePathItem.Completed -> {
+                    if (nodeIndex > 0) addSubStageDivider(density)
                     val row = ViewHomePathNodeCompletedBinding.inflate(inflater, binding.layoutMissionPath, false)
                     row.btnNode.translationX = translation
                     row.btnNode.text = item.icon
                     row.btnNode.setOnClickListener {
-                        showTooltip(row.btnNode, item.title, "완료됨", null)
+                        showTooltip(row.btnNode, item.title, "복습", null)
                     }
                     row.btnNode.setOnScaleTouchListener()
                     row.root.setTag(R.id.home_path_section_tag, sectionForRow)
@@ -116,6 +118,7 @@ class HomeLayoutBinder(
                     nodeIndex++
                 }
                 is HomePathItem.TodayStart -> {
+                    if (nodeIndex > 0) addSubStageDivider(density)
                     val row = ViewHomePathNodeStartBinding.inflate(inflater, binding.layoutMissionPath, false)
                     row.btnNode.translationX = translation
                     row.lottiePet.translationX = translation
@@ -132,6 +135,7 @@ class HomeLayoutBinder(
                     nodeIndex++
                 }
                 is HomePathItem.Review -> {
+                    if (nodeIndex > 0) addSubStageDivider(density)
                     val row = ViewHomePathNodeReviewBinding.inflate(inflater, binding.layoutMissionPath, false)
                     row.btnNode.translationX = translation
                     row.btnNode.setOnClickListener {
@@ -143,6 +147,7 @@ class HomeLayoutBinder(
                     nodeIndex++
                 }
                 is HomePathItem.Locked -> {
+                    if (nodeIndex > 0) addSubStageDivider(density)
                     val row = ViewHomePathNodeLockedBinding.inflate(inflater, binding.layoutMissionPath, false)
                     row.btnNode.translationX = translation
                     row.btnNode.setOnClickListener {
@@ -197,6 +202,31 @@ class HomeLayoutBinder(
         if (section == null) return
         binding.tvHomeBrand.text = "섹션 ${section.stage}"
         binding.tvHomeTitle.text = section.title
+
+        // 섹션별 배너 색상 분기
+        val bannerRes = when (section.stage) {
+            1 -> R.drawable.bg_home_section_banner_stage1
+            2 -> R.drawable.bg_home_section_banner_stage2
+            3 -> R.drawable.bg_home_section_banner_stage3
+            else -> R.drawable.bg_home_section_banner_gradient
+        }
+        binding.layoutSectionBanner.setBackgroundResource(bannerRes)
+    }
+
+    private fun addSubStageDivider(density: Float) {
+        val v = View(binding.root.context).apply {
+            setBackgroundColor(ContextCompat.getColor(context, R.color.home_card_stroke))
+        }
+        val lp = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            (1 * density).toInt().coerceAtLeast(1)
+        ).apply {
+            leftMargin = (64 * density).toInt()
+            rightMargin = (64 * density).toInt()
+            topMargin = (2 * density).toInt()
+            bottomMargin = (2 * density).toInt()
+        }
+        binding.layoutMissionPath.addView(v, lp)
     }
 
     private fun offsetTopInScrollContent(view: View): Int {
