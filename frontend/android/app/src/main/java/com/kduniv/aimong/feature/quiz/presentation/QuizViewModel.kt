@@ -56,6 +56,8 @@ class QuizViewModel @Inject constructor(
         savedStateHandle.getStateFlow("strictSingleLifeRetry", false)
 
     private var quizResult: QuizResult? = null
+    /** 풀이 보기에서 사용할 답안 스냅샷(제출/종료 시점) */
+    private var solutionAnswerSnapshot: Map<String, String> = emptyMap()
 
     init {
         fetchQuestions()
@@ -100,10 +102,38 @@ class QuizViewModel @Inject constructor(
         }
     }
 
+    private fun pauseSessionTimerForSolutionMode() {
+        timerJob?.cancel()
+    }
+
+    private fun resumeSessionTimerIfPossible() {
+        val expiresAt = cachedQuestions?.expiresAt ?: return
+        startTimer(expiresAt)
+    }
+
+    /** 신고 바텀시트 등 오버레이 동안 세션 타이머 정지 */
+    fun pauseSessionTimerForOverlay() {
+        timerJob?.cancel()
+    }
+
+    /** 오버레이 종료 시(풀이 모드가 아닐 때만) 세션 타이머 재개 */
+    fun resumeSessionTimerAfterOverlay() {
+        if (_isSolutionMode.value) return
+        resumeSessionTimerIfPossible()
+    }
+
     override fun onCleared() {
         super.onCleared()
         timerJob?.cancel()
     }
+
+    /** uiState와 무관하게, 캐시된 현재 문항을 반환 */
+    fun getCachedQuestionAt(index: Int): Question? {
+        return cachedQuestions?.questions?.getOrNull(index)
+    }
+
+    /** uiState가 AnswerChecked여도 안전한 현재 문항 조회 */
+    fun getCurrentCachedQuestion(): Question? = getCachedQuestionAt(currentQuestionIndex.value)
 
     fun selectAnswer(questionId: String, answer: String) {
         if (_isSolutionMode.value) return
@@ -203,6 +233,7 @@ class QuizViewModel @Inject constructor(
                 // 풀이 보기 종료 시 다시 결과 화면으로
                 quizResult?.let { _uiState.value = QuizUiState.Finished(it) }
                 _isSolutionMode.value = false
+                resumeSessionTimerIfPossible()
             } else {
                 // 모든 문제를 다 푼 경우 결과 화면으로
                 quizResult?.let {
@@ -223,6 +254,41 @@ class QuizViewModel @Inject constructor(
         }
     }
 
+    /**
+     * 복습 모드(하트 1개)에서 오답 발생 시 즉시 실패 처리.
+     * 서버 제출 없이 현재 인덱스 기준으로 결과를 구성해 결과 화면으로 전환한다.
+     */
+    fun finishReviewImmediatelyOnWrong(explanation: String) {
+        val qs = cachedQuestions ?: return
+        val idx = currentQuestionIndex.value.coerceIn(0, qs.questions.lastIndex)
+        val results = qs.questions.mapIndexed { index, q ->
+            when {
+                index < idx -> com.kduniv.aimong.feature.quiz.domain.model.QuestionResult(q.id, true, "")
+                index == idx -> com.kduniv.aimong.feature.quiz.domain.model.QuestionResult(q.id, false, explanation)
+                else -> com.kduniv.aimong.feature.quiz.domain.model.QuestionResult(q.id, false, "")
+            }
+        }
+        // 정답 수는 전체 문항 기준으로 보이되, 오답 수는 '실제로 푼 문항' 기준으로 집계
+        val score = results.take(idx + 1).count { it.isCorrect }
+        val wrongCount = (idx + 1) - score
+        quizResult = QuizResult(
+            mode = "review",
+            progressApplied = false,
+            attemptState = "in_progress",
+            score = score,
+            total = results.size,
+            wrongCount = wrongCount,
+            isPassed = false,
+            isPerfect = false,
+            xpEarned = 0,
+            petEvolved = false,
+            streakDays = 0,
+            results = results
+        )
+        solutionAnswerSnapshot = userAnswers.toMap()
+        _uiState.value = QuizUiState.Finished(quizResult!!)
+    }
+
     private fun submitQuiz(quizAttemptId: String) {
         viewModelScope.launch {
             val qs = cachedQuestions
@@ -237,6 +303,7 @@ class QuizViewModel @Inject constructor(
             _uiState.value = QuizUiState.Loading
             quizRepository.submitQuiz(missionId, quizAttemptId, userAnswers.toMap())
                 .onSuccess { result ->
+                    solutionAnswerSnapshot = userAnswers.toMap()
                     quizResult = result
                     _uiState.value = QuizUiState.Finished(result)
                 }
@@ -256,6 +323,7 @@ class QuizViewModel @Inject constructor(
 
     fun startSolutionMode() {
         _isSolutionMode.value = true
+        pauseSessionTimerForSolutionMode()
         savedStateHandle["currentIndex"] = 0
         showCurrentSolution()
     }
@@ -263,12 +331,14 @@ class QuizViewModel @Inject constructor(
     private fun showCurrentSolution() {
         val questions = cachedQuestions?.questions ?: return
         val result = quizResult?.results?.getOrNull(currentQuestionIndex.value) ?: return
-        
+        val q = questions[currentQuestionIndex.value]
+        val userAnswer = solutionAnswerSnapshot[q.id] ?: userAnswers[q.id] ?: ""
+
         _uiState.value = QuizUiState.SolutionLoaded(
-            questions[currentQuestionIndex.value],
+            q,
             result.isCorrect,
             result.explanation,
-            userAnswers[questions[currentQuestionIndex.value].id] ?: ""
+            userAnswer
         )
     }
 

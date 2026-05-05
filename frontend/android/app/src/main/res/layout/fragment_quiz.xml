@@ -476,7 +476,7 @@
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/btn_ox_o"
                 android:layout_width="0dp"
-                android:layout_height="120dp"
+                android:layout_height="140dp"
                 android:layout_marginEnd="12dp"
                 android:layout_weight="1"
                 android:clickable="true"
@@ -514,7 +514,7 @@
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/btn_ox_x"
                 android:layout_width="0dp"
-                android:layout_height="120dp"
+                android:layout_height="140dp"
                 android:layout_weight="1"
                 android:clickable="true"
                 android:focusable="true"
@@ -768,7 +768,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="3개"
-                                android:textColor="#FF4B4B"
+                                android:textColor="@color/white"
                                 android:textSize="18sp"
                                 android:textStyle="bold" />
                         </LinearLayout>
