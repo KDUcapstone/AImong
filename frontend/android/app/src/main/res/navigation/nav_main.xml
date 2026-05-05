@@ -22,22 +22,32 @@
         android:id="@+id/parentLoginFragment"
         android:name="com.kduniv.aimong.feature.auth.presentation.ParentLoginFragment"
         android:label="Parent Login"
-        tools:layout="@layout/fragment_parent_login" />
+        tools:layout="@layout/fragment_parent_login">
+        <action
+            android:id="@+id/action_parentLoginFragment_to_parentOnboardingFragment"
+            app:destination="@id/parentOnboardingFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/parentOnboardingFragment"
+        android:name="com.kduniv.aimong.feature.auth.presentation.ParentOnboardingFragment"
+        android:label="Parent Onboarding"
+        tools:layout="@layout/fragment_parent_onboarding">
+        <action
+            android:id="@+id/action_parentOnboardingFragment_to_parentRegisterChildFragment"
+            app:destination="@id/parentRegisterChildFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/parentRegisterChildFragment"
+        android:name="com.kduniv.aimong.feature.auth.presentation.ParentRegisterChildFragment"
+        android:label="Parent Register Child"
+        tools:layout="@layout/fragment_parent_register_child" />
 
     <fragment
         android:id="@+id/childCodeFragment"
         android:name="com.kduniv.aimong.feature.auth.presentation.ChildCodeFragment"
         android:label="Child Login"
-        tools:layout="@layout/fragment_child_code">
-        <action
-            android:id="@+id/action_childCodeFragment_to_childNicknameFragment"
-            app:destination="@id/childNicknameFragment" />
-    </fragment>
-
-    <fragment
-        android:id="@+id/childNicknameFragment"
-        android:name="com.kduniv.aimong.feature.auth.presentation.ChildNicknameFragment"
-        android:label="Child Nickname"
-        tools:layout="@layout/fragment_child_nickname" />
+        tools:layout="@layout/fragment_child_code" />
 
 </navigation>

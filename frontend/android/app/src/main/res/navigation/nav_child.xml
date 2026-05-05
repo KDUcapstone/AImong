@@ -19,6 +19,9 @@
         <action
             android:id="@+id/action_homeFragment_to_gachaFragment"
             app:destination="@id/gachaFragment" />
+        <action
+            android:id="@+id/action_homeFragment_to_quizFragment"
+            app:destination="@id/quizFragment" />
     </fragment>
 
     <fragment
@@ -30,43 +33,8 @@
             android:id="@+id/action_learningFragment_to_quizFragment"
             app:destination="@id/quizFragment" />
         <action
-            android:id="@+id/action_learningFragment_to_dummyQuizFragment"
-            app:destination="@id/dummyQuizFragment" />
-        <action
-            android:id="@+id/action_learningFragment_to_dummyTestFragment"
-            app:destination="@id/dummyTestFragment" />
-        <action
             android:id="@+id/action_learningFragment_to_chatFragment"
             app:destination="@id/chatFragment" />
-    </fragment>
-
-    <fragment
-        android:id="@+id/dummyQuizFragment"
-        android:name="com.kduniv.aimong.feature.mission.presentation.DummyQuizFragment"
-        android:label="Dummy Quiz"
-        tools:layout="@layout/fragment_dummy_quiz">
-        <action
-            android:id="@+id/action_dummyQuizFragment_to_dummyTestFragment"
-            app:destination="@id/dummyTestFragment" />
-    </fragment>
-
-    <fragment
-        android:id="@+id/dummyTestFragment"
-        android:name="com.kduniv.aimong.feature.mission.presentation.DummyTestFragment"
-        android:label="Dummy Test"
-        tools:layout="@layout/fragment_dummy_test">
-        <argument
-            android:name="score"
-            app:argType="integer"
-            android:defaultValue="0" />
-        <argument
-            android:name="isSuccess"
-            app:argType="boolean"
-            android:defaultValue="false" />
-        <argument
-            android:name="wrongCount"
-            app:argType="integer"
-            android:defaultValue="0" />
     </fragment>
 
     <fragment
@@ -83,9 +51,6 @@
         <argument
             android:name="missionId"
             app:argType="string" />
-        <action
-            android:id="@+id/action_quizFragment_to_dummyQuizFragment"
-            app:destination="@id/dummyQuizFragment" />
     </fragment>
 
     <fragment
@@ -93,5 +58,11 @@
         android:name="com.kduniv.aimong.feature.gacha.GachaFragment"
         android:label="Gacha"
         tools:layout="@layout/fragment_gacha" />
+
+    <fragment
+        android:id="@+id/myProfileFragment"
+        android:name="com.kduniv.aimong.feature.home.presentation.ChildMyProfilePlaceholderFragment"
+        android:label="MY"
+        tools:layout="@layout/fragment_child_my_profile_placeholder" />
 
 </navigation>

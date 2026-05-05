@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 칩 행 + 플로팅 섹션/퀘스트 헤더 아래까지 스크롤 콘텐츠 시작 (겹침 방지) -->
+    <dimen name="home_path_scroll_padding_top">168dp</dimen>
+</resources>

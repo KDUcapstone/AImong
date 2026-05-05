@@ -23,6 +23,7 @@ class SessionManager @Inject constructor(
         private val KEY_USER_ROLE = stringPreferencesKey("user_role")
         private val KEY_SESSION_VERSION = intPreferencesKey("session_version")
         private val KEY_AUTH_TOKEN = stringPreferencesKey("auth_token")
+        private val KEY_PARENT_CHILDREN_JSON = stringPreferencesKey("parent_children_json")
     }
 
     val userRole: Flow<String?> = context.dataStore.data.map { preferences ->
@@ -35,6 +36,17 @@ class SessionManager @Inject constructor(
 
     val authToken: Flow<String?> = context.dataStore.data.map { preferences ->
         preferences[KEY_AUTH_TOKEN]
+    }
+
+    /** GET /parent/children 캐시(JSON 배열). 재설치 전까지 복구용. */
+    val parentChildrenJson: Flow<String?> = context.dataStore.data.map { preferences ->
+        preferences[KEY_PARENT_CHILDREN_JSON]
+    }
+
+    suspend fun saveParentChildrenJson(json: String) {
+        context.dataStore.edit { preferences ->
+            preferences[KEY_PARENT_CHILDREN_JSON] = json
+        }
     }
 
     suspend fun saveSession(role: String, version: Int, token: String) {

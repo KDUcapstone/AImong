@@ -32,12 +32,15 @@ class MissionListViewModel @Inject constructor(
             missionRepository.getMissionsFlow()
                 .flowOn(Dispatchers.IO)
                 .collect { missions ->
+                    val sortedMissions = missions.sortedBy { m ->
+                        m.id.filter { it.isDigit() }.toIntOrNull() ?: Int.MAX_VALUE
+                    }
                     val currentState = _uiState.value
                     if (currentState is MissionListUiState.Success) {
-                        _uiState.value = currentState.copy(missions = missions)
+                        _uiState.value = currentState.copy(missions = sortedMissions)
                     } else {
                         // 첫 로컬 데이터 로드 시 Success 상태로 전환
-                        _uiState.value = MissionListUiState.Success(missions, MissionProgress(0, 0, 0))
+                        _uiState.value = MissionListUiState.Success(sortedMissions, MissionProgress(0, 0, 0))
                     }
                 }
         }
@@ -45,6 +48,9 @@ class MissionListViewModel @Inject constructor(
 
     fun refreshMissions() {
         viewModelScope.launch {
+            if (_uiState.value is MissionListUiState.Error) {
+                _uiState.value = MissionListUiState.Loading
+            }
             try {
                 // 최대 5초 대기 후 타임아웃 처리하여 무한 로딩 방지
                 withTimeout(5000) {

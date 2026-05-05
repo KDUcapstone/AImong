@@ -19,5 +19,7 @@ data class QuizMetadataEntity(
     val isReview: Boolean,
     val quizAttemptId: String,
     val expiresAt: String,
+    /** 서버 questionCount (스펙상 10) */
+    val questionCount: Int,
     val lastUpdated: Long = System.currentTimeMillis()
 )

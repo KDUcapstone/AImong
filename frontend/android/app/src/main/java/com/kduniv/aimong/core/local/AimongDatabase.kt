@@ -23,7 +23,7 @@ import com.kduniv.aimong.core.local.entity.MissionEntity
         QuizMetadataEntity::class,
         QuizQuestionEntity::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 abstract class AimongDatabase : RoomDatabase() {

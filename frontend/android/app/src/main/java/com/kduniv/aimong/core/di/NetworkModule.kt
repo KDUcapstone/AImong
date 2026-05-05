@@ -1,6 +1,7 @@
 package com.kduniv.aimong.core.di
 
 import com.google.gson.Gson
+import com.kduniv.aimong.BuildConfig
 import com.kduniv.aimong.core.network.AimongApiService
 import com.kduniv.aimong.core.network.AuthInterceptor
 import dagger.Module
@@ -16,8 +17,6 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
-
-    private const val BASE_URL = "https://your-supabase-url.supabase.co/rest/v1/"
 
     @Provides
     @Singleton
@@ -38,7 +37,7 @@ object NetworkModule {
     @Singleton
     fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder()
-            .baseUrl(BASE_URL)
+            .baseUrl(BuildConfig.API_BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()

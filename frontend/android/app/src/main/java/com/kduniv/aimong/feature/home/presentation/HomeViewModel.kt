@@ -1,76 +1,101 @@
 package com.kduniv.aimong.feature.home.presentation
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.kduniv.aimong.R
+import com.kduniv.aimong.feature.home.domain.GetHomeStatusUseCase
+import com.kduniv.aimong.feature.home.domain.HomePathBuilder
+import com.kduniv.aimong.feature.mission.domain.repository.MissionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class HomeViewModel @Inject constructor() : ViewModel() {
+class HomeViewModel @Inject constructor(
+    private val getHomeStatusUseCase: GetHomeStatusUseCase,
+    private val missionRepository: MissionRepository,
+    @ApplicationContext private val appContext: Context
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
-    init {
-        loadHomeData()
+    private val homePrefs by lazy {
+        appContext.getSharedPreferences(PREFS_HOME, Context.MODE_PRIVATE)
     }
 
-    private fun loadHomeData() {
+    fun onHomeResumed() {
+        loadHome()
+    }
+
+    fun consumeError() {
+        _uiState.update { it.copy(errorMessage = null) }
+    }
+
+    fun consumeSubtleNotice() {
+        _uiState.update { it.copy(subtleNotice = null) }
+    }
+
+    /** 퀘스트 수령 등으로 서버가 준 티켓 보유량만 반영 (전체 홈 재로드 없음) */
+    fun applyRemainingTickets(normal: Int, rare: Int, epic: Int) {
+        _uiState.update { s ->
+            val desc = if (normal == 0 && rare == 0 && epic == 0) ""
+            else "일반 $normal · 레어 $rare · 에픽 $epic"
+            s.copy(
+                normalTickets = normal,
+                srBonus = rare + epic,
+                gachaDescription = desc,
+                topTicketCount = normal + rare + epic
+            )
+        }
+    }
+
+    private fun loadHome() {
         viewModelScope.launch {
-            // 시안 v1.3 데이터 반영
-            _uiState.update { state ->
-                state.copy(
-                    nickname = "에이몽친구",
-                    streakDays = 7,
-                    userLevel = 7,
-                    profileType = "EXPLORER",
-                    
-                    petName = "팩트봇",
-                    petLevel = 3,
-                    petXp = 340,
-                    petMaxXp = 500,
-                    petMessage = "오늘도 같이 공부해요! 😊",
-                    
-                    normalTickets = 3,
-                    energyCount = 5, // 에너지 5개 만점
-                    
-                    srBonus = 5,
-                    gachaDescription = "레전드 확률 4% (Lv.7)",
-                    
-                    todayQuestProgress = "2/3",
-                    quests = listOf(
-                        QuestItemUiState(
-                            id = "1",
-                            title = "AI 퀴즈 3문제 맞히기",
-                            rewardSummary = "+50 EXP · 가챠 티켓 1장",
-                            iconRes = null,
-                            isCompleted = true,
-                            canStart = false
-                        ),
-                        QuestItemUiState(
-                            id = "2",
-                            title = "팩트체크 2문제 클리어",
-                            rewardSummary = "+30 EXP",
-                            iconRes = null,
-                            isCompleted = true,
-                            canStart = false
-                        ),
-                        QuestItemUiState(
-                            id = "3",
-                            title = "GPT 프롬프트 실습 1회",
-                            rewardSummary = "+40 EXP · 랜덤 아이템",
-                            iconRes = null,
-                            isCompleted = false,
-                            canStart = true
-                        )
+            _uiState.update { it.copy(isLoading = true, errorMessage = null, subtleNotice = null) }
+            getHomeStatusUseCase().fold(
+                onSuccess = { data ->
+                    missionRepository.refreshMissions()
+                    val missions = missionRepository.getMissionsFlow().first()
+                    val path = HomePathBuilder.build(data, missions)
+                    val notice = computeServerDayNotice(data.serverDate)
+                    val ui = HomeUiMapper.toUiState(data).copy(
+                        pathItems = path,
+                        isLoading = false,
+                        errorMessage = null,
+                        subtleNotice = notice
                     )
-                )
-            }
+                    _uiState.value = ui
+                },
+                onFailure = { e ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = e.message?.takeIf { m -> m.isNotBlank() }
+                                ?: "홈 정보를 불러오지 못했습니다."
+                        )
+                    }
+                }
+            )
+        }
+    }
+
+    /** GET /home 의 serverDate(KST)가 바뀌었으면 짧은 안내 (백그라운드 워커 없이 저장 비교) */
+    private fun computeServerDayNotice(serverDate: String?): String? {
+        if (serverDate.isNullOrBlank()) return null
+        val last = homePrefs.getString(KEY_LAST_SERVER_DATE, null)
+        homePrefs.edit().putString(KEY_LAST_SERVER_DATE, serverDate).apply()
+        return if (last != null && last != serverDate) {
+            appContext.getString(R.string.home_notice_server_day_changed)
+        } else {
+            null
         }
     }
 
@@ -82,5 +107,10 @@ class HomeViewModel @Inject constructor() : ViewModel() {
             "GUARDIAN" -> "AI 수호자"
             else -> "AI 입문자"
         }
+    }
+
+    companion object {
+        private const val PREFS_HOME = "aimong_home"
+        private const val KEY_LAST_SERVER_DATE = "last_server_date_kst"
     }
 }

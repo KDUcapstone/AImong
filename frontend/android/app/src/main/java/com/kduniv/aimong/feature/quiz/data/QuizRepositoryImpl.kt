@@ -6,11 +6,25 @@ import com.kduniv.aimong.core.local.dao.QuizDao
 import com.kduniv.aimong.core.local.entity.OfflineMissionQueueEntity
 import com.kduniv.aimong.core.local.entity.QuizMetadataEntity
 import com.kduniv.aimong.core.local.entity.QuizQuestionEntity
+import com.kduniv.aimong.core.network.ApiErrorMapper
 import com.kduniv.aimong.core.network.AimongApiService
+import com.kduniv.aimong.feature.quiz.data.model.QuestionReportRequest
 import com.kduniv.aimong.feature.quiz.data.model.QuizAnswer
+import com.kduniv.aimong.feature.quiz.data.model.QuizCheckRequest
+import com.kduniv.aimong.feature.quiz.data.model.QuizQuestionsResponse
 import com.kduniv.aimong.feature.quiz.data.model.QuizSubmitRequest
-import com.kduniv.aimong.feature.quiz.domain.model.*
+import com.kduniv.aimong.feature.quiz.data.model.QuizSubmitResponse
+import com.kduniv.aimong.feature.quiz.domain.model.Question
+import com.kduniv.aimong.feature.quiz.domain.model.QuestionCheckResult
+import com.kduniv.aimong.feature.quiz.domain.model.QuestionResult
+import com.kduniv.aimong.feature.quiz.domain.model.QuestionReportResult
+import com.kduniv.aimong.feature.quiz.domain.model.QuizQuestions
+import com.kduniv.aimong.feature.quiz.domain.model.QuizResult
+import com.kduniv.aimong.feature.quiz.domain.model.QuizReward
+import com.kduniv.aimong.feature.quiz.domain.model.RemainingTickets
 import com.kduniv.aimong.feature.quiz.domain.repository.QuizRepository
+import retrofit2.HttpException
+import java.io.IOException
 import java.util.*
 import javax.inject.Inject
 
@@ -20,81 +34,138 @@ class QuizRepositoryImpl @Inject constructor(
     private val quizDao: QuizDao,
     private val gson: Gson
 ) : QuizRepository {
-    override suspend fun getQuestions(missionId: String): Result<QuizQuestions> {
+
+    override suspend fun getQuestions(missionId: String): kotlin.Result<QuizQuestions> {
         return try {
             val response = apiService.getQuestions(missionId)
             if (response.success) {
                 val data = response.data
-                val questions = data.questions.map {
-                    Question(
-                        id = it.id,
-                        type = QuestionType.valueOf(it.type),
-                        question = it.question,
-                        options = it.options
-                    )
+                val mapped = QuizSessionRules.mapQuestionResponses(data.questions).getOrElse {
+                    return kotlin.Result.failure(it)
                 }
-                
-                // 로컬 캐시 저장
-                val metadata = QuizMetadataEntity(
+                val quiz = QuizSessionRules.buildQuizQuestions(
                     missionId = data.missionId,
                     missionTitle = data.missionTitle,
                     isReview = data.isReview,
                     quizAttemptId = data.quizAttemptId,
-                    expiresAt = data.expiresAt
-                )
-                val questionEntities = data.questions.map {
-                    QuizQuestionEntity(
-                        id = it.id,
-                        missionId = data.missionId,
-                        type = it.type,
-                        question = it.question,
-                        optionsJson = it.options?.let { opt -> gson.toJson(opt) }
-                    )
+                    questionCount = data.questionCount,
+                    expiresAt = data.expiresAt,
+                    questions = mapped
+                ).getOrElse {
+                    return kotlin.Result.failure(it)
                 }
-                quizDao.saveQuiz(metadata, questionEntities)
 
-                Result.success(
-                    QuizQuestions(
-                        missionId = data.missionId,
-                        missionTitle = data.missionTitle,
-                        isReview = data.isReview,
-                        quizAttemptId = data.quizAttemptId,
-                        expiresAt = data.expiresAt,
-                        questions = questions
-                    )
-                )
+                persistQuizCache(data)
+
+                kotlin.Result.success(quiz)
             } else {
-                Result.failure(Exception(response.error?.message ?: "Unknown error"))
+                kotlin.Result.failure(
+                    Exception(ApiErrorMapper.userMessageForApiError(response.error))
+                )
+            }
+        } catch (e: HttpException) {
+            fallbackCacheOr(missionId) {
+                Exception(ApiErrorMapper.userMessageForHttpException(e))
             }
         } catch (e: Exception) {
-            // 네트워크 오류 시 캐시 확인
-            val cachedMetadata = quizDao.getQuizMetadata(missionId)
-            val cachedQuestions = quizDao.getQuizQuestions(missionId)
-            
-            if (cachedMetadata != null && cachedQuestions.isNotEmpty()) {
-                val questions = cachedQuestions.map {
-                    Question(
-                        id = it.id,
-                        type = QuestionType.valueOf(it.type),
-                        question = it.question,
-                        options = it.optionsJson?.let { json ->
-                            gson.fromJson<List<String>>(json, object : com.google.gson.reflect.TypeToken<List<String>>() {}.type)
-                        }
-                    )
-                }
-                Result.success(
-                    QuizQuestions(
-                        missionId = cachedMetadata.missionId,
-                        missionTitle = cachedMetadata.missionTitle,
-                        isReview = cachedMetadata.isReview,
-                        quizAttemptId = cachedMetadata.quizAttemptId,
-                        expiresAt = cachedMetadata.expiresAt,
-                        questions = questions
+            fallbackCacheOr(missionId) { e }
+        }
+    }
+
+    private suspend fun persistQuizCache(data: QuizQuestionsResponse) {
+        val metadata = QuizMetadataEntity(
+            missionId = data.missionId,
+            missionTitle = data.missionTitle,
+            isReview = data.isReview,
+            quizAttemptId = data.quizAttemptId,
+            expiresAt = data.expiresAt,
+            questionCount = data.questionCount
+        )
+        val questionEntities = data.questions.map {
+            QuizQuestionEntity(
+                id = it.id,
+                missionId = data.missionId,
+                type = it.type,
+                question = it.question,
+                optionsJson = it.options?.let { opt -> gson.toJson(opt) }
+            )
+        }
+        quizDao.saveQuiz(metadata, questionEntities)
+    }
+
+    /** 네트워크 실패 시에만: TTL 유효하고 문항 10개 검증 통과할 때만 캐시 성공 */
+    private suspend fun fallbackCacheOr(
+        missionId: String,
+        primaryException: () -> Exception
+    ): kotlin.Result<QuizQuestions> {
+        val cached = loadValidCachedQuiz(missionId)
+        if (cached != null) return kotlin.Result.success(cached)
+        return kotlin.Result.failure(primaryException())
+    }
+
+    private suspend fun loadValidCachedQuiz(missionId: String): QuizQuestions? {
+        val meta = quizDao.getQuizMetadata(missionId) ?: return null
+        val entities = quizDao.getQuizQuestions(missionId)
+        if (entities.isEmpty()) return null
+
+        if (QuizSessionRules.isSessionExpired(meta.expiresAt)) return null
+
+        val questions = mutableListOf<Question>()
+        for (entity in entities) {
+            val type = QuizSessionRules.parseQuestionType(entity.type).getOrElse { return null }
+            val opts = entity.optionsJson?.let { json ->
+                gson.fromJson<List<String>>(
+                    json,
+                    object : com.google.gson.reflect.TypeToken<List<String>>() {}.type
+                )
+            }
+            questions.add(
+                Question(
+                    id = entity.id,
+                    type = type,
+                    question = entity.question,
+                    options = opts
+                )
+            )
+        }
+
+        return QuizSessionRules.buildQuizQuestions(
+            missionId = meta.missionId,
+            missionTitle = meta.missionTitle,
+            isReview = meta.isReview,
+            quizAttemptId = meta.quizAttemptId,
+            questionCount = meta.questionCount,
+            expiresAt = meta.expiresAt,
+            questions = questions
+        ).getOrNull()
+    }
+
+    override suspend fun checkQuestionAnswer(
+        missionId: String,
+        questionId: String,
+        quizAttemptId: String,
+        selected: String
+    ): kotlin.Result<QuestionCheckResult> {
+        val request = QuizCheckRequest(quizAttemptId = quizAttemptId, selected = selected)
+        return try {
+            val response =
+                apiService.checkQuestionAnswer(missionId = missionId, questionId = questionId, body = request)
+            if (response.success) {
+                val d = response.data
+                kotlin.Result.success(
+                    QuestionCheckResult(
+                        questionId = d.questionId,
+                        isCorrect = d.isCorrect,
+                        explanation = d.explanation
                     )
                 )
             } else {
-                Result.failure(e)
+                kotlin.Result.failure(Exception(ApiErrorMapper.userMessageForApiError(response.error)))
             }
+        } catch (e: HttpException) {
+            kotlin.Result.failure(Exception(ApiErrorMapper.userMessageForHttpException(e)))
+        } catch (e: Exception) {
+            kotlin.Result.failure(e)
         }
     }
 
@@ -102,51 +173,21 @@ class QuizRepositoryImpl @Inject constructor(
         missionId: String,
         quizAttemptId: String,
         answers: Map<String, String>
-    ): Result<QuizResult> {
+    ): kotlin.Result<QuizResult> {
         val quizAnswers = answers.map { QuizAnswer(it.key, it.value) }
         val request = QuizSubmitRequest(quizAttemptId, quizAnswers)
-        
+
         return try {
             val response = apiService.submitQuiz(missionId, request)
-            
+
             if (response.success) {
-                val data = response.data
-                Result.success(
-                    QuizResult(
-                        score = data.score,
-                        total = data.total,
-                        isPassed = data.isPassed,
-                        isPerfect = data.isPerfect,
-                        xpEarned = data.xpEarned,
-                        bonusXp = data.bonusXp,
-                        bonusReason = data.bonusReason,
-                        petEvolved = data.petEvolved,
-                        streakDays = data.streakDays,
-                        rewards = data.rewards.map {
-                            QuizReward(
-                                type = it.type,
-                                ticketType = it.ticketType,
-                                count = it.count,
-                                reason = it.reason
-                            )
-                        },
-                        results = data.results.map {
-                            QuestionResult(
-                                questionId = it.questionId,
-                                isCorrect = it.isCorrect,
-                                explanation = it.explanation
-                            )
-                        },
-                        currentLevel = data.currentLevel ?: 1,
-                        currentXp = data.currentXp ?: 0,
-                        nextLevelXp = data.nextLevelXp ?: 100
-                    )
-                )
+                kotlin.Result.success(mapSubmitResponse(response.data))
             } else {
-                Result.failure(Exception(response.error?.message ?: "서버 오류"))
+                kotlin.Result.failure(Exception(ApiErrorMapper.userMessageForApiError(response.error)))
             }
-        } catch (e: Exception) {
-            // 네트워크 오류 시 오프라인 큐에 저장
+        } catch (e: HttpException) {
+            kotlin.Result.failure(Exception(ApiErrorMapper.userMessageForHttpException(e)))
+        } catch (e: IOException) {
             offlineDao.insertMission(
                 OfflineMissionQueueEntity(
                     idempotencyKey = UUID.randomUUID().toString(),
@@ -156,11 +197,90 @@ class QuizRepositoryImpl @Inject constructor(
                     attemptDate = System.currentTimeMillis()
                 )
             )
-            Result.failure(Exception("네트워크가 불안정하여 결과가 저장되었습니다. 연결 시 자동 동기화됩니다."))
+            kotlin.Result.failure(
+                Exception("네트워크가 불안정하여 결과가 저장되었습니다. 연결 시 자동 동기화됩니다.")
+            )
+        } catch (e: Exception) {
+            kotlin.Result.failure(e)
         }
     }
 
-    override suspend fun syncOfflineMissions(): Result<Unit> {
+    private fun mapSubmitResponse(data: QuizSubmitResponse): QuizResult {
+        val rewardsList = data.rewards.orEmpty()
+        return QuizResult(
+            mode = data.mode ?: "normal",
+            progressApplied = data.progressApplied ?: false,
+            attemptState = data.attemptState ?: "submitted",
+            streakBonusApplied = data.streakBonusApplied ?: false,
+            score = data.score,
+            total = data.total,
+            wrongCount = data.wrongCount,
+            isPassed = data.isPassed,
+            isPerfect = data.isPerfect,
+            equippedPetGrade = data.equippedPetGrade,
+            xpEarned = data.xpEarned,
+            bonusXp = data.bonusXp ?: 0,
+            bonusReason = data.bonusReason,
+            petEvolved = data.petEvolved ?: false,
+            streakDays = data.streakDays,
+            todayMissionCount = data.todayMissionCount ?: 0,
+            rewards = rewardsList.map {
+                QuizReward(
+                    type = it.type,
+                    ticketType = it.ticketType,
+                    count = it.count,
+                    reason = it.reason
+                )
+            },
+            remainingTickets = data.remainingTickets?.let {
+                RemainingTickets(normal = it.normal, rare = it.rare, epic = it.epic)
+            },
+            results = data.results.orEmpty().map {
+                QuestionResult(
+                    questionId = it.questionId,
+                    isCorrect = it.isCorrect,
+                    explanation = it.explanation
+                )
+            },
+            currentLevel = data.currentLevel ?: 1,
+            currentXp = data.currentXp ?: 0,
+            nextLevelXp = data.nextLevelXp ?: 100
+        )
+    }
+
+    override suspend fun reportQuestion(
+        missionId: String,
+        questionId: String,
+        reasonCode: String,
+        detail: String?
+    ): kotlin.Result<QuestionReportResult> {
+        return try {
+            val response = apiService.reportQuestion(
+                missionId,
+                questionId,
+                QuestionReportRequest(reasonCode = reasonCode, detail = detail)
+            )
+            if (response.success) {
+                val d = response.data
+                kotlin.Result.success(
+                    QuestionReportResult(
+                        questionId = d.questionId,
+                        issueId = d.issueId,
+                        issueStatus = d.issueStatus,
+                        quarantined = d.quarantined
+                    )
+                )
+            } else {
+                kotlin.Result.failure(Exception(ApiErrorMapper.userMessageForApiError(response.error)))
+            }
+        } catch (e: HttpException) {
+            kotlin.Result.failure(Exception(ApiErrorMapper.userMessageForHttpException(e)))
+        } catch (e: Exception) {
+            kotlin.Result.failure(e)
+        }
+    }
+
+    override suspend fun syncOfflineMissions(): kotlin.Result<Unit> {
         return try {
             val unsynced = offlineDao.getUnsyncedMissions()
             for (mission in unsynced) {
@@ -174,9 +294,9 @@ class QuizRepositoryImpl @Inject constructor(
                     offlineDao.markAsSynced(mission.id)
                 }
             }
-            Result.success(Unit)
+            kotlin.Result.success(Unit)
         } catch (e: Exception) {
-            Result.failure(e)
+            kotlin.Result.failure(e)
         }
     }
 }

@@ -9,11 +9,11 @@
         android:icon="@drawable/ic_nav_study_color"
         android:title="학습" />
     <item
-        android:id="@+id/aiPracticeFragment"
+        android:id="@+id/chatFragment"
         android:icon="@drawable/ic_nav_ai_color"
         android:title="AI실습" />
     <item
-        android:id="@+id/collectionFragment"
+        android:id="@+id/gachaFragment"
         android:icon="@drawable/ic_nav_collection_color"
         android:title="수집" />
     <item
