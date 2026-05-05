@@ -32,6 +32,9 @@ class MissionListAdapter(
             binding.tvTitle.text = mission.title
             binding.tvDescription.text = mission.description
 
+            binding.tvReviewBadge.visibility =
+                if (mission.isUnlocked && mission.isReviewable) View.VISIBLE else View.GONE
+
             // 상태 아이콘 및 레이아웃 처리
             if (!mission.isUnlocked) {
                 binding.viewLockOverlay.visibility = View.VISIBLE
@@ -39,11 +42,12 @@ class MissionListAdapter(
                 binding.ivLock.setImageResource(R.drawable.ic_lock)
                 binding.ivStatus.visibility = View.GONE
                 binding.root.isClickable = false
+                binding.root.setOnClickListener(null)
             } else {
                 binding.viewLockOverlay.visibility = View.GONE
                 binding.ivLock.visibility = View.GONE
                 binding.ivStatus.visibility = View.VISIBLE
-                
+
                 if (mission.isCompleted) {
                     binding.ivStatus.setImageResource(R.drawable.ic_check_circle)
                     binding.ivStatus.setColorFilter(ContextCompat.getColor(binding.root.context, R.color.quiz_mint))
@@ -51,7 +55,7 @@ class MissionListAdapter(
                     binding.ivStatus.setImageResource(R.drawable.ic_play_arrow)
                     binding.ivStatus.setColorFilter(ContextCompat.getColor(binding.root.context, R.color.white))
                 }
-                
+
                 binding.root.setOnClickListener { onMissionClick(mission) }
             }
         }

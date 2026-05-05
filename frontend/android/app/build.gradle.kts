@@ -21,6 +21,9 @@ android {
         versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // BE Base URL (trailing slash 필수). 에뮬레이터에서 로컬: http://10.0.2.2:8080/
+        buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:8080/\"")
     }
 
     buildTypes {
@@ -53,7 +56,8 @@ hilt {
 
 dependencies {
     implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.appcompat)
+    // Plain Maven coordinates: Cursor/Kotlin LSP often fails to attach version-catalog deps to the IDE classpath.
+    implementation("androidx.appcompat:appcompat:1.7.0")
     implementation(libs.material)
     implementation(libs.androidx.constraintlayout)
 

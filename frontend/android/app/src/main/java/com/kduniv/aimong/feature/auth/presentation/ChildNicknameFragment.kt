@@ -2,6 +2,7 @@ package com.kduniv.aimong.feature.auth.presentation
 
 import android.graphics.Color
 import androidx.lifecycle.lifecycleScope
+import com.kduniv.aimong.MainActivity
 import com.kduniv.aimong.core.local.SessionManager
 import com.kduniv.aimong.core.ui.BaseFragment
 import com.kduniv.aimong.core.util.setGradientText
@@ -48,10 +49,10 @@ class ChildNicknameFragment : BaseFragment<FragmentChildNicknameBinding>(Fragmen
 
     private fun saveRoleAndRestart(role: String) {
         viewLifecycleOwner.lifecycleScope.launch {
-            sessionManager.saveSession(role, 1, "child_test_token")
-            val intent = android.content.Intent(requireContext(), com.kduniv.aimong.MainActivity::class.java).apply {
+            sessionManager.saveSession(role, 1, "")
+            val intent = android.content.Intent(requireContext(), MainActivity::class.java).apply {
                 addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK)
-                putExtra("IS_RESTART", true)
+                putExtra(MainActivity.EXTRA_IS_RESTART, true)
             }
             startActivity(intent)
         }
