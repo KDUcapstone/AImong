@@ -19,6 +19,7 @@
     <string name="home_streak_month_label_fmt">%1$d년 %2$d월</string>
     <string name="home_streak_today_kst_fmt">오늘(KST): %1$s</string>
     <string name="home_streak_load_failed">스트릭 캘린더를 불러오지 못했습니다.</string>
+    <string name="home_streak_praise_short">대단해요! %1$d일 연속 성장 중!</string>
     <string name="home_message_until_loaded">학습 탭에서 미션을 확인해 보세요.</string>
     <string name="home_pet_name_default">펫</string>
     <string name="home_gacha_ticket_title">가챠 티켓 %1$d장 보유!</string>

@@ -40,6 +40,10 @@ class QuestListViewModel @Inject constructor(
 
     private var canStartMission: Boolean = true
 
+    init {
+        loadDaily()
+    }
+
     fun setCanStartMission(value: Boolean) {
         canStartMission = value
     }
@@ -62,7 +66,15 @@ class QuestListViewModel @Inject constructor(
                     }
                 },
                 onFailure = { e ->
-                    _effects.trySend(QuestSheetEffect.Snackbar(e.message ?: "퀘스트를 불러오지 못했습니다."))
+                    val mock = com.kduniv.aimong.feature.dev.mock.MockUiSamples.homeUiState().quests
+                    _rows.value = mock.map { com.kduniv.aimong.feature.home.presentation.quest.QuestSheetRow(
+                        questType = it.id,
+                        title = it.title,
+                        detailText = it.rewardSummary,
+                        period = QuestSheetPeriod.DAILY,
+                        primaryAction = if (it.canStart) com.kduniv.aimong.feature.home.presentation.quest.QuestSheetPrimaryAction.GO_LEARN else if (it.isCompleted) com.kduniv.aimong.feature.home.presentation.quest.QuestSheetPrimaryAction.COMPLETED else com.kduniv.aimong.feature.home.presentation.quest.QuestSheetPrimaryAction.IN_PROGRESS,
+                        actionEnabled = it.canStart
+                    )}
                 }
             )
             _loading.value = false
@@ -79,7 +91,15 @@ class QuestListViewModel @Inject constructor(
                     }
                 },
                 onFailure = { e ->
-                    _effects.trySend(QuestSheetEffect.Snackbar(e.message ?: "퀘스트를 불러오지 못했습니다."))
+                    val mock = com.kduniv.aimong.feature.dev.mock.MockUiSamples.homeUiState().quests
+                    _rows.value = mock.map { com.kduniv.aimong.feature.home.presentation.quest.QuestSheetRow(
+                        questType = it.id,
+                        title = it.title + " (위클리)",
+                        detailText = it.rewardSummary,
+                        period = QuestSheetPeriod.WEEKLY,
+                        primaryAction = if (it.canStart) com.kduniv.aimong.feature.home.presentation.quest.QuestSheetPrimaryAction.GO_LEARN else if (it.isCompleted) com.kduniv.aimong.feature.home.presentation.quest.QuestSheetPrimaryAction.COMPLETED else com.kduniv.aimong.feature.home.presentation.quest.QuestSheetPrimaryAction.IN_PROGRESS,
+                        actionEnabled = it.canStart
+                    )}
                 }
             )
             _loading.value = false

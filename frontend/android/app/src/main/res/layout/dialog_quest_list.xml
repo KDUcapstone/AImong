@@ -21,6 +21,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="12dp"
+        android:background="@android:color/transparent"
+        app:tabBackground="@android:color/transparent"
         app:tabGravity="fill"
         app:tabIndicatorColor="@color/quiz_mint"
         app:tabMode="fixed"

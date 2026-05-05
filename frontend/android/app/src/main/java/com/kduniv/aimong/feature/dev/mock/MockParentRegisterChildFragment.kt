@@ -58,19 +58,9 @@ class MockParentRegisterChildFragment :
     }
 
     private fun showSuccessDialog(data: ParentRegisterResponse) {
-        AlertDialog.Builder(requireContext())
-            .setTitle(R.string.auth_register_success_title)
-            .setMessage(
-                getString(
-                    R.string.auth_register_success_message,
-                    data.nickname,
-                    data.code,
-                    data.starterTickets
-                )
-            )
-            .setPositiveButton(R.string.auth_confirm) { _, _ -> navigateParentHome() }
-            .setCancelable(false)
-            .show()
+        val bottomSheet = com.kduniv.aimong.feature.auth.presentation.ChildRegisterSuccessBottomSheet.newInstance(data)
+        bottomSheet.onConfirmClick = { navigateParentHome() }
+        bottomSheet.show(parentFragmentManager, "child_register_success")
     }
 
     private fun navigateParentHome() {

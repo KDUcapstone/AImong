@@ -19,6 +19,7 @@ import com.kduniv.aimong.core.network.model.ChildLoginResponse
 import com.kduniv.aimong.core.network.model.ParentChildrenResponseData
 import com.kduniv.aimong.core.network.model.ParentFcmTokenRequest
 import com.kduniv.aimong.core.network.model.ParentFcmTokenResponse
+import com.kduniv.aimong.core.network.model.RegenerateCodeResponse
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Header
@@ -46,6 +47,13 @@ interface AimongApiService {
     suspend fun getParentChildren(
         @Header("Authorization") authorization: String
     ): ApiResponse<ParentChildrenResponseData>
+
+    /** 자녀 등록 완료된 부모용 - 연결 코드 재발급 */
+    @retrofit2.http.PUT("parent/child/{childId}/regenerate-code")
+    suspend fun regenerateChildCode(
+        @Header("Authorization") authorization: String,
+        @Path("childId") childId: String
+    ): ApiResponse<RegenerateCodeResponse>
 
     /** 자녀 세션 발급 — 로그인 전에는 Authorization 없음 */
     @POST("child/login")

@@ -10,6 +10,8 @@ import com.kduniv.aimong.databinding.ViewHomePathNodeCompletedBinding
 import com.kduniv.aimong.databinding.ViewHomePathNodeLockedBinding
 import com.kduniv.aimong.databinding.ViewHomePathNodeReviewBinding
 import com.kduniv.aimong.databinding.ViewHomePathNodeStartBinding
+import com.kduniv.aimong.core.util.setOnScaleTouchListener
+import kotlin.math.abs
 import kotlin.math.sin
 
 /**
@@ -25,14 +27,14 @@ class HomeLayoutBinder(
     private val onSelectLearningTab: () -> Unit,
     private val onOpenQuest: () -> Unit
 ) {
+    private var lastPathItems: List<HomePathItem> = emptyList()
+
     fun bind(state: HomeUiState) {
         with(binding) {
             tvChipHeart.text = "❤️ ${state.heartCount}"
             tvChipXp.text = "⚡ ${state.topStatusXp}"
             tvChipTicket.text = "🎟 ${state.topTicketCount}"
             tvChipStreak.text = "🔥 ${state.streakDays}일"
-
-            tvHomeSubtitle.text = "Lv.${state.userLevel} ${getProfileLabel(state.profileType)}"
 
             // 우측 미니 퀘스트 버튼 (알림 표시용)
             btnMiniQuest.setOnClickListener {
@@ -57,6 +59,7 @@ class HomeLayoutBinder(
         binding.layoutFloatingTooltip.isVisible = false
         val inflater = layoutInflater
         val items = state.pathItems
+        lastPathItems = items
         
         binding.containerMissionPath.setOnClickListener {
             binding.layoutFloatingTooltip.isVisible = false
@@ -69,18 +72,37 @@ class HomeLayoutBinder(
         val density = binding.root.context.resources.displayMetrics.density
         val amplitude = 60f * density // 지그재그 진폭 설정
 
-        for ((index, item) in items.withIndex()) {
+        var nodeIndex = 0
+        var sectionForRow: HomePathItem.SectionHeader? = null
+
+        for (item in items) {
+            val isHeader = item is HomePathItem.SectionHeader
+            
             val rowLp = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
             ).apply {
-                topMargin = if (index == 0) (8 * density).toInt() else (24 * density).toInt()
-                bottomMargin = (24 * density).toInt()
+                if (isHeader) {
+                    topMargin = 0
+                    bottomMargin = 0
+                } else {
+                    topMargin = if (nodeIndex == 0) (8 * density).toInt() else (24 * density).toInt()
+                    bottomMargin = (24 * density).toInt()
+                }
+            }
+
+            if (isHeader) {
+                nodeIndex = 0
+                sectionForRow = item as HomePathItem.SectionHeader
+                continue
             }
             
-            val translation = (sin(index.toDouble() * Math.PI / 2) * amplitude).toFloat()
+            val translation = (sin(nodeIndex.toDouble() * Math.PI / 2) * amplitude).toFloat()
 
             when (item) {
+                is HomePathItem.SectionHeader -> {
+                    // 리스트 렌더링에서 제외
+                }
                 is HomePathItem.Completed -> {
                     val row = ViewHomePathNodeCompletedBinding.inflate(inflater, binding.layoutMissionPath, false)
                     row.btnNode.translationX = translation
@@ -88,7 +110,10 @@ class HomeLayoutBinder(
                     row.btnNode.setOnClickListener {
                         showTooltip(row.btnNode, item.title, "완료됨", null)
                     }
+                    row.btnNode.setOnScaleTouchListener()
+                    row.root.setTag(R.id.home_path_section_tag, sectionForRow)
                     binding.layoutMissionPath.addView(row.root, rowLp)
+                    nodeIndex++
                 }
                 is HomePathItem.TodayStart -> {
                     val row = ViewHomePathNodeStartBinding.inflate(inflater, binding.layoutMissionPath, false)
@@ -100,8 +125,11 @@ class HomeLayoutBinder(
                     row.btnNode.setOnClickListener {
                         showTooltip(row.btnNode, item.missionTitle, "시작하기", if (item.enabled) item.missionId else null)
                     }
+                    row.btnNode.setOnScaleTouchListener()
                     if (!row.lottiePet.isAnimating) row.lottiePet.playAnimation()
+                    row.root.setTag(R.id.home_path_section_tag, sectionForRow)
                     binding.layoutMissionPath.addView(row.root, rowLp)
+                    nodeIndex++
                 }
                 is HomePathItem.Review -> {
                     val row = ViewHomePathNodeReviewBinding.inflate(inflater, binding.layoutMissionPath, false)
@@ -109,7 +137,10 @@ class HomeLayoutBinder(
                     row.btnNode.setOnClickListener {
                         showTooltip(row.btnNode, "복습 미션", item.subtitle, item.missionId)
                     }
+                    row.btnNode.setOnScaleTouchListener()
+                    row.root.setTag(R.id.home_path_section_tag, sectionForRow)
                     binding.layoutMissionPath.addView(row.root, rowLp)
+                    nodeIndex++
                 }
                 is HomePathItem.Locked -> {
                     val row = ViewHomePathNodeLockedBinding.inflate(inflater, binding.layoutMissionPath, false)
@@ -117,10 +148,66 @@ class HomeLayoutBinder(
                     row.btnNode.setOnClickListener {
                         showTooltip(row.btnNode, "잠김", item.hint, null)
                     }
+                    row.btnNode.setOnScaleTouchListener()
+                    row.root.setTag(R.id.home_path_section_tag, sectionForRow)
                     binding.layoutMissionPath.addView(row.root, rowLp)
+                    nodeIndex++
                 }
             }
         }
+
+        binding.scrollPath.setOnScrollChangeListener { _, _, scrollY, _, _ ->
+            syncSectionBannerForScroll(scrollY)
+        }
+        binding.scrollPath.post {
+            syncSectionBannerForScroll(binding.scrollPath.scrollY)
+        }
+    }
+
+    private fun syncSectionBannerForScroll(scrollY: Int) {
+        val scroll = binding.scrollPath
+        val path = binding.layoutMissionPath
+        if (path.childCount == 0) {
+            applyTopSectionBanner(lastPathItems.filterIsInstance<HomePathItem.SectionHeader>().firstOrNull())
+            return
+        }
+
+        val viewportCenter = scrollY + scroll.height / 2
+        var bestSection: HomePathItem.SectionHeader? = null
+        var bestDist = Int.MAX_VALUE
+
+        for (i in 0 until path.childCount) {
+            val row = path.getChildAt(i)
+            val section = row.getTag(R.id.home_path_section_tag) as? HomePathItem.SectionHeader ?: continue
+            val rowCenterY = offsetTopInScrollContent(row) + row.height / 2
+            val dist = abs(rowCenterY - viewportCenter)
+            if (dist < bestDist) {
+                bestDist = dist
+                bestSection = section
+            }
+        }
+
+        if (bestSection == null) {
+            bestSection = lastPathItems.filterIsInstance<HomePathItem.SectionHeader>().firstOrNull()
+        }
+        applyTopSectionBanner(bestSection)
+    }
+
+    private fun applyTopSectionBanner(section: HomePathItem.SectionHeader?) {
+        if (section == null) return
+        binding.tvHomeBrand.text = "섹션 ${section.stage}"
+        binding.tvHomeTitle.text = section.title
+    }
+
+    private fun offsetTopInScrollContent(view: View): Int {
+        var y = 0
+        var v: View? = view
+        val anchor = binding.frameClickArea
+        while (v != null && v != anchor) {
+            y += v.top
+            v = v.parent as? View
+        }
+        return y
     }
 
     private fun showTooltip(

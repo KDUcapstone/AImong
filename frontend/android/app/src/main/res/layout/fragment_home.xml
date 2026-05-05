@@ -33,7 +33,7 @@
             android:clipToPadding="false"
             android:clickable="true"
             android:focusable="true"
-            android:paddingTop="160dp"
+            android:paddingTop="@dimen/home_path_scroll_padding_top"
             android:orientation="vertical">
 
             <FrameLayout
@@ -111,6 +111,7 @@
         android:id="@+id/scroll_top_chips"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:elevation="12dp"
         android:fillViewport="true"
         android:paddingHorizontal="12dp"
         android:paddingTop="12dp"
@@ -185,71 +186,87 @@
         </LinearLayout>
     </HorizontalScrollView>
 
-    <!-- 3. 헤더 영역 (문구 + 퀘스트 버튼) -->
-    <!-- 경로 위에 떠 있게 하기 위해 마지막에 선언, 배경 투명 -->
+    <!-- 섹션 카드 + 퀘스트: 칩 아래에 고정(플로팅), 스크롤과 분리 -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/layout_header"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="0dp"
         android:background="@android:color/transparent"
-        android:layout_marginTop="-8dp"
-        app:layout_constraintTop_toBottomOf="@id/scroll_top_chips"
+        android:elevation="10dp"
+        android:paddingHorizontal="4dp"
+        android:paddingBottom="8dp"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintTop_toBottomOf="@id/scroll_top_chips">
 
-        <TextView
-            android:id="@+id/tv_home_brand"
-            android:layout_width="wrap_content"
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/card_section_header"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
-            android:layout_marginTop="0dp"
-            android:gravity="center"
-            android:letterSpacing="0.05"
-            android:text="@string/home_brand"
-            android:textColor="@color/text_sub_grey"
-            android:textSize="12sp"
+            android:layout_marginEnd="8dp"
+            app:cardBackgroundColor="@android:color/transparent"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="6dp"
+            app:layout_constraintEnd_toStartOf="@id/btn_mini_quest"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toTopOf="parent">
 
-        <TextView
-            android:id="@+id/tv_home_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginTop="0dp"
-            android:gravity="center"
-            android:text="@string/home_title_explore"
-            android:textColor="@color/text_white"
-            android:textSize="22sp"
-            android:textStyle="bold"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tv_home_brand" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_home_section_banner_gradient"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="12dp">
 
-        <TextView
-            android:id="@+id/tv_home_subtitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginTop="0dp"
-            android:gravity="center"
-            android:textColor="@color/quiz_mint"
-            android:textSize="15sp"
-            android:textStyle="bold"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tv_home_title"
-            tools:text="Lv.4 AI 새싹" />
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
 
-        <!-- 우측 미니 퀘스트 버튼 -->
+                    <TextView
+                        android:id="@+id/tv_home_brand"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="#E5F9D6"
+                        android:textSize="13sp"
+                        android:textStyle="bold"
+                        tools:text="섹션 1" />
+
+                    <TextView
+                        android:id="@+id/tv_home_title"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:textColor="@color/white"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        tools:text="AI가 뭐예요?" />
+                </LinearLayout>
+
+                <ImageView
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:src="@drawable/ic_nav_study_color"
+                    app:tint="@color/white" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
         <LinearLayout
             android:id="@+id/btn_mini_quest"
             android:layout_width="56dp"
             android:layout_height="56dp"
             android:layout_marginEnd="16dp"
-            android:layout_marginTop="0dp"
             android:background="@drawable/bg_path_pill"
             android:clickable="true"
+            android:elevation="6dp"
             android:focusable="true"
             android:gravity="center"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent">
 

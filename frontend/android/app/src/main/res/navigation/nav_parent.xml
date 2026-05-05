@@ -9,7 +9,7 @@
         android:id="@+id/parentDashboardFragment"
         android:name="com.kduniv.aimong.feature.parent.presentation.ParentDashboardFragment"
         android:label="Parent Dashboard"
-        tools:layout="@layout/fragment_role_select">
+        tools:layout="@layout/fragment_parent_dashboard">
         <action
             android:id="@+id/action_parentDashboardFragment_to_privacyLogFragment"
             app:destination="@id/privacyLogFragment" />
