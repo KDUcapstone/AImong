@@ -23,7 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@Profile("!prod")
+@Profile({"local", "dev", "test"})
 @RequiredArgsConstructor
 public class DevGachaGrantService {
 

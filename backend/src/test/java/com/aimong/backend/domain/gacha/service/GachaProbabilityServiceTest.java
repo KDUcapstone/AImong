@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.aimong.backend.domain.gacha.entity.TicketType;
 import com.aimong.backend.domain.pet.entity.PetGrade;
+import java.lang.reflect.Method;
 import org.junit.jupiter.api.Test;
 
 class GachaProbabilityServiceTest {
@@ -35,5 +36,24 @@ class GachaProbabilityServiceTest {
         GachaProbabilityService.DrawResult result = service.draw(TicketType.RARE, 1, 100);
 
         assertThat(result.appliedSrBonus()).isZero();
+    }
+
+    @Test
+    void rareAndEpicTicketProbabilitiesIgnoreSrBonus() throws Exception {
+        assertThat(probabilitiesFor(TicketType.RARE, 1, 0))
+                .containsExactly(probabilitiesFor(TicketType.RARE, 1, 100));
+        assertThat(probabilitiesFor(TicketType.EPIC, 1, 0))
+                .containsExactly(probabilitiesFor(TicketType.EPIC, 1, 100));
+    }
+
+    private double[] probabilitiesFor(TicketType ticketType, int nextPullCount, int srMissCount) throws Exception {
+        Method method = GachaProbabilityService.class.getDeclaredMethod(
+                "probabilitiesFor",
+                TicketType.class,
+                int.class,
+                int.class
+        );
+        method.setAccessible(true);
+        return (double[]) method.invoke(service, ticketType, nextPullCount, srMissCount);
     }
 }

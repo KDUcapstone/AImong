@@ -9,4 +9,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface ReturnRewardClaimRepository extends JpaRepository<ReturnRewardClaim, UUID> {
 
     Optional<ReturnRewardClaim> findByChildIdAndBaseLastCompletedDate(UUID childId, LocalDate baseLastCompletedDate);
+
+    boolean existsByChildIdAndBaseLastCompletedDate(UUID childId, LocalDate baseLastCompletedDate);
 }

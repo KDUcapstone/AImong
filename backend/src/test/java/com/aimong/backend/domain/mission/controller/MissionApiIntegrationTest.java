@@ -12,11 +12,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.aimong.backend.domain.mission.dto.MissionListResponse;
 import com.aimong.backend.domain.mission.dto.MissionQuestionsResponse;
 import com.aimong.backend.domain.mission.dto.MissionSummaryResponse;
+import com.aimong.backend.domain.mission.dto.QuestionCheckRequest;
+import com.aimong.backend.domain.mission.dto.QuestionCheckResponse;
 import com.aimong.backend.domain.mission.dto.QuestionResponse;
 import com.aimong.backend.domain.mission.dto.StageProgressResponse;
 import com.aimong.backend.domain.mission.dto.SubmitRequest;
 import com.aimong.backend.domain.mission.dto.SubmitResponse;
 import com.aimong.backend.domain.mission.service.MissionService;
+import com.aimong.backend.domain.mission.service.QuestionCheckService;
 import com.aimong.backend.domain.mission.service.QuizService;
 import com.aimong.backend.domain.mission.service.SubmitService;
 import com.aimong.backend.domain.mission.service.question.QuestionQualityReviewService;
@@ -54,6 +57,9 @@ class MissionApiIntegrationTest {
 
     @MockitoBean
     private SubmitService submitService;
+
+    @MockitoBean
+    private QuestionCheckService questionCheckService;
 
     @MockitoBean
     private QuestionQualityReviewService questionQualityReviewService;
@@ -169,6 +175,35 @@ class MissionApiIntegrationTest {
                 .andExpect(jsonPath("$.data.profileImageType").value("SPROUT"))
                 .andExpect(jsonPath("$.data.results[0].questionId").value(answers.get(0).questionId()))
                 .andExpect(jsonPath("$.data.results[0].explanation").value("Do not share passwords."));
+    }
+
+    @Test
+    void checkQuestionReturnsImmediateFeedbackWithoutSubmitContract() throws Exception {
+        UUID childId = UUID.randomUUID();
+        UUID missionId = UUID.randomUUID();
+        UUID questionId = UUID.randomUUID();
+        UUID quizAttemptId = UUID.randomUUID();
+        QuestionCheckRequest request = new QuestionCheckRequest(quizAttemptId, "No");
+        QuestionCheckResponse response = new QuestionCheckResponse(questionId, true, "Do not share passwords.");
+
+        given(questionCheckService.check(eq(childId), eq(missionId), eq(questionId), any(QuestionCheckRequest.class)))
+                .willReturn(response);
+
+        mockMvc.perform(post("/missions/{missionId}/questions/{questionId}/check", missionId, questionId)
+                        .principal(new UsernamePasswordAuthenticationToken(
+                                childId.toString(),
+                                null,
+                                Collections.emptyList()
+                        ))
+                        .contentType(APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsBytes(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.questionId").value(questionId.toString()))
+                .andExpect(jsonPath("$.data.isCorrect").value(true))
+                .andExpect(jsonPath("$.data.explanation").value("Do not share passwords."))
+                .andExpect(jsonPath("$.data.xpEarned").doesNotExist())
+                .andExpect(jsonPath("$.data.rewards").doesNotExist());
     }
 
     @Test
