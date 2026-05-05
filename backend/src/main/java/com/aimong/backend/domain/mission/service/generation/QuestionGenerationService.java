@@ -52,8 +52,9 @@ public class QuestionGenerationService {
                     )
             );
             if (report.pass()) {
-                accepted.add(candidate);
-                knownTexts.add(candidate.question());
+                StructuredQuestionSchema normalizedCandidate = questionValidationService.normalizeCandidate(candidate);
+                accepted.add(normalizedCandidate);
+                knownTexts.add(normalizedCandidate.question());
             } else {
                 rejected.add(new RejectedCandidate(candidate, report));
             }

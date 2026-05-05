@@ -88,13 +88,13 @@ public class QuestionValidationService {
         return report;
     }
 
-    private StructuredQuestionSchema normalizeCandidate(StructuredQuestionSchema candidate) {
+    StructuredQuestionSchema normalizeCandidate(StructuredQuestionSchema candidate) {
         return new StructuredQuestionSchema(
                 candidate.missionCode() == null ? "" : candidate.missionCode().trim(),
                 candidate.packNo(),
                 candidate.difficultyBand(),
                 candidate.type(),
-                candidate.question() == null ? "" : candidate.question().trim().replaceAll("\\s+", " "),
+                QuestionPromptSanitizer.sanitizeQuestion(candidate.question()),
                 ValidationTextUtils.normalizeOptions(candidate.options()),
                 candidate.answer(),
                 candidate.explanation() == null ? "" : candidate.explanation().trim().replaceAll("\\s+", " "),

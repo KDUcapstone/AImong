@@ -5,10 +5,15 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.springframework.stereotype.Component;
 
 @Component
 public class AnswerQualityValidator {
+
+    private static final Pattern EXPLANATION_OPTION_NUMBER = Pattern.compile("(?:정답은\\s*)?(\\d+)번");
+    private static final Pattern CHAR_COUNT_PATTERN = Pattern.compile("(\\d+)자");
 
     public AnswerQualityResult validate(StructuredQuestionSchema candidate) {
         List<String> hardFails = new ArrayList<>();
@@ -21,6 +26,7 @@ public class AnswerQualityValidator {
                 || candidate.type() == QuestionType.SITUATION
                 || candidate.type() == QuestionType.FILL) {
             validateOptions(candidate, hardFails, warnings, repairHints);
+            validateAnswerExposure(candidate, hardFails, warnings, repairHints);
         }
 
         if (candidate.type() != null && candidate.explanation() != null && candidate.options() != null && !candidate.options().isEmpty()) {
@@ -47,6 +53,8 @@ public class AnswerQualityValidator {
                     warnings.add("answer.explanation_support_is_weak");
                     repairHints.add("Explain why the correct option is right using evidence from the situation or rule.");
                 }
+                validateExplanationNumberMatchesAnswer(candidate, answerIndex, hardFails, repairHints);
+                validateCorrectOptionDoesNotContradictStem(candidate, answerIndex, hardFails, repairHints);
             }
         }
 
@@ -99,6 +107,7 @@ public class AnswerQualityValidator {
             warnings.add("answer.correct_option_too_short");
             repairHints.add("Keep the correct option similar in detail and tone to the distractors.");
         }
+        validateDistractorPlausibility(candidate, answerIndex, hardFails, repairHints);
 
         for (int left = 0; left < options.size(); left++) {
             for (int right = left + 1; right < options.size(); right++) {
@@ -133,6 +142,101 @@ public class AnswerQualityValidator {
             hardFails.add("answer.multiple_options_match_stem");
             repairHints.add("Avoid writing two or more options that can both be justified directly from the stem.");
         }
+    }
+
+    private void validateDistractorPlausibility(
+            StructuredQuestionSchema candidate,
+            int answerIndex,
+            List<String> hardFails,
+            List<String> repairHints
+    ) {
+        long implausibleDistractors = 0;
+        for (int index = 0; index < candidate.options().size(); index++) {
+            if (index == answerIndex) {
+                continue;
+            }
+            if (isImplausibleDistractor(candidate.options().get(index))) {
+                implausibleDistractors++;
+            }
+        }
+        if (implausibleDistractors >= 2) {
+            hardFails.add("answer.implausible_distractors");
+            repairHints.add("Use plausible misconceptions as distractors instead of cartoonish or impossible statements.");
+        }
+    }
+
+    private void validateAnswerExposure(
+            StructuredQuestionSchema candidate,
+            List<String> hardFails,
+            List<String> warnings,
+            List<String> repairHints
+    ) {
+        Integer answerIndex = answerIndex(candidate);
+        if (candidate.options() == null || answerIndex == null || answerIndex < 0 || answerIndex >= candidate.options().size()) {
+            return;
+        }
+
+        String question = candidate.question();
+        String correct = candidate.options().get(answerIndex);
+        double stemOverlap = meaningfulOverlapRatio(question, correct);
+        if (candidate.type() == QuestionType.FILL && stemOverlap >= 0.55d) {
+            hardFails.add("answer.fill_answer_overexposed_in_stem");
+            repairHints.add("Do not reveal most of the blank answer in the stem. Ask for one missing concept or condition.");
+            return;
+        }
+        if (stemOverlap >= 0.70d) {
+            warnings.add("answer.correct_option_too_easy_from_stem");
+            repairHints.add("Reduce direct wording overlap between the stem and the correct option.");
+        }
+
+        if (candidate.type() == QuestionType.FILL && correct.length() > 24) {
+            warnings.add("answer.fill_correct_option_too_long");
+            repairHints.add("Keep FILL correct options short, usually one word or a short phrase.");
+        }
+        if (candidate.effectiveDifficulty() == com.aimong.backend.domain.mission.entity.DifficultyBand.HIGH
+                && isObviousHighBandAnswerSet(candidate, correct)) {
+            hardFails.add("answer.high_band_too_obvious");
+            repairHints.add("HIGH difficulty questions need a less obvious correct option and stronger distractors.");
+        }
+    }
+
+    private void validateExplanationNumberMatchesAnswer(
+            StructuredQuestionSchema candidate,
+            int answerIndex,
+            List<String> hardFails,
+            List<String> repairHints
+    ) {
+        Matcher matcher = EXPLANATION_OPTION_NUMBER.matcher(candidate.explanation());
+        if (matcher.find()) {
+            int mentionedNumber = Integer.parseInt(matcher.group(1));
+            if (mentionedNumber != answerIndex + 1) {
+                hardFails.add("answer.explanation_option_number_mismatch");
+                repairHints.add("Make answer index and explanation option number refer to the same choice.");
+            }
+        }
+    }
+
+    private void validateCorrectOptionDoesNotContradictStem(
+            StructuredQuestionSchema candidate,
+            int answerIndex,
+            List<String> hardFails,
+            List<String> repairHints
+    ) {
+        List<Integer> stemCounts = extractCharCounts(candidate.question());
+        List<Integer> optionCounts = extractCharCounts(candidate.options().get(answerIndex));
+        if (stemCounts.size() == 1 && !optionCounts.isEmpty() && optionCounts.stream().noneMatch(stemCounts.getFirst()::equals)) {
+            hardFails.add("answer.correct_option_contradicts_stem");
+            repairHints.add("Do not mark an option correct if it contradicts a concrete count or length in the stem.");
+        }
+    }
+
+    private List<Integer> extractCharCounts(String value) {
+        List<Integer> counts = new ArrayList<>();
+        Matcher matcher = CHAR_COUNT_PATTERN.matcher(value == null ? "" : value);
+        while (matcher.find()) {
+            counts.add(Integer.parseInt(matcher.group(1)));
+        }
+        return counts;
     }
 
     private void validateAnswerReference(
@@ -183,6 +287,71 @@ public class AnswerQualityValidator {
         }
         return null;
     }
+
+    private double meaningfulOverlapRatio(String left, String right) {
+        Set<String> leftTokens = meaningfulTokens(left);
+        Set<String> rightTokens = meaningfulTokens(right);
+        if (leftTokens.isEmpty() || rightTokens.isEmpty()) {
+            return 0d;
+        }
+        Set<String> intersection = new LinkedHashSet<>(rightTokens);
+        intersection.retainAll(leftTokens);
+        return (double) intersection.size() / rightTokens.size();
+    }
+
+    private Set<String> meaningfulTokens(String value) {
+        Set<String> tokens = new LinkedHashSet<>();
+        for (String token : ValidationTextUtils.normalize(value).split("\\s+")) {
+            String compacted = compact(token);
+            if (compacted.length() < 2 || FILLER_TOKENS.contains(compacted)) {
+                continue;
+            }
+            tokens.add(compacted);
+        }
+        return tokens;
+    }
+
+    private boolean isObviousHighBandAnswerSet(StructuredQuestionSchema candidate, String correct) {
+        String normalizedCorrect = compact(ValidationTextUtils.normalize(correct));
+        boolean correctTooEasy = normalizedCorrect.contains("짧고쉬운말")
+                || normalizedCorrect.contains("구체적으로")
+                || normalizedCorrect.contains("쉽게")
+                || normalizedCorrect.contains("3문장")
+                || normalizedCorrect.contains("한문장");
+        if (!correctTooEasy || candidate.options() == null) {
+            return false;
+        }
+        long obviouslyBadDistractors = candidate.options().stream()
+                .filter(option -> !option.equals(correct))
+                .map(ValidationTextUtils::normalize)
+                .map(this::compact)
+                .filter(option -> option.contains("전문용어")
+                        || option.contains("아무조건")
+                        || option.contains("무작위")
+                        || option.contains("막적어")
+                        || option.contains("길게")
+                        || option.contains("자세히"))
+                .count();
+        return obviouslyBadDistractors >= 2;
+    }
+
+    private boolean isImplausibleDistractor(String option) {
+        String normalized = compact(ValidationTextUtils.normalize(option));
+        return normalized.contains("일부러틀")
+                || normalized.contains("일부러작동")
+                || normalized.contains("전기를아껴")
+                || normalized.contains("사용자의기분")
+                || normalized.contains("기분을읽")
+                || normalized.contains("마음을읽")
+                || normalized.contains("사람처럼일부러")
+                || normalized.contains("알아서마법")
+                || normalized.contains("무조건정답");
+    }
+
+    private static final Set<String> FILLER_TOKENS = Set.of(
+            "것", "수", "때", "더", "잘", "가장", "어떤", "무엇", "해요", "합니다", "주세요",
+            "으로", "로", "에게", "에서", "에는", "은", "는", "이", "가", "을", "를", "과", "와"
+    );
 
     public record AnswerQualityResult(
             int answerClarityScore,

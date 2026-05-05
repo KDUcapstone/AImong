@@ -12,10 +12,12 @@ import com.aimong.backend.domain.mission.repository.QuestionBankRepository;
 import com.aimong.backend.domain.mission.service.generation.GeneratedQuestionPersistenceService;
 import com.aimong.backend.domain.mission.service.generation.ModelRoutingPolicy;
 import com.aimong.backend.domain.mission.service.generation.QuestionGenerationService;
+import com.aimong.backend.domain.mission.service.generation.QuestionGenerationRetryFeedback;
 import com.aimong.backend.domain.mission.service.generation.QuestionValidationService;
 import com.aimong.backend.domain.mission.service.generation.StructuredQuestionSchema;
 import com.aimong.backend.global.exception.AimongException;
 import com.aimong.backend.global.exception.ErrorCode;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.context.annotation.Profile;
@@ -67,25 +69,8 @@ public class DevMissionGenerationService {
                 .map(QuestionBank::getPrompt)
                 .toList();
 
-        QuestionGenerationService.QuestionGenerationRequest generationRequest =
-                new QuestionGenerationService.QuestionGenerationRequest(
-                        mission.getMissionCode(),
-                        packNo,
-                        difficultyBand,
-                        type,
-                        count,
-                        numericDifficulty,
-                        0,
-                        false,
-                        false,
-                        false,
-                        false,
-                        existingPrompts,
-                        List.of(),
-                        List.of()
-                );
         QuestionGenerationService.GenerationBatchResult batchResult =
-                questionGenerationService.generateValidatedCandidates(generationRequest);
+                generateWithRetry(mission.getMissionCode(), packNo, difficultyBand, type, count, numericDifficulty, existingPrompts);
 
         List<QuestionBank> savedQuestions = Boolean.TRUE.equals(request.persist())
                 ? persistenceService.persistCandidates(
@@ -103,6 +88,60 @@ public class DevMissionGenerationService {
                 count,
                 batchResult,
                 savedQuestions
+        );
+    }
+
+    private QuestionGenerationService.GenerationBatchResult generateWithRetry(
+            String missionCode,
+            int packNo,
+            DifficultyBand difficultyBand,
+            QuestionType type,
+            int count,
+            int numericDifficulty,
+            List<String> existingPrompts
+    ) {
+        List<StructuredQuestionSchema> accepted = new ArrayList<>();
+        List<QuestionGenerationService.RejectedCandidate> rejected = new ArrayList<>();
+        QuestionGenerationRetryFeedback feedback = QuestionGenerationRetryFeedback.empty();
+        ModelRoutingPolicy.RoutingDecision routingDecision = null;
+        List<String> knownPrompts = new ArrayList<>(existingPrompts);
+
+        int attemptLimit = Math.max(1, modelRoutingPolicy == null ? 2 : 2);
+        for (int attempt = 0; attempt < attemptLimit && accepted.size() < count; attempt++) {
+            QuestionGenerationService.QuestionGenerationRequest generationRequest =
+                    new QuestionGenerationService.QuestionGenerationRequest(
+                            missionCode,
+                            packNo,
+                            difficultyBand,
+                            type,
+                            count - accepted.size(),
+                            numericDifficulty,
+                            attempt,
+                            feedback.wordingQualityWeak(),
+                            feedback.highDuplicateRisk(),
+                            feedback.optionQualityWeak(),
+                            feedback.explanationQualityWeak(),
+                            List.copyOf(knownPrompts),
+                            List.of(),
+                            feedback.repairHints()
+                    );
+            QuestionGenerationService.GenerationBatchResult attemptResult =
+                    questionGenerationService.generateValidatedCandidates(generationRequest);
+            routingDecision = attemptResult.routingDecision();
+            accepted.addAll(attemptResult.accepted());
+            attemptResult.accepted().stream()
+                    .map(StructuredQuestionSchema::question)
+                    .forEach(knownPrompts::add);
+            if (accepted.size() < count && !attemptResult.rejected().isEmpty()) {
+                rejected.addAll(attemptResult.rejected());
+                feedback = feedback.merge(QuestionGenerationRetryFeedback.fromRejected(attemptResult.rejected()));
+            }
+        }
+
+        return new QuestionGenerationService.GenerationBatchResult(
+                routingDecision,
+                List.copyOf(accepted),
+                List.copyOf(rejected)
         );
     }
 
@@ -159,6 +198,8 @@ public class DevMissionGenerationService {
                 candidate.explanation(),
                 candidate.contentTags(),
                 candidate.curriculumRef(),
+                candidate.effectiveDifficulty(),
+                candidate.difficultyBand(),
                 candidate.difficulty(),
                 questionValidationService.validate(validationRequest).scores()
         );

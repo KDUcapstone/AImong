@@ -34,10 +34,10 @@ public final class QuestionBankSqlExporter {
         for (QuestionDraft question : distinctMissionQuestions(draft)) {
             UUID missionId = missionIds.get(question.missionCode());
             sql.append("    ('").append(missionId).append("', ")
-                    .append(question.stage()).append(", '")
-                    .append(escape(question.missionTitle())).append("', '")
-                    .append(escape(question.missionTitle())).append(" - ")
-                    .append(escape(question.sourceReference())).append("', NULL, TRUE)");
+                    .append(question.stage()).append(", ")
+                    .append(sqlString(question.missionTitle())).append(", ")
+                    .append(sqlString(question.missionTitle() + " - " + question.sourceReference()))
+                    .append(", NULL, TRUE)");
             sql.append(missionIndex++ < missionIds.size() - 1 ? ",\n" : "\n");
         }
         sql.append("ON CONFLICT (id) DO NOTHING;\n\n");
@@ -47,10 +47,10 @@ public final class QuestionBankSqlExporter {
             QuestionDraft question = draft.questions().get(i);
             sql.append("    ('").append(uuid("question:" + question.externalId())).append("', '")
                     .append(missionIds.get(question.missionCode())).append("', '")
-                    .append(QuestionType.valueOf(question.type())).append("', '")
-                    .append(escape(question.question())).append("', ")
-                    .append(question.options() == null ? "NULL" : "'" + escape(toJson(question.options())) + "'")
-                    .append(", '").append(question.sourceType()).append("', TRUE)");
+                    .append(QuestionType.valueOf(question.type())).append("', ")
+                    .append(sqlString(question.question())).append(", ")
+                    .append(question.options() == null ? "NULL" : sqlString(toJson(question.options())))
+                    .append(", ").append(sqlString(question.sourceType())).append(", TRUE)");
             sql.append(i < draft.questions().size() - 1 ? ",\n" : "\n");
         }
         sql.append("ON CONFLICT (id) DO NOTHING;\n\n");
@@ -58,9 +58,9 @@ public final class QuestionBankSqlExporter {
         sql.append("INSERT INTO private.question_answer_keys (question_id, answer_payload, explanation) VALUES\n");
         for (int i = 0; i < draft.questions().size(); i++) {
             QuestionDraft question = draft.questions().get(i);
-            sql.append("    ('").append(uuid("question:" + question.externalId())).append("', '")
-                    .append(escape(toAnswerPayload(question))).append("', '")
-                    .append(escape(question.explanation())).append("')");
+            sql.append("    ('").append(uuid("question:" + question.externalId())).append("', ")
+                    .append(sqlString(toAnswerPayload(question))).append(", ")
+                    .append(sqlString(question.explanation())).append(")");
             sql.append(i < draft.questions().size() - 1 ? ",\n" : "\n");
         }
         sql.append("ON CONFLICT (question_id) DO NOTHING;\n");
@@ -88,10 +88,10 @@ public final class QuestionBankSqlExporter {
                     question.missionTitle()
             );
             sql.append("    ('").append(missionId).append("', ")
-                    .append(question.stage()).append(", '")
-                    .append(escape(question.missionTitle())).append("', '")
-                    .append(escape(question.missionCode())).append("', '")
-                    .append(escape(description)).append("', NULL, TRUE)");
+                    .append(question.stage()).append(", ")
+                    .append(sqlString(question.missionTitle())).append(", ")
+                    .append(sqlString(question.missionCode())).append(", ")
+                    .append(sqlString(description)).append(", NULL, TRUE)");
             sql.append(index < missions.size() - 1 ? ",\n" : "\n");
         }
         sql.append("ON CONFLICT (id) DO UPDATE SET\n")
@@ -116,19 +116,19 @@ public final class QuestionBankSqlExporter {
             AuditQuestion question = bank.questions().get(index);
             sql.append("    ('").append(uuid("question:" + question.externalId())).append("', '")
                     .append(missionIds.get(question.missionCode())).append("', '")
-                    .append(question.type()).append("', '")
-                    .append(escape(question.question())).append("', ")
-                    .append(question.options() == null ? "NULL" : "'" + escape(toJson(question.options())) + "'")
+                    .append(question.type()).append("', ")
+                    .append(sqlString(question.question())).append(", ")
+                    .append(question.options() == null ? "NULL" : sqlString(toJson(question.options())))
                     .append(", ")
-                    .append(question.contentTags() == null ? "NULL" : "'" + escape(toJson(question.contentTags())) + "'")
-                    .append(", '").append(escape(question.curriculumRef())).append("', ")
-                    .append(question.difficultyBand() == null ? "NULL" : "'" + question.difficultyBand().name() + "'")
-                    .append(", '")
-                    .append(escape(defaultString(question.sourceType(), "STATIC"))).append("', '")
-                    .append(defaultGenerationPhase(question)).append("', ")
+                    .append(question.contentTags() == null ? "NULL" : sqlString(toJson(question.contentTags())))
+                    .append(", ").append(sqlString(question.curriculumRef())).append(", ")
+                    .append(question.difficultyBand() == null ? "NULL" : sqlString(question.difficultyBand().name()))
+                    .append(", ")
+                    .append(sqlString(defaultString(question.sourceType(), "STATIC"))).append(", ")
+                    .append(sqlString(defaultGenerationPhase(question))).append(", ")
                     .append(question.packNo() == null ? "NULL" : question.packNo()).append(", ")
-                    .append(question.difficultyBand() == null ? "NULL" : "'" + question.difficultyBand().name() + "'")
-                    .append(", '").append(QuestionPoolStatus.ACTIVE.name()).append("', TRUE)");
+                    .append(question.difficultyBand() == null ? "NULL" : sqlString(question.difficultyBand().name()))
+                    .append(", ").append(sqlString(QuestionPoolStatus.ACTIVE.name())).append(", TRUE)");
             sql.append(index < bank.questions().size() - 1 ? ",\n" : "\n");
         }
         sql.append("ON CONFLICT (id) DO UPDATE SET\n")
@@ -149,9 +149,9 @@ public final class QuestionBankSqlExporter {
         sql.append("INSERT INTO private.question_answer_keys (question_id, answer_payload, explanation) VALUES\n");
         for (int index = 0; index < bank.questions().size(); index++) {
             AuditQuestion question = bank.questions().get(index);
-            sql.append("    ('").append(uuid("question:" + question.externalId())).append("', '")
-                    .append(escape(toAnswerPayload(question))).append("', '")
-                    .append(escape(question.explanation())).append("')");
+            sql.append("    ('").append(uuid("question:" + question.externalId())).append("', ")
+                    .append(sqlString(toAnswerPayload(question))).append(", ")
+                    .append(sqlString(question.explanation())).append(")");
             sql.append(index < bank.questions().size() - 1 ? ",\n" : "\n");
         }
         sql.append("ON CONFLICT (question_id) DO UPDATE SET\n")
@@ -222,8 +222,19 @@ public final class QuestionBankSqlExporter {
             if (index++ > 0) {
                 sql.append(", ");
             }
-            sql.append('\'').append(escape(missionCode)).append('\'');
+            sql.append(sqlString(missionCode));
         }
+    }
+
+    private static String sqlString(String value) {
+        if (value == null) {
+            return "NULL";
+        }
+        String tag = "$aimong$";
+        if (value.contains(tag)) {
+            tag = "$aimong_sql$";
+        }
+        return tag + value + tag;
     }
 
     private static UUID uuid(String seed) {

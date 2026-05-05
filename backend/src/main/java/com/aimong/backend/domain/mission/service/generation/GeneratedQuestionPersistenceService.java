@@ -47,26 +47,27 @@ public class GeneratedQuestionPersistenceService {
             if (!report.pass()) {
                 continue;
             }
+            StructuredQuestionSchema normalizedCandidate = questionValidationService.normalizeCandidate(candidate);
 
             QuestionBank questionBank = QuestionBank.create(
                     missionId,
-                    candidate.type(),
-                    candidate.question(),
-                    writeJson(candidate.options()),
-                    writeJson(candidate.contentTags()),
-                    candidate.curriculumRef(),
-                    candidate.effectiveDifficulty(),
+                    normalizedCandidate.type(),
+                    normalizedCandidate.question(),
+                    writeJson(normalizedCandidate.options()),
+                    writeJson(normalizedCandidate.contentTags()),
+                    normalizedCandidate.curriculumRef(),
+                    normalizedCandidate.effectiveDifficulty(),
                     sourceType,
                     generationPhase,
-                    candidate.packNo() <= 0 ? null : (short) candidate.packNo(),
-                    candidate.difficultyBand(),
+                    normalizedCandidate.packNo() <= 0 ? null : (short) normalizedCandidate.packNo(),
+                    normalizedCandidate.difficultyBand(),
                     QuestionPoolStatus.ACTIVE
             );
             questionBankRepository.save(questionBank);
             questionAnswerKeyRepository.save(QuestionAnswerKey.create(
                     questionBank.getId(),
-                    writeJson(candidate.answer()),
-                    candidate.explanation()
+                    writeJson(normalizedCandidate.answer()),
+                    normalizedCandidate.explanation()
             ));
             saved.add(questionBank);
         }

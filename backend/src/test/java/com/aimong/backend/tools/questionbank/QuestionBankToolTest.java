@@ -40,12 +40,12 @@ class QuestionBankToolTest {
         String sql = Files.readString(output);
         assertThat(sql).contains("INSERT INTO missions (id, stage, title, mission_code, description, unlock_condition, is_active) VALUES");
         assertThat(sql).contains("INSERT INTO question_bank (id, mission_id, question_type, prompt, options, content_tags, curriculum_ref, difficulty, source_type, generation_phase, pack_no, difficulty_band, question_pool_status, is_active) VALUES");
-        assertThat(sql).contains("'PREGENERATED'");
-        assertThat(sql).contains("'ACTIVE'");
-        assertThat(sql).contains("'LOW'");
-        assertThat(sql).contains("'MEDIUM'");
-        assertThat(sql).contains("'HIGH'");
-        assertThat(sql).contains("'생활 속 AI 도구와 AI의 기본 개념을 배워요'");
+        assertThat(sql).contains("$aimong$PREGENERATED$aimong$");
+        assertThat(sql).contains("$aimong$ACTIVE$aimong$");
+        assertThat(sql).contains("$aimong$LOW$aimong$");
+        assertThat(sql).contains("$aimong$MEDIUM$aimong$");
+        assertThat(sql).contains("$aimong$HIGH$aimong$");
+        assertThat(sql).contains("$aimong$");
         assertThat(sql).doesNotContain("'KERIS-1 Ch2.1 pp.27-29; Ch3.1 pp.83-96; D0qG389 STEP 1', NULL, TRUE");
         assertThat(sql).contains("mission_code = EXCLUDED.mission_code");
         assertThat(sql).contains("UPDATE missions SET is_active = FALSE WHERE mission_code IS NULL OR mission_code NOT IN");
