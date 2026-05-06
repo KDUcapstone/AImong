@@ -49,6 +49,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
     private var timer: CountDownTimer? = null
     private var questionTimeLeftMs: Long = 30000L
     private var _isAdded = false
+    private var isRetryingFromResult = false
 
     override fun onViewCreated(view: android.view.View, savedInstanceState: android.os.Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -97,13 +98,31 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             viewModel.startSolutionMode()
         }
         binding.btnResRetry.setOnClickListener {
+            if (isRetryingFromResult) return@setOnClickListener
+            isRetryingFromResult = true
+
+            // 결과 화면에서 재시도 시, Fragment 로컬 상태를 먼저 정리해 크래시/꼬임을 방지한다.
+            timer?.cancel()
+            questionTimeLeftMs = 30000L
+            lives = 3
+            maxPlayedIndex = 0
+
+            binding.layoutFeedbackPanel.visibility = View.GONE
             binding.layoutQuizResult.visibility = View.GONE
+            unlockOptionsForNewQuestion()
+            resetOxButtons()
+            resetMultipleFixedOptions()
+
+            binding.btnResRetry.isEnabled = false
+            binding.btnResRetry.alpha = 0.5f
             viewModel.retryQuiz()
         }
         binding.btnResFinish.setOnClickListener {
             findNavController().popBackStack()
         }
         binding.btnNextQuestion.setOnClickListener {
+            // 결과 화면에서 "다시하기"를 누른 직후(두 번째 텀 로딩 중)엔 이전 텀의 피드백/전이와 충돌하지 않게 막는다.
+            if (isRetryingFromResult) return@setOnClickListener
             binding.layoutFeedbackPanel.visibility = View.GONE
             viewModel.nextQuestion()
         }
@@ -196,6 +215,11 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                 // 로딩 표시
             }
             is QuizUiState.QuestionLoaded -> {
+                if (isRetryingFromResult) {
+                    isRetryingFromResult = false
+                    binding.btnResRetry.isEnabled = true
+                    binding.btnResRetry.alpha = 1f
+                }
                 updateQuestion(viewModel.currentQuestionIndex.value)
             }
             is QuizUiState.AnswerChecked -> {
@@ -219,6 +243,11 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                 showResult(state.result)
             }
             is QuizUiState.Error -> {
+                if (isRetryingFromResult) {
+                    isRetryingFromResult = false
+                    binding.btnResRetry.isEnabled = true
+                    binding.btnResRetry.alpha = 1f
+                }
                 if (state.message == "세션이 만료되었습니다.") {
                     showFeedback("만료", state.message)
                 } else if (state.message.contains("문제 세트를 준비하는 데 실패했습니다")) {

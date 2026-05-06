@@ -353,10 +353,17 @@ class QuizViewModel @Inject constructor(
 
     fun retryQuiz() {
         savedStateHandle["strictSingleLifeRetry"] = true
+        // 이전 텀(결과/풀이보기)의 상태가 두 번째 텀에 섞이지 않도록, ViewModel 내부 상태를 강제 초기화한다.
+        timerJob?.cancel()
+        _timeLeft.value = 0
+        cachedQuestions = null
+        quizResult = null
+        solutionAnswerSnapshot = emptyMap()
+        _isSolutionMode.value = false
+
         userAnswers.clear()
         savedStateHandle["userAnswers"] = userAnswers
         savedStateHandle["currentIndex"] = 0
-        _isSolutionMode.value = false
         fetchQuestions()
     }
 
