@@ -68,6 +68,7 @@ object ApiErrorMapper {
             "INTERNAL_ERROR" -> "서버 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요."
             "GATEWAY_TIMEOUT" -> "AI 친구가 생각 중이에요. 다시 시도해볼까요?"
             "BAD_REQUEST" -> null
+            "CONFLICT" -> "이미 보유한 펫이에요."
             else -> null
         }
         return base ?: "문제를 불러오지 못했습니다."

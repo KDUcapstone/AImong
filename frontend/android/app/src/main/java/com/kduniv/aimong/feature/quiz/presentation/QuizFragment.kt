@@ -1103,7 +1103,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
     private fun getCurrentQuestion(): Question? {
         val state = viewModel.uiState.value
         return if (state is QuizUiState.QuestionLoaded) {
-            state.quizQuestions.questions[viewModel.currentQuestionIndex.value]
+            state.quizQuestions.questions.getOrNull(viewModel.currentQuestionIndex.value)
         } else null
     }
 

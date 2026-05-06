@@ -21,6 +21,10 @@
     <string name="home_streak_load_failed">스트릭 캘린더를 불러오지 못했습니다.</string>
     <string name="home_streak_praise_short">대단해요! %1$d일 연속 성장 중!</string>
     <string name="home_streak_calendar_no_completion_data">이번 달 완료 날짜는 표시할 수 없어요. 잠시 후 다시 열어 보세요.</string>
+    <string name="home_streak_status_summary_fmt">연속 %1$d일 · 오늘 %2$d회 · 쉴드 %3$d</string>
+    <string name="home_streak_partner_fmt">파트너 %1$s · 오늘 완료: %2$s</string>
+    <string name="home_yes">예</string>
+    <string name="home_no">아니오</string>
     <string name="home_message_until_loaded">학습 탭에서 미션을 확인해 보세요.</string>
     <string name="home_pet_name_default">펫</string>
     <string name="home_gacha_ticket_title">가챠 티켓 %1$d장 보유!</string>
@@ -140,4 +144,36 @@
     <string name="home_mission_tooltip_review">복습하기</string>
     <string name="quest_retry">다시 시도</string>
     <string name="quest_load_failed">퀘스트를 불러오지 못했습니다.</string>
+
+    <!-- Pet / Gacha (CHILD) -->
+    <string name="pet_equip_required_for_xp">펫을 장착해야 XP를 얻을 수 있어요!</string>
+    <string name="gacha_screen_title">펫 · 가챠</string>
+    <string name="gacha_ticket_label">티켓 종류</string>
+    <string name="gacha_ticket_normal">일반</string>
+    <string name="gacha_ticket_rare">레어</string>
+    <string name="gacha_ticket_epic">에픽</string>
+    <string name="gacha_pull">뽑기</string>
+    <string name="gacha_refresh">새로고침</string>
+    <string name="gacha_tickets_unknown">티켓 수는 뽑기 후 표시돼요.</string>
+    <string name="gacha_tickets_fmt">티켓 · 일반 %1$d · 레어 %2$d · 에픽 %3$d</string>
+    <string name="gacha_fragments_title">조각</string>
+    <string name="gacha_exchange_title">조각 교환 (신규 펫)</string>
+    <string name="gacha_exchange_grade_hint">등급 (NORMAL/RARE/EPIC/LEGEND)</string>
+    <string name="gacha_exchange_pet_type_hint">petType (예: pet_normal_005)</string>
+    <string name="gacha_exchange_button">교환하기</string>
+    <string name="gacha_exchange_done">교환으로 새 펫을 받았어요.</string>
+    <string name="gacha_owned_pets">보유 펫</string>
+    <string name="gacha_equip">장착</string>
+    <string name="gacha_equipped_label">장착됨</string>
+    <string name="gacha_equipped_fmt">장착: %1$s · %2$s · %3$s · XP %4$d</string>
+    <string name="gacha_probabilities">뽑기 확률</string>
+    <string name="gacha_probabilities_title">뽑기 확률</string>
+    <string name="gacha_probabilities_body" formatted="false">[Lv.1] (0~19)\nNORMAL 75% · RARE 21% · EPIC 3.5% · LEGEND 0.5%\n\n[Lv.2] (20~49)\nNORMAL 66% · RARE 24% · EPIC 7.5% · LEGEND 2.5%\n\n[Lv.3] (50~99)\nNORMAL 56% · RARE 27% · EPIC 13% · LEGEND 4%\n\n[Lv.4] (100+)\nNORMAL 44% · RARE 29% · EPIC 22% · LEGEND 5%\n\nSR 보너스(v1.9)\n- srBonusRaw = srMissCount >= 10 ? (srMissCount - 9) * 0.01 : 0.0\n- 응답 srBonus는 실제 적용치(appliedSrBonus)\n- NORMAL 티켓이 아닌 경우 srBonus는 0.0</string>
+    <string name="gacha_equip_done">장착했어요.</string>
+    <string name="gacha_level_up">가챠 레벨 업! 티켓이 추가됐어요.</string>
+    <string name="gacha_pull_summary_fmt">%1$s (%2$s) · %3$s\n신규: %4$s · 조각 +%5$d\nSR 미스: %6$d · 적용 보너스: %7$.4f\n레벨업: %8$s\n%9$s</string>
+    <string name="gacha_new_yes">예</string>
+    <string name="gacha_new_no">아니오</string>
+    <string name="gacha_level_up_yes">예</string>
+    <string name="gacha_level_up_no">아니오</string>
 </resources>

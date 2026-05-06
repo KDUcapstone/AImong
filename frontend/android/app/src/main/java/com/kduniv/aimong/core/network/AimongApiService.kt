@@ -22,10 +22,20 @@ import com.kduniv.aimong.core.network.model.ParentChildrenResponseData
 import com.kduniv.aimong.core.network.model.ParentFcmTokenRequest
 import com.kduniv.aimong.core.network.model.ParentFcmTokenResponse
 import com.kduniv.aimong.core.network.model.RegenerateCodeResponse
+import com.kduniv.aimong.feature.gacha.data.model.GachaExchangeData
+import com.kduniv.aimong.feature.gacha.data.model.GachaExchangeRequest
+import com.kduniv.aimong.feature.gacha.data.model.GachaFragmentsData
+import com.kduniv.aimong.feature.gacha.data.model.GachaPullData
+import com.kduniv.aimong.feature.gacha.data.model.GachaPullRequest
+import com.kduniv.aimong.feature.pet.data.model.PetEquipData
+import com.kduniv.aimong.feature.pet.data.model.PetEquipRequest
+import com.kduniv.aimong.feature.pet.data.model.PetListData
+import com.kduniv.aimong.feature.streak.data.model.StreakStatusData
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Path
 import retrofit2.http.Query
 
@@ -122,6 +132,33 @@ interface AimongApiService {
     suspend fun sendChatMessage(
         @Body request: ChatMessageRequest
     ): ApiResponse<ChatMessageResponse>
+
+    // PET (CHILD)
+    @GET("pet")
+    suspend fun getPets(): ApiResponse<PetListData>
+
+    @PUT("pet/equip")
+    suspend fun equipPet(
+        @Body body: PetEquipRequest
+    ): ApiResponse<PetEquipData>
+
+    // GACHA (CHILD)
+    @POST("gacha/pull")
+    suspend fun gachaPull(
+        @Body body: GachaPullRequest
+    ): ApiResponse<GachaPullData>
+
+    @GET("gacha/fragments")
+    suspend fun getGachaFragments(): ApiResponse<GachaFragmentsData>
+
+    @POST("gacha/exchange")
+    suspend fun gachaExchange(
+        @Body body: GachaExchangeRequest
+    ): ApiResponse<GachaExchangeData>
+
+    // STREAK (CHILD)
+    @GET("streak")
+    suspend fun getStreak(): ApiResponse<StreakStatusData>
 }
 
 data class ChatMessageRequest(
