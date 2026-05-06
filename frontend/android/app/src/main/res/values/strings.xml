@@ -20,6 +20,7 @@
     <string name="home_streak_today_kst_fmt">오늘(KST): %1$s</string>
     <string name="home_streak_load_failed">스트릭 캘린더를 불러오지 못했습니다.</string>
     <string name="home_streak_praise_short">대단해요! %1$d일 연속 성장 중!</string>
+    <string name="home_streak_calendar_no_completion_data">이번 달 완료 날짜는 표시할 수 없어요. 잠시 후 다시 열어 보세요.</string>
     <string name="home_message_until_loaded">학습 탭에서 미션을 확인해 보세요.</string>
     <string name="home_pet_name_default">펫</string>
     <string name="home_gacha_ticket_title">가챠 티켓 %1$d장 보유!</string>
@@ -120,4 +121,23 @@
     <string name="quest_reward_ticket_epic">에픽 티켓 %1$d장</string>
     <string name="quest_reward_ticket_generic">티켓 %1$d장</string>
     <string name="quest_reward_generic">보상을 받았어요</string>
+
+    <!-- Bottom nav -->
+    <string name="bottom_nav_home">홈</string>
+    <string name="bottom_nav_learning">학습</string>
+    <string name="bottom_nav_chatbot">챗봇</string>
+    <string name="bottom_nav_gacha">수집</string>
+    <string name="bottom_nav_my">MY</string>
+    <string name="label_ai_practice_chatbot">AI실습(챗봇)</string>
+
+    <!-- Chat (GPT) -->
+    <string name="chat_input_hint">메시지를 입력하세요</string>
+    <string name="chat_send">전송</string>
+    <string name="chat_remaining_calls_fmt">오늘 AI 친구와 %1$d번 더 이야기할 수 있어요</string>
+    <string name="chat_remaining_calls_zero">오늘은 AI 친구와 이야기할 횟수를 다 썼어요. 내일 또 만나요!</string>
+    <string name="chat_remaining_calls_unknown">AI 친구와 대화해 보세요.</string>
+    <string name="chat_char_counter_fmt">%1$d / 200</string>
+    <string name="home_mission_tooltip_review">복습하기</string>
+    <string name="quest_retry">다시 시도</string>
+    <string name="quest_load_failed">퀘스트를 불러오지 못했습니다.</string>
 </resources>

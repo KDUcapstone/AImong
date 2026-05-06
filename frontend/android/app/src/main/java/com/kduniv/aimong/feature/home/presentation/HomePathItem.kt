@@ -4,7 +4,15 @@ package com.kduniv.aimong.feature.home.presentation
 sealed class HomePathItem {
     data class SectionHeader(val stage: Int, val title: String) : HomePathItem()
 
-    data class Completed(val order: Int, val title: String, val icon: String = "⭐") : HomePathItem()
+    data class Completed(
+        val order: Int,
+        val title: String,
+        val missionId: String,
+        val icon: String = "⭐"
+    ) : HomePathItem()
+
+    /** 스테이지(10노드) 블록 사이 가로 구분선 1줄 */
+    object InterStageDivider : HomePathItem()
 
     data class TodayStart(
         val missionId: String,

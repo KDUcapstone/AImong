@@ -72,6 +72,7 @@ class HomeLayoutBinder(
 
         val density = binding.root.context.resources.displayMetrics.density
         val amplitude = 60f * density // 지그재그 진폭 설정
+        val reviewLabel = binding.root.context.getString(R.string.home_mission_tooltip_review)
 
         var nodeIndex = 0
         var sectionForRow: HomePathItem.SectionHeader? = null
@@ -97,20 +98,27 @@ class HomeLayoutBinder(
                 sectionForRow = item as HomePathItem.SectionHeader
                 continue
             }
-            
+
+            if (item === HomePathItem.InterStageDivider) {
+                addInterStageDivider(density)
+                continue
+            }
+
             val translation = (sin(nodeIndex.toDouble() * Math.PI / 2) * amplitude).toFloat()
 
             when (item) {
                 is HomePathItem.SectionHeader -> {
                     // 리스트 렌더링에서 제외
                 }
+                HomePathItem.InterStageDivider -> {
+                    // 루프 상단에서 처리됨
+                }
                 is HomePathItem.Completed -> {
-                    if (nodeIndex > 0) addSubStageDivider(density)
                     val row = ViewHomePathNodeCompletedBinding.inflate(inflater, binding.layoutMissionPath, false)
                     row.btnNode.translationX = translation
                     row.btnNode.text = item.icon
                     row.btnNode.setOnClickListener {
-                        showTooltip(row.btnNode, item.title, "복습", null)
+                        showTooltip(row.btnNode, item.title, reviewLabel, item.missionId)
                     }
                     row.btnNode.setOnScaleTouchListener()
                     row.root.setTag(R.id.home_path_section_tag, sectionForRow)
@@ -118,7 +126,6 @@ class HomeLayoutBinder(
                     nodeIndex++
                 }
                 is HomePathItem.TodayStart -> {
-                    if (nodeIndex > 0) addSubStageDivider(density)
                     val row = ViewHomePathNodeStartBinding.inflate(inflater, binding.layoutMissionPath, false)
                     row.btnNode.translationX = translation
                     row.lottiePet.translationX = translation
@@ -135,11 +142,10 @@ class HomeLayoutBinder(
                     nodeIndex++
                 }
                 is HomePathItem.Review -> {
-                    if (nodeIndex > 0) addSubStageDivider(density)
                     val row = ViewHomePathNodeReviewBinding.inflate(inflater, binding.layoutMissionPath, false)
                     row.btnNode.translationX = translation
                     row.btnNode.setOnClickListener {
-                        showTooltip(row.btnNode, "복습 미션", item.subtitle, item.missionId)
+                        showTooltip(row.btnNode, item.subtitle, reviewLabel, item.missionId)
                     }
                     row.btnNode.setOnScaleTouchListener()
                     row.root.setTag(R.id.home_path_section_tag, sectionForRow)
@@ -147,7 +153,6 @@ class HomeLayoutBinder(
                     nodeIndex++
                 }
                 is HomePathItem.Locked -> {
-                    if (nodeIndex > 0) addSubStageDivider(density)
                     val row = ViewHomePathNodeLockedBinding.inflate(inflater, binding.layoutMissionPath, false)
                     row.btnNode.translationX = translation
                     row.btnNode.setOnClickListener {
@@ -213,18 +218,19 @@ class HomeLayoutBinder(
         binding.layoutSectionBanner.setBackgroundResource(bannerRes)
     }
 
-    private fun addSubStageDivider(density: Float) {
+    private fun addInterStageDivider(density: Float) {
         val v = View(binding.root.context).apply {
             setBackgroundColor(ContextCompat.getColor(context, R.color.home_card_stroke))
         }
         val lp = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
-            (1 * density).toInt().coerceAtLeast(1)
+            (2 * density).toInt().coerceAtLeast(1)
         ).apply {
-            leftMargin = (64 * density).toInt()
-            rightMargin = (64 * density).toInt()
-            topMargin = (2 * density).toInt()
-            bottomMargin = (2 * density).toInt()
+            // 스테이지 경계는 "여기서 끊긴다"가 보이도록 여백을 더 줌
+            leftMargin = (24 * density).toInt()
+            rightMargin = (24 * density).toInt()
+            topMargin = (12 * density).toInt()
+            bottomMargin = (12 * density).toInt()
         }
         binding.layoutMissionPath.addView(v, lp)
     }

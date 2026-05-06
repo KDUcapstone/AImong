@@ -48,8 +48,10 @@ object MockUiSamples {
                 add(HomePathItem.Locked(hint = "이후 오픈"))
                 add(HomePathItem.Locked(hint = "다음 챕터"))
                 add(HomePathItem.SectionHeader(2, "AI 잘 쓰기"))
+                add(HomePathItem.InterStageDivider)
                 repeat(10) { add(HomePathItem.Locked(hint = "준비 중")) }
                 add(HomePathItem.SectionHeader(3, "비판적으로 생각하기"))
+                add(HomePathItem.InterStageDivider)
                 repeat(10) { add(HomePathItem.Locked(hint = "준비 중")) }
             }
         )

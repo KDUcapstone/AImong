@@ -111,13 +111,15 @@ class StreakCalendarBottomSheet : BottomSheetDialogFragment() {
         val tvMessage = root.findViewById<TextView>(R.id.tv_streak_message)
         val ivIcon = root.findViewById<ImageView>(R.id.iv_message_icon)
         val lottiePet = root.findViewById<com.airbnb.lottie.LottieAnimationView>(R.id.lav_streak_pet)
-        
+
+        val calendarNote = getString(R.string.home_streak_calendar_no_completion_data)
+        tvMessage.maxLines = 5
         if (fallbackStreak > 0) {
-            tvMessage.text = getString(R.string.home_streak_praise_short, fallbackStreak)
+            tvMessage.text = getString(R.string.home_streak_praise_short, fallbackStreak) + "\n" + calendarNote
             ivIcon.setImageResource(R.drawable.ic_flame)
             ivIcon.clearColorFilter()
         } else {
-            tvMessage.text = "어제 학습이 잠시 멈췄습니다. 지금 연속 학습 기록을 이어가세요!"
+            tvMessage.text = getString(R.string.home_streak_load_failed) + "\n" + calendarNote
             ivIcon.setImageResource(R.drawable.ic_star_filled)
             ivIcon.setColorFilter(ContextCompat.getColor(requireContext(), R.color.quiz_red))
         }
@@ -128,28 +130,16 @@ class StreakCalendarBottomSheet : BottomSheetDialogFragment() {
         root.findViewById<TextView>(R.id.tv_month_label).text = formatYearMonthLabel(ymStr)
 
         buildWeekdayRow(root)
-        
-        // 목업/에러 시에도 캘린더 마킹이 보이도록 임시 데이터 제공
-        val dummyCompleted = mutableSetOf<LocalDate>()
+
         val ym = YearMonth.parse(ymStr)
-        if (fallbackStreak > 0) {
-            val today = LocalDate.now(ZoneId.of("Asia/Seoul"))
-            if (YearMonth.from(today) == ym) {
-                for (i in 0 until fallbackStreak) {
-                    val d = today.minusDays(i.toLong())
-                    if (YearMonth.from(d) == ym) {
-                        dummyCompleted.add(d)
-                    }
-                }
-            }
-        }
-        
-        buildCalendarCells(root, ym, dummyCompleted, if (fallbackStreak > 0) LocalDate.now(ZoneId.of("Asia/Seoul")) else null)
+        // API 실패 시 완료일을 추정하지 않음 — 빈 그리드 + 상단 스트릭 숫자만 폴백
+        buildCalendarCells(root, ym, emptySet(), null)
         updateNavButtons(root)
     }
 
     private fun bind(result: StreakCalendarResult, fallbackStreak: Int) {
         val root = requireView()
+        root.findViewById<TextView>(R.id.tv_streak_message).maxLines = 2
         val ym = YearMonth.parse(result.yearMonth)
         val completed = result.completedDates.mapNotNull { runCatching { LocalDate.parse(it) }.getOrNull() }.toSet()
         val today = result.today?.let { runCatching { LocalDate.parse(it) }.getOrNull() }

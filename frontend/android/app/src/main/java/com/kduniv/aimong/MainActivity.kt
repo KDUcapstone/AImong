@@ -5,7 +5,9 @@ import android.view.View
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
@@ -16,7 +18,9 @@ import com.kduniv.aimong.core.local.SessionManager
 import com.kduniv.aimong.feature.auth.domain.RegisterChildFcmTokenUseCase
 import com.kduniv.aimong.feature.auth.domain.RegisterParentFcmTokenUseCase
 import com.kduniv.aimong.feature.parent.domain.SyncParentChildrenUseCase
+import com.google.android.material.snackbar.Snackbar
 import com.kduniv.aimong.databinding.ActivityMainBinding
+import com.kduniv.aimong.feature.chat.ChatHintNotifier
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -42,6 +46,9 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var syncParentChildrenUseCase: SyncParentChildrenUseCase
+
+    @Inject
+    lateinit var chatHintNotifier: ChatHintNotifier
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var navController: NavController
@@ -119,6 +126,14 @@ class MainActivity : AppCompatActivity() {
             }
 
             if (userRole == "CHILD") {
+                lifecycleScope.launch {
+                    repeatOnLifecycle(Lifecycle.State.STARTED) {
+                        chatHintNotifier.hints.collect { hint ->
+                            Snackbar.make(binding.root, hint, Snackbar.LENGTH_LONG).show()
+                        }
+                    }
+                }
+
                 binding.bottomNav.visibility = View.VISIBLE
                 binding.bottomNav.setupWithNavController(navController)
                 binding.bottomNav.itemIconTintList = null

@@ -36,6 +36,7 @@ object ApiErrorMapper {
             code == 403 -> userMessageForCode("FORBIDDEN", null)
             code == 404 -> userMessageForCode("NOT_FOUND", null)
             code == 429 -> userMessageForCode("TOO_MANY_REQUESTS", null)
+            code == 504 -> userMessageForCode("GATEWAY_TIMEOUT", null)
             code == 409 -> "요청을 처리할 수 없습니다. 문제를 다시 불러오거나 이전 화면으로 돌아가 주세요."
             code in 500..599 ->
                 "서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요."
@@ -65,6 +66,7 @@ object ApiErrorMapper {
             "ATTEMPT_ALREADY_SUBMITTED" -> "이미 제출한 문제 세트예요."
             "QUESTION_NOT_FOUND" -> "문항을 찾을 수 없습니다."
             "INTERNAL_ERROR" -> "서버 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요."
+            "GATEWAY_TIMEOUT" -> "AI 친구가 생각 중이에요. 다시 시도해볼까요?"
             "BAD_REQUEST" -> null
             else -> null
         }

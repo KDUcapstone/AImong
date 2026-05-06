@@ -45,9 +45,11 @@ object HomePathBuilder {
                         )
                     )
                 } else if (m.isCompleted) {
-                    items.add(HomePathItem.Completed(order = index + 1, title = m.title))
+                    items.add(
+                        HomePathItem.Completed(order = index + 1, title = m.title, missionId = m.id)
+                    )
                 } else if (m.isReviewable) {
-                    items.add(HomePathItem.Review(missionId = m.id, subtitle = "복습 미션"))
+                    items.add(HomePathItem.Review(missionId = m.id, subtitle = m.title))
                 } else if (!m.isUnlocked) {
                     items.add(HomePathItem.Locked(hint = "잠김"))
                 } else {
@@ -60,6 +62,10 @@ object HomePathBuilder {
             while (nodeCount < 10) {
                 items.add(HomePathItem.Locked(hint = "준비 중"))
                 nodeCount++
+            }
+
+            if (stage < 3) {
+                items.add(HomePathItem.InterStageDivider)
             }
         }
 

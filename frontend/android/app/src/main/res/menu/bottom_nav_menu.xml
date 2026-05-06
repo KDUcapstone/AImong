@@ -3,21 +3,21 @@
     <item
         android:id="@+id/homeFragment"
         android:icon="@drawable/ic_nav_home_color"
-        android:title="홈" />
+        android:title="@string/bottom_nav_home" />
     <item
         android:id="@+id/learningFragment"
         android:icon="@drawable/ic_nav_study_color"
-        android:title="학습" />
+        android:title="@string/bottom_nav_learning" />
     <item
         android:id="@+id/chatFragment"
         android:icon="@drawable/ic_nav_ai_color"
-        android:title="AI실습" />
+        android:title="@string/bottom_nav_chatbot" />
     <item
         android:id="@+id/gachaFragment"
         android:icon="@drawable/ic_nav_collection_color"
-        android:title="수집" />
+        android:title="@string/bottom_nav_gacha" />
     <item
         android:id="@+id/myProfileFragment"
         android:icon="@drawable/ic_nav_my_color"
-        android:title="MY" />
+        android:title="@string/bottom_nav_my" />
 </menu>

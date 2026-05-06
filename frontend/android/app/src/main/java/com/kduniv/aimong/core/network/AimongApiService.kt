@@ -126,11 +126,11 @@ interface AimongApiService {
 
 data class ChatMessageRequest(
     val message: String,
-    val timestamp: Long = System.currentTimeMillis()
+    val masked: Boolean
 )
 
 data class ChatMessageResponse(
     val reply: String,
-    val conversationId: String,
-    val xpEarned: Int? = 0
+    val remainingCalls: Int,
+    val hintSuggestion: String? = null
 )
