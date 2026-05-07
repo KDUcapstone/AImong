@@ -47,12 +47,7 @@
         android:id="@+id/quizFragment"
         android:name="com.kduniv.aimong.feature.dev.mock.DummyQuizFragment"
         android:label="Quiz"
-        tools:layout="@layout/fragment_quiz">
-        <argument
-            android:name="missionId"
-            android:defaultValue="stub-mission"
-            app:argType="string" />
-    </fragment>
+        tools:layout="@layout/fragment_quiz" />
 
     <fragment
         android:id="@+id/gachaFragment"

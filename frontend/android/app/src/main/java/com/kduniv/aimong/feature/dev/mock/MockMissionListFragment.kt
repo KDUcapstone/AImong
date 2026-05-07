@@ -22,9 +22,9 @@ class MockMissionListFragment : BaseFragment<FragmentMissionListBinding>(Fragmen
         binding.layoutEmptyState.visibility = View.GONE
         binding.rvMissions.visibility = View.VISIBLE
 
-        missionAdapter = MissionListAdapter { mission ->
+        missionAdapter = MissionListAdapter {
             findNavController().navigate(
-                MockMissionListFragmentDirections.actionLearningFragmentToQuizFragment(mission.id)
+                MockMissionListFragmentDirections.actionLearningFragmentToQuizFragment()
             )
         }
         binding.rvMissions.apply {
