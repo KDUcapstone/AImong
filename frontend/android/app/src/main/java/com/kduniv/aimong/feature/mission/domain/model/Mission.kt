@@ -1,8 +1,14 @@
 package com.kduniv.aimong.feature.mission.domain.model
 
 data class Mission(
-    val id: String,
+    /** 학습 세트 ID (예: S0101-L1) */
+    val setId: String,
+    /** 퀴즈 API에서 사용하는 mission UUID */
+    val missionId: String,
+    val missionCode: String,
+    val levelNo: Int,
     val stage: Int,
+    val difficulty: String,
     val title: String,
     val description: String,
     val isUnlocked: Boolean,
@@ -12,7 +18,7 @@ data class Mission(
 )
 
 data class MissionProgress(
-    val stage1Completed: Int,
-    val stage2Completed: Int,
-    val stage3Completed: Int
+    val completedSetCount: Int,
+    val totalSetCount: Int,
+    val currentLevelNo: Int
 )

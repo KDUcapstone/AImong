@@ -57,6 +57,10 @@ class QuestListBottomSheet : BottomSheetDialogFragment() {
         val canStart = arguments?.getBoolean(ARG_CAN_START_MISSION) ?: true
         viewModel.setCanStartMission(canStart)
 
+        binding.btnCheckAchievements.setOnClickListener {
+            viewModel.onCheckAchievements()
+        }
+
         adapter = QuestListAdapter { row -> onQuestRowClicked(row) }
         binding.rvQuests.layoutManager = LinearLayoutManager(requireContext())
         binding.rvQuests.adapter = adapter

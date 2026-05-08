@@ -24,7 +24,7 @@ class MockMissionListFragment : BaseFragment<FragmentMissionListBinding>(Fragmen
 
         missionAdapter = MissionListAdapter { mission ->
             findNavController().navigate(
-                MockMissionListFragmentDirections.actionLearningFragmentToQuizFragment(mission.id)
+                MockMissionListFragmentDirections.actionLearningFragmentToQuizFragment(mission.missionId)
             )
         }
         binding.rvMissions.apply {
@@ -32,9 +32,7 @@ class MockMissionListFragment : BaseFragment<FragmentMissionListBinding>(Fragmen
             layoutManager = LinearLayoutManager(requireContext())
         }
         
-        val sortedMockData = mockMissions().sortedBy { m ->
-            m.id.filter { it.isDigit() }.toIntOrNull() ?: Int.MAX_VALUE
-        }
+        val sortedMockData = mockMissions()
         missionAdapter.submitList(sortedMockData)
 
         binding.btnRetryMissions.setOnClickListener {
@@ -48,8 +46,12 @@ class MockMissionListFragment : BaseFragment<FragmentMissionListBinding>(Fragmen
 
     private fun mockMissions(): List<Mission> = listOf(
         Mission(
-            id = "mock-mission-1",
+            setId = "S0101-L1",
+            missionId = "mock-mission-1",
+            missionCode = "S0101",
+            levelNo = 1,
             stage = 1,
+            difficulty = "LOW",
             title = "입문: AI 친구 만나기",
             description = "목업 미션입니다. 실제 연동 시 서버 문구가 표시됩니다.",
             isUnlocked = true,
@@ -58,8 +60,12 @@ class MockMissionListFragment : BaseFragment<FragmentMissionListBinding>(Fragmen
             isReviewable = false
         ),
         Mission(
-            id = "mock-mission-2",
+            setId = "S0102-L1",
+            missionId = "mock-mission-2",
+            missionCode = "S0102",
+            levelNo = 1,
             stage = 1,
+            difficulty = "LOW",
             title = "탐험: 단어 맞추기",
             description = "복습 가능한 목업 카드 예시입니다.",
             isUnlocked = true,
@@ -68,8 +74,12 @@ class MockMissionListFragment : BaseFragment<FragmentMissionListBinding>(Fragmen
             isReviewable = true
         ),
         Mission(
-            id = "mock-mission-3",
+            setId = "S0201-L2",
+            missionId = "mock-mission-3",
+            missionCode = "S0201",
+            levelNo = 2,
             stage = 2,
+            difficulty = "MEDIUM",
             title = "도전: 문장 완성",
             description = "잠금 해제된 2단계 목업입니다.",
             isUnlocked = true,
@@ -78,8 +88,12 @@ class MockMissionListFragment : BaseFragment<FragmentMissionListBinding>(Fragmen
             isReviewable = false
         ),
         Mission(
-            id = "mock-mission-locked",
+            setId = "S0301-L4",
+            missionId = "mock-mission-locked",
+            missionCode = "S0301",
+            levelNo = 4,
             stage = 3,
+            difficulty = "HIGH",
             title = "잠금: 고급 미션",
             description = "아직 열리지 않은 목업입니다.",
             isUnlocked = false,

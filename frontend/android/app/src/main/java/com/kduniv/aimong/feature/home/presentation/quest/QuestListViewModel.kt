@@ -134,4 +134,22 @@ class QuestListViewModel @Inject constructor(
             )
         }
     }
+
+    fun onCheckAchievements() {
+        viewModelScope.launch {
+            _loading.value = true
+            questRepository.getAchievements().fold(
+                onSuccess = { data ->
+                    val completed = data.achievements.count { it.isCompleted }
+                    val total = data.achievements.size
+                    _effects.trySend(QuestSheetEffect.Snackbar("업적 $completed / $total"))
+                    _loading.value = false
+                },
+                onFailure = { e ->
+                    _loading.value = false
+                    _effects.trySend(QuestSheetEffect.Snackbar(e.message ?: "업적 조회에 실패했습니다."))
+                }
+            )
+        }
+    }
 }

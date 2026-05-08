@@ -1,8 +1,10 @@
 package com.kduniv.aimong.feature.mission.data
 
-import com.kduniv.aimong.core.local.dao.MissionDao
 import com.kduniv.aimong.core.local.entity.MissionEntity
+import com.kduniv.aimong.core.local.dao.MissionSetDao
+import com.kduniv.aimong.core.local.entity.MissionSetEntity
 import com.kduniv.aimong.core.network.AimongApiService
+import com.kduniv.aimong.feature.mission.data.model.MissionSetDto
 import com.kduniv.aimong.feature.mission.domain.model.Mission
 import com.kduniv.aimong.feature.mission.domain.model.MissionProgress
 import com.kduniv.aimong.feature.mission.domain.model.Question
@@ -14,11 +16,11 @@ import javax.inject.Inject
 
 class MissionRepositoryImpl @Inject constructor(
     private val apiService: AimongApiService,
-    private val missionDao: MissionDao
+    private val missionSetDao: MissionSetDao
 ) : MissionRepository {
 
     override fun getMissionsFlow(): Flow<List<Mission>> {
-        return missionDao.getMissions().map { entities ->
+        return missionSetDao.getMissionSets().map { entities ->
             entities.map { it.toDomain() }
         }
     }
@@ -27,26 +29,21 @@ class MissionRepositoryImpl @Inject constructor(
         return try {
             val response = apiService.getMissions()
             if (response.success) {
-                val missionEntities = response.data.missions.map {
-                    MissionEntity(
-                        id = it.id,
-                        stage = it.stage,
-                        title = it.title,
-                        description = it.description,
-                        isUnlocked = it.isUnlocked,
-                        isCompleted = it.isCompleted,
-                        completedAt = it.completedAt,
-                        isReviewable = it.isReviewable
+                val sets = response.data.levels
+                    .flatMap { level -> level.stages }
+                    .flatMap { stage -> stage.sets }
+
+                val entities = sets.map { it.toEntity() }
+                missionSetDao.insertMissionSets(entities)
+
+                val p = response.data.progress
+                Result.success(
+                    MissionProgress(
+                        completedSetCount = p?.completedSetCount ?: sets.count { it.isCompleted },
+                        totalSetCount = p?.totalSetCount ?: sets.size,
+                        currentLevelNo = p?.currentLevelNo ?: 1
                     )
-                }
-                missionDao.insertMissions(missionEntities)
-                
-                val progress = MissionProgress(
-                    stage1Completed = response.data.stageProgress.stage1Completed,
-                    stage2Completed = response.data.stageProgress.stage2Completed,
-                    stage3Completed = response.data.stageProgress.stage3Completed
                 )
-                Result.success(progress)
             } else {
                 Result.failure(Exception("미션 데이터를 가져오는데 실패했습니다."))
             }
@@ -65,9 +62,28 @@ class MissionRepositoryImpl @Inject constructor(
         return Result.success(QuizResult(0, 0, false, 0, 0))
     }
 
-    private fun MissionEntity.toDomain() = Mission(
-        id = id,
+    private fun MissionSetEntity.toDomain() = Mission(
+        setId = setId,
+        missionId = missionId,
+        missionCode = missionCode,
+        levelNo = levelNo,
         stage = stage,
+        difficulty = difficulty,
+        title = title,
+        description = description,
+        isUnlocked = isUnlocked,
+        isCompleted = isCompleted,
+        completedAt = completedAt,
+        isReviewable = isReviewable
+    )
+
+    private fun MissionSetDto.toEntity() = MissionSetEntity(
+        setId = setId,
+        missionId = missionId,
+        missionCode = missionCode,
+        levelNo = levelNo,
+        stage = stage,
+        difficulty = difficulty,
         title = title,
         description = description,
         isUnlocked = isUnlocked,

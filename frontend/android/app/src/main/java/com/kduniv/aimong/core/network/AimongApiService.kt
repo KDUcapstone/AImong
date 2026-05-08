@@ -2,7 +2,13 @@ package com.kduniv.aimong.core.network
 
 import com.kduniv.aimong.feature.home.data.model.HomeScreenData
 import com.kduniv.aimong.feature.home.data.model.StreakCalendarData
-import com.kduniv.aimong.feature.mission.data.model.MissionListResponse
+import com.kduniv.aimong.feature.home.data.model.ReturnRewardClaimResponseData
+import com.kduniv.aimong.feature.home.data.model.ReturnRewardCheckResponseData
+import com.kduniv.aimong.feature.mission.data.model.MissionsMapResponseData
+import com.kduniv.aimong.feature.parent.data.model.ParentPrivacyLogResponseData
+import com.kduniv.aimong.feature.parent.data.model.ParentWeakPointsResponseData
+import com.kduniv.aimong.feature.parent.data.model.ParentWeeklyStatsResponseData
+import com.kduniv.aimong.feature.parent.data.model.ParentChildSummaryResponseData
 import com.kduniv.aimong.feature.quiz.data.model.QuestionReportRequest
 import com.kduniv.aimong.feature.quiz.data.model.QuestionReportResponseData
 import com.kduniv.aimong.feature.quiz.data.model.QuizCheckRequest
@@ -15,6 +21,7 @@ import com.kduniv.aimong.feature.quest.data.model.DailyQuestsResponseData
 import com.kduniv.aimong.feature.quest.data.model.QuestClaimRequest
 import com.kduniv.aimong.feature.quest.data.model.QuestClaimResponseData
 import com.kduniv.aimong.feature.quest.data.model.WeeklyQuestsResponseData
+import com.kduniv.aimong.feature.quest.data.model.AchievementsResponseData
 import com.kduniv.aimong.feature.quiz.data.model.QuizSubmitRequest
 import com.kduniv.aimong.feature.quiz.data.model.QuizSubmitResponse
 import com.kduniv.aimong.core.network.model.ChildLoginResponse
@@ -98,9 +105,13 @@ interface AimongApiService {
         @Body body: QuestClaimRequest
     ): ApiResponse<QuestClaimResponseData>
 
+    // ACHIEVEMENTS (CHILD)
+    @GET("achievements")
+    suspend fun getAchievements(): ApiResponse<AchievementsResponseData>
+
     // MISSION
     @GET("missions")
-    suspend fun getMissions(): ApiResponse<MissionListResponse>
+    suspend fun getMissions(): ApiResponse<MissionsMapResponseData>
 
     @GET("missions/{missionId}/questions")
     suspend fun getQuestions(
@@ -126,6 +137,42 @@ interface AimongApiService {
         @Path("questionId") questionId: String,
         @Body request: QuestionReportRequest
     ): ApiResponse<QuestionReportResponseData>
+
+    // RETURN REWARD (CHILD)
+    @GET("return-reward")
+    suspend fun getReturnReward(): ApiResponse<ReturnRewardCheckResponseData>
+
+    @POST("return-reward/claim")
+    suspend fun claimReturnReward(): ApiResponse<ReturnRewardClaimResponseData>
+
+    // PARENT DASHBOARD (PARENT)
+    @GET("parent/child/{childId}/summary")
+    suspend fun getParentChildSummary(
+        @Header("Authorization") authorization: String,
+        @Path("childId") childId: String
+    ): ApiResponse<ParentChildSummaryResponseData>
+
+    @GET("parent/child/{childId}/weekly-stats")
+    suspend fun getParentChildWeeklyStats(
+        @Header("Authorization") authorization: String,
+        @Path("childId") childId: String
+    ): ApiResponse<ParentWeeklyStatsResponseData>
+
+    @GET("parent/child/{childId}/privacy-log")
+    suspend fun getParentChildPrivacyLog(
+        @Header("Authorization") authorization: String,
+        @Path("childId") childId: String,
+        @Query("page") page: Int? = null,
+        @Query("size") size: Int? = null
+    ): ApiResponse<ParentPrivacyLogResponseData>
+
+    @GET("parent/child/{childId}/weak-points")
+    suspend fun getParentChildWeakPoints(
+        @Header("Authorization") authorization: String,
+        @Path("childId") childId: String,
+        @Query("page") page: Int? = null,
+        @Query("size") size: Int? = null
+    ): ApiResponse<ParentWeakPointsResponseData>
 
     // CHAT
     @POST("chat/send")

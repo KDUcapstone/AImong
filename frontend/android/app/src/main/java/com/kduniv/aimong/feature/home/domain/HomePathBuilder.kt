@@ -20,15 +20,18 @@ object HomePathBuilder {
         val canStart = data.missionSummary.canStartMission
         val items = mutableListOf<HomePathItem>()
 
-        val groupedByStage = missions.groupBy { it.stage }.toSortedMap()
+        // 홈 경로는 현재 화면 구조상 "3스테이지 × 10노드"까지만 보여줌.
+        // 세트 기반(96) 전체를 그대로 렌더링하면 홈이 과밀해지므로, 스테이지별 상위 10개만 노출.
+        val groupedByStage = missions
+            .groupBy { it.stage }
+            .toSortedMap()
 
         // 1단계부터 3단계까지 순차적으로 렌더링
         for (stage in 1..3) {
             val stageMissions = groupedByStage[stage] ?: emptyList()
-            // id 내 숫자를 추출하여 오름차순(낮은 난이도 순) 정렬
-            val sortedMissions = stageMissions.sortedBy { m ->
-                m.id.filter { it.isDigit() }.toIntOrNull() ?: Int.MAX_VALUE
-            }
+            val sortedMissions = stageMissions
+                .sortedWith(compareBy<Mission> { it.levelNo }.thenBy { it.setId })
+                .take(10)
             
             val stageTitle = STAGE_TITLES[stage] ?: "단계 $stage"
             items.add(HomePathItem.SectionHeader(stage = stage, title = stageTitle))
@@ -36,7 +39,7 @@ object HomePathBuilder {
             var nodeCount = 0
             
             sortedMissions.forEachIndexed { index, m ->
-                if (rec != null && m.id == rec.id) {
+                if (rec != null && m.missionId == rec.id) {
                     items.add(
                         HomePathItem.TodayStart(
                             missionId = rec.id,
@@ -46,10 +49,10 @@ object HomePathBuilder {
                     )
                 } else if (m.isCompleted) {
                     items.add(
-                        HomePathItem.Completed(order = index + 1, title = m.title, missionId = m.id)
+                        HomePathItem.Completed(order = index + 1, title = m.title, missionId = m.missionId)
                     )
                 } else if (m.isReviewable) {
-                    items.add(HomePathItem.Review(missionId = m.id, subtitle = m.title))
+                    items.add(HomePathItem.Review(missionId = m.missionId, subtitle = m.title))
                 } else if (!m.isUnlocked) {
                     items.add(HomePathItem.Locked(hint = "잠김"))
                 } else {

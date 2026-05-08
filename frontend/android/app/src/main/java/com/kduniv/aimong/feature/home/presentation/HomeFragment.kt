@@ -44,6 +44,9 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
         )
         binding.tvChipTicket.setOnClickListener { openGacha() }
         binding.tvChipStreak.setOnClickListener { openStreakSheet() }
+
+        binding.btnReturnRewardCheck.setOnClickListener { viewModel.onCheckReturnReward() }
+        binding.btnReturnRewardClaim.setOnClickListener { viewModel.onClaimReturnReward() }
     }
 
     private fun openGacha() {

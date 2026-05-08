@@ -7,6 +7,10 @@ import com.kduniv.aimong.core.local.SessionManager
 import com.kduniv.aimong.core.network.AimongApiService
 import com.kduniv.aimong.core.network.ApiErrorMapper
 import com.kduniv.aimong.core.network.model.ParentChildItem
+import com.kduniv.aimong.feature.parent.data.model.ParentChildSummaryResponseData
+import com.kduniv.aimong.feature.parent.data.model.ParentPrivacyLogResponseData
+import com.kduniv.aimong.feature.parent.data.model.ParentWeakPointsResponseData
+import com.kduniv.aimong.feature.parent.data.model.ParentWeeklyStatsResponseData
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -82,4 +86,63 @@ class ParentRepositoryImpl @Inject constructor(
             if (json.isNullOrBlank()) emptyList()
             else runCatching { gson.fromJson<List<ParentChildItem>>(json, childListType) }.getOrElse { emptyList() }
         }
+
+    private suspend fun requireParentIdToken(): String {
+        val user = FirebaseAuth.getInstance().currentUser
+            ?: throw IllegalStateException("Firebase 로그인이 필요합니다.")
+        return user.getIdToken(false).await().token
+            ?: throw IllegalStateException("Firebase 토큰을 가져오지 못했습니다.")
+    }
+
+    override suspend fun getChildSummary(childId: String): Result<ParentChildSummaryResponseData> = try {
+        val idToken = requireParentIdToken()
+        val response = apiService.getParentChildSummary("Bearer $idToken", childId)
+        if (response.success) Result.success(response.data)
+        else Result.failure(Exception(ApiErrorMapper.userMessageForApiError(response.error)))
+    } catch (e: HttpException) {
+        Result.failure(Exception(ApiErrorMapper.userMessageForHttpException(e)))
+    } catch (e: IOException) {
+        Result.failure(Exception("연결을 확인한 뒤 다시 시도해주세요."))
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    override suspend fun getWeeklyStats(childId: String): Result<ParentWeeklyStatsResponseData> = try {
+        val idToken = requireParentIdToken()
+        val response = apiService.getParentChildWeeklyStats("Bearer $idToken", childId)
+        if (response.success) Result.success(response.data)
+        else Result.failure(Exception(ApiErrorMapper.userMessageForApiError(response.error)))
+    } catch (e: HttpException) {
+        Result.failure(Exception(ApiErrorMapper.userMessageForHttpException(e)))
+    } catch (e: IOException) {
+        Result.failure(Exception("연결을 확인한 뒤 다시 시도해주세요."))
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    override suspend fun getPrivacyLog(childId: String, page: Int, size: Int): Result<ParentPrivacyLogResponseData> = try {
+        val idToken = requireParentIdToken()
+        val response = apiService.getParentChildPrivacyLog("Bearer $idToken", childId, page = page, size = size)
+        if (response.success) Result.success(response.data)
+        else Result.failure(Exception(ApiErrorMapper.userMessageForApiError(response.error)))
+    } catch (e: HttpException) {
+        Result.failure(Exception(ApiErrorMapper.userMessageForHttpException(e)))
+    } catch (e: IOException) {
+        Result.failure(Exception("연결을 확인한 뒤 다시 시도해주세요."))
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    override suspend fun getWeakPoints(childId: String, page: Int, size: Int): Result<ParentWeakPointsResponseData> = try {
+        val idToken = requireParentIdToken()
+        val response = apiService.getParentChildWeakPoints("Bearer $idToken", childId, page = page, size = size)
+        if (response.success) Result.success(response.data)
+        else Result.failure(Exception(ApiErrorMapper.userMessageForApiError(response.error)))
+    } catch (e: HttpException) {
+        Result.failure(Exception(ApiErrorMapper.userMessageForHttpException(e)))
+    } catch (e: IOException) {
+        Result.failure(Exception("연결을 확인한 뒤 다시 시도해주세요."))
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
 }

@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.kduniv.aimong.core.local.AimongDatabase
 import com.kduniv.aimong.core.local.dao.MissionDao
+import com.kduniv.aimong.core.local.dao.MissionSetDao
 import com.kduniv.aimong.core.local.dao.OfflineMissionQueueDao
 import com.kduniv.aimong.core.local.dao.QuizDao
 import dagger.Module
@@ -29,6 +30,9 @@ object DatabaseModule {
 
     @Provides
     fun provideMissionDao(database: AimongDatabase): MissionDao = database.missionDao()
+
+    @Provides
+    fun provideMissionSetDao(database: AimongDatabase): MissionSetDao = database.missionSetDao()
 
     @Provides
     fun provideOfflineMissionQueueDao(database: AimongDatabase): OfflineMissionQueueDao = database.offlineMissionQueueDao()

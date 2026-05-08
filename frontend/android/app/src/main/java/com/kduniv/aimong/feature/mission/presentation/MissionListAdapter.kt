@@ -29,7 +29,7 @@ class MissionListAdapter(
 
         fun bind(mission: Mission) {
             binding.tvStage.text = binding.root.context.getString(R.string.quiz_stage_label, mission.stage)
-            binding.tvTitle.text = mission.title
+            binding.tvTitle.text = "Lv.${mission.levelNo} · ${mission.title}"
             binding.tvDescription.text = mission.description
 
             binding.tvReviewBadge.visibility =
@@ -63,7 +63,7 @@ class MissionListAdapter(
 
     class MissionDiffCallback : DiffUtil.ItemCallback<Mission>() {
         override fun areItemsTheSame(oldItem: Mission, newItem: Mission): Boolean =
-            oldItem.id == newItem.id
+            oldItem.setId == newItem.setId
 
         override fun areContentsTheSame(oldItem: Mission, newItem: Mission): Boolean =
             oldItem == newItem

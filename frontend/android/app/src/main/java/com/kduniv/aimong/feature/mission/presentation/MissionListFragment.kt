@@ -32,7 +32,7 @@ class MissionListFragment : BaseFragment<FragmentMissionListBinding>(FragmentMis
 
     private fun initRecyclerView() {
         missionAdapter = MissionListAdapter { mission ->
-            val action = MissionListFragmentDirections.actionLearningFragmentToQuizFragment(mission.id)
+            val action = MissionListFragmentDirections.actionLearningFragmentToQuizFragment(mission.missionId)
             findNavController().navigate(action)
         }
         binding.rvMissions.apply {
