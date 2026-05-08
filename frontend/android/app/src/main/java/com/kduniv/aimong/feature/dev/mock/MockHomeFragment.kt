@@ -22,9 +22,9 @@ class MockHomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::
             layoutInflater = layoutInflater,
             getProfileLabel = { MockUiSamples.profileLabel(it) },
             petNameDefault = getString(R.string.home_pet_name_default),
-            onNavigateQuiz = { missionId ->
+            onNavigateQuiz = {
                 findNavController().navigate(
-                    MockHomeFragmentDirections.actionHomeFragmentToQuizFragment(missionId)
+                    MockHomeFragmentDirections.actionHomeFragmentToQuizFragment()
                 )
             },
             onSelectLearningTab = {
