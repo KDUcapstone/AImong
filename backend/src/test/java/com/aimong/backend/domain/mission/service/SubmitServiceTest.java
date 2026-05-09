@@ -216,9 +216,9 @@ class SubmitServiceTest {
 
         SubmitResponse response = service.submit(fixture.childId(), fixture.missionId(), fixture.request());
 
-        assertThat(response.bonusXp()).isEqualTo(5);
-        assertThat(response.xpEarned()).isEqualTo(25);
-        verify(petGrowthService).applyMissionReward(fixture.childId(), 25);
+        assertThat(response.bonusXp()).isEqualTo(10);
+        assertThat(response.xpEarned()).isEqualTo(30);
+        verify(petGrowthService).applyMissionReward(fixture.childId(), 30);
     }
 
     @Test

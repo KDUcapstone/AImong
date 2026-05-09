@@ -6,10 +6,13 @@ import com.aimong.backend.domain.mission.dto.QuestionResponse;
 import com.aimong.backend.domain.mission.dto.StageProgressResponse;
 import com.aimong.backend.domain.mission.config.MissionQuestionProperties;
 import com.aimong.backend.domain.mission.entity.Mission;
+import com.aimong.backend.domain.mission.entity.MissionSet;
 import com.aimong.backend.domain.mission.entity.QuestionBank;
 import com.aimong.backend.domain.mission.entity.QuizAttempt;
 import com.aimong.backend.domain.mission.repository.MissionDailyProgressRepository;
 import com.aimong.backend.domain.mission.repository.MissionRepository;
+import com.aimong.backend.domain.mission.repository.MissionSetProgressRepository;
+import com.aimong.backend.domain.mission.repository.MissionSetRepository;
 import com.aimong.backend.domain.mission.repository.QuizAttemptRepository;
 import com.aimong.backend.domain.mission.service.question.MissionQuestionSetFactory;
 import com.aimong.backend.domain.mission.service.question.QuestionServingQualityGuard;
@@ -23,15 +26,16 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@RequiredArgsConstructor
 public class QuizService {
 
     private final MissionRepository missionRepository;
+    private final MissionSetRepository missionSetRepository;
+    private final MissionSetProgressRepository missionSetProgressRepository;
     private final QuizAttemptRepository quizAttemptRepository;
     private final MissionDailyProgressRepository missionDailyProgressRepository;
     private final ChildActivityService childActivityService;
@@ -41,25 +45,87 @@ public class QuizService {
     private final MissionQuestionProperties missionQuestionProperties;
     private final ObjectMapper objectMapper;
 
+    @Autowired
+    public QuizService(
+            MissionRepository missionRepository,
+            MissionSetRepository missionSetRepository,
+            MissionSetProgressRepository missionSetProgressRepository,
+            QuizAttemptRepository quizAttemptRepository,
+            MissionDailyProgressRepository missionDailyProgressRepository,
+            ChildActivityService childActivityService,
+            MissionService missionService,
+            MissionQuestionSetFactory missionQuestionSetFactory,
+            QuestionServingQualityGuard questionServingQualityGuard,
+            MissionQuestionProperties missionQuestionProperties,
+            ObjectMapper objectMapper
+    ) {
+        this.missionRepository = missionRepository;
+        this.missionSetRepository = missionSetRepository;
+        this.missionSetProgressRepository = missionSetProgressRepository;
+        this.quizAttemptRepository = quizAttemptRepository;
+        this.missionDailyProgressRepository = missionDailyProgressRepository;
+        this.childActivityService = childActivityService;
+        this.missionService = missionService;
+        this.missionQuestionSetFactory = missionQuestionSetFactory;
+        this.questionServingQualityGuard = questionServingQualityGuard;
+        this.missionQuestionProperties = missionQuestionProperties;
+        this.objectMapper = objectMapper;
+    }
+
+    public QuizService(
+            MissionRepository missionRepository,
+            QuizAttemptRepository quizAttemptRepository,
+            MissionDailyProgressRepository missionDailyProgressRepository,
+            ChildActivityService childActivityService,
+            MissionService missionService,
+            MissionQuestionSetFactory missionQuestionSetFactory,
+            QuestionServingQualityGuard questionServingQualityGuard,
+            MissionQuestionProperties missionQuestionProperties,
+            ObjectMapper objectMapper
+    ) {
+        this.missionRepository = missionRepository;
+        this.missionSetRepository = null;
+        this.missionSetProgressRepository = null;
+        this.quizAttemptRepository = quizAttemptRepository;
+        this.missionDailyProgressRepository = missionDailyProgressRepository;
+        this.childActivityService = childActivityService;
+        this.missionService = missionService;
+        this.missionQuestionSetFactory = missionQuestionSetFactory;
+        this.questionServingQualityGuard = questionServingQualityGuard;
+        this.missionQuestionProperties = missionQuestionProperties;
+        this.objectMapper = objectMapper;
+    }
+
     @Transactional
     public MissionQuestionsResponse getQuestions(UUID childId, UUID missionId) {
         childActivityService.touchLastActiveAt(childId);
         Mission mission = missionRepository.findById(missionId)
                 .filter(Mission::isActive)
                 .orElseThrow(() -> new AimongException(ErrorCode.MISSION_NOT_FOUND));
-
-        StageProgressResponse stageProgress = missionService.getMissions(childId).stageProgress();
-        if (!missionService.isUnlockedForChild(childId, mission, stageProgress)) {
-            throw new AimongException(ErrorCode.MISSION_QUESTIONS_LOCKED);
+        if (missionSetRepository == null || missionSetProgressRepository == null) {
+            return getLegacyQuestions(childId, mission);
         }
+        MissionSet missionSet = missionService.resolvePlayableSet(childId, mission.getId());
+        return getQuestionsForSet(childId, missionSet);
+    }
 
-        boolean isReview = missionDailyProgressRepository.findByChildIdAndMissionIdAndProgressDate(
-                childId,
-                missionId,
-                KstDateUtils.today()
-        ).isPresent();
+    @Transactional
+    public MissionQuestionsResponse getQuestions(UUID childId, String setId) {
+        childActivityService.touchLastActiveAt(childId);
+        MissionSet missionSet = missionSetRepository.findBySetIdAndActiveTrue(setId)
+                .orElseThrow(() -> new AimongException(ErrorCode.MISSION_SET_NOT_FOUND));
+        if (!missionService.isUnlocked(childId, missionSet)) {
+            throw new AimongException(ErrorCode.MISSION_SET_LOCKED);
+        }
+        return getQuestionsForSet(childId, missionSet);
+    }
 
-        List<QuestionBank> selectedQuestions = createServingReadyQuestionSet(mission, childId, isReview);
+    private MissionQuestionsResponse getQuestionsForSet(UUID childId, MissionSet missionSet) {
+        Mission mission = missionRepository.findById(missionSet.getMissionId())
+                .filter(Mission::isActive)
+                .orElseThrow(() -> new AimongException(ErrorCode.MISSION_NOT_FOUND));
+        boolean isReview = missionSetProgressRepository.existsByChildIdAndSetId(childId, missionSet.getSetId());
+        List<QuestionBank> selectedQuestions = createServingReadyQuestionSet(missionSet, mission, childId, isReview);
         if (selectedQuestions.size() != missionQuestionProperties.setSize()) {
             throw new AimongException(ErrorCode.MISSION_SET_NOT_READY);
         }
@@ -69,13 +135,59 @@ public class QuizService {
 
         QuizAttempt quizAttempt = QuizAttempt.create(
                 childId,
-                missionId,
+                missionSet.getMissionId(),
+                missionSet.getSetId(),
+                missionSet.getLevelNo(),
                 writeQuestionIds(selectedQuestionIds),
                 Instant.now().plus(missionQuestionProperties.attemptTtlMinutes(), ChronoUnit.MINUTES),
                 isReview
         );
         quizAttemptRepository.save(quizAttempt);
 
+        return new MissionQuestionsResponse(
+                missionSet.getSetId(),
+                mission.getId(),
+                missionSet.getMissionCode(),
+                missionSet.getLevelNo(),
+                missionSet.getStage(),
+                missionSet.getDifficulty().name(),
+                missionSet.getTitle(),
+                missionSet.getDescription(),
+                isReview,
+                quizAttempt.getId(),
+                missionQuestionProperties.setSize(),
+                quizAttempt.getExpiresAt(),
+                selectedQuestions.stream().map(this::toQuestionResponse).toList()
+        );
+    }
+
+    private MissionQuestionsResponse getLegacyQuestions(UUID childId, Mission mission) {
+        StageProgressResponse stageProgress = missionService.getMissions(childId).stageProgress();
+        if (!missionService.isUnlockedForChild(childId, mission, stageProgress)) {
+            throw new AimongException(ErrorCode.MISSION_QUESTIONS_LOCKED);
+        }
+        boolean isReview = missionDailyProgressRepository.findByChildIdAndMissionIdAndProgressDate(
+                childId,
+                mission.getId(),
+                KstDateUtils.today()
+        ).isPresent();
+        List<QuestionBank> selectedQuestions = missionQuestionSetFactory.create(mission.getId(), childId, isReview);
+        if (missionQuestionProperties.servingAutoQuarantineEnabled()) {
+            QuestionServingQualityGuard.ServingValidationResult validationResult =
+                    questionServingQualityGuard.validateForServing(mission, selectedQuestions);
+            if (validationResult.validQuestions().size() != missionQuestionProperties.setSize()) {
+                throw new AimongException(ErrorCode.MISSION_SET_NOT_READY);
+            }
+            selectedQuestions = validationResult.validQuestions();
+        }
+        QuizAttempt quizAttempt = QuizAttempt.create(
+                childId,
+                mission.getId(),
+                writeQuestionIds(selectedQuestions.stream().map(QuestionBank::getId).toList()),
+                Instant.now().plus(missionQuestionProperties.attemptTtlMinutes(), ChronoUnit.MINUTES),
+                isReview
+        );
+        quizAttemptRepository.save(quizAttempt);
         return new MissionQuestionsResponse(
                 mission.getId(),
                 mission.getTitle(),
@@ -87,13 +199,13 @@ public class QuizService {
         );
     }
 
-    private List<QuestionBank> createServingReadyQuestionSet(Mission mission, UUID childId, boolean isReview) {
+    private List<QuestionBank> createServingReadyQuestionSet(MissionSet missionSet, Mission mission, UUID childId, boolean isReview) {
         if (!missionQuestionProperties.servingAutoQuarantineEnabled()) {
-            return missionQuestionSetFactory.create(mission.getId(), childId, isReview);
+            return missionQuestionSetFactory.create(missionSet.getSetId(), mission.getId(), childId, isReview);
         }
 
         for (int attempt = 0; attempt < 2; attempt++) {
-            List<QuestionBank> selectedQuestions = missionQuestionSetFactory.create(mission.getId(), childId, isReview);
+            List<QuestionBank> selectedQuestions = missionQuestionSetFactory.create(missionSet.getSetId(), mission.getId(), childId, isReview);
             QuestionServingQualityGuard.ServingValidationResult validationResult =
                     questionServingQualityGuard.validateForServing(mission, selectedQuestions);
             if (validationResult.validQuestions().size() == missionQuestionProperties.setSize()) {

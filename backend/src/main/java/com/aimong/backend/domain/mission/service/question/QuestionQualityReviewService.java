@@ -66,6 +66,18 @@ public class QuestionQualityReviewService {
     }
 
     @Transactional
+    public QuestionReportResponse reportQuestion(
+            UUID childId,
+            String setId,
+            UUID questionId,
+            QuestionReportRequest request
+    ) {
+        QuestionBank question = questionBankRepository.findByIdAndSetIdAndIsActiveTrue(questionId, setId)
+                .orElseThrow(() -> new AimongException(ErrorCode.QUESTION_NOT_FOUND));
+        return reportQuestion(childId, question.getMissionId(), questionId, request);
+    }
+
+    @Transactional
     public void recordServingFailure(
             Mission mission,
             QuestionBank question,

@@ -16,22 +16,25 @@ public interface MissionAnswerResultRepository extends JpaRepository<MissionAnsw
             value = """
                     select new com.aimong.backend.domain.parent.dto.ParentWeakPointResponse(
                         m.id,
-                        m.title,
-                        m.stage,
+                        coalesce(ms.title, m.title),
+                        coalesce(ms.stage, m.stage),
                         (sum(case when r.correct = false then 1 else 0 end) * 1.0) / count(r.id),
-                        count(distinct r.attemptId)
+                        count(distinct r.attemptId),
+                        r.setId,
+                        ms.levelNo
                     )
                     from MissionAnswerResult r
                     join Mission m on m.id = r.missionId
+                    left join MissionSet ms on ms.setId = r.setId
                     where r.childId = :childId
                       and r.createdAt >= :since
-                    group by m.id, m.title, m.stage
+                    group by m.id, m.title, m.stage, r.setId, ms.title, ms.stage, ms.levelNo
                     having count(r.id) > 0
                     order by (sum(case when r.correct = false then 1 else 0 end) * 1.0) / count(r.id) desc,
                              count(distinct r.attemptId) desc
                     """,
             countQuery = """
-                    select count(distinct r.missionId)
+                    select count(distinct coalesce(r.setId, cast(r.missionId as string)))
                     from MissionAnswerResult r
                     where r.childId = :childId
                       and r.createdAt >= :since

@@ -20,6 +20,7 @@ public interface QuestionBankRepository extends JpaRepository<QuestionBank, UUID
             SELECT
                 id,
                 mission_id,
+                set_id,
                 question_type,
                 prompt,
                 options,
@@ -45,11 +46,38 @@ public interface QuestionBankRepository extends JpaRepository<QuestionBank, UUID
             @Param("difficulty") String difficulty
     );
 
+    @Query(value = """
+            SELECT
+                id,
+                mission_id,
+                set_id,
+                question_type,
+                prompt,
+                options,
+                content_tags,
+                curriculum_ref,
+                difficulty,
+                legacy_numeric_difficulty,
+                source_type,
+                generation_phase,
+                pack_no,
+                difficulty_band,
+                question_pool_status,
+                created_at,
+                is_active
+            FROM public.question_bank_safe
+            WHERE set_id = :setId
+            ORDER BY created_at ASC, id ASC
+            """, nativeQuery = true)
+    List<QuestionBank> findAllFromSafeViewBySetId(@Param("setId") String setId);
+
     List<QuestionBank> findAllByMissionIdAndIsActiveTrueAndQuestionPoolStatus(UUID missionId, QuestionPoolStatus questionPoolStatus);
 
     List<QuestionBank> findAllByMissionIdAndIsActiveTrueAndPackNoOrderByCreatedAtAsc(UUID missionId, Short packNo);
 
     java.util.Optional<QuestionBank> findByIdAndMissionIdAndIsActiveTrue(UUID id, UUID missionId);
+
+    java.util.Optional<QuestionBank> findByIdAndSetIdAndIsActiveTrue(UUID id, String setId);
 
     List<QuestionBank> findAllByIdIn(Collection<UUID> ids);
 

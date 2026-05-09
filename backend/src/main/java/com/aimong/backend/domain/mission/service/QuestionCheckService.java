@@ -64,6 +64,42 @@ public class QuestionCheckService {
         );
     }
 
+    @Transactional
+    public QuestionCheckResponse check(
+            UUID childId,
+            String setId,
+            UUID questionId,
+            QuestionCheckRequest request
+    ) {
+        childActivityService.touchLastActiveAt(childId);
+        QuizAttempt quizAttempt = quizAttemptRepository.findById(request.quizAttemptId())
+                .orElseThrow(() -> new AimongException(ErrorCode.QUIZ_ATTEMPT_INVALID));
+
+        if (!quizAttempt.getChildId().equals(childId)) {
+            throw new AimongException(ErrorCode.FORBIDDEN);
+        }
+        if (quizAttempt.getSetId() == null || !quizAttempt.getSetId().equals(setId)) {
+            throw new AimongException(ErrorCode.MISSION_SET_MISMATCH);
+        }
+        if (quizAttempt.getSubmittedAt() != null) {
+            throw new AimongException(ErrorCode.QUIZ_ATTEMPT_ALREADY_SUBMITTED);
+        }
+        if (!quizAttempt.getExpiresAt().isAfter(Instant.now())) {
+            throw new AimongException(ErrorCode.ATTEMPT_EXPIRED);
+        }
+        if (!quizService.parseQuestionIds(quizAttempt.getQuestionIdsJson()).contains(questionId)) {
+            throw new AimongException(ErrorCode.QUESTION_NOT_FOUND);
+        }
+
+        QuestionAnswerKey answerKey = questionAnswerKeyRepository.findById(questionId)
+                .orElseThrow(() -> new AimongException(ErrorCode.QUESTION_NOT_FOUND));
+        return new QuestionCheckResponse(
+                questionId,
+                matchesAnswerPayload(answerKey.getAnswerPayload(), request.selected()),
+                answerKey.getExplanation()
+        );
+    }
+
     private boolean matchesAnswerPayload(String answerPayload, String selected) {
         Set<String> expectedValues = parseExpectedAnswerValues(answerPayload);
         String normalizedSelected = normalizeAnswerText(selected);

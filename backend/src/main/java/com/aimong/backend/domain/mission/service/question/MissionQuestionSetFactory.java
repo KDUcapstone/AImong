@@ -8,16 +8,50 @@ import com.aimong.backend.global.exception.ErrorCode;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
-@RequiredArgsConstructor
 public class MissionQuestionSetFactory {
 
     private final ApprovedQuestionProvider approvedQuestionProvider;
     private final MissionQuestionProperties missionQuestionProperties;
     private final RecompositionSelector recompositionSelector;
+    private final com.aimong.backend.domain.mission.repository.QuestionBankRepository questionBankRepository;
+
+    @Autowired
+    public MissionQuestionSetFactory(
+            ApprovedQuestionProvider approvedQuestionProvider,
+            MissionQuestionProperties missionQuestionProperties,
+            RecompositionSelector recompositionSelector,
+            com.aimong.backend.domain.mission.repository.QuestionBankRepository questionBankRepository
+    ) {
+        this.approvedQuestionProvider = approvedQuestionProvider;
+        this.missionQuestionProperties = missionQuestionProperties;
+        this.recompositionSelector = recompositionSelector;
+        this.questionBankRepository = questionBankRepository;
+    }
+
+    public MissionQuestionSetFactory(
+            ApprovedQuestionProvider approvedQuestionProvider,
+            MissionQuestionProperties missionQuestionProperties,
+            RecompositionSelector recompositionSelector
+    ) {
+        this.approvedQuestionProvider = approvedQuestionProvider;
+        this.missionQuestionProperties = missionQuestionProperties;
+        this.recompositionSelector = recompositionSelector;
+        this.questionBankRepository = null;
+    }
+
+    public List<QuestionBank> create(String setId, UUID missionId, UUID childId, boolean isReview) {
+        if (questionBankRepository != null) {
+            List<QuestionBank> questions = questionBankRepository.findAllFromSafeViewBySetId(setId);
+            if (questions.size() == missionQuestionProperties.setSize()) {
+                return List.copyOf(questions);
+            }
+        }
+        throw new AimongException(ErrorCode.MISSION_SET_NOT_READY);
+    }
 
     public List<QuestionBank> create(UUID missionId, UUID childId, boolean isReview) {
         List<QuestionBank> lowPool = approvedQuestionProvider.findActiveQuestionsByMissionIdAndDifficulty(missionId, DifficultyBand.LOW);

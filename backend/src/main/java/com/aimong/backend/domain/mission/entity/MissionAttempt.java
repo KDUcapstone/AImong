@@ -27,6 +27,12 @@ public class MissionAttempt {
     @Column(name = "mission_id", nullable = false)
     private UUID missionId;
 
+    @Column(name = "set_id", length = 32)
+    private String setId;
+
+    @Column(name = "level_no")
+    private Integer levelNo;
+
     @Column(name = "attempt_date", nullable = false)
     private LocalDate attemptDate;
 
@@ -65,10 +71,28 @@ public class MissionAttempt {
             boolean isPassed,
             int xpEarned
     ) {
+        return create(childId, missionId, null, null, attemptDate, attemptNo, score, total, isReview, isPassed, xpEarned);
+    }
+
+    public static MissionAttempt create(
+            UUID childId,
+            UUID missionId,
+            String setId,
+            Integer levelNo,
+            LocalDate attemptDate,
+            int attemptNo,
+            int score,
+            int total,
+            boolean isReview,
+            boolean isPassed,
+            int xpEarned
+    ) {
         MissionAttempt attempt = new MissionAttempt();
         attempt.id = UUID.randomUUID();
         attempt.childId = childId;
         attempt.missionId = missionId;
+        attempt.setId = setId;
+        attempt.levelNo = levelNo;
         attempt.attemptDate = attemptDate;
         attempt.attemptNo = attemptNo;
         attempt.score = score;

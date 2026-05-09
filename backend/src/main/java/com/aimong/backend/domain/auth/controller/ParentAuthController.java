@@ -23,7 +23,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -68,10 +67,9 @@ public class ParentAuthController {
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<ParentRegisterResponse> register(
-            @RequestHeader("Authorization") String authorizationHeader,
             @Valid @RequestBody ParentRegisterRequest request
     ) {
-        return ApiResponse.success(parentAuthService.register(authorizationHeader, request));
+        return ApiResponse.success(parentAuthService.register(currentPrincipalName(), request));
     }
 
     @Operation(
@@ -94,10 +92,9 @@ public class ParentAuthController {
     )
     @PutMapping("/child/{childId}/regenerate-code")
     public ApiResponse<RegenerateCodeResponse> regenerateCode(
-            @RequestHeader("Authorization") String authorizationHeader,
             @PathVariable String childId
     ) {
-        return ApiResponse.success(parentAuthService.regenerateCode(authorizationHeader, childId));
+        return ApiResponse.success(parentAuthService.regenerateCode(currentPrincipalName(), childId));
     }
 
     @Operation(

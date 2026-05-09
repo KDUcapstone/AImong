@@ -26,6 +26,9 @@ public class QuestionBank {
     @Column(name = "mission_id", nullable = false)
     private UUID missionId;
 
+    @Column(name = "set_id", length = 32)
+    private String setId;
+
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(name = "question_type", nullable = false)
@@ -99,6 +102,7 @@ public class QuestionBank {
         QuestionBank questionBank = new QuestionBank();
         questionBank.id = UUID.randomUUID();
         questionBank.missionId = missionId;
+        questionBank.setId = null;
         questionBank.questionType = questionType;
         questionBank.prompt = prompt;
         questionBank.optionsJson = optionsJson;

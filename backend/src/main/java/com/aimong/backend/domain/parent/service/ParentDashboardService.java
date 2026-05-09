@@ -135,7 +135,7 @@ public class ParentDashboardService {
                 safeSize,
                 weakPointPage.getTotalElements(),
                 weakPointPage.hasNext(),
-                "최근 30일",
+                "LAST_30_DAYS",
                 weakPointPage.getContent()
         );
     }

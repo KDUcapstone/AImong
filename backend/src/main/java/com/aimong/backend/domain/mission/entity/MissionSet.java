@@ -1,0 +1,54 @@
+package com.aimong.backend.domain.mission.entity;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import java.util.UUID;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
+@Getter
+@Entity
+@Table(name = "mission_sets")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class MissionSet {
+
+    @Id
+    @Column(name = "set_id", length = 32)
+    private String setId;
+
+    @Column(name = "mission_id", nullable = false)
+    private UUID missionId;
+
+    @Column(name = "mission_code", nullable = false, length = 16)
+    private String missionCode;
+
+    @Column(name = "level_no", nullable = false)
+    private int levelNo;
+
+    @Column(nullable = false)
+    private short stage;
+
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(nullable = false)
+    private DifficultyBand difficulty;
+
+    @Column(nullable = false)
+    private String title;
+
+    @Column
+    private String description;
+
+    @Column(name = "display_order", nullable = false)
+    private int displayOrder;
+
+    @Column(name = "is_active", nullable = false)
+    private boolean active;
+}

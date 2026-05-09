@@ -28,6 +28,12 @@ public class QuizAttempt {
     @Column(name = "mission_id", nullable = false)
     private UUID missionId;
 
+    @Column(name = "set_id", length = 32)
+    private String setId;
+
+    @Column(name = "level_no")
+    private Integer levelNo;
+
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "question_ids_json", nullable = false, columnDefinition = "jsonb")
     private String questionIdsJson;
@@ -45,10 +51,24 @@ public class QuizAttempt {
     private Instant submittedAt;
 
     public static QuizAttempt create(UUID childId, UUID missionId, String questionIdsJson, Instant expiresAt, boolean isReview) {
+        return create(childId, missionId, null, null, questionIdsJson, expiresAt, isReview);
+    }
+
+    public static QuizAttempt create(
+            UUID childId,
+            UUID missionId,
+            String setId,
+            Integer levelNo,
+            String questionIdsJson,
+            Instant expiresAt,
+            boolean isReview
+    ) {
         QuizAttempt attempt = new QuizAttempt();
         attempt.id = UUID.randomUUID();
         attempt.childId = childId;
         attempt.missionId = missionId;
+        attempt.setId = setId;
+        attempt.levelNo = levelNo;
         attempt.questionIdsJson = questionIdsJson;
         attempt.expiresAt = expiresAt;
         attempt.isReview = isReview;

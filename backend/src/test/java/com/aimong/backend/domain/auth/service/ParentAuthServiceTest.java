@@ -15,9 +15,6 @@ import com.aimong.backend.domain.gacha.repository.TicketRepository;
 import com.aimong.backend.domain.streak.repository.StreakRecordRepository;
 import com.aimong.backend.global.exception.AimongException;
 import com.aimong.backend.global.exception.ErrorCode;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseToken;
-import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,9 +24,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class ParentAuthServiceTest {
-
-    @Mock
-    private FirebaseAuth firebaseAuth;
 
     @Mock
     private ParentAccountRepository parentAccountRepository;
@@ -43,18 +37,11 @@ class ParentAuthServiceTest {
     @Mock
     private StreakRecordRepository streakRecordRepository;
 
-    @Mock
-    private FirebaseToken firebaseToken;
-
     @InjectMocks
     private ParentAuthService parentAuthService;
 
     @Test
-    void registerCreatesChildAndStarterResources() throws Exception {
-        when(firebaseAuth.verifyIdToken("valid-token")).thenReturn(firebaseToken);
-        when(firebaseToken.getUid()).thenReturn("firebase-uid");
-        when(firebaseToken.getEmail()).thenReturn("parent@example.com");
-        when(firebaseToken.getClaims()).thenReturn(Map.of("firebase", Map.of("sign_in_provider", "google.com")));
+    void registerCreatesChildAndStarterResources() {
         when(parentAccountRepository.findWithLockByParentId("firebase-uid")).thenReturn(Optional.empty());
         when(parentAccountRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
         when(childProfileRepository.countByParentAccountParentId("firebase-uid")).thenReturn(0L);
@@ -64,11 +51,11 @@ class ParentAuthServiceTest {
         when(streakRecordRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         ParentRegisterResponse response = parentAuthService.register(
-                "Bearer valid-token",
-                new ParentRegisterRequest("민준")
+                "firebase-uid",
+                new ParentRegisterRequest("test-child")
         );
 
-        assertThat(response.nickname()).isEqualTo("민준");
+        assertThat(response.nickname()).isEqualTo("test-child");
         assertThat(response.code()).matches("\\d{6}");
         assertThat(response.starterTickets()).isEqualTo(3);
         verify(ticketRepository).saveAll(any(Iterable.class));
@@ -76,17 +63,14 @@ class ParentAuthServiceTest {
     }
 
     @Test
-    void registerRejectsWhenParentAlreadyHasThreeChildren() throws Exception {
-        when(firebaseAuth.verifyIdToken("valid-token")).thenReturn(firebaseToken);
-        when(firebaseToken.getUid()).thenReturn("firebase-uid");
-        when(firebaseToken.getClaims()).thenReturn(Map.of("firebase", Map.of("sign_in_provider", "google.com")));
+    void registerRejectsWhenParentAlreadyHasThreeChildren() {
         when(parentAccountRepository.findWithLockByParentId("firebase-uid"))
                 .thenReturn(Optional.of(ParentAccount.create("firebase-uid", "parent@example.com")));
         when(childProfileRepository.countByParentAccountParentId("firebase-uid")).thenReturn(3L);
 
         assertThatThrownBy(() -> parentAuthService.register(
-                "Bearer valid-token",
-                new ParentRegisterRequest("민준")
+                "firebase-uid",
+                new ParentRegisterRequest("test-child")
         ))
                 .isInstanceOf(AimongException.class)
                 .extracting(exception -> ((AimongException) exception).getErrorCode())
@@ -94,14 +78,11 @@ class ParentAuthServiceTest {
     }
 
     @Test
-    void regenerateCodeRejectsInvalidChildIdFormat() throws Exception {
-        when(firebaseAuth.verifyIdToken("valid-token")).thenReturn(firebaseToken);
-        when(firebaseToken.getUid()).thenReturn("firebase-uid");
-        when(firebaseToken.getClaims()).thenReturn(Map.of("firebase", Map.of("sign_in_provider", "google.com")));
+    void regenerateCodeRejectsInvalidChildIdFormat() {
         when(parentAccountRepository.findByParentId("firebase-uid"))
                 .thenReturn(Optional.of(ParentAccount.create("firebase-uid", "parent@example.com")));
 
-        assertThatThrownBy(() -> parentAuthService.regenerateCode("Bearer valid-token", "not-a-uuid"))
+        assertThatThrownBy(() -> parentAuthService.regenerateCode("firebase-uid", "not-a-uuid"))
                 .isInstanceOf(AimongException.class)
                 .extracting(exception -> ((AimongException) exception).getErrorCode())
                 .isEqualTo(ErrorCode.BAD_REQUEST);
