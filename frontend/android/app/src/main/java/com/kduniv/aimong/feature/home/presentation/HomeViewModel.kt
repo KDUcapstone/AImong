@@ -4,9 +4,8 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kduniv.aimong.R
-import com.kduniv.aimong.core.network.AimongApiService
-import com.kduniv.aimong.core.network.ApiErrorMapper
 import com.kduniv.aimong.feature.home.domain.GetHomeStatusUseCase
+import com.kduniv.aimong.feature.home.domain.repository.HomeRepository
 import com.kduniv.aimong.feature.home.domain.HomePathBuilder
 import com.kduniv.aimong.feature.mission.domain.repository.MissionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,15 +16,13 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import retrofit2.HttpException
-import java.io.IOException
 import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val getHomeStatusUseCase: GetHomeStatusUseCase,
     private val missionRepository: MissionRepository,
-    private val apiService: AimongApiService,
+    private val homeRepository: HomeRepository,
     @ApplicationContext private val appContext: Context
 ) : ViewModel() {
 
@@ -65,62 +62,51 @@ class HomeViewModel @Inject constructor(
     fun onCheckReturnReward() {
         viewModelScope.launch {
             _uiState.update { it.copy(subtleNotice = null, errorMessage = null) }
-            runCatching { apiService.getReturnReward() }
-                .onSuccess { response ->
-                    if (response.success) {
-                        val d = response.data
-                        val msg = if (!d.hasReward) {
-                            "복귀 보상 없음"
-                        } else {
-                            val days = d.daysMissed ?: 0
-                            val tickets = d.ticketCount ?: 0
-                            d.message ?: "복귀 보상 있음: ${days}일 결석 · 티켓 $tickets"
-                        }
-                        _uiState.update { it.copy(subtleNotice = msg) }
+            homeRepository.getReturnReward().fold(
+                onSuccess = { d ->
+                    val msg = if (!d.hasReward) {
+                        "복귀 보상 없음"
                     } else {
-                        val code = response.error?.code ?: "UNKNOWN"
-                        val message = response.error?.message ?: "요청을 처리하지 못했습니다."
-                        _uiState.update {
-                            it.copy(errorMessage = "[$code] $message")
-                        }
+                        val days = d.daysMissed ?: 0
+                        val tickets = d.ticketCount ?: 0
+                        d.message ?: "복귀 보상 있음: ${days}일 결석 · 티켓 $tickets"
+                    }
+                    _uiState.update { it.copy(subtleNotice = msg) }
+                },
+                onFailure = { e ->
+                    _uiState.update {
+                        it.copy(errorMessage = e.message ?: "복귀 보상 조회에 실패했습니다.")
                     }
                 }
-                .onFailure { e ->
-                    val msg = when (e) {
-                        is HttpException -> ApiErrorMapper.userMessageForHttpException(e)
-                        is IOException -> "연결을 확인한 뒤 다시 시도해주세요."
-                        else -> e.message ?: "복귀 보상 조회에 실패했습니다."
-                    }
-                    _uiState.update { it.copy(errorMessage = msg) }
-                }
+            )
         }
     }
 
     fun onClaimReturnReward() {
         viewModelScope.launch {
             _uiState.update { it.copy(subtleNotice = null, errorMessage = null) }
-            runCatching { apiService.claimReturnReward() }
-                .onSuccess { response ->
-                    if (response.success) {
-                        val t = response.data.remainingTickets
-                        applyRemainingTickets(t.normal, t.rare, t.epic)
-                        _uiState.update { it.copy(subtleNotice = "복귀 보상 수령 완료") }
-                    } else {
-                        val code = response.error?.code ?: "UNKNOWN"
-                        val message = response.error?.message ?: "요청을 처리하지 못했습니다."
-                        _uiState.update {
-                            it.copy(errorMessage = "[$code] $message")
-                        }
+            homeRepository.claimReturnReward().fold(
+                onSuccess = { data ->
+                    val rem = data.remainingTickets
+                    if (rem != null) {
+                        applyRemainingTickets(rem.normal, rem.rare, rem.epic)
+                    }
+                    val extra = data.ticketEarned?.let { te ->
+                        val cnt = te.count
+                        if (cnt > 0) " (티켓 ${cnt}장)" else null
+                    } ?: data.rewards.takeIf { it.isNotEmpty() }?.joinToString { r ->
+                        "${r.type} ×${r.count}"
+                    }?.let { " ($it)" }
+                    _uiState.update {
+                        it.copy(subtleNotice = "복귀 보상 수령 완료${extra.orEmpty()}")
+                    }
+                },
+                onFailure = { e ->
+                    _uiState.update {
+                        it.copy(errorMessage = e.message ?: "복귀 보상 수령에 실패했습니다.")
                     }
                 }
-                .onFailure { e ->
-                    val msg = when (e) {
-                        is HttpException -> ApiErrorMapper.userMessageForHttpException(e)
-                        is IOException -> "연결을 확인한 뒤 다시 시도해주세요."
-                        else -> e.message ?: "복귀 보상 수령에 실패했습니다."
-                    }
-                    _uiState.update { it.copy(errorMessage = msg) }
-                }
+            )
         }
     }
 

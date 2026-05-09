@@ -11,8 +11,6 @@ import com.kduniv.aimong.feature.parent.data.model.ParentWeeklyStatsResponseData
 import com.kduniv.aimong.feature.parent.data.model.ParentChildSummaryResponseData
 import com.kduniv.aimong.feature.quiz.data.model.QuestionReportRequest
 import com.kduniv.aimong.feature.quiz.data.model.QuestionReportResponseData
-import com.kduniv.aimong.feature.quiz.data.model.QuizCheckRequest
-import com.kduniv.aimong.feature.quiz.data.model.QuizCheckResponseData
 import com.kduniv.aimong.feature.quiz.data.model.QuizQuestionsResponse
 import com.kduniv.aimong.core.network.model.ChildLoginRequest
 import com.kduniv.aimong.core.network.model.ParentRegisterRequest
@@ -28,6 +26,8 @@ import com.kduniv.aimong.core.network.model.ChildLoginResponse
 import com.kduniv.aimong.core.network.model.ParentChildrenResponseData
 import com.kduniv.aimong.core.network.model.ParentFcmTokenRequest
 import com.kduniv.aimong.core.network.model.ParentFcmTokenResponse
+import com.kduniv.aimong.core.network.model.PrivacyEventRequest
+import com.kduniv.aimong.core.network.model.PrivacyEventResponseData
 import com.kduniv.aimong.core.network.model.RegenerateCodeResponse
 import com.kduniv.aimong.feature.gacha.data.model.GachaExchangeData
 import com.kduniv.aimong.feature.gacha.data.model.GachaExchangeRequest
@@ -124,13 +124,6 @@ interface AimongApiService {
         @Body request: QuizSubmitRequest
     ): ApiResponse<QuizSubmitResponse>
 
-    @POST("missions/{missionId}/questions/{questionId}/check")
-    suspend fun checkQuestionAnswer(
-        @Path("missionId") missionId: String,
-        @Path("questionId") questionId: String,
-        @Body body: QuizCheckRequest
-    ): ApiResponse<QuizCheckResponseData>
-
     @POST("missions/{missionId}/questions/{questionId}/report")
     suspend fun reportQuestion(
         @Path("missionId") missionId: String,
@@ -179,6 +172,11 @@ interface AimongApiService {
     suspend fun sendChatMessage(
         @Body request: ChatMessageRequest
     ): ApiResponse<ChatMessageResponse>
+
+    @POST("privacy/event")
+    suspend fun reportPrivacyEvent(
+        @Body body: PrivacyEventRequest
+    ): ApiResponse<PrivacyEventResponseData>
 
     // PET (CHILD)
     @GET("pet")

@@ -39,7 +39,7 @@
 
     <fragment
         android:id="@+id/chatFragment"
-        android:name="com.kduniv.aimong.feature.chat.ChatFragment"
+        android:name="com.kduniv.aimong.feature.chat.presentation.ChatFragment"
         android:label="@string/label_ai_practice_chatbot"
         tools:layout="@layout/fragment_chat" />
 

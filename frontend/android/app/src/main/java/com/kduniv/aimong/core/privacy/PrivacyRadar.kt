@@ -99,6 +99,36 @@ class PrivacyRadar @Inject constructor() {
     suspend fun checkPrivacy(text: String): Boolean =
         scanSensitiveRangesForChat(text).isNotEmpty()
 
+    /**
+     * ML Kit 우선, 없으면 Regex 기반 [detectPrivacyType] — `/privacy/event` 용.
+     */
+    suspend fun detectedPrivacyApiType(text: String): String {
+        try {
+            entityExtractor.downloadModelIfNeeded().await()
+            val annotations = entityExtractor.annotate(text).await()
+            for (annotation in annotations) {
+                val entity = annotation.entities.firstOrNull { e ->
+                    e.type == Entity.TYPE_PHONE ||
+                        e.type == Entity.TYPE_EMAIL ||
+                        e.type == Entity.TYPE_ADDRESS ||
+                        e.type == Entity.TYPE_URL ||
+                        e.type == Entity.TYPE_DATE_TIME
+                } ?: continue
+                val api = when (entity.type) {
+                    Entity.TYPE_PHONE -> "PHONE"
+                    Entity.TYPE_EMAIL -> "EMAIL"
+                    Entity.TYPE_ADDRESS -> "ADDRESS"
+                    Entity.TYPE_URL -> "URL"
+                    Entity.TYPE_DATE_TIME -> "DATE"
+                    else -> null
+                }
+                if (api != null) return api
+            }
+        } catch (_: Exception) {
+        }
+        return detectPrivacyType(text).toApiDetectedType()
+    }
+
     fun detectPrivacyType(text: String): PrivacyType {
         if (Regex("""(초등학교|중학교|고등학교|\w+초|\w+중|\w+고)""").containsMatchIn(text)) return PrivacyType.SCHOOL
         if (Regex("""\d+살|\d+세""").containsMatchIn(text)) return PrivacyType.AGE

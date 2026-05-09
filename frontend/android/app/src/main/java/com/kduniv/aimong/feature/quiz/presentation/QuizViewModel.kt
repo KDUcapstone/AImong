@@ -1,18 +1,20 @@
 package com.kduniv.aimong.feature.quiz.presentation
 
+import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kduniv.aimong.core.dev.UiMode
 import com.kduniv.aimong.feature.quiz.domain.model.Question
-import com.kduniv.aimong.feature.quiz.domain.model.QuestionCheckResult
 import com.kduniv.aimong.feature.quiz.domain.model.QuestionReportResult
 import com.kduniv.aimong.feature.quiz.domain.model.QuestionResult
 import com.kduniv.aimong.feature.quiz.data.QuizSessionRules
 import com.kduniv.aimong.feature.quiz.domain.model.QuizQuestions
 import com.kduniv.aimong.feature.quiz.domain.model.QuizResult
 import com.kduniv.aimong.feature.quiz.domain.repository.QuizRepository
+import com.kduniv.aimong.R
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,7 +28,8 @@ import javax.inject.Inject
 @HiltViewModel
 class QuizViewModel @Inject constructor(
     private val quizRepository: QuizRepository,
-    private val savedStateHandle: SavedStateHandle
+    private val savedStateHandle: SavedStateHandle,
+    @ApplicationContext private val appContext: Context
 ) : ViewModel() {
 
     private val missionId: String = checkNotNull(savedStateHandle["missionId"])
@@ -191,28 +194,13 @@ class QuizViewModel @Inject constructor(
                 return@launch
             }
 
-            _uiState.value = QuizUiState.Loading
-            quizRepository.checkQuestionAnswer(
-                missionId = missionId,
-                questionId = questionId,
-                quizAttemptId = qs.quizAttemptId,
-                selected = answer
+            // 단건 check API 미사용: 정답·해설은 최종 제출 응답에서만 확인
+            _uiState.value = QuizUiState.AnswerChecked(
+                isCorrect = true,
+                explanation = appContext.getString(R.string.quiz_answer_saved_hint),
+                userAnswer = answer,
+                deferImmediateCorrectness = true
             )
-                .onSuccess { check ->
-                    _uiState.value = QuizUiState.AnswerChecked(
-                        isCorrect = check.isCorrect,
-                        explanation = check.explanation,
-                        userAnswer = answer
-                    )
-                }
-                .onFailure {
-                    // 채점 실패 시, Fragment에서 잠금 해제 및 재시도를 할 수 있게
-                    // 에러 상태를 올린 뒤, 즉시 현재 문항을 유지한 상태로 되돌린다.
-                    _uiState.value = QuizUiState.Error(it.message ?: "채점 실패")
-                    cachedQuestions?.let { stable ->
-                        _uiState.value = QuizUiState.QuestionLoaded(stable)
-                    }
-                }
         }
     }
 
@@ -368,80 +356,9 @@ class QuizViewModel @Inject constructor(
     }
 
     /**
-     * strict 재도전: 현재 문항만 v1.9 check로 정오 확인. 마지막 문항까지 정답이면 그때 [submitQuiz].
-     * @return true면 이후 [nextQuestion]을 호출하지 말 것(이미 종료/에러 상태로 전이).
+     * 단건 check API 미사용으로, 문항별 즉시 정오 판정은 불가합니다. (최종 [submitQuiz]로만 확인)
      */
-    suspend fun submitCurrentStepForStrictLife(): Boolean {
-        if (!strictSingleLifeRetry.value || _isSolutionMode.value) return false
-        val qs = cachedQuestions ?: return false
-        val questions = qs.questions
-        val idx = currentQuestionIndex.value
-        val q = questions.getOrNull(idx) ?: return false
-        val answer = userAnswers[q.id] ?: return false
-        if (UiMode.useStubNav) return false
-
-        val res = quizRepository.checkQuestionAnswer(missionId, q.id, qs.quizAttemptId, answer)
-        return when {
-            res.isFailure -> {
-                _uiState.value = QuizUiState.Error(res.exceptionOrNull()?.message ?: "채점 실패")
-                true
-            }
-            else -> {
-                val check = res.getOrNull()!!
-                when {
-                    !check.isCorrect -> {
-                        quizResult = quizResultStrictFailedAfterCheck(qs, idx, check)
-                        _uiState.value = QuizUiState.Finished(quizResult!!)
-                        true
-                    }
-                    idx >= questions.lastIndex -> {
-                        val submitRes =
-                            quizRepository.submitQuiz(missionId, qs.quizAttemptId, userAnswers.toMap())
-                        if (submitRes.isSuccess) {
-                            quizResult = submitRes.getOrNull()!!
-                            _uiState.value = QuizUiState.Finished(quizResult!!)
-                        } else {
-                            _uiState.value = QuizUiState.Error(
-                                submitRes.exceptionOrNull()?.message ?: "제출 실패"
-                            )
-                        }
-                        true
-                    }
-                    else -> false
-                }
-            }
-        }
-    }
-
-    private fun quizResultStrictFailedAfterCheck(
-        qs: QuizQuestions,
-        failedIndex: Int,
-        check: QuestionCheckResult,
-    ): QuizResult {
-        val results = qs.questions.mapIndexed { index, pq ->
-            when {
-                index < failedIndex -> QuestionResult(pq.id, true, "")
-                index == failedIndex -> QuestionResult(pq.id, check.isCorrect, check.explanation)
-                else -> QuestionResult(pq.id, false, "")
-            }
-        }
-        val score = results.count { it.isCorrect }
-        val wrongCount = results.count { !it.isCorrect }
-        return QuizResult(
-            mode = if (_isReviewMode.value) "review" else "normal",
-            progressApplied = false,
-            attemptState = "in_progress",
-            score = score,
-            total = results.size,
-            wrongCount = wrongCount,
-            isPassed = false,
-            isPerfect = false,
-            xpEarned = 0,
-            petEvolved = false,
-            streakDays = 0,
-            results = results,
-        )
-    }
+    suspend fun submitCurrentStepForStrictLife(): Boolean = false
 
     fun syncOffline() {
         viewModelScope.launch {
@@ -466,7 +383,8 @@ sealed class QuizUiState {
     data class AnswerChecked(
         val isCorrect: Boolean,
         val explanation: String,
-        val userAnswer: String
+        val userAnswer: String,
+        val deferImmediateCorrectness: Boolean = false
     ) : QuizUiState()
     data class SolutionLoaded(
         val question: Question,

@@ -1,5 +1,6 @@
 package com.kduniv.aimong.core.fcm
 
+import android.util.Log
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.kduniv.aimong.feature.auth.domain.RegisterChildFcmTokenUseCase
@@ -29,8 +30,16 @@ class AimongFcmService : FirebaseMessagingService() {
     override fun onNewToken(token: String) {
         super.onNewToken(token)
         serviceScope.launch {
-            registerParentFcmTokenUseCase(fcmTokenOverride = token, requireParentSession = true)
-            registerChildFcmTokenUseCase(fcmTokenOverride = token, requireChildSession = true)
+            try {
+                registerParentFcmTokenUseCase(fcmTokenOverride = token, requireParentSession = true)
+                registerChildFcmTokenUseCase(fcmTokenOverride = token, requireChildSession = true)
+            } catch (e: Exception) {
+                Log.e(TAG, "FCM token registration failed", e)
+            }
         }
+    }
+
+    companion object {
+        private const val TAG = "AimongFcm"
     }
 }

@@ -10,8 +10,15 @@ data class ReturnRewardCheckResponseData(
 )
 
 data class ReturnRewardClaimResponseData(
+    /** 명세 v1 기본 형태. v1.1 일부 응답은 [rewards]만 올 수 있음. */
+    @SerializedName("ticketEarned") val ticketEarned: ReturnRewardTicketEarnedDto? = null,
     @SerializedName("rewards") val rewards: List<ReturnRewardItemDto> = emptyList(),
-    @SerializedName("remainingTickets") val remainingTickets: ReturnRewardRemainingTicketsDto
+    @SerializedName("remainingTickets") val remainingTickets: ReturnRewardRemainingTicketsDto? = null
+)
+
+data class ReturnRewardTicketEarnedDto(
+    @SerializedName("type") val type: String? = null,
+    @SerializedName("count") val count: Int = 0
 )
 
 data class ReturnRewardItemDto(

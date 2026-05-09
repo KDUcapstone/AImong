@@ -227,7 +227,13 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                     viewModel.getCurrentCachedQuestion()
                         ?: viewModel.getCachedQuestionAt(viewModel.currentQuestionIndex.value)
                 if (q != null) {
-                    showAnswerFeedback(q, state.isCorrect, state.explanation, state.userAnswer)
+                    showAnswerFeedback(
+                        q,
+                        state.isCorrect,
+                        state.explanation,
+                        state.userAnswer,
+                        state.deferImmediateCorrectness
+                    )
                 } else {
                     // 캐시가 비어있으면 기존 동작(최소한 패널은 띄우지 않고 토스트만)
                     Toast.makeText(requireContext(), "문제 정보를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show()
@@ -323,7 +329,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         lockOptions()
         markCorrectAnswer(state.question, state.userAnswer, state.isCorrect)
         
-        showAnswerFeedback(state.question, state.isCorrect, state.explanation, state.userAnswer)
+        showAnswerFeedback(state.question, state.isCorrect, state.explanation, state.userAnswer, false)
         binding.btnFeedbackRetry.visibility = View.GONE // 풀이 모드에선 다시보기 불필요
         
         val targetSize = if (lives <= 0) maxPlayedIndex else total - 1
@@ -407,7 +413,46 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         }
     }
 
-    private fun showAnswerFeedback(question: Question, isCorrect: Boolean, explanation: String, userAnswer: String) {
+    private fun showAnswerFeedback(
+        question: Question,
+        isCorrect: Boolean,
+        explanation: String,
+        userAnswer: String,
+        deferImmediateCorrectness: Boolean = false
+    ) {
+        if (deferImmediateCorrectness) {
+            binding.layoutFeedbackPanel.visibility = View.VISIBLE
+            binding.tvFeedbackTitle.text = getString(R.string.quiz_feedback_answer_saved_title)
+            binding.tvFeedbackTitle.setTextColor(Color.parseColor("#8A96AD"))
+            binding.layoutFeedbackPanel.setCardBackgroundColor(
+                android.content.res.ColorStateList.valueOf(Color.parseColor("#0D1D41"))
+            )
+            binding.tvFeedbackContent.text = explanation
+
+            val isFailedByLives = lives <= 0
+            val isLast = (viewModel.currentQuestionIndex.value >= (binding.pbQuizProgress.max - 1))
+
+            if (isFailedByLives) {
+                binding.btnNextQuestion.text = getString(R.string.quiz_btn_view_result)
+                binding.btnNextQuestion.setOnClickListener {
+                    binding.layoutFeedbackPanel.visibility = View.GONE
+                    if (viewModel.isReviewMode.value && !viewModel.isSolutionMode.value) {
+                        viewModel.finishReviewImmediatelyOnWrong(explanation)
+                    } else {
+                        viewModel.finishQuizEarly()
+                    }
+                }
+            } else {
+                binding.btnNextQuestion.text =
+                    if (isLast) getString(R.string.quiz_btn_view_result) else getString(R.string.quiz_btn_next)
+                binding.btnNextQuestion.setOnClickListener {
+                    binding.layoutFeedbackPanel.visibility = View.GONE
+                    viewModel.nextQuestion()
+                }
+            }
+            return
+        }
+
         markCorrectAnswer(question, userAnswer, isCorrect)
 
         binding.layoutFeedbackPanel.visibility = View.VISIBLE

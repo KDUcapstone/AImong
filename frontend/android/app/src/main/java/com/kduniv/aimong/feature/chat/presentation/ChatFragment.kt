@@ -1,9 +1,10 @@
-package com.kduniv.aimong.feature.chat
+package com.kduniv.aimong.feature.chat.presentation
 
 import android.text.Editable
 import android.text.Spanned
 import android.text.TextWatcher
 import android.text.style.BackgroundColorSpan
+import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.viewModels
@@ -11,11 +12,13 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.kduniv.aimong.R
 import com.kduniv.aimong.core.ui.BaseFragment
 import com.kduniv.aimong.databinding.FragmentChatBinding
-import com.kduniv.aimong.feature.chat.presentation.ChatViewModel
+import com.kduniv.aimong.feature.chat.ChatForegroundTracker
+import com.kduniv.aimong.feature.chat.ChatMessageAdapter
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -33,6 +36,8 @@ class ChatFragment : BaseFragment<FragmentChatBinding>(FragmentChatBinding::infl
     private val chatAdapter = ChatMessageAdapter()
 
     private var suppressInputCallback = false
+
+    private var privacyDialog: AlertDialog? = null
 
     override fun initView() {
         binding.rvChat.layoutManager = LinearLayoutManager(requireContext()).apply {
@@ -100,15 +105,35 @@ class ChatFragment : BaseFragment<FragmentChatBinding>(FragmentChatBinding::infl
                         viewModel.acknowledgeInputClear()
                     }
 
-                    state.privacyWarningMessage?.let { msg ->
-                        Snackbar.make(binding.root, msg, Snackbar.LENGTH_LONG).show()
-                        viewModel.clearPrivacyWarning()
+                    if (state.privacyPrompt != null && privacyDialog?.isShowing != true) {
+                            var choiceMade = false
+                            privacyDialog = MaterialAlertDialogBuilder(requireContext())
+                                .setTitle(R.string.chat_privacy_dialog_title)
+                                .setMessage(R.string.chat_privacy_dialog_message)
+                                .setNegativeButton(R.string.chat_privacy_action_cancel) { _, _ ->
+                                    choiceMade = true
+                                    viewModel.onPrivacySendCancelled()
+                                }
+                                .setPositiveButton(R.string.chat_privacy_action_mask) { _, _ ->
+                                    choiceMade = true
+                                    viewModel.onPrivacyMaskedSend()
+                                }
+                                .setOnDismissListener {
+                                    if (!choiceMade) {
+                                        viewModel.onPrivacySendCancelled()
+                                    }
+                                    privacyDialog = null
+                                }
+                                .create()
+                            privacyDialog?.show()
                     }
 
-                    if (state.privacyHighlightRanges.isEmpty()) {
+                    val highlightRanges = state.privacyPrompt?.highlightRanges
+                        ?: state.privacyHighlightRanges
+                    if (highlightRanges.isEmpty()) {
                         removePrivacyHighlightsFromInput()
                     } else {
-                        applyPrivacyHighlights(state.privacyHighlightRanges)
+                        applyPrivacyHighlights(highlightRanges)
                     }
                 }
             }

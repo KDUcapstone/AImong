@@ -14,10 +14,14 @@ import com.kduniv.aimong.feature.parent.data.ParentRepository
 import com.kduniv.aimong.feature.parent.data.ParentRepositoryImpl
 import com.kduniv.aimong.feature.quest.data.QuestRepositoryImpl
 import com.kduniv.aimong.feature.quest.domain.repository.QuestRepository
+import com.kduniv.aimong.feature.chat.data.ChatRepositoryImpl
+import com.kduniv.aimong.feature.chat.domain.repository.ChatRepository
 import com.kduniv.aimong.feature.quiz.data.QuizRepositoryImpl
 import com.kduniv.aimong.feature.quiz.domain.repository.QuizRepository
 import com.kduniv.aimong.feature.streak.data.StreakRepository
 import com.kduniv.aimong.feature.streak.data.StreakRepositoryImpl
+import com.kduniv.aimong.core.privacy.PrivacyRepository
+import com.kduniv.aimong.core.privacy.PrivacyRepositoryImpl
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -54,6 +58,12 @@ abstract class RepositoryModule {
 
     @Binds
     @Singleton
+    abstract fun bindChatRepository(
+        chatRepositoryImpl: ChatRepositoryImpl
+    ): ChatRepository
+
+    @Binds
+    @Singleton
     abstract fun bindParentRepository(
         parentRepositoryImpl: ParentRepositoryImpl
     ): ParentRepository
@@ -81,4 +91,10 @@ abstract class RepositoryModule {
     abstract fun bindStreakRepository(
         streakRepositoryImpl: StreakRepositoryImpl
     ): StreakRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindPrivacyRepository(
+        impl: PrivacyRepositoryImpl
+    ): PrivacyRepository
 }

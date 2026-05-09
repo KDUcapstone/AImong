@@ -48,6 +48,8 @@
     <string name="quiz_feedback_wrong">😥 아쉬워요!</string>
     <string name="quiz_feedback_correct_xp">🎉 정답이에요! +15 EXP</string>
     <string name="quiz_feedback_wrong_hint">다시 생각해볼까?</string>
+    <string name="quiz_feedback_answer_saved_title">답변이 저장됐어요</string>
+    <string name="quiz_answer_saved_hint">정답 여부는 모든 문제를 푼 뒤 제출하면 확인할 수 있어요.</string>
     <string name="quiz_btn_next">다음 문제 →</string>
     <string name="quiz_btn_view_result">결과 보기</string>
     <string name="quiz_btn_result_confirm">결과 확인하기</string>
@@ -141,7 +143,11 @@
     <string name="chat_remaining_calls_zero">오늘은 AI 친구와 이야기할 횟수를 다 썼어요. 내일 또 만나요!</string>
     <string name="chat_remaining_calls_unknown">AI 친구와 대화해 보세요.</string>
     <string name="chat_char_counter_fmt">%1$d / 200</string>
-    <string name="chat_privacy_blocked_message">개인정보는 AI 친구에게 말하면 안 돼요. 해당 부분을 지우거나 수정한 뒤 다시 보내 주세요.</string>
+    <string name="chat_privacy_blocked_message">개인정보로 보이는 부분이 있어요. 지우거나, 가리고 보내기를 선택할 수 있어요.</string>
+    <string name="chat_privacy_dialog_title">개인정보 입력 주의</string>
+    <string name="chat_privacy_dialog_message">민감해 보이는 부분은 [***]로 가려서 보낼 수 있어요. 그래도 직접 지우고 다시 쓰는 것이 가장 안전해요.</string>
+    <string name="chat_privacy_action_cancel">취소</string>
+    <string name="chat_privacy_action_mask">가리고 보내기</string>
     <string name="home_mission_tooltip_review">복습하기</string>
     <string name="quest_retry">다시 시도</string>
     <string name="quest_load_failed">퀘스트를 불러오지 못했습니다.</string>
