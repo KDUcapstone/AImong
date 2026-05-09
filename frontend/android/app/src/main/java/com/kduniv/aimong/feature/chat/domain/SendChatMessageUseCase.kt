@@ -16,6 +16,7 @@ class SendChatMessageUseCase @Inject constructor(
     sealed class Result {
         data class Success(val response: ChatMessageResponse) : Result()
         data class Error(val message: String) : Result()
+        data class PrivacyBlocked(val sensitiveRanges: List<IntRange>) : Result()
     }
 
     suspend operator fun invoke(message: String): Result {
@@ -27,11 +28,15 @@ class SendChatMessageUseCase @Inject constructor(
             return Result.Error("메시지는 200자 이하로 입력해주세요.")
         }
 
-        val (sanitized, maskedFlag) = privacyRadar.maskForChatSend(trimmed)
+        // 입력창과 인덱스를 맞추기 위해 trim 전 본문으로 스캔합니다.
+        val sensitiveRanges = privacyRadar.scanSensitiveRangesForChat(message)
+        if (sensitiveRanges.isNotEmpty()) {
+            return Result.PrivacyBlocked(sensitiveRanges)
+        }
 
         return try {
             val response = apiService.sendChatMessage(
-                ChatMessageRequest(message = sanitized, masked = maskedFlag)
+                ChatMessageRequest(message = trimmed, masked = false)
             )
             if (response.success) {
                 Result.Success(response.data)

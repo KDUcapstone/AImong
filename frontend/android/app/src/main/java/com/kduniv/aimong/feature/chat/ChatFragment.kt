@@ -1,7 +1,10 @@
 package com.kduniv.aimong.feature.chat
 
 import android.text.Editable
+import android.text.Spanned
 import android.text.TextWatcher
+import android.text.style.BackgroundColorSpan
+import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -17,6 +20,8 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+private class ChatPrivacyHighlightSpan(color: Int) : BackgroundColorSpan(color)
+
 @AndroidEntryPoint
 class ChatFragment : BaseFragment<FragmentChatBinding>(FragmentChatBinding::inflate) {
 
@@ -26,6 +31,8 @@ class ChatFragment : BaseFragment<FragmentChatBinding>(FragmentChatBinding::infl
     lateinit var chatForegroundTracker: ChatForegroundTracker
 
     private val chatAdapter = ChatMessageAdapter()
+
+    private var suppressInputCallback = false
 
     override fun initView() {
         binding.rvChat.layoutManager = LinearLayoutManager(requireContext()).apply {
@@ -37,6 +44,7 @@ class ChatFragment : BaseFragment<FragmentChatBinding>(FragmentChatBinding::infl
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
             override fun afterTextChanged(s: Editable?) {
+                if (suppressInputCallback) return
                 val len = s?.length ?: 0
                 viewModel.onInputChanged(len)
                 binding.tvCharCounter.isVisible = len >= 150
@@ -48,7 +56,6 @@ class ChatFragment : BaseFragment<FragmentChatBinding>(FragmentChatBinding::infl
 
         binding.btnSend.setOnClickListener {
             viewModel.sendMessage(binding.etMessage.text?.toString().orEmpty())
-            binding.etMessage.text = null
         }
     }
 
@@ -87,8 +94,60 @@ class ChatFragment : BaseFragment<FragmentChatBinding>(FragmentChatBinding::infl
                         Snackbar.make(binding.root, msg, Snackbar.LENGTH_LONG).show()
                         viewModel.clearError()
                     }
+
+                    if (state.pendingInputClear) {
+                        binding.etMessage.text = null
+                        viewModel.acknowledgeInputClear()
+                    }
+
+                    state.privacyWarningMessage?.let { msg ->
+                        Snackbar.make(binding.root, msg, Snackbar.LENGTH_LONG).show()
+                        viewModel.clearPrivacyWarning()
+                    }
+
+                    if (state.privacyHighlightRanges.isEmpty()) {
+                        removePrivacyHighlightsFromInput()
+                    } else {
+                        applyPrivacyHighlights(state.privacyHighlightRanges)
+                    }
                 }
             }
+        }
+    }
+
+    private fun removePrivacyHighlightsFromInput() {
+        val editable = binding.etMessage.text as? Editable ?: return
+        suppressInputCallback = true
+        try {
+            editable.getSpans(0, editable.length, ChatPrivacyHighlightSpan::class.java)
+                .forEach { editable.removeSpan(it) }
+        } finally {
+            suppressInputCallback = false
+        }
+    }
+
+    private fun applyPrivacyHighlights(ranges: List<IntRange>) {
+        val editable = binding.etMessage.text as? Editable ?: return
+        suppressInputCallback = true
+        try {
+            editable.getSpans(0, editable.length, ChatPrivacyHighlightSpan::class.java)
+                .forEach { editable.removeSpan(it) }
+            val color = ContextCompat.getColor(requireContext(), R.color.chat_privacy_highlight)
+            val n = editable.length
+            for (range in ranges) {
+                val start = range.first.coerceIn(0, n)
+                val end = (range.last + 1).coerceIn(start, n)
+                if (start < end) {
+                    editable.setSpan(
+                        ChatPrivacyHighlightSpan(color),
+                        start,
+                        end,
+                        Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                    )
+                }
+            }
+        } finally {
+            suppressInputCallback = false
         }
     }
 }

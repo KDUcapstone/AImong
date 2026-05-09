@@ -25,9 +25,26 @@ class PrivacyRadar @Inject constructor() {
     private val maskPlaceholder = "[***]"
 
     /**
+     * 채팅 입력 검사·UI 하이라이트용: 병합된 민감 구간(문자 인덱스) 목록.
+     */
+    suspend fun scanSensitiveRangesForChat(text: String): List<IntRange> =
+        mergeRanges(collectSensitiveRanges(text))
+
+    /**
      * 채팅 전송용: 개인정보 구간을 마스킹한 문자열과, 치환 여부를 반환합니다.
      */
     suspend fun maskForChatSend(text: String): Pair<String, Boolean> {
+        val merged = mergeRanges(collectSensitiveRanges(text))
+        if (merged.isEmpty()) return text to false
+
+        var result = text
+        for (range in merged.sortedByDescending { it.first }) {
+            result = result.replaceRange(range, maskPlaceholder)
+        }
+        return result to true
+    }
+
+    private suspend fun collectSensitiveRanges(text: String): List<IntRange> {
         val ranges = mutableListOf<IntRange>()
 
         try {
@@ -58,14 +75,7 @@ class PrivacyRadar @Inject constructor() {
             }
         }
 
-        val merged = mergeRanges(ranges)
-        if (merged.isEmpty()) return text to false
-
-        var result = text
-        for (range in merged.sortedByDescending { it.first }) {
-            result = result.replaceRange(range, maskPlaceholder)
-        }
-        return result to true
+        return ranges
     }
 
     private fun mergeRanges(ranges: List<IntRange>): List<IntRange> {
@@ -86,26 +96,8 @@ class PrivacyRadar @Inject constructor() {
         return out
     }
 
-    suspend fun checkPrivacy(text: String): Boolean {
-        try {
-            entityExtractor.downloadModelIfNeeded().await()
-            val entities = entityExtractor.annotate(text).await()
-            if (entities.isNotEmpty()) {
-                val hasSensitiveEntity = entities.any { annotation ->
-                    annotation.entities.any { entity ->
-                        entity.type == Entity.TYPE_PHONE ||
-                            entity.type == Entity.TYPE_EMAIL ||
-                            entity.type == Entity.TYPE_ADDRESS ||
-                            entity.type == Entity.TYPE_URL ||
-                            entity.type == Entity.TYPE_DATE_TIME
-                    }
-                }
-                if (hasSensitiveEntity) return true
-            }
-        } catch (e: Exception) {
-        }
-        return patterns.any { it.containsMatchIn(text) }
-    }
+    suspend fun checkPrivacy(text: String): Boolean =
+        scanSensitiveRangesForChat(text).isNotEmpty()
 
     fun detectPrivacyType(text: String): PrivacyType {
         if (Regex("""(초등학교|중학교|고등학교|\w+초|\w+중|\w+고)""").containsMatchIn(text)) return PrivacyType.SCHOOL
