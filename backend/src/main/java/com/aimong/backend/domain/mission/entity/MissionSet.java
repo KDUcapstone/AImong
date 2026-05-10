@@ -29,8 +29,11 @@ public class MissionSet {
     @Column(name = "mission_code", nullable = false, length = 16)
     private String missionCode;
 
-    @Column(name = "level_no", nullable = false)
-    private int levelNo;
+    @Column(name = "star_level", nullable = false)
+    private int starLevel;
+
+    @Column(name = "variant_no", nullable = false)
+    private int variantNo;
 
     @Column(nullable = false)
     private short stage;
@@ -51,4 +54,13 @@ public class MissionSet {
 
     @Column(name = "is_active", nullable = false)
     private boolean active;
+
+    public String starLabel() {
+        return switch (starLevel) {
+            case 1 -> "쉬움";
+            case 2 -> "보통";
+            case 3 -> "어려움";
+            default -> "알 수 없음";
+        };
+    }
 }

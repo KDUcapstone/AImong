@@ -30,8 +30,8 @@ public class MissionAttempt {
     @Column(name = "set_id", length = 32)
     private String setId;
 
-    @Column(name = "level_no")
-    private Integer levelNo;
+    @Column(name = "star_level", nullable = false)
+    private Integer starLevel;
 
     @Column(name = "attempt_date", nullable = false)
     private LocalDate attemptDate;
@@ -71,14 +71,14 @@ public class MissionAttempt {
             boolean isPassed,
             int xpEarned
     ) {
-        return create(childId, missionId, null, null, attemptDate, attemptNo, score, total, isReview, isPassed, xpEarned);
+        return create(childId, missionId, null, 1, attemptDate, attemptNo, score, total, isReview, isPassed, xpEarned);
     }
 
     public static MissionAttempt create(
             UUID childId,
             UUID missionId,
             String setId,
-            Integer levelNo,
+            Integer starLevel,
             LocalDate attemptDate,
             int attemptNo,
             int score,
@@ -92,7 +92,7 @@ public class MissionAttempt {
         attempt.childId = childId;
         attempt.missionId = missionId;
         attempt.setId = setId;
-        attempt.levelNo = levelNo;
+        attempt.starLevel = starLevel;
         attempt.attemptDate = attemptDate;
         attempt.attemptNo = attemptNo;
         attempt.score = score;

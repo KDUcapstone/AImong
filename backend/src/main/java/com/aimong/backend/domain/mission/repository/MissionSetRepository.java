@@ -8,9 +8,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface MissionSetRepository extends JpaRepository<MissionSet, String> {
 
-    List<MissionSet> findAllByActiveTrueOrderByLevelNoAscStageAscDisplayOrderAscSetIdAsc();
+    List<MissionSet> findAllByActiveTrueOrderByStageAscDisplayOrderAscStarLevelAscVariantNoAscSetIdAsc();
 
-    List<MissionSet> findAllByMissionIdAndActiveTrueOrderByLevelNoAscDisplayOrderAscSetIdAsc(UUID missionId);
+    List<MissionSet> findAllByMissionIdAndActiveTrueOrderByStarLevelAscVariantNoAscSetIdAsc(UUID missionId);
+
+    List<MissionSet> findAllByMissionIdAndStarLevelAndActiveTrueOrderByVariantNoAscSetIdAsc(UUID missionId, int starLevel);
 
     Optional<MissionSet> findBySetIdAndActiveTrue(String setId);
 

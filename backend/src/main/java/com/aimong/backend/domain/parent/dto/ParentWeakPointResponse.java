@@ -9,7 +9,7 @@ public record ParentWeakPointResponse(
         double incorrectRate,
         long attemptCount,
         String setId,
-        Integer levelNo
+        Integer starLevel
 ) {
     public ParentWeakPointResponse(
             UUID missionId,

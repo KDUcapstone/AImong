@@ -2,30 +2,30 @@ package com.aimong.backend.domain.mission.service;
 
 import com.aimong.backend.domain.auth.service.ChildActivityService;
 import com.aimong.backend.domain.mission.dto.MissionListResponse;
-import com.aimong.backend.domain.mission.dto.MissionSummaryResponse;
 import com.aimong.backend.domain.mission.dto.StageProgressResponse;
 import com.aimong.backend.domain.mission.entity.Mission;
 import com.aimong.backend.domain.mission.entity.MissionSet;
+import com.aimong.backend.domain.mission.entity.MissionSetProgress;
 import com.aimong.backend.domain.mission.repository.MissionAttemptRepository;
 import com.aimong.backend.domain.mission.repository.MissionRepository;
 import com.aimong.backend.domain.mission.repository.MissionSetProgressRepository;
 import com.aimong.backend.domain.mission.repository.MissionSetRepository;
-import java.time.ZoneId;
-import java.time.LocalDate;
+import com.aimong.backend.global.exception.AimongException;
+import com.aimong.backend.global.exception.ErrorCode;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
 
 @Service
 public class MissionService {
-
-    private static final ZoneId KST = ZoneId.of("Asia/Seoul");
 
     private final MissionSetRepository missionSetRepository;
     private final MissionSetProgressRepository missionSetProgressRepository;
@@ -64,44 +64,43 @@ public class MissionService {
         if (missionSetRepository == null || missionSetProgressRepository == null) {
             return getLegacyMissions(childId);
         }
-        List<MissionSet> missionSets = missionSetRepository.findAllByActiveTrueOrderByLevelNoAscStageAscDisplayOrderAscSetIdAsc();
-        Map<String, com.aimong.backend.domain.mission.entity.MissionSetProgress> progressBySetId =
-                missionSetProgressRepository.findAllByChildIdAndSetIdIn(childId, setIds(missionSets))
-                        .stream()
-                        .collect(Collectors.toMap(
-                                com.aimong.backend.domain.mission.entity.MissionSetProgress::getSetId,
-                                progress -> progress
-                        ));
 
-        List<MissionListResponse.LevelResponse> levels = missionSets.stream()
-                .collect(Collectors.groupingBy(MissionSet::getLevelNo))
+        List<MissionSet> missionSets = missionSetRepository
+                .findAllByActiveTrueOrderByStageAscDisplayOrderAscStarLevelAscVariantNoAscSetIdAsc();
+        Map<String, MissionSetProgress> progressBySetId = progressBySetId(childId, missionSets);
+        StageProgressResponse stageProgress = stageProgress(missionSets, progressBySetId);
+
+        List<MissionListResponse.StageResponse> stages = missionSets.stream()
+                .collect(Collectors.groupingBy(
+                        MissionSet::getStage,
+                        LinkedHashMap::new,
+                        Collectors.toList()
+                ))
                 .entrySet()
                 .stream()
-                .sorted(Map.Entry.comparingByKey())
-                .map(entry -> toLevelResponse(entry.getKey(), childId, entry.getValue(), progressBySetId))
+                .map(entry -> toStageResponse(entry.getKey(), entry.getValue(), progressBySetId, stageProgress))
                 .toList();
 
         long completedSetCount = progressBySetId.size();
         long totalSetCount = missionSets.size();
-        int currentLevelNo = levels.stream()
-                .filter(level -> level.completedSetCount() < level.totalSetCount())
-                .map(MissionListResponse.LevelResponse::levelNo)
+        int currentStarLevel = missionSets.stream()
+                .filter(set -> !progressBySetId.containsKey(set.getSetId()))
+                .map(MissionSet::getStarLevel)
                 .findFirst()
-                .orElse(levels.isEmpty() ? 1 : levels.get(levels.size() - 1).levelNo());
+                .orElse(1);
 
         return new MissionListResponse(
-                levels,
-                new MissionListResponse.ProgressResponse(completedSetCount, totalSetCount, currentLevelNo)
+                stages,
+                new MissionListResponse.ProgressResponse(completedSetCount, totalSetCount, currentStarLevel)
         );
     }
 
+    public boolean isValidStarLevel(int starLevel) {
+        return starLevel >= 1 && starLevel <= 3;
+    }
+
     public boolean isUnlocked(Mission mission, StageProgressResponse stageProgress) {
-        return switch (mission.getStage()) {
-            case 1 -> true;
-            case 2 -> stageProgress.stage1Completed() >= 3;
-            case 3 -> stageProgress.stage2Completed() >= 4;
-            default -> false;
-        };
+        return isStageUnlocked(mission.getStage(), stageProgress);
     }
 
     public boolean isUnlockedForChild(UUID childId, Mission mission, StageProgressResponse stageProgress) {
@@ -112,132 +111,163 @@ public class MissionService {
     }
 
     public StageProgressResponse stageProgressForLegacy(UUID childId) {
-        List<MissionSet> missionSets = missionSetRepository.findAllByActiveTrueOrderByLevelNoAscStageAscDisplayOrderAscSetIdAsc();
-        Map<Short, List<String>> setIdsByStage = missionSets.stream()
-                .filter(set -> set.getLevelNo() == 1)
-                .collect(Collectors.groupingBy(MissionSet::getStage, Collectors.mapping(MissionSet::getSetId, Collectors.toList())));
-        return new StageProgressResponse(
-                countCompletedSets(childId, setIdsByStage.getOrDefault((short) 1, List.of())),
-                countCompletedSets(childId, setIdsByStage.getOrDefault((short) 2, List.of())),
-                countCompletedSets(childId, setIdsByStage.getOrDefault((short) 3, List.of()))
-        );
+        if (missionSetRepository == null || missionSetProgressRepository == null) {
+            return new StageProgressResponse(
+                    legacyMissionAttemptRepository.countCompletedMissionByStage(childId, (short) 1),
+                    legacyMissionAttemptRepository.countCompletedMissionByStage(childId, (short) 2),
+                    legacyMissionAttemptRepository.countCompletedMissionByStage(childId, (short) 3)
+            );
+        }
+        List<MissionSet> missionSets = missionSetRepository
+                .findAllByActiveTrueOrderByStageAscDisplayOrderAscStarLevelAscVariantNoAscSetIdAsc();
+        return stageProgress(missionSets, progressBySetId(childId, missionSets));
     }
 
     public boolean isUnlocked(UUID childId, MissionSet missionSet) {
-        if (missionSet.getLevelNo() > 1) {
-            List<String> previousLevelSetIds = missionSetRepository.findAllByActiveTrueOrderByLevelNoAscStageAscDisplayOrderAscSetIdAsc()
-                    .stream()
-                    .filter(set -> set.getLevelNo() == missionSet.getLevelNo() - 1)
-                    .map(MissionSet::getSetId)
-                    .toList();
-            return !previousLevelSetIds.isEmpty()
-                    && countCompletedSets(childId, previousLevelSetIds) >= previousLevelSetIds.size();
-        }
-
-        long stage1Completed = countCompletedSets(childId, setIdsForLevelAndStage(1, (short) 1));
-        long stage2Completed = countCompletedSets(childId, setIdsForLevelAndStage(1, (short) 2));
-        return switch (missionSet.getStage()) {
-            case 1 -> true;
-            case 2 -> stage1Completed >= 3;
-            case 3 -> stage2Completed >= 4;
-            default -> false;
-        };
+        List<MissionSet> missionSets = missionSetRepository
+                .findAllByActiveTrueOrderByStageAscDisplayOrderAscStarLevelAscVariantNoAscSetIdAsc();
+        StageProgressResponse stageProgress = stageProgress(missionSets, progressBySetId(childId, missionSets));
+        return isStageUnlocked(missionSet.getStage(), stageProgress);
     }
 
     public MissionSet resolvePlayableSet(UUID childId, UUID missionId) {
-        return missionSetRepository.findAllByMissionIdAndActiveTrueOrderByLevelNoAscDisplayOrderAscSetIdAsc(missionId)
-                .stream()
-                .filter(set -> isUnlocked(childId, set))
-                .filter(set -> !missionSetProgressRepository.existsByChildIdAndSetId(childId, set.getSetId()))
-                .findFirst()
-                .or(() -> missionSetRepository.findAllByMissionIdAndActiveTrueOrderByLevelNoAscDisplayOrderAscSetIdAsc(missionId)
-                        .stream()
-                        .filter(set -> isUnlocked(childId, set))
-                        .findFirst())
-                .orElseThrow(() -> new com.aimong.backend.global.exception.AimongException(
-                        com.aimong.backend.global.exception.ErrorCode.MISSION_SET_LOCKED
-                ));
+        return resolvePlayableSet(childId, missionId, 1);
     }
 
-    private MissionListResponse.LevelResponse toLevelResponse(
-            int levelNo,
-            UUID childId,
-            List<MissionSet> missionSets,
-            Map<String, com.aimong.backend.domain.mission.entity.MissionSetProgress> progressBySetId
-    ) {
-        List<MissionListResponse.StageResponse> stages = missionSets.stream()
-                .collect(Collectors.groupingBy(MissionSet::getStage))
-                .entrySet()
-                .stream()
-                .sorted(Map.Entry.comparingByKey())
-                .map(entry -> toStageResponse(entry.getKey(), childId, entry.getValue(), progressBySetId))
+    public MissionSet resolvePlayableSet(UUID childId, UUID missionId, int starLevel) {
+        if (!isValidStarLevel(starLevel)) {
+            throw new AimongException(ErrorCode.INVALID_STAR_LEVEL);
+        }
+        List<MissionSet> candidates = missionSetRepository
+                .findAllByMissionIdAndStarLevelAndActiveTrueOrderByVariantNoAscSetIdAsc(missionId, starLevel);
+        if (candidates.isEmpty()) {
+            throw new AimongException(ErrorCode.MISSION_SET_NOT_READY);
+        }
+        List<MissionSet> unlocked = candidates.stream()
+                .filter(set -> isUnlocked(childId, set))
                 .toList();
-        long completed = stages.stream().mapToLong(MissionListResponse.StageResponse::completedSetCount).sum();
-        long total = stages.stream().mapToLong(MissionListResponse.StageResponse::totalSetCount).sum();
-        String difficulty = missionSets.stream()
-                .min(Comparator.comparing(MissionSet::getSetId))
-                .map(set -> set.getDifficulty().name())
-                .orElse("LOW");
-        boolean unlocked = levelNo == 1 || completed > 0 || stages.stream()
-                .flatMap(stage -> stage.sets().stream())
-                .anyMatch(MissionListResponse.SetResponse::isUnlocked);
-        return new MissionListResponse.LevelResponse(levelNo, difficulty, unlocked, completed, total, stages);
+        if (unlocked.isEmpty()) {
+            throw new AimongException(ErrorCode.MISSION_SET_LOCKED);
+        }
+        List<MissionSet> incomplete = unlocked.stream()
+                .filter(set -> !missionSetProgressRepository.existsByChildIdAndSetId(childId, set.getSetId()))
+                .toList();
+        List<MissionSet> pool = incomplete.isEmpty() ? unlocked : incomplete;
+        return pool.get(ThreadLocalRandom.current().nextInt(pool.size()));
     }
 
     private MissionListResponse.StageResponse toStageResponse(
             short stage,
-            UUID childId,
             List<MissionSet> missionSets,
-            Map<String, com.aimong.backend.domain.mission.entity.MissionSetProgress> progressBySetId
+            Map<String, MissionSetProgress> progressBySetId,
+            StageProgressResponse stageProgress
     ) {
-        List<MissionListResponse.SetResponse> sets = missionSets.stream()
-                .sorted(Comparator.comparing(MissionSet::getDisplayOrder).thenComparing(MissionSet::getSetId))
-                .map(set -> toSetResponse(childId, set, progressBySetId))
+        List<MissionListResponse.MissionResponse> missions = missionSets.stream()
+                .collect(Collectors.groupingBy(
+                        MissionSet::getMissionId,
+                        LinkedHashMap::new,
+                        Collectors.toList()
+                ))
+                .values()
+                .stream()
+                .map(sets -> toMissionResponse(stage, sets, progressBySetId, stageProgress))
+                .sorted(Comparator.comparing(MissionListResponse.MissionResponse::missionCode,
+                        Comparator.nullsLast(String::compareTo)))
                 .toList();
-        long completed = sets.stream().filter(MissionListResponse.SetResponse::isCompleted).count();
-        return new MissionListResponse.StageResponse(stage, completed, sets.size(), sets);
+        return new MissionListResponse.StageResponse(stage, "Stage " + stage, missions);
     }
 
-    private MissionListResponse.SetResponse toSetResponse(
-            UUID childId,
-            MissionSet missionSet,
-            Map<String, com.aimong.backend.domain.mission.entity.MissionSetProgress> progressBySetId
+    private MissionListResponse.MissionResponse toMissionResponse(
+            short stage,
+            List<MissionSet> missionSets,
+            Map<String, MissionSetProgress> progressBySetId,
+            StageProgressResponse stageProgress
     ) {
-        com.aimong.backend.domain.mission.entity.MissionSetProgress progress = progressBySetId.get(missionSet.getSetId());
-        boolean completed = progress != null;
-        return new MissionListResponse.SetResponse(
-                missionSet.getSetId(),
-                missionSet.getMissionId(),
-                missionSet.getMissionCode(),
-                missionSet.getLevelNo(),
-                missionSet.getStage(),
-                missionSet.getDifficulty().name(),
-                missionSet.getTitle(),
-                missionSet.getDescription(),
-                isUnlocked(childId, missionSet),
-                completed,
-                completed ? progress.getCompletedAt().atZone(KST).toLocalDate() : null,
-                completed
+        MissionSet first = missionSets.stream()
+                .min(Comparator.comparing(MissionSet::getDisplayOrder).thenComparing(MissionSet::getSetId))
+                .orElseThrow();
+        boolean missionUnlocked = isStageUnlocked(stage, stageProgress);
+        List<MissionListResponse.StarLevelResponse> starLevels = missionSets.stream()
+                .collect(Collectors.groupingBy(
+                        MissionSet::getStarLevel,
+                        LinkedHashMap::new,
+                        Collectors.toList()
+                ))
+                .entrySet()
+                .stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(entry -> toStarLevelResponse(entry.getKey(), entry.getValue(), progressBySetId, missionUnlocked))
+                .toList();
+        return new MissionListResponse.MissionResponse(
+                first.getMissionId(),
+                first.getMissionCode(),
+                first.getTitle(),
+                first.getDescription(),
+                missionUnlocked,
+                starLevels,
+                stage
         );
     }
 
-    private List<String> setIds(Collection<MissionSet> missionSets) {
-        return missionSets.stream().map(MissionSet::getSetId).toList();
+    private MissionListResponse.StarLevelResponse toStarLevelResponse(
+            int starLevel,
+            List<MissionSet> missionSets,
+            Map<String, MissionSetProgress> progressBySetId,
+            boolean missionUnlocked
+    ) {
+        long completed = missionSets.stream()
+                .filter(set -> progressBySetId.containsKey(set.getSetId()))
+                .count();
+        return new MissionListResponse.StarLevelResponse(
+                starLevel,
+                MissionListResponse.labelForStar(starLevel),
+                missionSets.size(),
+                completed,
+                missionUnlocked,
+                completed > 0
+        );
     }
 
-    private List<String> setIdsForLevelAndStage(int levelNo, short stage) {
-        return missionSetRepository.findAllByActiveTrueOrderByLevelNoAscStageAscDisplayOrderAscSetIdAsc()
-                .stream()
-                .filter(set -> set.getLevelNo() == levelNo && set.getStage() == stage)
-                .map(MissionSet::getSetId)
-                .toList();
+    private StageProgressResponse stageProgress(
+            Collection<MissionSet> missionSets,
+            Map<String, MissionSetProgress> progressBySetId
+    ) {
+        Map<Short, Long> completedMissionsByStage = missionSets.stream()
+                .filter(set -> progressBySetId.containsKey(set.getSetId()))
+                .collect(Collectors.groupingBy(
+                        MissionSet::getStage,
+                        Collectors.mapping(MissionSet::getMissionId, Collectors.collectingAndThen(
+                                Collectors.toSet(),
+                                set -> (long) set.size()
+                        ))
+                ));
+        return new StageProgressResponse(
+                completedMissionsByStage.getOrDefault((short) 1, 0L),
+                completedMissionsByStage.getOrDefault((short) 2, 0L),
+                completedMissionsByStage.getOrDefault((short) 3, 0L)
+        );
     }
 
-    private long countCompletedSets(UUID childId, List<String> setIds) {
+    private boolean isStageUnlocked(short stage, StageProgressResponse stageProgress) {
+        return switch (stage) {
+            case 1 -> true;
+            case 2 -> stageProgress.stage1Completed() >= 3;
+            case 3 -> stageProgress.stage2Completed() >= 4;
+            default -> false;
+        };
+    }
+
+    private Map<String, MissionSetProgress> progressBySetId(UUID childId, Collection<MissionSet> missionSets) {
+        List<String> setIds = missionSets.stream().map(MissionSet::getSetId).toList();
         if (setIds.isEmpty()) {
-            return 0;
+            return Map.of();
         }
-        return missionSetProgressRepository.countByChildIdAndSetIdIn(childId, setIds);
+        return missionSetProgressRepository.findAllByChildIdAndSetIdIn(childId, setIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        MissionSetProgress::getSetId,
+                        progress -> progress
+                ));
     }
 
     private MissionListResponse getLegacyMissions(UUID childId) {
@@ -246,23 +276,53 @@ public class MissionService {
                 legacyMissionAttemptRepository.countCompletedMissionByStage(childId, (short) 2),
                 legacyMissionAttemptRepository.countCompletedMissionByStage(childId, (short) 3)
         );
-        List<MissionSummaryResponse> missions = legacyMissionRepository.findAllByIsActiveTrueOrderByStageAscMissionCodeAscIdAsc()
+        List<MissionListResponse.StageResponse> stages = legacyMissionRepository.findAllByIsActiveTrueOrderByStageAscMissionCodeAscIdAsc()
                 .stream()
-                .map(mission -> {
-                    LocalDate completedAt = legacyMissionAttemptRepository.findLatestCompletedAt(childId, mission.getId()).orElse(null);
-                    boolean completed = completedAt != null;
-                    return new MissionSummaryResponse(
-                            mission.getId(),
-                            mission.getStage(),
-                            mission.getTitle(),
-                            mission.getDescription(),
-                            isUnlocked(mission, stageProgress),
-                            completed,
-                            completedAt,
-                            completed
-                    );
-                })
+                .collect(Collectors.groupingBy(
+                        Mission::getStage,
+                        LinkedHashMap::new,
+                        Collectors.toList()
+                ))
+                .entrySet()
+                .stream()
+                .map(entry -> new MissionListResponse.StageResponse(
+                        entry.getKey(),
+                        "Stage " + entry.getKey(),
+                        entry.getValue().stream()
+                                .map(mission -> {
+                                    boolean completed = legacyMissionAttemptRepository
+                                            .findLatestCompletedAt(childId, mission.getId())
+                                            .isPresent();
+                                    boolean unlocked = isUnlocked(mission, stageProgress);
+                                    return new MissionListResponse.MissionResponse(
+                                            mission.getId(),
+                                            mission.getMissionCode(),
+                                            mission.getTitle(),
+                                            mission.getDescription(),
+                                            unlocked,
+                                            List.of(new MissionListResponse.StarLevelResponse(
+                                                    1,
+                                                    MissionListResponse.labelForStar(1),
+                                                    1,
+                                                    completed ? 1 : 0,
+                                                    unlocked,
+                                                    completed
+                                            )),
+                                            mission.getStage()
+                                    );
+                                })
+                                .toList()
+                ))
                 .toList();
-        return new MissionListResponse(missions, stageProgress);
+        long completedSetCount = stageProgress.stage1Completed()
+                + stageProgress.stage2Completed()
+                + stageProgress.stage3Completed();
+        long totalSetCount = stages.stream()
+                .flatMap(stage -> stage.missions().stream())
+                .count();
+        return new MissionListResponse(
+                stages,
+                new MissionListResponse.ProgressResponse(completedSetCount, totalSetCount, 1)
+        );
     }
 }

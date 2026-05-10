@@ -13,6 +13,7 @@ import com.aimong.backend.domain.mission.entity.GenerationPhase;
 import com.aimong.backend.domain.mission.entity.QuestionBank;
 import com.aimong.backend.domain.mission.entity.QuestionPoolStatus;
 import com.aimong.backend.domain.mission.entity.QuestionType;
+import com.aimong.backend.domain.mission.repository.MissionSetRepository;
 import com.aimong.backend.domain.mission.repository.QuestionBankRepository;
 import com.aimong.backend.domain.mission.repository.QuestionQualityIssueRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -32,10 +33,14 @@ class QuestionQualityReviewServiceTest {
     @Mock
     private QuestionQualityIssueRepository questionQualityIssueRepository;
 
+    @Mock
+    private MissionSetRepository missionSetRepository;
+
     @Test
     void reportOnlyRecordsIssueByDefault() {
         QuestionQualityReviewService service = new QuestionQualityReviewService(
                 questionBankRepository,
+                missionSetRepository,
                 questionQualityIssueRepository,
                 new MissionQuestionProperties(10, 30, false, false, false, false),
                 new ObjectMapper()

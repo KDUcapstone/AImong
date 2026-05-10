@@ -192,7 +192,7 @@ public class SubmitService {
                 .filter(Mission::isActive)
                 .orElseThrow(() -> new AimongException(ErrorCode.MISSION_NOT_FOUND));
 
-        StageProgressResponse stageProgress = missionService.getMissions(childId).stageProgress();
+        StageProgressResponse stageProgress = missionService.stageProgressForLegacy(childId);
         if (!missionService.isUnlockedForChild(childId, mission, stageProgress)) {
             throw new AimongException(ErrorCode.MISSION_LOCKED);
         }
@@ -278,10 +278,11 @@ public class SubmitService {
         LocalDate weekStart = KstDateUtils.currentWeekStart();
         UUID missionId = mission.getId();
         String setId = missionSet == null ? quizAttempt.getSetId() : missionSet.getSetId();
-        Integer levelNo = missionSet != null ? Integer.valueOf(missionSet.getLevelNo()) : quizAttempt.getLevelNo();
-        if (levelNo == null) {
-            levelNo = 1;
+        Integer starLevel = missionSet != null ? Integer.valueOf(missionSet.getStarLevel()) : quizAttempt.getStarLevel();
+        if (starLevel == null) {
+            starLevel = 1;
         }
+        Integer variantNo = missionSet == null ? null : missionSet.getVariantNo();
         int attemptNo = Math.toIntExact(missionAttemptRepository.countByChildIdAndMissionIdAndAttemptDate(childId, missionId, today)) + 1;
         boolean isReview = quizAttempt.isReview();
         ChildProfile childProfile = childProfileRepository.findById(childId)
@@ -301,7 +302,7 @@ public class SubmitService {
                     childId,
                     missionId,
                     setId,
-                    levelNo,
+                    starLevel,
                     today,
                     attemptNo,
                     reviewScore,
@@ -333,7 +334,7 @@ public class SubmitService {
                     childId,
                     missionId,
                     setId,
-                    levelNo,
+                    starLevel,
                     today,
                     attemptNo,
                     score,
@@ -381,7 +382,7 @@ public class SubmitService {
                     childId,
                     missionId,
                     setId,
-                    levelNo,
+                    starLevel,
                     today,
                     attemptNo,
                     score,
@@ -392,12 +393,16 @@ public class SubmitService {
             ));
             saveAnswerResults(passedAttempt.getId(), childId, missionId, setId, false, request.answers(), answerKeysById);
             if (setId != null) {
+                final Integer progressStarLevel = missionSet == null ? starLevel : missionSet.getStarLevel();
+                final Integer progressVariantNo = missionSet == null ? variantNo : missionSet.getVariantNo();
                 missionSetProgressRepository.findWithLockByChildIdAndSetId(childId, setId)
                         .ifPresentOrElse(
                                 progress -> progress.improveBestScore(passedScore),
                                 () -> missionSetProgressRepository.save(MissionSetProgress.create(
                                         childId,
                                         setId,
+                                        progressStarLevel,
+                                        progressVariantNo,
                                         passedAttempt.getId(),
                                         passedScore,
                                         TOTAL_QUESTIONS
@@ -454,10 +459,10 @@ public class SubmitService {
                 results,
                 setId,
                 missionId.toString(),
-                missionSet == null ? null : missionSet.getLevelNo(),
-                missionSet == null ? null : missionSet.getDifficulty().name(),
+                starLevel,
+                variantNo,
                 completedSetCount(childId),
-                missionSet == null ? 0 : levelCompletedSetCount(childId, missionSet.getLevelNo()),
+                missionSet == null ? 0 : starLevelCompletedSetCount(childId, missionSet.getStarLevel()),
                 unlockedAfterCompletion.stream().toList(),
                 todayProgress == null ? streakRecord.getTodayMissionCount() : todayProgress.getCompletedSetCount()
         );
@@ -507,10 +512,10 @@ public class SubmitService {
                 results,
                 missionSet == null ? null : missionSet.getSetId(),
                 mission.getId().toString(),
-                missionSet == null ? null : missionSet.getLevelNo(),
-                missionSet == null ? null : missionSet.getDifficulty().name(),
+                missionSet == null ? null : missionSet.getStarLevel(),
+                missionSet == null ? null : missionSet.getVariantNo(),
                 completedSetCount(childId),
-                missionSet == null ? 0 : levelCompletedSetCount(childId, missionSet.getLevelNo()),
+                missionSet == null ? 0 : starLevelCompletedSetCount(childId, missionSet.getStarLevel()),
                 List.of(),
                 todaySetCount(childId, streakRecord)
         );
@@ -556,10 +561,10 @@ public class SubmitService {
                 results,
                 missionSet == null ? null : missionSet.getSetId(),
                 mission.getId().toString(),
-                missionSet == null ? null : missionSet.getLevelNo(),
-                missionSet == null ? null : missionSet.getDifficulty().name(),
+                missionSet == null ? null : missionSet.getStarLevel(),
+                missionSet == null ? null : missionSet.getVariantNo(),
                 completedSetCount(childId),
-                missionSet == null ? 0 : levelCompletedSetCount(childId, missionSet.getLevelNo()),
+                missionSet == null ? 0 : starLevelCompletedSetCount(childId, missionSet.getStarLevel()),
                 List.of(),
                 todaySetCount(childId, streakRecord)
         );
@@ -766,13 +771,13 @@ public class SubmitService {
         return missionAttemptRepository.countCompletedMission(childId);
     }
 
-    private long levelCompletedSetCount(UUID childId, int levelNo) {
+    private long starLevelCompletedSetCount(UUID childId, int starLevel) {
         if (missionSetRepository == null || missionSetProgressRepository == null) {
             return 0;
         }
-        List<String> setIds = missionSetRepository.findAllByActiveTrueOrderByLevelNoAscStageAscDisplayOrderAscSetIdAsc()
+        List<String> setIds = missionSetRepository.findAllByActiveTrueOrderByStageAscDisplayOrderAscStarLevelAscVariantNoAscSetIdAsc()
                 .stream()
-                .filter(set -> set.getLevelNo() == levelNo)
+                .filter(set -> set.getStarLevel() == starLevel)
                 .map(MissionSet::getSetId)
                 .toList();
         if (setIds.isEmpty()) {
@@ -785,7 +790,7 @@ public class SubmitService {
         if (missionSetRepository == null || missionSetProgressRepository == null) {
             return Set.of();
         }
-        return missionSetRepository.findAllByActiveTrueOrderByLevelNoAscStageAscDisplayOrderAscSetIdAsc()
+        return missionSetRepository.findAllByActiveTrueOrderByStageAscDisplayOrderAscStarLevelAscVariantNoAscSetIdAsc()
                 .stream()
                 .filter(set -> missionService.isUnlocked(childId, set))
                 .filter(set -> !missionSetProgressRepository.existsByChildIdAndSetId(childId, set.getSetId()))

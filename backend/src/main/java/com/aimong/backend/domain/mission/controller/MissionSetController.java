@@ -1,7 +1,7 @@
 package com.aimong.backend.domain.mission.controller;
 
 import com.aimong.backend.domain.mission.dto.MissionQuestionsResponse;
-import com.aimong.backend.domain.mission.dto.QuestionCheckRequest;
+import com.aimong.backend.domain.mission.dto.MissionSetCheckRequest;
 import com.aimong.backend.domain.mission.dto.QuestionCheckResponse;
 import com.aimong.backend.domain.mission.dto.QuestionReportRequest;
 import com.aimong.backend.domain.mission.dto.QuestionReportResponse;
@@ -50,14 +50,13 @@ public class MissionSetController {
         return ApiResponse.success(submitService.submit(extractChildId(authentication), setId, request));
     }
 
-    @PostMapping("/{setId}/questions/{questionId}/check")
+    @PostMapping("/{setId}/check")
     public ApiResponse<QuestionCheckResponse> checkQuestion(
             @PathVariable String setId,
-            @PathVariable UUID questionId,
-            @Valid @RequestBody QuestionCheckRequest request,
+            @Valid @RequestBody MissionSetCheckRequest request,
             Authentication authentication
     ) {
-        return ApiResponse.success(questionCheckService.check(extractChildId(authentication), setId, questionId, request));
+        return ApiResponse.success(questionCheckService.check(extractChildId(authentication), setId, request));
     }
 
     @PostMapping("/{setId}/questions/{questionId}/report")

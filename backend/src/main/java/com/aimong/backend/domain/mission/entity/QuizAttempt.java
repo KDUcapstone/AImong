@@ -31,8 +31,8 @@ public class QuizAttempt {
     @Column(name = "set_id", length = 32)
     private String setId;
 
-    @Column(name = "level_no")
-    private Integer levelNo;
+    @Column(name = "star_level", nullable = false)
+    private Integer starLevel;
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "question_ids_json", nullable = false, columnDefinition = "jsonb")
@@ -51,14 +51,14 @@ public class QuizAttempt {
     private Instant submittedAt;
 
     public static QuizAttempt create(UUID childId, UUID missionId, String questionIdsJson, Instant expiresAt, boolean isReview) {
-        return create(childId, missionId, null, null, questionIdsJson, expiresAt, isReview);
+        return create(childId, missionId, null, 1, questionIdsJson, expiresAt, isReview);
     }
 
     public static QuizAttempt create(
             UUID childId,
             UUID missionId,
             String setId,
-            Integer levelNo,
+            Integer starLevel,
             String questionIdsJson,
             Instant expiresAt,
             boolean isReview
@@ -68,7 +68,7 @@ public class QuizAttempt {
         attempt.childId = childId;
         attempt.missionId = missionId;
         attempt.setId = setId;
-        attempt.levelNo = levelNo;
+        attempt.starLevel = starLevel;
         attempt.questionIdsJson = questionIdsJson;
         attempt.expiresAt = expiresAt;
         attempt.isReview = isReview;

@@ -50,13 +50,14 @@ class MissionServiceTest {
 
         MissionListResponse response = missionService.getMissions(childId);
 
-        assertThat(response.stageProgress().stage1Completed()).isEqualTo(3);
-        assertThat(response.stageProgress().stage2Completed()).isEqualTo(1);
-        assertThat(response.missions()).singleElement().satisfies(summary -> {
+        assertThat(response.progress().completedSetCount()).isEqualTo(4);
+        assertThat(response.stages()).singleElement().satisfies(stage -> assertThat(stage.stage()).isEqualTo(2));
+        assertThat(response.stages().getFirst().missions()).singleElement().satisfies(summary -> {
             assertThat(summary.isUnlocked()).isTrue();
-            assertThat(summary.isCompleted()).isTrue();
-            assertThat(summary.completedAt()).isEqualTo(completedAt);
-            assertThat(summary.isReviewable()).isTrue();
+            assertThat(summary.starLevels()).singleElement().satisfies(starLevel -> {
+                assertThat(starLevel.completedSetCount()).isEqualTo(1);
+                assertThat(starLevel.isReviewable()).isTrue();
+            });
         });
         verify(childActivityService).touchLastActiveAt(childId);
     }

@@ -26,36 +26,64 @@ class MissionQuestionSetFactoryTest {
     @Mock
     private ApprovedQuestionProvider approvedQuestionProvider;
 
-    private final RecompositionSelector recompositionSelector = new RecompositionSelector();
-
     @Test
-    void selectsExactlyLowFiveMediumThreeHighTwo() {
+    void selectsStarLevelOneRatio() {
         MissionQuestionSetFactory factory = factory();
         UUID missionId = UUID.randomUUID();
 
-        stubPools(missionId, 6, 4, 3);
+        stubPools(missionId, 8, 3, 2);
 
         List<QuestionBank> selected = factory.create(missionId, UUID.randomUUID(), false);
 
         assertThat(selected).hasSize(10);
-        assertThat(selected.stream().filter(question -> question.getDifficulty() == DifficultyBand.LOW).count()).isEqualTo(5);
-        assertThat(selected.stream().filter(question -> question.getDifficulty() == DifficultyBand.MEDIUM).count()).isEqualTo(3);
+        assertThat(selected.stream().filter(question -> question.getDifficulty() == DifficultyBand.LOW).count()).isEqualTo(7);
+        assertThat(selected.stream().filter(question -> question.getDifficulty() == DifficultyBand.MEDIUM).count()).isEqualTo(2);
+        assertThat(selected.stream().filter(question -> question.getDifficulty() == DifficultyBand.HIGH).count()).isEqualTo(1);
+    }
+
+    @Test
+    void selectsStarLevelTwoRatio() {
+        MissionQuestionSetFactory factory = factory();
+        UUID missionId = UUID.randomUUID();
+
+        stubPools(missionId, 4, 6, 3);
+
+        List<QuestionBank> selected = factory.create(missionId, UUID.randomUUID(), 2, false);
+
+        assertThat(selected).hasSize(10);
+        assertThat(selected.stream().filter(question -> question.getDifficulty() == DifficultyBand.LOW).count()).isEqualTo(3);
+        assertThat(selected.stream().filter(question -> question.getDifficulty() == DifficultyBand.MEDIUM).count()).isEqualTo(5);
         assertThat(selected.stream().filter(question -> question.getDifficulty() == DifficultyBand.HIGH).count()).isEqualTo(2);
     }
 
     @Test
-    void failsWhenLowPoolIsBelowFive() {
-        assertMissionSetNotReady(4, 3, 2);
+    void selectsStarLevelThreeRatio() {
+        MissionQuestionSetFactory factory = factory();
+        UUID missionId = UUID.randomUUID();
+
+        stubPools(missionId, 3, 4, 6);
+
+        List<QuestionBank> selected = factory.create(missionId, UUID.randomUUID(), 3, false);
+
+        assertThat(selected).hasSize(10);
+        assertThat(selected.stream().filter(question -> question.getDifficulty() == DifficultyBand.LOW).count()).isEqualTo(2);
+        assertThat(selected.stream().filter(question -> question.getDifficulty() == DifficultyBand.MEDIUM).count()).isEqualTo(3);
+        assertThat(selected.stream().filter(question -> question.getDifficulty() == DifficultyBand.HIGH).count()).isEqualTo(5);
     }
 
     @Test
-    void failsWhenMediumPoolIsBelowThree() {
-        assertMissionSetNotReady(5, 2, 2);
+    void failsWhenLowPoolIsBelowStarLevelOneQuota() {
+        assertMissionSetNotReady(6, 2, 1);
     }
 
     @Test
-    void failsWhenHighPoolIsBelowTwo() {
-        assertMissionSetNotReady(5, 3, 1);
+    void failsWhenMediumPoolIsBelowStarLevelOneQuota() {
+        assertMissionSetNotReady(7, 1, 1);
+    }
+
+    @Test
+    void failsWhenHighPoolIsBelowStarLevelOneQuota() {
+        assertMissionSetNotReady(7, 2, 0);
     }
 
     @Test
@@ -87,8 +115,7 @@ class MissionQuestionSetFactoryTest {
     private MissionQuestionSetFactory factory() {
         return new MissionQuestionSetFactory(
                 approvedQuestionProvider,
-                new MissionQuestionProperties(10, 30, false, false, false, false),
-                recompositionSelector
+                new MissionQuestionProperties(10, 30, false, false, false, false)
         );
     }
 

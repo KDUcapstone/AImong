@@ -2,14 +2,11 @@ package com.aimong.backend.domain.mission.controller;
 
 import com.aimong.backend.domain.mission.dto.MissionListResponse;
 import com.aimong.backend.domain.mission.dto.MissionQuestionsResponse;
-import com.aimong.backend.domain.mission.dto.QuestionCheckRequest;
-import com.aimong.backend.domain.mission.dto.QuestionCheckResponse;
 import com.aimong.backend.domain.mission.dto.QuestionReportRequest;
 import com.aimong.backend.domain.mission.dto.QuestionReportResponse;
 import com.aimong.backend.domain.mission.dto.SubmitRequest;
 import com.aimong.backend.domain.mission.dto.SubmitResponse;
 import com.aimong.backend.domain.mission.service.MissionService;
-import com.aimong.backend.domain.mission.service.QuestionCheckService;
 import com.aimong.backend.domain.mission.service.QuizService;
 import com.aimong.backend.domain.mission.service.SubmitService;
 import com.aimong.backend.domain.mission.service.question.QuestionQualityReviewService;
@@ -28,6 +25,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -40,7 +38,6 @@ public class MissionController {
     private final MissionService missionService;
     private final QuizService quizService;
     private final SubmitService submitService;
-    private final QuestionCheckService questionCheckService;
     private final QuestionQualityReviewService questionQualityReviewService;
 
     @Operation(
@@ -132,9 +129,10 @@ public class MissionController {
     @GetMapping("/{missionId}/questions")
     public ApiResponse<MissionQuestionsResponse> getQuestions(
             @PathVariable UUID missionId,
+            @RequestParam(defaultValue = "1") int starLevel,
             Authentication authentication
     ) {
-        return ApiResponse.success(quizService.getQuestions(extractChildId(authentication), missionId));
+        return ApiResponse.success(quizService.getQuestions(extractChildId(authentication), missionId, starLevel));
     }
 
     @Operation(
@@ -255,21 +253,6 @@ public class MissionController {
             Authentication authentication
     ) {
         return ApiResponse.success(submitService.submit(extractChildId(authentication), missionId, request));
-    }
-
-    @PostMapping("/{missionId}/questions/{questionId}/check")
-    public ApiResponse<QuestionCheckResponse> checkQuestion(
-            @PathVariable UUID missionId,
-            @PathVariable UUID questionId,
-            @Valid @RequestBody QuestionCheckRequest request,
-            Authentication authentication
-    ) {
-        return ApiResponse.success(questionCheckService.check(
-                extractChildId(authentication),
-                missionId,
-                questionId,
-                request
-        ));
     }
 
     @PostMapping("/{missionId}/questions/{questionId}/report")

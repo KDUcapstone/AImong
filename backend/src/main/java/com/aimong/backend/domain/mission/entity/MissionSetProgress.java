@@ -40,10 +40,30 @@ public class MissionSetProgress {
     @Column(name = "first_attempt_id")
     private UUID firstAttemptId;
 
+    @Column(name = "star_level", nullable = false)
+    private Integer starLevel;
+
+    @Column(name = "variant_no", nullable = false)
+    private Integer variantNo;
+
     public static MissionSetProgress create(UUID childId, String setId, UUID firstAttemptId, int score, int total) {
+        return create(childId, setId, 1, 1, firstAttemptId, score, total);
+    }
+
+    public static MissionSetProgress create(
+            UUID childId,
+            String setId,
+            Integer starLevel,
+            Integer variantNo,
+            UUID firstAttemptId,
+            int score,
+            int total
+    ) {
         MissionSetProgress progress = new MissionSetProgress();
         progress.childId = childId;
         progress.setId = setId;
+        progress.starLevel = starLevel;
+        progress.variantNo = variantNo;
         progress.firstAttemptId = firstAttemptId;
         progress.completedAt = Instant.now();
         progress.bestScore = score;

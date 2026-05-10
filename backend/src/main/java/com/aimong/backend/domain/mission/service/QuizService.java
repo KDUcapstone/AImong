@@ -1,5 +1,7 @@
 package com.aimong.backend.domain.mission.service;
 
+import com.aimong.backend.domain.auth.entity.ChildProfile;
+import com.aimong.backend.domain.auth.repository.ChildProfileRepository;
 import com.aimong.backend.domain.auth.service.ChildActivityService;
 import com.aimong.backend.domain.mission.dto.MissionQuestionsResponse;
 import com.aimong.backend.domain.mission.dto.QuestionResponse;
@@ -36,6 +38,7 @@ public class QuizService {
     private final MissionRepository missionRepository;
     private final MissionSetRepository missionSetRepository;
     private final MissionSetProgressRepository missionSetProgressRepository;
+    private final ChildProfileRepository childProfileRepository;
     private final QuizAttemptRepository quizAttemptRepository;
     private final MissionDailyProgressRepository missionDailyProgressRepository;
     private final ChildActivityService childActivityService;
@@ -50,6 +53,7 @@ public class QuizService {
             MissionRepository missionRepository,
             MissionSetRepository missionSetRepository,
             MissionSetProgressRepository missionSetProgressRepository,
+            ChildProfileRepository childProfileRepository,
             QuizAttemptRepository quizAttemptRepository,
             MissionDailyProgressRepository missionDailyProgressRepository,
             ChildActivityService childActivityService,
@@ -62,6 +66,7 @@ public class QuizService {
         this.missionRepository = missionRepository;
         this.missionSetRepository = missionSetRepository;
         this.missionSetProgressRepository = missionSetProgressRepository;
+        this.childProfileRepository = childProfileRepository;
         this.quizAttemptRepository = quizAttemptRepository;
         this.missionDailyProgressRepository = missionDailyProgressRepository;
         this.childActivityService = childActivityService;
@@ -86,6 +91,7 @@ public class QuizService {
         this.missionRepository = missionRepository;
         this.missionSetRepository = null;
         this.missionSetProgressRepository = null;
+        this.childProfileRepository = null;
         this.quizAttemptRepository = quizAttemptRepository;
         this.missionDailyProgressRepository = missionDailyProgressRepository;
         this.childActivityService = childActivityService;
@@ -98,14 +104,22 @@ public class QuizService {
 
     @Transactional
     public MissionQuestionsResponse getQuestions(UUID childId, UUID missionId) {
+        return getQuestions(childId, missionId, 1);
+    }
+
+    @Transactional
+    public MissionQuestionsResponse getQuestions(UUID childId, UUID missionId, int starLevel) {
         childActivityService.touchLastActiveAt(childId);
+        if (starLevel < 1 || starLevel > 3) {
+            throw new AimongException(ErrorCode.INVALID_STAR_LEVEL);
+        }
         Mission mission = missionRepository.findById(missionId)
                 .filter(Mission::isActive)
                 .orElseThrow(() -> new AimongException(ErrorCode.MISSION_NOT_FOUND));
         if (missionSetRepository == null || missionSetProgressRepository == null) {
             return getLegacyQuestions(childId, mission);
         }
-        MissionSet missionSet = missionService.resolvePlayableSet(childId, mission.getId());
+        MissionSet missionSet = missionService.resolvePlayableSet(childId, mission.getId(), starLevel);
         return getQuestionsForSet(childId, missionSet);
     }
 
@@ -129,6 +143,21 @@ public class QuizService {
         if (selectedQuestions.size() != missionQuestionProperties.setSize()) {
             throw new AimongException(ErrorCode.MISSION_SET_NOT_READY);
         }
+
+        int energyCost = isReview ? 0 : ChildProfile.MISSION_ENERGY_COST;
+        Integer energyBefore = null;
+        Integer energyAfter = null;
+        if (!isReview) {
+            ChildProfile childProfile = childProfileRepository.findWithLockById(childId)
+                    .orElseThrow(() -> new AimongException(ErrorCode.CHILD_NOT_FOUND));
+            childProfile.recoverEnergy(Instant.now());
+            energyBefore = childProfile.getEnergy();
+            if (!childProfile.consumeMissionEnergy(Instant.now())) {
+                throw new AimongException(ErrorCode.INSUFFICIENT_ENERGY);
+            }
+            energyAfter = childProfile.getEnergy();
+        }
+
         List<UUID> selectedQuestionIds = selectedQuestions.stream()
                 .map(QuestionBank::getId)
                 .toList();
@@ -137,7 +166,7 @@ public class QuizService {
                 childId,
                 missionSet.getMissionId(),
                 missionSet.getSetId(),
-                missionSet.getLevelNo(),
+                missionSet.getStarLevel(),
                 writeQuestionIds(selectedQuestionIds),
                 Instant.now().plus(missionQuestionProperties.attemptTtlMinutes(), ChronoUnit.MINUTES),
                 isReview
@@ -148,12 +177,16 @@ public class QuizService {
                 missionSet.getSetId(),
                 mission.getId(),
                 missionSet.getMissionCode(),
-                missionSet.getLevelNo(),
+                missionSet.getStarLevel(),
+                missionSet.getVariantNo(),
                 missionSet.getStage(),
-                missionSet.getDifficulty().name(),
+                missionSet.starLabel(),
                 missionSet.getTitle(),
                 missionSet.getDescription(),
                 isReview,
+                energyCost,
+                energyBefore,
+                energyAfter,
                 quizAttempt.getId(),
                 missionQuestionProperties.setSize(),
                 quizAttempt.getExpiresAt(),
@@ -162,7 +195,7 @@ public class QuizService {
     }
 
     private MissionQuestionsResponse getLegacyQuestions(UUID childId, Mission mission) {
-        StageProgressResponse stageProgress = missionService.getMissions(childId).stageProgress();
+        StageProgressResponse stageProgress = missionService.stageProgressForLegacy(childId);
         if (!missionService.isUnlockedForChild(childId, mission, stageProgress)) {
             throw new AimongException(ErrorCode.MISSION_QUESTIONS_LOCKED);
         }
@@ -183,15 +216,27 @@ public class QuizService {
         QuizAttempt quizAttempt = QuizAttempt.create(
                 childId,
                 mission.getId(),
+                null,
+                1,
                 writeQuestionIds(selectedQuestions.stream().map(QuestionBank::getId).toList()),
                 Instant.now().plus(missionQuestionProperties.attemptTtlMinutes(), ChronoUnit.MINUTES),
                 isReview
         );
         quizAttemptRepository.save(quizAttempt);
         return new MissionQuestionsResponse(
+                null,
                 mission.getId(),
+                null,
+                1,
+                1,
+                mission.getStage(),
+                MissionQuestionsResponse.labelForStar(1),
                 mission.getTitle(),
+                mission.getDescription(),
                 isReview,
+                0,
+                null,
+                null,
                 quizAttempt.getId(),
                 missionQuestionProperties.setSize(),
                 quizAttempt.getExpiresAt(),
@@ -201,11 +246,17 @@ public class QuizService {
 
     private List<QuestionBank> createServingReadyQuestionSet(MissionSet missionSet, Mission mission, UUID childId, boolean isReview) {
         if (!missionQuestionProperties.servingAutoQuarantineEnabled()) {
-            return missionQuestionSetFactory.create(missionSet.getSetId(), mission.getId(), childId, isReview);
+            return missionQuestionSetFactory.create(missionSet.getSetId(), mission.getId(), missionSet.getStarLevel(), childId, isReview);
         }
 
         for (int attempt = 0; attempt < 2; attempt++) {
-            List<QuestionBank> selectedQuestions = missionQuestionSetFactory.create(missionSet.getSetId(), mission.getId(), childId, isReview);
+            List<QuestionBank> selectedQuestions = missionQuestionSetFactory.create(
+                    missionSet.getSetId(),
+                    mission.getId(),
+                    missionSet.getStarLevel(),
+                    childId,
+                    isReview
+            );
             QuestionServingQualityGuard.ServingValidationResult validationResult =
                     questionServingQualityGuard.validateForServing(mission, selectedQuestions);
             if (validationResult.validQuestions().size() == missionQuestionProperties.setSize()) {
@@ -237,7 +288,8 @@ public class QuizService {
                 question.getId(),
                 question.getQuestionType().name(),
                 question.getPrompt(),
-                readOptions(question.getOptionsJson())
+                readOptions(question.getOptionsJson()),
+                question.getDifficulty() == null ? null : question.getDifficulty().name()
         );
     }
 

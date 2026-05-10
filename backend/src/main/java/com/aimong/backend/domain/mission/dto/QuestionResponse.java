@@ -7,6 +7,10 @@ public record QuestionResponse(
         UUID id,
         String type,
         String question,
-        List<String> options
+        List<String> options,
+        String difficulty
 ) {
+    public QuestionResponse(UUID id, String type, String question, List<String> options) {
+        this(id, type, question, options, null);
+    }
 }

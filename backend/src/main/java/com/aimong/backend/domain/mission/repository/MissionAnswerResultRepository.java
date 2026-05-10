@@ -3,6 +3,7 @@ package com.aimong.backend.domain.mission.repository;
 import com.aimong.backend.domain.mission.entity.MissionAnswerResult;
 import com.aimong.backend.domain.parent.dto.ParentWeakPointResponse;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,14 +22,14 @@ public interface MissionAnswerResultRepository extends JpaRepository<MissionAnsw
                         (sum(case when r.correct = false then 1 else 0 end) * 1.0) / count(r.id),
                         count(distinct r.attemptId),
                         r.setId,
-                        ms.levelNo
+                        ms.starLevel
                     )
                     from MissionAnswerResult r
                     join Mission m on m.id = r.missionId
                     left join MissionSet ms on ms.setId = r.setId
                     where r.childId = :childId
                       and r.createdAt >= :since
-                    group by m.id, m.title, m.stage, r.setId, ms.title, ms.stage, ms.levelNo
+                    group by m.id, m.title, m.stage, r.setId, ms.title, ms.stage, ms.starLevel
                     having count(r.id) > 0
                     order by (sum(case when r.correct = false then 1 else 0 end) * 1.0) / count(r.id) desc,
                              count(distinct r.attemptId) desc
@@ -44,5 +45,17 @@ public interface MissionAnswerResultRepository extends JpaRepository<MissionAnsw
             @Param("childId") UUID childId,
             @Param("since") Instant since,
             Pageable pageable
+    );
+
+    @Query("""
+            select distinct r.questionId
+            from MissionAnswerResult r
+            where r.childId = :childId
+              and r.missionId = :missionId
+              and r.review = false
+            """)
+    List<UUID> findNormalAttemptedQuestionIds(
+            @Param("childId") UUID childId,
+            @Param("missionId") UUID missionId
     );
 }

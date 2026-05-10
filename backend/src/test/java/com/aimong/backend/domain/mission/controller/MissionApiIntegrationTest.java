@@ -11,11 +11,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.aimong.backend.domain.mission.dto.MissionListResponse;
 import com.aimong.backend.domain.mission.dto.MissionQuestionsResponse;
-import com.aimong.backend.domain.mission.dto.MissionSummaryResponse;
-import com.aimong.backend.domain.mission.dto.QuestionCheckRequest;
+import com.aimong.backend.domain.mission.dto.MissionSetCheckRequest;
 import com.aimong.backend.domain.mission.dto.QuestionCheckResponse;
 import com.aimong.backend.domain.mission.dto.QuestionResponse;
-import com.aimong.backend.domain.mission.dto.StageProgressResponse;
 import com.aimong.backend.domain.mission.dto.SubmitRequest;
 import com.aimong.backend.domain.mission.dto.SubmitResponse;
 import com.aimong.backend.domain.mission.service.MissionService;
@@ -39,7 +37,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-@WebMvcTest(MissionController.class)
+@WebMvcTest({MissionController.class, MissionSetController.class})
 @AutoConfigureMockMvc(addFilters = false)
 class MissionApiIntegrationTest {
 
@@ -76,16 +74,26 @@ class MissionApiIntegrationTest {
         UUID missionId = UUID.randomUUID();
         UUID quizAttemptId = UUID.randomUUID();
         MissionQuestionsResponse response = new MissionQuestionsResponse(
+                "S0101-L1",
                 missionId,
+                "S0101",
+                1,
+                1,
+                1,
+                MissionQuestionsResponse.labelForStar(1),
                 "Privacy Safety",
+                null,
                 true,
+                0,
+                null,
+                null,
                 quizAttemptId,
                 10,
                 Instant.parse("2026-04-14T12:00:00Z"),
                 List.of(new QuestionResponse(UUID.randomUUID(), "OX", "Should you share a password?", List.of("Yes", "No")))
         );
 
-        given(quizService.getQuestions(childId, missionId)).willReturn(response);
+        given(quizService.getQuestions(childId, missionId, 1)).willReturn(response);
 
         mockMvc.perform(get("/missions/{missionId}/questions", missionId)
                         .principal(new UsernamePasswordAuthenticationToken(
@@ -98,7 +106,9 @@ class MissionApiIntegrationTest {
                 .andExpect(jsonPath("$.error").doesNotExist())
                 .andExpect(jsonPath("$.requestId").exists())
                 .andExpect(jsonPath("$.data.missionId").value(missionId.toString()))
-                .andExpect(jsonPath("$.data.missionTitle").value("Privacy Safety"))
+                .andExpect(jsonPath("$.data.starLevel").value(1))
+                .andExpect(jsonPath("$.data.variantNo").value(1))
+                .andExpect(jsonPath("$.data.title").value("Privacy Safety"))
                 .andExpect(jsonPath("$.data.isReview").value(true))
                 .andExpect(jsonPath("$.data.quizAttemptId").value(quizAttemptId.toString()))
                 .andExpect(jsonPath("$.data.questionCount").value(10))
@@ -147,7 +157,15 @@ class MissionApiIntegrationTest {
                 "SPROUT",
                 false,
                 false,
-                List.of(new SubmitResponse.ResultResponse(answers.get(0).questionId(), true, "Do not share passwords."))
+                List.of(new SubmitResponse.ResultResponse(answers.get(0).questionId(), true, "Do not share passwords.")),
+                "S0101-L1",
+                missionId.toString(),
+                1,
+                1,
+                1,
+                1,
+                List.of(),
+                1
         );
 
         given(submitService.submit(eq(childId), eq(missionId), any(SubmitRequest.class))).willReturn(response);
@@ -178,18 +196,17 @@ class MissionApiIntegrationTest {
     }
 
     @Test
-    void checkQuestionReturnsImmediateFeedbackWithoutSubmitContract() throws Exception {
+    void checkMissionSetQuestionReturnsImmediateFeedbackWithoutSubmitContract() throws Exception {
         UUID childId = UUID.randomUUID();
-        UUID missionId = UUID.randomUUID();
+        String setId = "S0101-L1";
         UUID questionId = UUID.randomUUID();
-        UUID quizAttemptId = UUID.randomUUID();
-        QuestionCheckRequest request = new QuestionCheckRequest(quizAttemptId, "No");
-        QuestionCheckResponse response = new QuestionCheckResponse(questionId, true, "Do not share passwords.");
+        MissionSetCheckRequest request = new MissionSetCheckRequest(questionId.toString(), "No");
+        QuestionCheckResponse response = new QuestionCheckResponse(questionId, true, "No", "Do not share passwords.");
 
-        given(questionCheckService.check(eq(childId), eq(missionId), eq(questionId), any(QuestionCheckRequest.class)))
+        given(questionCheckService.check(eq(childId), eq(setId), any(MissionSetCheckRequest.class)))
                 .willReturn(response);
 
-        mockMvc.perform(post("/missions/{missionId}/questions/{questionId}/check", missionId, questionId)
+        mockMvc.perform(post("/mission-sets/{setId}/check", setId)
                         .principal(new UsernamePasswordAuthenticationToken(
                                 childId.toString(),
                                 null,
@@ -209,9 +226,29 @@ class MissionApiIntegrationTest {
     @Test
     void getMissionsReturnsMissionListEnvelope() throws Exception {
         UUID childId = UUID.randomUUID();
+        UUID missionId = UUID.randomUUID();
         MissionListResponse response = new MissionListResponse(
-                List.of(new MissionSummaryResponse(UUID.randomUUID(), 1, "Password", "Read the prompt", true, false, null, false)),
-                new StageProgressResponse(1, 0, 0)
+                List.of(new MissionListResponse.StageResponse(
+                        1,
+                        "Stage 1",
+                        List.of(new MissionListResponse.MissionResponse(
+                                missionId,
+                                "S0101",
+                                "Password",
+                                "Read the prompt",
+                                true,
+                                List.of(new MissionListResponse.StarLevelResponse(
+                                        1,
+                                        MissionListResponse.labelForStar(1),
+                                        1,
+                                        1,
+                                        true,
+                                        true
+                                )),
+                                1
+                        ))
+                )),
+                new MissionListResponse.ProgressResponse(1, 1, 1)
         );
 
         given(missionService.getMissions(childId)).willReturn(response);
@@ -226,7 +263,7 @@ class MissionApiIntegrationTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.error").doesNotExist())
                 .andExpect(jsonPath("$.requestId").exists())
-                .andExpect(jsonPath("$.data.missions[0].title").value("Password"))
-                .andExpect(jsonPath("$.data.stageProgress.stage1Completed").value(1));
+                .andExpect(jsonPath("$.data.stages[0].missions[0].title").value("Password"))
+                .andExpect(jsonPath("$.data.progress.completedSetCount").value(1));
     }
 }
