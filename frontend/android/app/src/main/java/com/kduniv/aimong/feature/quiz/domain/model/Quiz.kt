@@ -1,6 +1,7 @@
 package com.kduniv.aimong.feature.quiz.domain.model
 
 data class QuizQuestions(
+    val setId: String,
     val missionId: String,
     val missionTitle: String,
     val isReview: Boolean,

@@ -25,7 +25,9 @@
     <string name="home_streak_partner_fmt">파트너 %1$s · 오늘 완료: %2$s</string>
     <string name="home_yes">예</string>
     <string name="home_no">아니오</string>
-    <string name="home_message_until_loaded">학습 탭에서 미션을 확인해 보세요.</string>
+    <string name="home_message_until_loaded">홈에서 미션을 확인해 보세요.</string>
+    <string name="parent_dashboard_title_default">부모 대시보드</string>
+    <string name="parent_dashboard_title_with_nickname">%1$s 님의 대시보드</string>
     <string name="home_pet_name_default">펫</string>
     <string name="home_gacha_ticket_title">가챠 티켓 %1$d장 보유!</string>
     <string name="home_gacha_until_loaded">가챠 안내는 데이터 연동 후 표시됩니다.</string>
@@ -50,6 +52,9 @@
     <string name="quiz_feedback_wrong_hint">다시 생각해볼까?</string>
     <string name="quiz_feedback_answer_saved_title">답변이 저장됐어요</string>
     <string name="quiz_answer_saved_hint">정답 여부는 모든 문제를 푼 뒤 제출하면 확인할 수 있어요.</string>
+    <string name="quiz_timeout_explanation">시간이 초과됐어요. 다음 문제로 넘어가요.</string>
+    <string name="quiz_attempt_recovered_banner">진행 중인 퀴즈를 복구했어요. 이미 답한 문항은 다시 선택할 수 없어요.</string>
+    <string name="quiz_timer_recovered_label">진행 복구됨</string>
     <string name="quiz_btn_next">다음 문제 →</string>
     <string name="quiz_btn_view_result">결과 보기</string>
     <string name="quiz_btn_result_confirm">결과 확인하기</string>
@@ -88,6 +93,7 @@
     <string name="mission_stage_progress_counts">1단계 %1$d · 2단계 %2$d · 3단계 %3$d</string>
     <string name="mission_stage_unlock_hint">2단계: 1단계 3개 이상 클리어 시 · 3단계: 2단계 4개 이상 클리어 시 잠금 해제</string>
     <string name="mission_badge_review">복습</string>
+    <string name="mission_no_playable_star_level">지금 시작할 수 있는 난이도가 없어요.</string>
     <string name="mission_error_retry">다시 시도</string>
 
     <!-- Auth (Google / parent register / child code) -->

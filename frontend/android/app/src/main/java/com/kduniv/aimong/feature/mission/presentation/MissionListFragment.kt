@@ -7,9 +7,13 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
+import androidx.core.os.bundleOf
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.kduniv.aimong.core.ui.BaseFragment
 import com.kduniv.aimong.databinding.FragmentMissionListBinding
+import com.kduniv.aimong.feature.mission.domain.model.Mission
+import com.kduniv.aimong.feature.mission.domain.model.MissionStarLevel
 import com.kduniv.aimong.feature.mission.domain.model.MissionProgress
 import com.kduniv.aimong.R
 import dagger.hilt.android.AndroidEntryPoint
@@ -31,14 +35,44 @@ class MissionListFragment : BaseFragment<FragmentMissionListBinding>(FragmentMis
     }
 
     private fun initRecyclerView() {
-        missionAdapter = MissionListAdapter { mission ->
-            val action = MissionListFragmentDirections.actionLearningFragmentToQuizFragment(mission.missionId)
-            findNavController().navigate(action)
-        }
+        missionAdapter = MissionListAdapter { mission -> showStarLevelPicker(mission) }
         binding.rvMissions.apply {
             adapter = missionAdapter
             layoutManager = LinearLayoutManager(requireContext())
         }
+    }
+
+    private fun showStarLevelPicker(mission: Mission) {
+        val candidates = mission.starLevels.filter { it.isPlayable || it.isReviewable }
+            .sortedBy { it.starLevel }
+        if (candidates.isEmpty()) {
+            Toast.makeText(requireContext(), R.string.mission_no_playable_star_level, Toast.LENGTH_SHORT).show()
+            return
+        }
+        val labels = candidates.map { starLabel(it) }.toTypedArray()
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(mission.title)
+            .setItems(labels) { _, which ->
+                val sl = candidates[which]
+                navigateToQuiz(mission.missionId, sl.starLevel)
+            }
+            .show()
+    }
+
+    private fun starLabel(sl: MissionStarLevel): String {
+        val ctx = requireContext()
+        return "${sl.label} (${sl.completedSetCount}/${sl.totalSetCount})"
+    }
+
+    private fun navigateToQuiz(missionId: String, starLevel: Int) {
+        findNavController().navigate(
+            R.id.quizFragment,
+            bundleOf(
+                "entrySetId" to "",
+                "missionId" to missionId,
+                "starLevel" to starLevel
+            )
+        )
     }
 
     override fun initObserver() {

@@ -39,6 +39,7 @@ class ParentRepositoryImpl @Inject constructor(
             if (response.success) {
                 val list = response.data.children
                 sessionManager.saveParentChildrenJson(gson.toJson(list))
+                sessionManager.saveParentNickname(response.data.parentNickname)
                 Result.success(list)
             } else {
                 Result.failure(Exception(ApiErrorMapper.userMessageForApiError(response.error)))

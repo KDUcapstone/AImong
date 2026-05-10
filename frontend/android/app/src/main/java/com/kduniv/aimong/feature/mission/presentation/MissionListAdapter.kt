@@ -20,8 +20,8 @@ class MissionListAdapter(
         return MissionViewHolder(binding)
     }
 
-    override fun onBindViewHolder(parent: MissionViewHolder, position: Int) {
-        parent.bind(getItem(position))
+    override fun onBindViewHolder(holder: MissionViewHolder, position: Int) {
+        holder.bind(getItem(position))
     }
 
     inner class MissionViewHolder(private val binding: ItemMissionBinding) :
@@ -29,13 +29,16 @@ class MissionListAdapter(
 
         fun bind(mission: Mission) {
             binding.tvStage.text = binding.root.context.getString(R.string.quiz_stage_label, mission.stage)
-            binding.tvTitle.text = "Lv.${mission.levelNo} · ${mission.title}"
+            binding.tvTitle.text = mission.title
             binding.tvDescription.text = mission.description
 
+            val anyReviewable = mission.starLevels.any { it.isReviewable }
             binding.tvReviewBadge.visibility =
-                if (mission.isUnlocked && mission.isReviewable) View.VISIBLE else View.GONE
+                if (mission.isUnlocked && anyReviewable) View.VISIBLE else View.GONE
 
-            // 상태 아이콘 및 레이아웃 처리
+            val anyCompleted = mission.starLevels.any { it.isCompleted }
+            val anyPlayable = mission.starLevels.any { it.isPlayable }
+
             if (!mission.isUnlocked) {
                 binding.viewLockOverlay.visibility = View.VISIBLE
                 binding.ivLock.visibility = View.VISIBLE
@@ -48,22 +51,38 @@ class MissionListAdapter(
                 binding.ivLock.visibility = View.GONE
                 binding.ivStatus.visibility = View.VISIBLE
 
-                if (mission.isCompleted) {
-                    binding.ivStatus.setImageResource(R.drawable.ic_check_circle)
-                    binding.ivStatus.setColorFilter(ContextCompat.getColor(binding.root.context, R.color.quiz_mint))
-                } else {
-                    binding.ivStatus.setImageResource(R.drawable.ic_play_arrow)
-                    binding.ivStatus.setColorFilter(ContextCompat.getColor(binding.root.context, R.color.white))
+                when {
+                    anyCompleted && !anyPlayable -> {
+                        binding.ivStatus.setImageResource(R.drawable.ic_check_circle)
+                        binding.ivStatus.setColorFilter(
+                            ContextCompat.getColor(binding.root.context, R.color.quiz_mint)
+                        )
+                    }
+                    anyPlayable -> {
+                        binding.ivStatus.setImageResource(R.drawable.ic_play_arrow)
+                        binding.ivStatus.setColorFilter(
+                            ContextCompat.getColor(binding.root.context, R.color.white)
+                        )
+                    }
+                    else -> {
+                        binding.ivStatus.setImageResource(R.drawable.ic_play_arrow)
+                        binding.ivStatus.setColorFilter(
+                            ContextCompat.getColor(binding.root.context, R.color.white)
+                        )
+                        binding.ivStatus.alpha = 0.5f
+                    }
                 }
 
-                binding.root.setOnClickListener { onMissionClick(mission) }
+                binding.root.setOnClickListener {
+                    if (anyPlayable || anyReviewable) onMissionClick(mission)
+                }
             }
         }
     }
 
     class MissionDiffCallback : DiffUtil.ItemCallback<Mission>() {
         override fun areItemsTheSame(oldItem: Mission, newItem: Mission): Boolean =
-            oldItem.setId == newItem.setId
+            oldItem.missionId == newItem.missionId
 
         override fun areContentsTheSame(oldItem: Mission, newItem: Mission): Boolean =
             oldItem == newItem

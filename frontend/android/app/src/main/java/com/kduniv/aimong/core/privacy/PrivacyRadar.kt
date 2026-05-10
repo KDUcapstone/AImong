@@ -14,7 +14,6 @@ class PrivacyRadar @Inject constructor() {
     )
 
     private val patterns = listOf(
-        Regex("""[가-힣]{2,4}(이야|입니다|야|이에요|예요)"""),
         Regex("""(초등학교|중학교|고등학교|\w+초|\w+중|\w+고)"""),
         Regex("""\d+살|\d+세"""),
         Regex("""\d+학년"""),
@@ -135,7 +134,6 @@ class PrivacyRadar @Inject constructor() {
         if (Regex("""\d+학년""").containsMatchIn(text)) return PrivacyType.ETC
         if (Regex("""010[- .]?\d{3,4}[- .]?\d{4}""").containsMatchIn(text)) return PrivacyType.PHONE
         if (Regex("""[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}""").containsMatchIn(text)) return PrivacyType.EMAIL
-        if (Regex("""[가-힣]{2,4}(이야|입니다|야|이에요|예요)""").containsMatchIn(text)) return PrivacyType.NAME
         return PrivacyType.ETC
     }
 }

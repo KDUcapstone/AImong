@@ -5,10 +5,6 @@
         android:icon="@drawable/ic_nav_home_color"
         android:title="@string/bottom_nav_home" />
     <item
-        android:id="@+id/learningFragment"
-        android:icon="@drawable/ic_nav_study_color"
-        android:title="@string/bottom_nav_learning" />
-    <item
         android:id="@+id/chatFragment"
         android:icon="@drawable/ic_nav_ai_color"
         android:title="@string/bottom_nav_chatbot" />

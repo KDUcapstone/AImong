@@ -91,7 +91,11 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
 
     override fun initView() {
         binding.ivBack.setOnClickListener {
-            findNavController().popBackStack()
+            // v2.4: 진행 중 attempt가 있으면 중도 이탈 기록 후 종료
+            lifecycleScope.launch {
+                viewModel.abandonCurrentAttemptIfAny("USER_EXIT")
+                findNavController().popBackStack()
+            }
         }
         binding.btnResViewSolutions.setOnClickListener {
             binding.layoutQuizResult.visibility = View.GONE
@@ -118,7 +122,10 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             viewModel.retryQuiz()
         }
         binding.btnResFinish.setOnClickListener {
-            findNavController().popBackStack()
+            lifecycleScope.launch {
+                viewModel.abandonCurrentAttemptIfAny("USER_EXIT")
+                findNavController().popBackStack()
+            }
         }
         binding.btnNextQuestion.setOnClickListener {
             // 결과 화면에서 "다시하기"를 누른 직후(두 번째 텀 로딩 중)엔 이전 텀의 피드백/전이와 충돌하지 않게 막는다.
@@ -232,6 +239,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                         state.isCorrect,
                         state.explanation,
                         state.userAnswer,
+                        state.correctAnswer,
                         state.deferImmediateCorrectness
                     )
                 } else {
@@ -329,7 +337,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         lockOptions()
         markCorrectAnswer(state.question, state.userAnswer, state.isCorrect)
         
-        showAnswerFeedback(state.question, state.isCorrect, state.explanation, state.userAnswer, false)
+        showAnswerFeedback(state.question, state.isCorrect, state.explanation, state.userAnswer, null, false)
         binding.btnFeedbackRetry.visibility = View.GONE // 풀이 모드에선 다시보기 불필요
         
         val targetSize = if (lives <= 0) maxPlayedIndex else total - 1
@@ -418,6 +426,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         isCorrect: Boolean,
         explanation: String,
         userAnswer: String,
+        correctAnswer: String? = null,
         deferImmediateCorrectness: Boolean = false
     ) {
         if (deferImmediateCorrectness) {
@@ -512,7 +521,12 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             binding.tvFeedbackTitle.setTextColor(Color.parseColor("#FF4B4B"))
             binding.layoutFeedbackPanel.setCardBackgroundColor(android.content.res.ColorStateList.valueOf(Color.parseColor("#1A1025")))
         }
-        binding.tvFeedbackContent.text = explanation
+        val correctLine = correctAnswer?.takeIf { it.isNotBlank() }?.let { ca ->
+            "정답: $ca"
+        }
+        val exp = explanation.trim()
+        binding.tvFeedbackContent.text = listOfNotNull(correctLine, exp.takeIf { it.isNotBlank() })
+            .joinToString(separator = "\n\n")
     }
 
     private fun showResult(result: QuizResult) {
@@ -704,7 +718,21 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             if (index == 0) updateHearts(maxLives, forceReset = true)
             updateQuizModeBanner()
             setupOptions(question)
-            startTimer(reset = true)
+            // v2.4: 이미 답한 문항(복구)이라면 입력을 막는다.
+            if (viewModel.isAnsweredAlready(question.id)) {
+                lockOptions()
+                binding.tvAttemptRecoverBanner.visibility = View.VISIBLE
+                binding.tvAttemptRecoverBanner.text = getString(R.string.quiz_attempt_recovered_banner)
+                binding.tvTimer.text = getString(R.string.quiz_timer_recovered_label)
+                binding.tvTimer.setTextColor(Color.parseColor("#8A96AD"))
+                timer?.cancel()
+                timer = null
+            } else {
+                binding.tvAttemptRecoverBanner.visibility = View.GONE
+                if (!viewModel.isSolutionMode.value) {
+                    startTimer(reset = true)
+                }
+            }
         }
     }
 

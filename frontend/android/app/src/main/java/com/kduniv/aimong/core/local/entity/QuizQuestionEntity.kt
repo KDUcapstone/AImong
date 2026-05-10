@@ -6,7 +6,7 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "quiz_questions")
 data class QuizQuestionEntity(
     @PrimaryKey val id: String,
-    val missionId: String,
+    val setId: String,
     val type: String,
     val question: String,
     val optionsJson: String? // List<String>을 JSON으로 저장
@@ -14,7 +14,8 @@ data class QuizQuestionEntity(
 
 @Entity(tableName = "quiz_metadata")
 data class QuizMetadataEntity(
-    @PrimaryKey val missionId: String,
+    @PrimaryKey val setId: String,
+    val missionId: String,
     val missionTitle: String,
     val isReview: Boolean,
     val quizAttemptId: String,

@@ -9,7 +9,9 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
 import com.kduniv.aimong.MainActivity
+import com.kduniv.aimong.R
 import com.kduniv.aimong.core.local.SessionManager
+import com.kduniv.aimong.core.network.model.ParentChildItem
 import com.kduniv.aimong.core.ui.BaseFragment
 import com.kduniv.aimong.databinding.FragmentParentDashboardBinding
 import dagger.hilt.android.AndroidEntryPoint
@@ -24,6 +26,21 @@ class ParentDashboardFragment : BaseFragment<FragmentParentDashboardBinding>(Fra
 
     @Inject
     lateinit var sessionManager: SessionManager
+
+    private fun titleForParentDashboard(nickname: String?): String {
+        val n = nickname?.trim().orEmpty()
+        return if (n.isNotEmpty()) getString(R.string.parent_dashboard_title_with_nickname, n)
+        else getString(R.string.parent_dashboard_title_default)
+    }
+
+    private var latestChildren: List<ParentChildItem> = emptyList()
+    private var latestSelectedChildId: String? = null
+
+    private fun updateDashboardTitle() {
+        val childNickname = latestSelectedChildId
+            ?.let { id -> latestChildren.firstOrNull { it.childId == id }?.nickname }
+        binding.tvTitle.text = titleForParentDashboard(childNickname)
+    }
 
     override fun initView() {
         adapter = ParentChildAdapter(
@@ -58,7 +75,15 @@ class ParentDashboardFragment : BaseFragment<FragmentParentDashboardBinding>(Fra
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
                     viewModel.children.collect { children ->
+                        latestChildren = children
                         adapter.submitList(children)
+                        updateDashboardTitle()
+                    }
+                }
+                launch {
+                    viewModel.selectedChildId.collect { id ->
+                        latestSelectedChildId = id
+                        updateDashboardTitle()
                     }
                 }
                 launch {
@@ -94,8 +119,10 @@ class ParentDashboardFragment : BaseFragment<FragmentParentDashboardBinding>(Fra
                         val lines = wp.weakPoints.joinToString(separator = "\n") { it ->
                             val title = it.setTitle ?: it.missionTitle ?: "-"
                             val stage = it.stage?.let { s -> "S$s" } ?: "-"
-                            val level = it.levelNo?.let { l -> "L$l" } ?: "-"
-                            "- $title ($level/$stage) 오답률 ${it.incorrectRate}, 시도 ${it.attemptCount}"
+                            val diff = it.starLevel?.let { sl -> "★$sl" }
+                                ?: it.levelNo?.let { l -> "L$l" }
+                                ?: "-"
+                            "- $title ($diff/$stage) 오답률 ${it.incorrectRate}, 시도 ${it.attemptCount}"
                         }
                         binding.tvParentWeakPoints.text =
                             "약점 분석 (${wp.analyzedPeriod ?: "최근"})\n- total: ${wp.totalCount}\n$lines"

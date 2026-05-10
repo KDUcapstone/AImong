@@ -8,8 +8,8 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.kduniv.aimong.core.local.dao.OfflineMissionQueueDao
 import com.kduniv.aimong.core.network.AimongApiService
-import com.kduniv.aimong.feature.quiz.data.model.QuizAnswer
-import com.kduniv.aimong.feature.quiz.data.model.QuizSubmitRequest
+import com.kduniv.aimong.feature.quiz.data.model.MissionSetAnswerItem
+import com.kduniv.aimong.feature.quiz.data.model.MissionSetSubmitRequest
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.Dispatchers
@@ -31,17 +31,17 @@ class QuizSyncWorker @AssistedInject constructor(
         var hasError = false
         unsyncedMissions.forEach { entity ->
             try {
-                val answersType = object : TypeToken<List<QuizAnswer>>() {}.type
-                val answers: List<QuizAnswer> = gson.fromJson(entity.answersJson, answersType)
-                val request = QuizSubmitRequest(entity.quizAttemptId, answers)
-                
-                val response = apiService.submitQuiz(entity.missionId, request)
+                val answersType = object : TypeToken<List<MissionSetAnswerItem>>() {}.type
+                val answers: List<MissionSetAnswerItem> = gson.fromJson(entity.answersJson, answersType)
+                val request = MissionSetSubmitRequest(answers = answers)
+
+                val response = apiService.submitMissionSet(entity.setId, request)
                 if (response.success) {
                     offlineDao.markAsSynced(entity.id)
                 } else {
                     hasError = true
                 }
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 hasError = true
             }
         }

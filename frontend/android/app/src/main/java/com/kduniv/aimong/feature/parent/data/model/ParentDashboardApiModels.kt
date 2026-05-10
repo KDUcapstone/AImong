@@ -58,6 +58,7 @@ data class ParentWeakPointDto(
     @SerializedName("missionTitle") val missionTitle: String? = null,
     @SerializedName("setId") val setId: String? = null,
     @SerializedName("setTitle") val setTitle: String? = null,
+    @SerializedName("starLevel") val starLevel: Int? = null,
     @SerializedName("levelNo") val levelNo: Int? = null,
     @SerializedName("difficulty") val difficulty: String? = null,
     @SerializedName("stage") val stage: Int? = null,

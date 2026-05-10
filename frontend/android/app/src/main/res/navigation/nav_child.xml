@@ -11,9 +11,6 @@
         android:label="Home"
         tools:layout="@layout/fragment_home">
         <action
-            android:id="@+id/action_homeFragment_to_learningFragment"
-            app:destination="@id/learningFragment" />
-        <action
             android:id="@+id/action_homeFragment_to_chatFragment"
             app:destination="@id/chatFragment" />
         <action
@@ -22,19 +19,6 @@
         <action
             android:id="@+id/action_homeFragment_to_quizFragment"
             app:destination="@id/quizFragment" />
-    </fragment>
-
-    <fragment
-        android:id="@+id/learningFragment"
-        android:name="com.kduniv.aimong.feature.mission.presentation.MissionListFragment"
-        android:label="Missions"
-        tools:layout="@layout/fragment_mission_list">
-        <action
-            android:id="@+id/action_learningFragment_to_quizFragment"
-            app:destination="@id/quizFragment" />
-        <action
-            android:id="@+id/action_learningFragment_to_chatFragment"
-            app:destination="@id/chatFragment" />
     </fragment>
 
     <fragment
@@ -49,8 +33,17 @@
         android:label="Quiz"
         tools:layout="@layout/fragment_quiz">
         <argument
-            android:name="missionId"
+            android:name="entrySetId"
+            android:defaultValue=""
             app:argType="string" />
+        <argument
+            android:name="missionId"
+            android:defaultValue=""
+            app:argType="string" />
+        <argument
+            android:name="starLevel"
+            android:defaultValue="-1"
+            app:argType="integer" />
     </fragment>
 
     <fragment

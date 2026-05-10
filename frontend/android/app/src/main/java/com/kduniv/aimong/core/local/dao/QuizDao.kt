@@ -6,11 +6,11 @@ import com.kduniv.aimong.core.local.entity.QuizQuestionEntity
 
 @Dao
 interface QuizDao {
-    @Query("SELECT * FROM quiz_metadata WHERE missionId = :missionId")
-    suspend fun getQuizMetadata(missionId: String): QuizMetadataEntity?
+    @Query("SELECT * FROM quiz_metadata WHERE setId = :setId")
+    suspend fun getQuizMetadata(setId: String): QuizMetadataEntity?
 
-    @Query("SELECT * FROM quiz_questions WHERE missionId = :missionId")
-    suspend fun getQuizQuestions(missionId: String): List<QuizQuestionEntity>
+    @Query("SELECT * FROM quiz_questions WHERE setId = :setId")
+    suspend fun getQuizQuestions(setId: String): List<QuizQuestionEntity>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertQuizMetadata(metadata: QuizMetadataEntity)
@@ -24,6 +24,6 @@ interface QuizDao {
         insertQuizQuestions(questions)
     }
 
-    @Query("DELETE FROM quiz_questions WHERE missionId = :missionId")
-    suspend fun deleteQuestionsByMission(missionId: String)
+    @Query("DELETE FROM quiz_questions WHERE setId = :setId")
+    suspend fun deleteQuestionsBySetId(setId: String)
 }

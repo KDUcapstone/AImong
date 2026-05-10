@@ -4,7 +4,9 @@ import com.google.gson.annotations.SerializedName
 
 /** GET /parent/children 의 `data` 본문 */
 data class ParentChildrenResponseData(
-    @SerializedName("children") val children: List<ParentChildItem> = emptyList()
+    @SerializedName("children") val children: List<ParentChildItem> = emptyList(),
+    /** 일부 BE: 부모 계정 표시명 */
+    @SerializedName("parentNickname") val parentNickname: String? = null
 )
 
 data class ParentChildItem(

@@ -15,6 +15,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.NavOptions
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.NavigationUI
 import androidx.navigation.ui.setupWithNavController
@@ -153,7 +155,24 @@ class MainActivity : AppCompatActivity() {
                 binding.bottomNav.itemIconTintList = null
                 
                 binding.bottomNav.setOnItemSelectedListener { item ->
-                    val navigated = NavigationUI.onNavDestinationSelected(item, navController)
+                    val currentId = navController.currentDestination?.id
+                    val targetId = item.itemId
+                    val navigated = if (currentId == targetId) {
+                        true
+                    } else {
+                        val options = NavOptions.Builder()
+                            .setLaunchSingleTop(true)
+                            .setRestoreState(true)
+                            .setPopUpTo(navController.graph.findStartDestination().id, false, true)
+                            .build()
+                        try {
+                            navController.navigate(targetId, null, options)
+                            true
+                        } catch (_: IllegalArgumentException) {
+                            // 그래프에 목적지가 없거나 현재 그래프에서 갈 수 없는 경우
+                            false
+                        }
+                    }
                     if (navigated) {
                         // 바텀바 아이템 클릭 시 바운시 효과
                         for (i in 0 until binding.bottomNav.menu.size()) {
@@ -172,7 +191,12 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 binding.bottomNav.setOnItemReselectedListener { item ->
-                    navController.popBackStack(item.itemId, false)
+                    // reselect 시 항상 해당 탭의 루트로 복귀(pop) 시도.
+                    // 탭 상태가 꼬인 경우를 대비해 pop이 실패하면 navigate로 보정한다.
+                    val popped = navController.popBackStack(item.itemId, false)
+                    if (!popped) {
+                        runCatching { navController.navigate(item.itemId) }
+                    }
                 }
             } else {
                 binding.bottomNav.visibility = View.GONE
@@ -186,7 +210,6 @@ class MainActivity : AppCompatActivity() {
         val topLevelDestinations = when (userRole) {
             "CHILD" -> setOf(
                 R.id.homeFragment,
-                R.id.learningFragment,
                 R.id.chatFragment,
                 R.id.gachaFragment,
                 R.id.myProfileFragment,

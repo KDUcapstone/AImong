@@ -13,6 +13,7 @@ import com.kduniv.aimong.feature.quiz.domain.model.QuizQuestions
 import com.kduniv.aimong.feature.quiz.domain.model.QuizResult
 import com.kduniv.aimong.feature.quiz.domain.repository.QuizRepository
 import com.kduniv.aimong.R
+import com.kduniv.aimong.core.network.AimongApiService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Job
@@ -21,6 +22,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.*
 import javax.inject.Inject
@@ -29,10 +31,13 @@ import javax.inject.Inject
 class QuizViewModel @Inject constructor(
     private val quizRepository: QuizRepository,
     private val savedStateHandle: SavedStateHandle,
-    @ApplicationContext private val appContext: Context
+    @ApplicationContext private val appContext: Context,
+    private val apiService: AimongApiService
 ) : ViewModel() {
 
-    private val missionId: String = checkNotNull(savedStateHandle["missionId"])
+    private val entrySetId: String = savedStateHandle.get<String>("entrySetId").orEmpty()
+    private val missionIdArg: String = savedStateHandle.get<String>("missionId").orEmpty()
+    private val starLevel: Int = savedStateHandle.get<Int>("starLevel") ?: -1
 
     private val _uiState = MutableStateFlow<QuizUiState>(QuizUiState.Loading)
     val uiState: StateFlow<QuizUiState> = _uiState
@@ -46,7 +51,10 @@ class QuizViewModel @Inject constructor(
     val currentQuestionIndex: StateFlow<Int> = savedStateHandle.getStateFlow("currentIndex", 0)
 
     private var cachedQuestions: QuizQuestions? = null
-    private val userAnswers = savedStateHandle.get<MutableMap<String, String>>("userAnswers") ?: mutableMapOf<String, String>()
+    // SavedStateHandle에는 Serializable/Parcelable만 안정적으로 저장 가능.
+    // MutableMap 그대로 저장하면 프로세스 복원 시 크래시가 날 수 있어 HashMap(Serializable)로 고정한다.
+    private val userAnswers: HashMap<String, String> =
+        savedStateHandle.get<HashMap<String, String>>("userAnswers") ?: hashMapOf()
     
     private val _isReviewMode = MutableStateFlow(false)
     val isReviewMode: StateFlow<Boolean> = _isReviewMode
@@ -62,6 +70,10 @@ class QuizViewModel @Inject constructor(
     /** 풀이 보기에서 사용할 답안 스냅샷(제출/종료 시점) */
     private var solutionAnswerSnapshot: Map<String, String> = emptyMap()
 
+    /** v2.4: 진행 중 attempt 복구용 */
+    private var attemptId: String? = null
+    private var answeredQuestionIds: Set<String> = emptySet()
+
     init {
         fetchQuestions()
     }
@@ -69,7 +81,13 @@ class QuizViewModel @Inject constructor(
     private fun fetchQuestions() {
         viewModelScope.launch {
             _uiState.value = QuizUiState.Loading
-            quizRepository.getQuestions(missionId)
+            val loadResult = when {
+                entrySetId.isNotBlank() -> quizRepository.getQuestionsBySetId(entrySetId)
+                starLevel in 1..3 && missionIdArg.isNotBlank() ->
+                    loadByMissionWithStatus(missionIdArg, starLevel)
+                else -> kotlin.Result.failure(Exception("학습 진입 정보가 없습니다."))
+            }
+            loadResult
                 .onSuccess { questions ->
                     cachedQuestions = questions
                     _isReviewMode.value = questions.isReview
@@ -86,12 +104,36 @@ class QuizViewModel @Inject constructor(
         }
     }
 
+    /** v2.4: missions/{missionId}/status로 진행중 attempt가 있으면 복구, 없으면 새 출제 */
+    private suspend fun loadByMissionWithStatus(missionId: String, starLevel: Int): kotlin.Result<QuizQuestions> {
+        return try {
+            val statusResp = apiService.getMissionStatus(missionId)
+            if (!statusResp.success) {
+                return kotlin.Result.failure(Exception(com.kduniv.aimong.core.network.ApiErrorMapper.userMessageForApiError(statusResp.error)))
+            }
+            val inProgress = statusResp.data.inProgressAttempt
+            if (inProgress != null) {
+                attemptId = inProgress.attemptId
+                // 문서대로: attempt 복구는 상태만 내려오므로, 상태 조회 후 setId로 문제를 다시 로드한다.
+                quizRepository.getAttempt(inProgress.attemptId)
+                    .onSuccess { attempt ->
+                        answeredQuestionIds = attempt.answeredQuestionIds.map { it.toString() }.toSet()
+                    }
+                quizRepository.getQuestionsBySetId(inProgress.setId.toString())
+            } else {
+                attemptId = null
+                answeredQuestionIds = emptySet()
+                quizRepository.getQuestionsByMission(missionId, starLevel)
+            }
+        } catch (e: Exception) {
+            kotlin.Result.failure(e)
+        }
+    }
+
     private fun startTimer(expiresAt: String) {
         timerJob?.cancel()
         timerJob = viewModelScope.launch {
-            val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
-            sdf.timeZone = TimeZone.getTimeZone("UTC")
-            val expiryTime = sdf.parse(expiresAt)?.time ?: return@launch
+            val expiryTime = parseExpiresAtMillis(expiresAt) ?: return@launch
             
             while (isActive) {
                 val currentTime = System.currentTimeMillis()
@@ -107,6 +149,31 @@ class QuizViewModel @Inject constructor(
                 delay(1000)
             }
         }
+    }
+
+    /**
+     * 서버 `expiresAt` 포맷이 환경별로 달라질 수 있어(밀리초/타임존/Z 여부),
+     * 여러 패턴을 순서대로 시도해 파싱한다.
+     */
+    private fun parseExpiresAtMillis(expiresAt: String): Long? {
+        val candidates = listOf(
+            "yyyy-MM-dd'T'HH:mm:ss.SSSX",
+            "yyyy-MM-dd'T'HH:mm:ssX",
+            "yyyy-MM-dd'T'HH:mm:ss"
+        )
+        for (p in candidates) {
+            try {
+                val sdf = SimpleDateFormat(p, Locale.getDefault()).apply {
+                    timeZone = TimeZone.getTimeZone("UTC")
+                    isLenient = true
+                }
+                val t = sdf.parse(expiresAt)?.time
+                if (t != null) return t
+            } catch (_: ParseException) {
+            } catch (_: Exception) {
+            }
+        }
+        return null
     }
 
     private fun pauseSessionTimerForSolutionMode() {
@@ -145,7 +212,7 @@ class QuizViewModel @Inject constructor(
     fun selectAnswer(questionId: String, answer: String) {
         if (_isSolutionMode.value) return
         userAnswers[questionId] = answer
-        savedStateHandle["userAnswers"] = userAnswers // 상태 저장
+        savedStateHandle["userAnswers"] = userAnswers // 상태 저장(Serializable)
     }
 
     /**
@@ -164,7 +231,8 @@ class QuizViewModel @Inject constructor(
                 _uiState.value = QuizUiState.AnswerChecked(
                     isCorrect = isAnswerCorrect,
                     explanation = if (isAnswerCorrect) "목업 모드 해설: 정답입니다!" else "목업 모드 해설: 시간 초과 또는 오답입니다.",
-                    userAnswer = answer
+                    userAnswer = answer,
+                    correctAnswer = if (isAnswerCorrect) answer else null
                 )
                 // 결과 객체가 필요하므로 가상의 결과 생성
                 if (quizResult == null) {
@@ -194,13 +262,36 @@ class QuizViewModel @Inject constructor(
                 return@launch
             }
 
-            // 단건 check API 미사용: 정답·해설은 최종 제출 응답에서만 확인
-            _uiState.value = QuizUiState.AnswerChecked(
-                isCorrect = true,
-                explanation = appContext.getString(R.string.quiz_answer_saved_hint),
-                userAnswer = answer,
-                deferImmediateCorrectness = true
-            )
+            // v2.4: 단건 check API로 즉시 정오·해설 반영
+            if (answer.isBlank()) {
+                _uiState.value = QuizUiState.AnswerChecked(
+                    isCorrect = false,
+                    explanation = appContext.getString(R.string.quiz_timeout_explanation),
+                    userAnswer = "",
+                    correctAnswer = null,
+                    deferImmediateCorrectness = false
+                )
+                return@launch
+            }
+            val setId = qs.setId
+            val qidLong = questionId.toLongOrNull()
+                ?: return@launch kotlin.run {
+                    _uiState.value = QuizUiState.Error("문항 식별자가 올바르지 않습니다.")
+                }
+            quizRepository.checkAnswer(setId, qidLong, answer)
+                .onSuccess { checked ->
+                    val exp = checked.explanation ?: appContext.getString(R.string.quiz_answer_saved_hint)
+                    _uiState.value = QuizUiState.AnswerChecked(
+                        isCorrect = checked.isCorrect,
+                        explanation = exp,
+                        userAnswer = answer,
+                        correctAnswer = checked.correctAnswer,
+                        deferImmediateCorrectness = false
+                    )
+                }
+                .onFailure { e ->
+                    _uiState.value = QuizUiState.Error(e.message ?: "채점에 실패했습니다.")
+                }
         }
     }
 
@@ -298,7 +389,13 @@ class QuizViewModel @Inject constructor(
                 return@launch
             }
             _uiState.value = QuizUiState.Loading
-            quizRepository.submitQuiz(missionId, quizAttemptId, userAnswers.toMap())
+            val qsNonNull = qs
+            quizRepository.submitQuiz(
+                setId = qsNonNull.setId,
+                missionId = qsNonNull.missionId.ifBlank { missionIdArg },
+                quizAttemptId = quizAttemptId,
+                answers = userAnswers.toMap()
+            )
                 .onSuccess { result ->
                     solutionAnswerSnapshot = userAnswers.toMap()
                     quizResult = result
@@ -348,11 +445,20 @@ class QuizViewModel @Inject constructor(
         quizResult = null
         solutionAnswerSnapshot = emptyMap()
         _isSolutionMode.value = false
+        attemptId = null
+        answeredQuestionIds = emptySet()
 
         userAnswers.clear()
         savedStateHandle["userAnswers"] = userAnswers
         savedStateHandle["currentIndex"] = 0
         fetchQuestions()
+    }
+
+    fun isAnsweredAlready(questionId: String): Boolean = answeredQuestionIds.contains(questionId)
+
+    suspend fun abandonCurrentAttemptIfAny(reason: String): Result<Unit> {
+        val id = attemptId?.takeIf { it.isNotBlank() } ?: return Result.success(Unit)
+        return quizRepository.abandonAttempt(id, reason).map { Unit }
     }
 
     /**
@@ -373,7 +479,8 @@ class QuizViewModel @Inject constructor(
         detail: String?
     ): Result<QuestionReportResult> {
         val trimmed = detail?.trim()?.takeIf { it.isNotEmpty() }
-        return quizRepository.reportQuestion(missionId, questionId, reasonCode, trimmed)
+        val mid = cachedQuestions?.missionId?.takeIf { it.isNotBlank() } ?: missionIdArg
+        return quizRepository.reportQuestion(mid, questionId, reasonCode, trimmed)
     }
 }
 
@@ -384,6 +491,7 @@ sealed class QuizUiState {
         val isCorrect: Boolean,
         val explanation: String,
         val userAnswer: String,
+        val correctAnswer: String? = null,
         val deferImmediateCorrectness: Boolean = false
     ) : QuizUiState()
     data class SolutionLoaded(

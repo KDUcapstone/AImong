@@ -58,6 +58,7 @@ data class MissionSummaryDto(
 data class RecommendedMissionDto(
     @SerializedName(value = "id", alternate = ["missionId"])
     val id: String,
+    @SerializedName("setId") val setId: Long? = null,
     @SerializedName("stage") val stage: Int,
     @SerializedName("title") val title: String,
     @SerializedName("description") val description: String,

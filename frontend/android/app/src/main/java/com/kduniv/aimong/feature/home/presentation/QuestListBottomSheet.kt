@@ -14,7 +14,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.NavHostFragment
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.tabs.TabLayout
@@ -145,8 +144,13 @@ class QuestListBottomSheet : BottomSheetDialogFragment() {
                 viewModel.onClaim(row.questType, row.period)
             QuestSheetPrimaryAction.GO_LEARN -> {
                 dismiss()
-                requireActivity().findViewById<BottomNavigationView>(R.id.bottom_nav)
-                    .selectedItemId = R.id.learningFragment
+                val navHost = requireActivity().supportFragmentManager
+                    .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
+                val nav = navHost.navController
+                // 학습 탭(learningFragment)은 제거됨. 홈으로 이동해 스테이지 팝업에서 퀴즈를 시작한다.
+                if (nav.currentDestination?.id != R.id.homeFragment) {
+                    nav.navigate(R.id.homeFragment)
+                }
             }
             QuestSheetPrimaryAction.GO_CHAT -> {
                 dismiss()

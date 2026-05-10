@@ -38,7 +38,7 @@ class MissionListViewModel @Inject constructor(
                         _uiState.value = currentState.copy(missions = sortedMissions)
                     } else {
                         // 첫 로컬 데이터 로드 시 Success 상태로 전환
-                        _uiState.value = MissionListUiState.Success(sortedMissions, MissionProgress(0, 0, 1))
+                        _uiState.value = MissionListUiState.Success(sortedMissions, MissionProgress(0, 0))
                     }
                 }
         }

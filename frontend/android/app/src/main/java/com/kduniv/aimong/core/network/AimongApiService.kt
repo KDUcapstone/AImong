@@ -11,6 +11,12 @@ import com.kduniv.aimong.feature.parent.data.model.ParentWeeklyStatsResponseData
 import com.kduniv.aimong.feature.parent.data.model.ParentChildSummaryResponseData
 import com.kduniv.aimong.feature.quiz.data.model.QuestionReportRequest
 import com.kduniv.aimong.feature.quiz.data.model.QuestionReportResponseData
+import com.kduniv.aimong.feature.mission.data.model.MissionStatusResponseData
+import com.kduniv.aimong.feature.quiz.data.model.MissionAttemptResponseData
+import com.kduniv.aimong.feature.quiz.data.model.MissionAttemptAbandonRequest
+import com.kduniv.aimong.feature.quiz.data.model.MissionAttemptAbandonResponseData
+import com.kduniv.aimong.feature.quiz.data.model.MissionSetCheckRequest
+import com.kduniv.aimong.feature.quiz.data.model.MissionSetCheckResponseData
 import com.kduniv.aimong.feature.quiz.data.model.QuizQuestionsResponse
 import com.kduniv.aimong.core.network.model.ChildLoginRequest
 import com.kduniv.aimong.core.network.model.ParentRegisterRequest
@@ -20,7 +26,7 @@ import com.kduniv.aimong.feature.quest.data.model.QuestClaimRequest
 import com.kduniv.aimong.feature.quest.data.model.QuestClaimResponseData
 import com.kduniv.aimong.feature.quest.data.model.WeeklyQuestsResponseData
 import com.kduniv.aimong.feature.quest.data.model.AchievementsResponseData
-import com.kduniv.aimong.feature.quiz.data.model.QuizSubmitRequest
+import com.kduniv.aimong.feature.quiz.data.model.MissionSetSubmitRequest
 import com.kduniv.aimong.feature.quiz.data.model.QuizSubmitResponse
 import com.kduniv.aimong.core.network.model.ChildLoginResponse
 import com.kduniv.aimong.core.network.model.ParentChildrenResponseData
@@ -109,20 +115,52 @@ interface AimongApiService {
     @GET("achievements")
     suspend fun getAchievements(): ApiResponse<AchievementsResponseData>
 
-    // MISSION
+    // MISSION / LEARNING (v2.3)
     @GET("missions")
     suspend fun getMissions(): ApiResponse<MissionsMapResponseData>
 
-    @GET("missions/{missionId}/questions")
-    suspend fun getQuestions(
+    /** v2.4: 미션 진입 전 상태 조회 */
+    @GET("missions/{missionId}/status")
+    suspend fun getMissionStatus(
         @Path("missionId") missionId: String
+    ): ApiResponse<MissionStatusResponseData>
+
+    @GET("missions/{missionId}/questions")
+    suspend fun getMissionQuestions(
+        @Path("missionId") missionId: String,
+        @Query("starLevel") starLevel: Int
     ): ApiResponse<QuizQuestionsResponse>
 
-    @POST("missions/{missionId}/submit")
-    suspend fun submitQuiz(
-        @Path("missionId") missionId: String,
-        @Body request: QuizSubmitRequest
+    @GET("mission-sets/{setId}/questions")
+    suspend fun getMissionSetQuestions(
+        @Path("setId") setId: String
+    ): ApiResponse<QuizQuestionsResponse>
+
+    @POST("mission-sets/{setId}/submit")
+    suspend fun submitMissionSet(
+        @Path("setId") setId: String,
+        @Body body: MissionSetSubmitRequest
     ): ApiResponse<QuizSubmitResponse>
+
+    /** v2.4: 문항 단위 채점 */
+    @POST("mission-sets/{setId}/check")
+    suspend fun checkMissionSetAnswer(
+        @Path("setId") setId: String,
+        @Body body: MissionSetCheckRequest
+    ): ApiResponse<MissionSetCheckResponseData>
+
+    /** v2.4: 진행 중 attempt 복구 */
+    @GET("mission-attempts/{attemptId}")
+    suspend fun getMissionAttempt(
+        @Path("attemptId") attemptId: String
+    ): ApiResponse<MissionAttemptResponseData>
+
+    /** v2.4: 중도 이탈 */
+    @POST("mission-attempts/{attemptId}/abandon")
+    suspend fun abandonMissionAttempt(
+        @Path("attemptId") attemptId: String,
+        @Body body: MissionAttemptAbandonRequest
+    ): ApiResponse<MissionAttemptAbandonResponseData>
 
     @POST("missions/{missionId}/questions/{questionId}/report")
     suspend fun reportQuestion(

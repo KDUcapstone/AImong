@@ -24,8 +24,7 @@ class HomeLayoutBinder(
     private val layoutInflater: LayoutInflater,
     private val getProfileLabel: (String) -> String,
     private val petNameDefault: String,
-    private val onNavigateQuiz: (String) -> Unit,
-    private val onSelectLearningTab: () -> Unit,
+    private val onNavigateQuiz: (HomeQuizNavigation) -> Unit,
     private val onOpenQuest: () -> Unit
 ) {
     private var lastPathItems: List<HomePathItem> = emptyList()
@@ -118,7 +117,7 @@ class HomeLayoutBinder(
                     row.btnNode.translationX = translation
                     row.btnNode.text = item.icon
                     row.btnNode.setOnClickListener {
-                        showTooltip(row.btnNode, item.title, reviewLabel, item.missionId)
+                        showTooltip(row.btnNode, item.title, reviewLabel, item.quizNav)
                     }
                     row.btnNode.setOnScaleTouchListener()
                     row.root.setTag(R.id.home_path_section_tag, sectionForRow)
@@ -133,7 +132,12 @@ class HomeLayoutBinder(
                     row.btnNode.text = item.icon
                     row.btnNode.alpha = if (item.enabled) 1f else 0.5f
                     row.btnNode.setOnClickListener {
-                        showTooltip(row.btnNode, item.missionTitle, "시작하기", if (item.enabled) item.missionId else null)
+                        showTooltip(
+                            row.btnNode,
+                            item.missionTitle,
+                            "시작하기",
+                            if (item.enabled) item.quizNav else null
+                        )
                     }
                     row.btnNode.setOnScaleTouchListener()
                     if (!row.lottiePet.isAnimating) row.lottiePet.playAnimation()
@@ -145,7 +149,7 @@ class HomeLayoutBinder(
                     val row = ViewHomePathNodeReviewBinding.inflate(inflater, binding.layoutMissionPath, false)
                     row.btnNode.translationX = translation
                     row.btnNode.setOnClickListener {
-                        showTooltip(row.btnNode, item.subtitle, reviewLabel, item.missionId)
+                        showTooltip(row.btnNode, item.subtitle, reviewLabel, item.quizNav)
                     }
                     row.btnNode.setOnScaleTouchListener()
                     row.root.setTag(R.id.home_path_section_tag, sectionForRow)
@@ -250,7 +254,7 @@ class HomeLayoutBinder(
         nodeView: View,
         title: String,
         subtitle: String?,
-        missionId: String?
+        quizNav: HomeQuizNavigation?
     ) {
         val tooltip = binding.layoutFloatingTooltip
         tooltip.isVisible = true
@@ -263,11 +267,11 @@ class HomeLayoutBinder(
             binding.tvTooltipSubtitle.isVisible = false
         }
         
-        if (missionId != null) {
+        if (quizNav != null && quizNav.canNavigate()) {
             binding.btnTooltipStart.isEnabled = true
             binding.btnTooltipStart.alpha = 1.0f
             binding.btnTooltipStart.setOnClickListener {
-                onNavigateQuiz(missionId)
+                onNavigateQuiz(quizNav)
                 tooltip.isVisible = false
             }
         } else {
