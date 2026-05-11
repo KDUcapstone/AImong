@@ -1,20 +1,23 @@
 package com.aimong.backend.domain.mission.service;
 
 import com.aimong.backend.domain.auth.service.ChildActivityService;
-import com.aimong.backend.domain.mission.dto.QuestionCheckRequest;
+import com.aimong.backend.domain.mission.dto.MissionSetCheckRequest;
 import com.aimong.backend.domain.mission.dto.QuestionCheckResponse;
 import com.aimong.backend.domain.mission.entity.QuestionAnswerKey;
 import com.aimong.backend.domain.mission.entity.QuizAttempt;
 import com.aimong.backend.domain.mission.repository.QuestionAnswerKeyRepository;
+import com.aimong.backend.domain.mission.repository.QuestionBankRepository;
 import com.aimong.backend.domain.mission.repository.QuizAttemptRepository;
 import com.aimong.backend.global.exception.AimongException;
 import com.aimong.backend.global.exception.ErrorCode;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -25,41 +28,39 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class QuestionCheckService {
 
-    private final QuizAttemptRepository quizAttemptRepository;
     private final QuestionAnswerKeyRepository questionAnswerKeyRepository;
+    private final QuestionBankRepository questionBankRepository;
+    private final QuizAttemptRepository quizAttemptRepository;
     private final ChildActivityService childActivityService;
-    private final QuizService quizService;
     private final ObjectMapper objectMapper;
 
-    @Transactional
+    @Transactional(readOnly = true)
     public QuestionCheckResponse check(
             UUID childId,
-            UUID missionId,
-            UUID questionId,
-            QuestionCheckRequest request
+            String setId,
+            MissionSetCheckRequest request
     ) {
         childActivityService.touchLastActiveAt(childId);
-        QuizAttempt quizAttempt = quizAttemptRepository.findById(request.quizAttemptId())
+        UUID questionId = parseQuestionId(request.questionId());
+        QuizAttempt quizAttempt = quizAttemptRepository
+                .findFirstByChildIdAndSetIdAndSubmittedAtIsNullOrderByCreatedAtDesc(childId, setId)
                 .orElseThrow(() -> new AimongException(ErrorCode.QUIZ_ATTEMPT_INVALID));
-
-        if (!quizAttempt.getChildId().equals(childId) || !quizAttempt.getMissionId().equals(missionId)) {
-            throw new AimongException(ErrorCode.FORBIDDEN);
-        }
-        if (quizAttempt.getSubmittedAt() != null) {
-            throw new AimongException(ErrorCode.QUIZ_ATTEMPT_ALREADY_SUBMITTED);
-        }
         if (!quizAttempt.getExpiresAt().isAfter(Instant.now())) {
             throw new AimongException(ErrorCode.ATTEMPT_EXPIRED);
         }
-        if (!quizService.parseQuestionIds(quizAttempt.getQuestionIdsJson()).contains(questionId)) {
+        if (!parseQuestionIds(quizAttempt.getQuestionIdsJson()).contains(questionId)) {
             throw new AimongException(ErrorCode.QUESTION_NOT_FOUND);
         }
+
+        questionBankRepository.findByIdAndMissionIdAndIsActiveTrue(questionId, quizAttempt.getMissionId())
+                .orElseThrow(() -> new AimongException(ErrorCode.QUESTION_NOT_FOUND));
 
         QuestionAnswerKey answerKey = questionAnswerKeyRepository.findById(questionId)
                 .orElseThrow(() -> new AimongException(ErrorCode.QUESTION_NOT_FOUND));
         return new QuestionCheckResponse(
                 questionId,
-                matchesAnswerPayload(answerKey.getAnswerPayload(), request.selected()),
+                matchesAnswerPayload(answerKey.getAnswerPayload(), request.answer()),
+                correctAnswer(answerKey.getAnswerPayload()),
                 answerKey.getExplanation()
         );
     }
@@ -78,6 +79,29 @@ public class QuestionCheckService {
             Set<String> values = new HashSet<>();
             collectExpectedAnswerValues(root, values);
             return values;
+        } catch (JsonProcessingException exception) {
+            throw new AimongException(ErrorCode.INTERNAL_SERVER_ERROR, exception);
+        }
+    }
+
+    private String correctAnswer(String answerPayload) {
+        return parseExpectedAnswerValues(answerPayload).stream()
+                .findFirst()
+                .orElse(null);
+    }
+
+    private UUID parseQuestionId(String questionId) {
+        try {
+            return UUID.fromString(questionId);
+        } catch (IllegalArgumentException exception) {
+            throw new AimongException(ErrorCode.BAD_REQUEST);
+        }
+    }
+
+    private List<UUID> parseQuestionIds(String questionIdsJson) {
+        try {
+            return objectMapper.readValue(questionIdsJson, new TypeReference<>() {
+            });
         } catch (JsonProcessingException exception) {
             throw new AimongException(ErrorCode.INTERNAL_SERVER_ERROR, exception);
         }

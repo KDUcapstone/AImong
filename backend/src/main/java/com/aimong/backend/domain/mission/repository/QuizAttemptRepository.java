@@ -15,4 +15,6 @@ public interface QuizAttemptRepository extends JpaRepository<QuizAttempt, UUID> 
     Optional<QuizAttempt> findWithLockById(UUID id);
 
     List<QuizAttempt> findAllByChildIdAndMissionIdAndSubmittedAtIsNotNull(UUID childId, UUID missionId);
+
+    Optional<QuizAttempt> findFirstByChildIdAndSetIdAndSubmittedAtIsNullOrderByCreatedAtDesc(UUID childId, String setId);
 }

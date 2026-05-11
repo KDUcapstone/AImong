@@ -28,7 +28,15 @@ public record SubmitResponse(
         String profileImageType,
         boolean profileImageUnlocked,
         boolean isReview,
-        List<ResultResponse> results
+        List<ResultResponse> results,
+        String setId,
+        String missionId,
+        Integer starLevel,
+        Integer variantNo,
+        long completedSetCount,
+        long starLevelCompletedSetCount,
+        List<String> nextUnlockedSetIds,
+        int todaySetCount
 ) {
     public record RewardResponse(
             String type,

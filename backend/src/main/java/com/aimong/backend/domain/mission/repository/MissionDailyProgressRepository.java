@@ -17,6 +17,8 @@ public interface MissionDailyProgressRepository extends JpaRepository<MissionDai
 
     Optional<MissionDailyProgress> findByChildIdAndMissionIdAndProgressDate(UUID childId, UUID missionId, LocalDate progressDate);
 
+    Optional<MissionDailyProgress> findByChildIdAndProgressDate(UUID childId, LocalDate progressDate);
+
     List<MissionDailyProgress> findAllByChildIdAndProgressDate(UUID childId, LocalDate progressDate);
 
     List<MissionDailyProgress> findAllByChildIdAndProgressDateBetweenOrderByProgressDateAsc(
@@ -30,8 +32,8 @@ public interface MissionDailyProgressRepository extends JpaRepository<MissionDai
     @Query("""
             select new com.aimong.backend.domain.parent.dto.ParentDailyProgressStat(
                 p.progressDate,
-                count(p),
-                coalesce(sum(p.firstXpEarned), 0)
+                coalesce(sum(p.completedSetCount), 0),
+                coalesce(sum(p.totalXpEarned), 0)
             )
             from MissionDailyProgress p
             where p.childId = :childId
@@ -47,4 +49,7 @@ public interface MissionDailyProgressRepository extends JpaRepository<MissionDai
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<MissionDailyProgress> findWithLockByChildIdAndMissionIdAndProgressDate(UUID childId, UUID missionId, LocalDate progressDate);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    Optional<MissionDailyProgress> findWithLockByChildIdAndProgressDate(UUID childId, LocalDate progressDate);
 }

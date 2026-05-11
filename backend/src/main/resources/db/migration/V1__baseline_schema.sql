@@ -57,7 +57,7 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 DO $$ BEGIN
-    CREATE TYPE privacy_detected_type_enum AS ENUM ('NAME', 'SCHOOL', 'AGE', 'PHONE', 'EMAIL', 'ADDRESS', 'DATE', 'URL');
+    CREATE TYPE privacy_detected_type_enum AS ENUM ('NAME', 'SCHOOL', 'AGE', 'PHONE', 'EMAIL', 'ADDRESS', 'DATE', 'URL', 'ETC');
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 CREATE TABLE IF NOT EXISTS public.parent_accounts (
@@ -85,9 +85,12 @@ CREATE TABLE IF NOT EXISTS public.child_profiles (
     profile_image_type profile_image_type_enum NOT NULL DEFAULT 'DEFAULT',
     session_version BIGINT NOT NULL DEFAULT 0,
     fcm_token TEXT,
+    energy INT NOT NULL DEFAULT 20,
+    energy_recovered_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     last_active_at TIMESTAMPTZ,
-    CONSTRAINT chk_child_profiles_code CHECK (code ~ '^[0-9]{6}$')
+    CONSTRAINT chk_child_profiles_code CHECK (code ~ '^[0-9]{6}$'),
+    CONSTRAINT child_profiles_energy_check CHECK (energy BETWEEN 0 AND 20)
 );
 
 CREATE INDEX IF NOT EXISTS idx_child_profiles_parent ON public.child_profiles(parent_id);
@@ -102,9 +105,28 @@ CREATE TABLE IF NOT EXISTS public.missions (
     is_active BOOLEAN NOT NULL DEFAULT TRUE
 );
 
+CREATE TABLE IF NOT EXISTS public.mission_sets (
+    set_id VARCHAR(32) PRIMARY KEY,
+    mission_id UUID NOT NULL REFERENCES public.missions(id) ON DELETE CASCADE,
+    mission_code VARCHAR(16) NOT NULL,
+    star_level SMALLINT NOT NULL CHECK (star_level BETWEEN 1 AND 3),
+    variant_no SMALLINT NOT NULL CHECK (variant_no > 0),
+    stage SMALLINT NOT NULL CHECK (stage BETWEEN 1 AND 3),
+    difficulty difficulty_band_enum NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT,
+    display_order INT NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    CONSTRAINT uq_mission_sets_mission_star_variant UNIQUE (mission_id, star_level, variant_no)
+);
+
+CREATE INDEX IF NOT EXISTS idx_mission_sets_active_star
+    ON public.mission_sets(mission_id, star_level, is_active, variant_no);
+
 CREATE TABLE IF NOT EXISTS public.question_bank (
     id UUID PRIMARY KEY,
     mission_id UUID NOT NULL REFERENCES public.missions(id) ON DELETE CASCADE,
+    set_id VARCHAR(32) REFERENCES public.mission_sets(set_id) ON DELETE SET NULL,
     question_type question_type_enum NOT NULL,
     prompt TEXT NOT NULL,
     options JSONB,
@@ -113,7 +135,7 @@ CREATE TABLE IF NOT EXISTS public.question_bank (
     difficulty difficulty_band_enum NOT NULL,
     legacy_numeric_difficulty SMALLINT,
     source_type question_source_enum NOT NULL DEFAULT 'STATIC',
-    generation_phase generation_phase_enum NOT NULL DEFAULT 'PREGENERATED',
+    generation_phase generation_phase_enum DEFAULT 'PREGENERATED',
     pack_no SMALLINT,
     difficulty_band difficulty_band_enum,
     question_pool_status question_pool_status_enum NOT NULL DEFAULT 'ACTIVE',
@@ -127,6 +149,8 @@ CREATE INDEX IF NOT EXISTS idx_question_bank_mission_active_pack
     ON public.question_bank(mission_id, is_active, pack_no);
 CREATE INDEX IF NOT EXISTS idx_question_bank_pool_status
     ON public.question_bank(mission_id, question_pool_status, is_active);
+CREATE INDEX IF NOT EXISTS idx_question_bank_set_active
+    ON public.question_bank(set_id, is_active, question_pool_status);
 
 CREATE TABLE IF NOT EXISTS private.question_answer_keys (
     question_id UUID PRIMARY KEY REFERENCES public.question_bank(id) ON DELETE CASCADE,
@@ -158,6 +182,8 @@ CREATE TABLE IF NOT EXISTS public.quiz_attempts (
     id UUID PRIMARY KEY,
     child_id UUID NOT NULL REFERENCES public.child_profiles(child_id) ON DELETE CASCADE,
     mission_id UUID NOT NULL REFERENCES public.missions(id) ON DELETE CASCADE,
+    set_id VARCHAR(32) REFERENCES public.mission_sets(set_id),
+    star_level SMALLINT NOT NULL CHECK (star_level BETWEEN 1 AND 3),
     question_ids_json JSONB NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     expires_at TIMESTAMPTZ NOT NULL,
@@ -167,11 +193,15 @@ CREATE TABLE IF NOT EXISTS public.quiz_attempts (
 
 CREATE INDEX IF NOT EXISTS idx_quiz_attempts_child_mission
     ON public.quiz_attempts(child_id, mission_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_quiz_attempts_child_set
+    ON public.quiz_attempts(child_id, set_id, created_at DESC);
 
 CREATE TABLE IF NOT EXISTS public.mission_attempts (
     id UUID PRIMARY KEY,
     child_id UUID NOT NULL REFERENCES public.child_profiles(child_id) ON DELETE CASCADE,
     mission_id UUID NOT NULL REFERENCES public.missions(id) ON DELETE CASCADE,
+    set_id VARCHAR(32) REFERENCES public.mission_sets(set_id),
+    star_level SMALLINT NOT NULL CHECK (star_level BETWEEN 1 AND 3),
     attempt_date DATE NOT NULL,
     attempt_no INT NOT NULL,
     score INT NOT NULL CHECK (score >= 0),
@@ -187,12 +217,17 @@ CREATE INDEX IF NOT EXISTS idx_mission_attempts_child_mission_date
     ON public.mission_attempts(child_id, mission_id, attempt_date);
 CREATE INDEX IF NOT EXISTS idx_mission_attempts_child_date
     ON public.mission_attempts(child_id, attempt_date);
+CREATE INDEX IF NOT EXISTS idx_mission_attempts_child_set_date
+    ON public.mission_attempts(child_id, set_id, attempt_date);
+CREATE INDEX IF NOT EXISTS idx_mission_attempts_child_star_date
+    ON public.mission_attempts(child_id, star_level, attempt_date);
 
 CREATE TABLE IF NOT EXISTS public.mission_answer_results (
     result_id UUID PRIMARY KEY,
     attempt_id UUID NOT NULL REFERENCES public.mission_attempts(id) ON DELETE CASCADE,
     child_id UUID NOT NULL REFERENCES public.child_profiles(child_id) ON DELETE CASCADE,
     mission_id UUID NOT NULL REFERENCES public.missions(id) ON DELETE CASCADE,
+    set_id VARCHAR(32) REFERENCES public.mission_sets(set_id),
     question_id UUID NOT NULL REFERENCES public.question_bank(id) ON DELETE CASCADE,
     is_review BOOLEAN NOT NULL DEFAULT FALSE,
     is_correct BOOLEAN NOT NULL,
@@ -204,14 +239,16 @@ CREATE INDEX IF NOT EXISTS idx_mission_answer_results_question
 
 CREATE TABLE IF NOT EXISTS public.mission_daily_progress (
     child_id UUID NOT NULL REFERENCES public.child_profiles(child_id) ON DELETE CASCADE,
-    mission_id UUID NOT NULL REFERENCES public.missions(id) ON DELETE CASCADE,
     progress_date DATE NOT NULL,
+    mission_id UUID REFERENCES public.missions(id) ON DELETE SET NULL,
     first_attempt_at TIMESTAMPTZ NOT NULL,
-    best_score INT NOT NULL CHECK (best_score >= 0),
-    total INT NOT NULL CHECK (total > 0),
+    completed_set_count INT NOT NULL DEFAULT 0 CHECK (completed_set_count >= 0),
+    total_xp_earned INT NOT NULL DEFAULT 0 CHECK (total_xp_earned >= 0),
+    best_score INT NOT NULL DEFAULT 0 CHECK (best_score >= 0),
+    total INT NOT NULL DEFAULT 10 CHECK (total > 0),
     first_xp_earned INT NOT NULL DEFAULT 0 CHECK (first_xp_earned >= 0),
     review_attempt_count INT NOT NULL DEFAULT 0 CHECK (review_attempt_count >= 0),
-    PRIMARY KEY (child_id, mission_id, progress_date)
+    PRIMARY KEY (child_id, progress_date)
 );
 
 CREATE TABLE IF NOT EXISTS public.pets (
@@ -233,6 +270,18 @@ ALTER TABLE public.child_profiles
 ALTER TABLE public.child_profiles
     ADD CONSTRAINT child_profiles_equipped_pet_id_fkey
         FOREIGN KEY (equipped_pet_id) REFERENCES public.pets(id);
+
+CREATE TABLE IF NOT EXISTS public.mission_set_progress (
+    child_id UUID NOT NULL REFERENCES public.child_profiles(child_id) ON DELETE CASCADE,
+    set_id VARCHAR(32) NOT NULL REFERENCES public.mission_sets(set_id) ON DELETE CASCADE,
+    completed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    best_score INT NOT NULL CHECK (best_score >= 0),
+    total INT NOT NULL CHECK (total > 0),
+    first_attempt_id UUID REFERENCES public.mission_attempts(id) ON DELETE SET NULL,
+    star_level SMALLINT NOT NULL CHECK (star_level BETWEEN 1 AND 3),
+    variant_no SMALLINT NOT NULL CHECK (variant_no > 0),
+    PRIMARY KEY (child_id, set_id)
+);
 
 CREATE TABLE IF NOT EXISTS public.tickets (
     ticket_id UUID PRIMARY KEY,
@@ -309,6 +358,7 @@ CREATE TABLE IF NOT EXISTS public.daily_quest_progress (
     child_id UUID NOT NULL REFERENCES public.child_profiles(child_id) ON DELETE CASCADE,
     date DATE NOT NULL,
     quest_type daily_quest_type_enum NOT NULL,
+    current_value INT NOT NULL DEFAULT 0 CHECK (current_value >= 0),
     completed BOOLEAN NOT NULL DEFAULT FALSE,
     reward_claimed BOOLEAN NOT NULL DEFAULT FALSE,
     completed_at TIMESTAMPTZ,
@@ -320,6 +370,7 @@ CREATE TABLE IF NOT EXISTS public.weekly_quest_progress (
     child_id UUID NOT NULL REFERENCES public.child_profiles(child_id) ON DELETE CASCADE,
     week_start DATE NOT NULL,
     quest_type weekly_quest_type_enum NOT NULL,
+    current_value INT NOT NULL DEFAULT 0 CHECK (current_value >= 0),
     completed BOOLEAN NOT NULL DEFAULT FALSE,
     reward_claimed BOOLEAN NOT NULL DEFAULT FALSE,
     completed_at TIMESTAMPTZ,
@@ -374,10 +425,30 @@ CREATE TABLE IF NOT EXISTS public.login_attempts (
 CREATE INDEX IF NOT EXISTS idx_login_attempts_expiry
     ON public.login_attempts(expires_at, locked_until);
 
+CREATE TABLE IF NOT EXISTS public.fcm_notification_events (
+    id UUID PRIMARY KEY,
+    parent_id VARCHAR(255) NOT NULL REFERENCES public.parent_accounts(parent_id) ON DELETE CASCADE,
+    child_id UUID REFERENCES public.child_profiles(child_id) ON DELETE CASCADE,
+    notification_type VARCHAR(32) NOT NULL,
+    status VARCHAR(16) NOT NULL,
+    detected_type VARCHAR(32),
+    aggregate_count INT NOT NULL DEFAULT 1 CHECK (aggregate_count > 0),
+    queued_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    sent_at TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS idx_fcm_events_parent_status_sent
+    ON public.fcm_notification_events(parent_id, status, sent_at DESC);
+CREATE INDEX IF NOT EXISTS idx_fcm_events_parent_type_status_queued
+    ON public.fcm_notification_events(parent_id, notification_type, status, queued_at ASC);
+CREATE INDEX IF NOT EXISTS idx_fcm_events_parent_child_type_sent
+    ON public.fcm_notification_events(parent_id, child_id, notification_type, status, sent_at DESC);
+
 CREATE OR REPLACE VIEW public.question_bank_safe AS
 SELECT
     id,
     mission_id,
+    set_id,
     question_type,
     prompt,
     options,
@@ -399,6 +470,7 @@ WHERE is_active = TRUE
 ALTER TABLE public.parent_accounts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.child_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.missions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.mission_sets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.question_bank ENABLE ROW LEVEL SECURITY;
 ALTER TABLE private.question_answer_keys ENABLE ROW LEVEL SECURITY;
 ALTER TABLE private.question_quality_issues ENABLE ROW LEVEL SECURITY;
@@ -406,6 +478,7 @@ ALTER TABLE public.quiz_attempts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.mission_attempts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.mission_answer_results ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.mission_daily_progress ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.mission_set_progress ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.pets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.tickets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.gacha_pulls ENABLE ROW LEVEL SECURITY;
@@ -421,29 +494,61 @@ ALTER TABLE public.privacy_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.chat_usage ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.return_reward_claims ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.login_attempts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.fcm_notification_events ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS backend_parent_accounts_all ON public.parent_accounts;
 CREATE POLICY backend_parent_accounts_all ON public.parent_accounts FOR ALL USING (TRUE) WITH CHECK (TRUE);
+DROP POLICY IF EXISTS backend_child_profiles_all ON public.child_profiles;
 CREATE POLICY backend_child_profiles_all ON public.child_profiles FOR ALL USING (TRUE) WITH CHECK (TRUE);
+DROP POLICY IF EXISTS backend_missions_all ON public.missions;
 CREATE POLICY backend_missions_all ON public.missions FOR ALL USING (TRUE) WITH CHECK (TRUE);
+DROP POLICY IF EXISTS backend_mission_sets_all ON public.mission_sets;
+CREATE POLICY backend_mission_sets_all ON public.mission_sets FOR ALL USING (TRUE) WITH CHECK (TRUE);
+DROP POLICY IF EXISTS backend_question_bank_all ON public.question_bank;
 CREATE POLICY backend_question_bank_all ON public.question_bank FOR ALL USING (TRUE) WITH CHECK (TRUE);
+DROP POLICY IF EXISTS backend_question_answer_keys_all ON private.question_answer_keys;
 CREATE POLICY backend_question_answer_keys_all ON private.question_answer_keys FOR ALL USING (TRUE) WITH CHECK (TRUE);
+DROP POLICY IF EXISTS backend_question_quality_issues_all ON private.question_quality_issues;
 CREATE POLICY backend_question_quality_issues_all ON private.question_quality_issues FOR ALL USING (TRUE) WITH CHECK (TRUE);
+DROP POLICY IF EXISTS backend_quiz_attempts_all ON public.quiz_attempts;
 CREATE POLICY backend_quiz_attempts_all ON public.quiz_attempts FOR ALL USING (TRUE) WITH CHECK (TRUE);
+DROP POLICY IF EXISTS backend_mission_attempts_all ON public.mission_attempts;
 CREATE POLICY backend_mission_attempts_all ON public.mission_attempts FOR ALL USING (TRUE) WITH CHECK (TRUE);
+DROP POLICY IF EXISTS backend_mission_answer_results_all ON public.mission_answer_results;
 CREATE POLICY backend_mission_answer_results_all ON public.mission_answer_results FOR ALL USING (TRUE) WITH CHECK (TRUE);
+DROP POLICY IF EXISTS backend_mission_daily_progress_all ON public.mission_daily_progress;
 CREATE POLICY backend_mission_daily_progress_all ON public.mission_daily_progress FOR ALL USING (TRUE) WITH CHECK (TRUE);
+DROP POLICY IF EXISTS backend_mission_set_progress_all ON public.mission_set_progress;
+CREATE POLICY backend_mission_set_progress_all ON public.mission_set_progress FOR ALL USING (TRUE) WITH CHECK (TRUE);
+DROP POLICY IF EXISTS backend_pets_all ON public.pets;
 CREATE POLICY backend_pets_all ON public.pets FOR ALL USING (TRUE) WITH CHECK (TRUE);
+DROP POLICY IF EXISTS backend_tickets_all ON public.tickets;
 CREATE POLICY backend_tickets_all ON public.tickets FOR ALL USING (TRUE) WITH CHECK (TRUE);
+DROP POLICY IF EXISTS backend_gacha_pulls_all ON public.gacha_pulls;
 CREATE POLICY backend_gacha_pulls_all ON public.gacha_pulls FOR ALL USING (TRUE) WITH CHECK (TRUE);
+DROP POLICY IF EXISTS backend_pet_fragments_all ON public.pet_fragments;
 CREATE POLICY backend_pet_fragments_all ON public.pet_fragments FOR ALL USING (TRUE) WITH CHECK (TRUE);
+DROP POLICY IF EXISTS backend_streak_records_all ON public.streak_records;
 CREATE POLICY backend_streak_records_all ON public.streak_records FOR ALL USING (TRUE) WITH CHECK (TRUE);
+DROP POLICY IF EXISTS backend_friend_streaks_all ON public.friend_streaks;
 CREATE POLICY backend_friend_streaks_all ON public.friend_streaks FOR ALL USING (TRUE) WITH CHECK (TRUE);
+DROP POLICY IF EXISTS backend_streak_milestones_all ON public.streak_milestones;
 CREATE POLICY backend_streak_milestones_all ON public.streak_milestones FOR ALL USING (TRUE) WITH CHECK (TRUE);
+DROP POLICY IF EXISTS backend_milestone_rewards_all ON public.milestone_rewards;
 CREATE POLICY backend_milestone_rewards_all ON public.milestone_rewards FOR ALL USING (TRUE) WITH CHECK (TRUE);
+DROP POLICY IF EXISTS backend_daily_quest_progress_all ON public.daily_quest_progress;
 CREATE POLICY backend_daily_quest_progress_all ON public.daily_quest_progress FOR ALL USING (TRUE) WITH CHECK (TRUE);
+DROP POLICY IF EXISTS backend_weekly_quest_progress_all ON public.weekly_quest_progress;
 CREATE POLICY backend_weekly_quest_progress_all ON public.weekly_quest_progress FOR ALL USING (TRUE) WITH CHECK (TRUE);
+DROP POLICY IF EXISTS backend_achievement_progress_all ON public.achievement_progress;
 CREATE POLICY backend_achievement_progress_all ON public.achievement_progress FOR ALL USING (TRUE) WITH CHECK (TRUE);
+DROP POLICY IF EXISTS backend_privacy_events_all ON public.privacy_events;
 CREATE POLICY backend_privacy_events_all ON public.privacy_events FOR ALL USING (TRUE) WITH CHECK (TRUE);
+DROP POLICY IF EXISTS backend_chat_usage_all ON public.chat_usage;
 CREATE POLICY backend_chat_usage_all ON public.chat_usage FOR ALL USING (TRUE) WITH CHECK (TRUE);
+DROP POLICY IF EXISTS backend_return_reward_claims_all ON public.return_reward_claims;
 CREATE POLICY backend_return_reward_claims_all ON public.return_reward_claims FOR ALL USING (TRUE) WITH CHECK (TRUE);
+DROP POLICY IF EXISTS backend_login_attempts_all ON public.login_attempts;
 CREATE POLICY backend_login_attempts_all ON public.login_attempts FOR ALL USING (TRUE) WITH CHECK (TRUE);
+DROP POLICY IF EXISTS backend_fcm_notification_events_all ON public.fcm_notification_events;
+CREATE POLICY backend_fcm_notification_events_all ON public.fcm_notification_events FOR ALL USING (TRUE) WITH CHECK (TRUE);

@@ -11,6 +11,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
@@ -27,6 +28,10 @@ import org.hibernate.type.SqlTypes;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class ChildProfile {
+
+    public static final int MAX_ENERGY = 20;
+    public static final int MISSION_ENERGY_COST = 5;
+    public static final int ENERGY_RECOVERY_MINUTES = 10;
 
     @Id
     @Column(name = "child_id")
@@ -83,6 +88,12 @@ public class ChildProfile {
     @Column(name = "fcm_token")
     private String fcmToken;
 
+    @Column(name = "energy", nullable = false)
+    private int energy;
+
+    @Column(name = "energy_recovered_at", nullable = false)
+    private Instant energyRecoveredAt;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -107,6 +118,8 @@ public class ChildProfile {
                 null,
                 ProfileImageType.DEFAULT,
                 0,
+                null,
+                MAX_ENERGY,
                 null,
                 null,
                 null
@@ -171,6 +184,44 @@ public class ChildProfile {
         shieldCount += count;
     }
 
+    public void recoverEnergy(Instant now) {
+        if (energyRecoveredAt == null) {
+            energyRecoveredAt = now;
+        }
+        if (energy >= MAX_ENERGY) {
+            energy = MAX_ENERGY;
+            energyRecoveredAt = now;
+            return;
+        }
+
+        long recoveredUnits = Duration.between(energyRecoveredAt, now).toMinutes() / ENERGY_RECOVERY_MINUTES;
+        if (recoveredUnits <= 0) {
+            return;
+        }
+        int recoveredEnergy = (int) Math.min(recoveredUnits, MAX_ENERGY - energy);
+        energy += recoveredEnergy;
+        energyRecoveredAt = energy >= MAX_ENERGY
+                ? now
+                : energyRecoveredAt.plus(Duration.ofMinutes(recoveredUnits * ENERGY_RECOVERY_MINUTES));
+    }
+
+    public boolean consumeMissionEnergy(Instant now) {
+        recoverEnergy(now);
+        if (energy < MISSION_ENERGY_COST) {
+            return false;
+        }
+        energy -= MISSION_ENERGY_COST;
+        return true;
+    }
+
+    public Instant nextEnergyRecoverAt() {
+        if (energy >= MAX_ENERGY) {
+            return null;
+        }
+        Instant base = energyRecoveredAt == null ? Instant.now() : energyRecoveredAt;
+        return base.plus(Duration.ofMinutes(ENERGY_RECOVERY_MINUTES));
+    }
+
     public boolean consumeShieldIfAvailable() {
         if (shieldCount <= 0) {
             return false;
@@ -200,6 +251,9 @@ public class ChildProfile {
     void prePersist() {
         if (createdAt == null) {
             createdAt = Instant.now();
+        }
+        if (energyRecoveredAt == null) {
+            energyRecoveredAt = createdAt;
         }
     }
 }

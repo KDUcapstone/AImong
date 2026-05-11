@@ -9,8 +9,6 @@ import static org.mockito.Mockito.when;
 
 import com.aimong.backend.domain.auth.service.ChildActivityService;
 import com.aimong.backend.domain.mission.config.MissionQuestionProperties;
-import com.aimong.backend.domain.mission.dto.MissionListResponse;
-import com.aimong.backend.domain.mission.dto.MissionSummaryResponse;
 import com.aimong.backend.domain.mission.dto.StageProgressResponse;
 import com.aimong.backend.domain.mission.entity.Mission;
 import com.aimong.backend.domain.mission.entity.MissionDailyProgress;
@@ -174,11 +172,7 @@ class QuizServiceTest {
     private void wireUnlockedMission(UUID childId, UUID missionId, Mission mission) {
         when(missionRepository.findById(missionId)).thenReturn(Optional.of(mission));
         StageProgressResponse stageProgress = new StageProgressResponse(0, 0, 0);
-        when(missionService.getMissions(childId))
-                .thenReturn(new MissionListResponse(
-                        List.of(new MissionSummaryResponse(missionId, (short) 1, "AI Basics", null, true, false, null, false)),
-                        stageProgress
-                ));
+        when(missionService.stageProgressForLegacy(childId)).thenReturn(stageProgress);
         when(missionService.isUnlockedForChild(childId, mission, stageProgress)).thenReturn(true);
     }
 

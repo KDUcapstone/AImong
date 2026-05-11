@@ -30,6 +30,9 @@ public class MissionAnswerResult {
     @Column(name = "mission_id", nullable = false)
     private UUID missionId;
 
+    @Column(name = "set_id", length = 32)
+    private String setId;
+
     @Column(name = "question_id", nullable = false)
     private UUID questionId;
 
@@ -50,11 +53,24 @@ public class MissionAnswerResult {
             boolean isReview,
             boolean isCorrect
     ) {
+        return create(attemptId, childId, missionId, null, questionId, isReview, isCorrect);
+    }
+
+    public static MissionAnswerResult create(
+            UUID attemptId,
+            UUID childId,
+            UUID missionId,
+            String setId,
+            UUID questionId,
+            boolean isReview,
+            boolean isCorrect
+    ) {
         MissionAnswerResult result = new MissionAnswerResult();
         result.id = UUID.randomUUID();
         result.attemptId = attemptId;
         result.childId = childId;
         result.missionId = missionId;
+        result.setId = setId;
         result.questionId = questionId;
         result.review = isReview;
         result.correct = isCorrect;

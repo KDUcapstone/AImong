@@ -14,7 +14,6 @@ import com.aimong.backend.domain.auth.repository.ChildProfileRepository;
 import com.aimong.backend.domain.auth.service.ChildActivityService;
 import com.aimong.backend.domain.gacha.entity.TicketType;
 import com.aimong.backend.domain.gacha.repository.TicketRepository;
-import com.aimong.backend.domain.mission.dto.MissionListResponse;
 import com.aimong.backend.domain.mission.dto.StageProgressResponse;
 import com.aimong.backend.domain.mission.dto.SubmitRequest;
 import com.aimong.backend.domain.mission.dto.SubmitResponse;
@@ -216,9 +215,9 @@ class SubmitServiceTest {
 
         SubmitResponse response = service.submit(fixture.childId(), fixture.missionId(), fixture.request());
 
-        assertThat(response.bonusXp()).isEqualTo(5);
-        assertThat(response.xpEarned()).isEqualTo(25);
-        verify(petGrowthService).applyMissionReward(fixture.childId(), 25);
+        assertThat(response.bonusXp()).isEqualTo(10);
+        assertThat(response.xpEarned()).isEqualTo(30);
+        verify(petGrowthService).applyMissionReward(fixture.childId(), 30);
     }
 
     @Test
@@ -292,7 +291,7 @@ class SubmitServiceTest {
         when(mission.isActive()).thenReturn(true);
         when(mission.getId()).thenReturn(missionId);
         when(missionRepository.findById(missionId)).thenReturn(Optional.of(mission));
-        when(missionService.getMissions(childId)).thenReturn(new MissionListResponse(List.of(), stageProgress));
+        when(missionService.stageProgressForLegacy(childId)).thenReturn(stageProgress);
         when(missionService.isUnlockedForChild(childId, mission, stageProgress)).thenReturn(true);
 
         List<UUID> questionIds = java.util.stream.IntStream.range(0, 10)

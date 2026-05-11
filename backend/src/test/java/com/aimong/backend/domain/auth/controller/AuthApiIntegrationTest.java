@@ -63,21 +63,26 @@ class AuthApiIntegrationTest {
         UUID childId = UUID.randomUUID();
         ParentRegisterResponse response = new ParentRegisterResponse(childId, "민준", "482917", 3);
 
-        given(parentAuthService.register(eq("Bearer parent-token"), any(ParentRegisterRequest.class)))
+        given(parentAuthService.register(eq("firebase-parent"), any(ParentRegisterRequest.class)))
                 .willReturn(response);
 
-        mockMvc.perform(post("/parent/register")
-                        .contentType(APPLICATION_JSON)
-                        .header("Authorization", "Bearer parent-token")
-                        .content(objectMapper.writeValueAsBytes(new ParentRegisterRequest("민준"))))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.error").doesNotExist())
-                .andExpect(jsonPath("$.requestId").exists())
-                .andExpect(jsonPath("$.data.childId").value(childId.toString()))
-                .andExpect(jsonPath("$.data.nickname").value("민준"))
-                .andExpect(jsonPath("$.data.code").value("482917"))
-                .andExpect(jsonPath("$.data.starterTickets").value(3));
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken("firebase-parent", null));
+        try {
+            mockMvc.perform(post("/parent/register")
+                            .contentType(APPLICATION_JSON)
+                            .header("Authorization", "Bearer parent-token")
+                            .content(objectMapper.writeValueAsBytes(new ParentRegisterRequest("민준"))))
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.error").doesNotExist())
+                    .andExpect(jsonPath("$.requestId").exists())
+                    .andExpect(jsonPath("$.data.childId").value(childId.toString()))
+                    .andExpect(jsonPath("$.data.nickname").value("민준"))
+                    .andExpect(jsonPath("$.data.code").value("482917"))
+                    .andExpect(jsonPath("$.data.starterTickets").value(3));
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
     }
 
     @Test
@@ -112,15 +117,20 @@ class AuthApiIntegrationTest {
         UUID childId = UUID.randomUUID();
         RegenerateCodeResponse response = new RegenerateCodeResponse("135790");
 
-        given(parentAuthService.regenerateCode("Bearer parent-token", childId.toString())).willReturn(response);
+        given(parentAuthService.regenerateCode("firebase-parent", childId.toString())).willReturn(response);
 
-        mockMvc.perform(put("/parent/child/{childId}/regenerate-code", childId)
-                        .header("Authorization", "Bearer parent-token"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.error").doesNotExist())
-                .andExpect(jsonPath("$.requestId").exists())
-                .andExpect(jsonPath("$.data.newCode").value("135790"));
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken("firebase-parent", null));
+        try {
+            mockMvc.perform(put("/parent/child/{childId}/regenerate-code", childId)
+                            .header("Authorization", "Bearer parent-token"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.error").doesNotExist())
+                    .andExpect(jsonPath("$.requestId").exists())
+                    .andExpect(jsonPath("$.data.newCode").value("135790"));
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
     }
 
     @Test

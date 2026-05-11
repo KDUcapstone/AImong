@@ -17,12 +17,7 @@ import com.aimong.backend.domain.streak.entity.StreakRecord;
 import com.aimong.backend.domain.streak.repository.StreakRecordRepository;
 import com.aimong.backend.global.exception.AimongException;
 import com.aimong.backend.global.exception.ErrorCode;
-import com.aimong.backend.global.util.AuthHeaderUtils;
 import com.aimong.backend.global.util.SecureRandomUtils;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseAuthException;
-import com.google.firebase.auth.FirebaseToken;
-import java.util.Map;
 import java.util.UUID;
 import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
@@ -33,23 +28,20 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class ParentAuthService {
 
-    private static final String GOOGLE_SIGN_IN_PROVIDER = "google.com";
     private static final int MAX_CODE_RETRY = 5;
     private static final int STARTER_TICKETS = 3;
     private static final int MAX_CHILDREN_PER_PARENT = 3;
 
-    private final FirebaseAuth firebaseAuth;
     private final ParentAccountRepository parentAccountRepository;
     private final ChildProfileRepository childProfileRepository;
     private final TicketRepository ticketRepository;
     private final StreakRecordRepository streakRecordRepository;
 
     @Transactional
-    public ParentRegisterResponse register(String authorizationHeader, ParentRegisterRequest request) {
-        FirebaseToken firebaseToken = verifyFirebaseToken(authorizationHeader);
-        ParentAccount parentAccount = parentAccountRepository.findWithLockByParentId(firebaseToken.getUid())
+    public ParentRegisterResponse register(String firebaseUid, ParentRegisterRequest request) {
+        ParentAccount parentAccount = parentAccountRepository.findWithLockByParentId(firebaseUid)
                 .orElseGet(() -> parentAccountRepository.save(
-                        ParentAccount.create(firebaseToken.getUid(), firebaseToken.getEmail())
+                        ParentAccount.create(firebaseUid, null)
                 ));
 
         if (childProfileRepository.countByParentAccountParentId(parentAccount.getParentId()) >= MAX_CHILDREN_PER_PARENT) {
@@ -74,9 +66,8 @@ public class ParentAuthService {
     }
 
     @Transactional
-    public RegenerateCodeResponse regenerateCode(String authorizationHeader, String childId) {
-        FirebaseToken firebaseToken = verifyFirebaseToken(authorizationHeader);
-        ParentAccount parentAccount = parentAccountRepository.findByParentId(firebaseToken.getUid())
+    public RegenerateCodeResponse regenerateCode(String firebaseUid, String childId) {
+        ParentAccount parentAccount = parentAccountRepository.findByParentId(firebaseUid)
                 .orElseThrow(() -> new AimongException(ErrorCode.UNAUTHORIZED));
 
         ChildProfile childProfile = childProfileRepository.findWithLockById(parseChildId(childId))
@@ -114,29 +105,6 @@ public class ParentAuthService {
                         ))
                         .toList()
         );
-    }
-
-    private FirebaseToken verifyFirebaseToken(String authorizationHeader) {
-        try {
-            String idToken = AuthHeaderUtils.extractBearerToken(authorizationHeader);
-            FirebaseToken firebaseToken = firebaseAuth.verifyIdToken(idToken);
-            validateGoogleProvider(firebaseToken);
-            return firebaseToken;
-        } catch (FirebaseAuthException exception) {
-            throw new AimongException(ErrorCode.INVALID_TOKEN, exception);
-        }
-    }
-
-    private void validateGoogleProvider(FirebaseToken firebaseToken) {
-        Object firebaseClaim = firebaseToken.getClaims().get("firebase");
-        if (!(firebaseClaim instanceof Map<?, ?> firebaseMap)) {
-            throw new AimongException(ErrorCode.UNAUTHORIZED);
-        }
-
-        Object signInProvider = firebaseMap.get("sign_in_provider");
-        if (!GOOGLE_SIGN_IN_PROVIDER.equals(signInProvider)) {
-            throw new AimongException(ErrorCode.UNAUTHORIZED);
-        }
     }
 
     private String generateUniqueCode() {

@@ -20,46 +20,45 @@ public interface MissionAttemptRepository extends JpaRepository<MissionAttempt, 
 
     long countByChildIdAndReviewFalseAndPassedTrue(UUID childId);
 
-    @Query("""
-            select count(distinct ma.missionId)
-            from MissionAttempt ma
-            where ma.childId = :childId
-              and ma.review = false
-              and ma.passed = true
-            """)
+    @Query(value = """
+            select count(distinct coalesce(ma.set_id, ma.mission_id::text))
+            from mission_attempts ma
+            where ma.child_id = :childId
+              and ma.is_review = false
+              and ma.is_passed = true
+            """, nativeQuery = true)
     long countCompletedMission(@Param("childId") UUID childId);
 
-    @Query("""
-            select count(distinct ma.missionId)
-            from MissionAttempt ma
-            where ma.childId = :childId
-              and ma.review = false
-              and ma.passed = true
-              and ma.attemptDate = (
-                  select min(firstAttempt.attemptDate)
-                  from MissionAttempt firstAttempt
-                  where firstAttempt.childId = :childId
-                    and firstAttempt.missionId = ma.missionId
-                    and firstAttempt.review = false
-                    and firstAttempt.passed = true
-              )
-              and ma.attemptDate between :startDate and :endDate
-            """)
+    @Query(value = """
+            with first_completed as (
+                select coalesce(ma.set_id, ma.mission_id::text) as completion_key,
+                       min(ma.attempt_date) as first_completed_date
+                from mission_attempts ma
+                where ma.child_id = :childId
+                  and ma.is_review = false
+                  and ma.is_passed = true
+                group by coalesce(ma.set_id, ma.mission_id::text)
+            )
+            select count(*)
+            from first_completed fc
+            where fc.first_completed_date between :startDate and :endDate
+            """, nativeQuery = true)
     long countFirstCompletedMissionBetween(
             @Param("childId") UUID childId,
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate
     );
 
-    @Query("""
-            select count(distinct ma.missionId)
-            from MissionAttempt ma
-            join Mission m on m.id = ma.missionId
-            where ma.childId = :childId
-              and ma.review = false
-              and ma.passed = true
-              and m.stage = :stage
-            """)
+    @Query(value = """
+            select count(distinct coalesce(ma.set_id, ma.mission_id::text))
+            from mission_attempts ma
+            join missions m on m.id = ma.mission_id
+            left join mission_sets ms on ms.set_id = ma.set_id
+            where ma.child_id = :childId
+              and ma.is_review = false
+              and ma.is_passed = true
+              and coalesce(ms.stage, m.stage) = :stage
+            """, nativeQuery = true)
     long countCompletedMissionByStage(
             @Param("childId") UUID childId,
             @Param("stage") short stage

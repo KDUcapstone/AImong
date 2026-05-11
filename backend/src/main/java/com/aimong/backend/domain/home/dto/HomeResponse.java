@@ -19,11 +19,16 @@ public record HomeResponse(
 ) {
 
     public record TopStatusResponse(
-            int heartCount,
+            int energy,
+            int maxEnergy,
+            Instant nextEnergyRecoverAt,
             int xp,
             int ticketCount,
             int streakDays
     ) {
+        public TopStatusResponse(int heartCount, int xp, int ticketCount, int streakDays) {
+            this(heartCount, 20, null, xp, ticketCount, streakDays);
+        }
     }
 
     public record ProfileResponse(

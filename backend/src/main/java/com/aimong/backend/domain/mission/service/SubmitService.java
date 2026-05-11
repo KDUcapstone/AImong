@@ -14,12 +14,16 @@ import com.aimong.backend.domain.mission.entity.Mission;
 import com.aimong.backend.domain.mission.entity.MissionAnswerResult;
 import com.aimong.backend.domain.mission.entity.MissionAttempt;
 import com.aimong.backend.domain.mission.entity.MissionDailyProgress;
+import com.aimong.backend.domain.mission.entity.MissionSet;
+import com.aimong.backend.domain.mission.entity.MissionSetProgress;
 import com.aimong.backend.domain.mission.entity.QuestionAnswerKey;
 import com.aimong.backend.domain.mission.entity.QuizAttempt;
 import com.aimong.backend.domain.mission.repository.MissionAnswerResultRepository;
 import com.aimong.backend.domain.mission.repository.MissionAttemptRepository;
 import com.aimong.backend.domain.mission.repository.MissionDailyProgressRepository;
 import com.aimong.backend.domain.mission.repository.MissionRepository;
+import com.aimong.backend.domain.mission.repository.MissionSetProgressRepository;
+import com.aimong.backend.domain.mission.repository.MissionSetRepository;
 import com.aimong.backend.domain.mission.repository.QuestionAnswerKeyRepository;
 import com.aimong.backend.domain.mission.repository.QuestionBankRepository;
 import com.aimong.backend.domain.mission.repository.QuizAttemptRepository;
@@ -43,17 +47,17 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@RequiredArgsConstructor
 public class SubmitService {
 
     private static final int TOTAL_QUESTIONS = 10;
@@ -65,6 +69,8 @@ public class SubmitService {
 
     private final QuizAttemptRepository quizAttemptRepository;
     private final MissionRepository missionRepository;
+    private final MissionSetRepository missionSetRepository;
+    private final MissionSetProgressRepository missionSetProgressRepository;
     private final QuestionBankRepository questionBankRepository;
     private final QuestionAnswerKeyRepository questionAnswerKeyRepository;
     private final MissionAnswerResultRepository missionAnswerResultRepository;
@@ -84,6 +90,101 @@ public class SubmitService {
     private final MissionService missionService;
     private final ObjectMapper objectMapper;
 
+    @Autowired
+    public SubmitService(
+            QuizAttemptRepository quizAttemptRepository,
+            MissionRepository missionRepository,
+            MissionSetRepository missionSetRepository,
+            MissionSetProgressRepository missionSetProgressRepository,
+            QuestionBankRepository questionBankRepository,
+            QuestionAnswerKeyRepository questionAnswerKeyRepository,
+            MissionAnswerResultRepository missionAnswerResultRepository,
+            MissionAttemptRepository missionAttemptRepository,
+            MissionDailyProgressRepository missionDailyProgressRepository,
+            ChildProfileRepository childProfileRepository,
+            ChildActivityService childActivityService,
+            TicketRepository ticketRepository,
+            StreakRecordRepository streakRecordRepository,
+            FriendStreakRepository friendStreakRepository,
+            MilestoneService milestoneService,
+            DailyQuestService dailyQuestService,
+            WeeklyQuestService weeklyQuestService,
+            AchievementService achievementService,
+            PetGrowthService petGrowthService,
+            QuizService quizService,
+            MissionService missionService,
+            ObjectMapper objectMapper
+    ) {
+        this.quizAttemptRepository = quizAttemptRepository;
+        this.missionRepository = missionRepository;
+        this.missionSetRepository = missionSetRepository;
+        this.missionSetProgressRepository = missionSetProgressRepository;
+        this.questionBankRepository = questionBankRepository;
+        this.questionAnswerKeyRepository = questionAnswerKeyRepository;
+        this.missionAnswerResultRepository = missionAnswerResultRepository;
+        this.missionAttemptRepository = missionAttemptRepository;
+        this.missionDailyProgressRepository = missionDailyProgressRepository;
+        this.childProfileRepository = childProfileRepository;
+        this.childActivityService = childActivityService;
+        this.ticketRepository = ticketRepository;
+        this.streakRecordRepository = streakRecordRepository;
+        this.friendStreakRepository = friendStreakRepository;
+        this.milestoneService = milestoneService;
+        this.dailyQuestService = dailyQuestService;
+        this.weeklyQuestService = weeklyQuestService;
+        this.achievementService = achievementService;
+        this.petGrowthService = petGrowthService;
+        this.quizService = quizService;
+        this.missionService = missionService;
+        this.objectMapper = objectMapper;
+    }
+
+    public SubmitService(
+            QuizAttemptRepository quizAttemptRepository,
+            MissionRepository missionRepository,
+            QuestionBankRepository questionBankRepository,
+            QuestionAnswerKeyRepository questionAnswerKeyRepository,
+            MissionAnswerResultRepository missionAnswerResultRepository,
+            MissionAttemptRepository missionAttemptRepository,
+            MissionDailyProgressRepository missionDailyProgressRepository,
+            ChildProfileRepository childProfileRepository,
+            ChildActivityService childActivityService,
+            TicketRepository ticketRepository,
+            StreakRecordRepository streakRecordRepository,
+            FriendStreakRepository friendStreakRepository,
+            MilestoneService milestoneService,
+            DailyQuestService dailyQuestService,
+            WeeklyQuestService weeklyQuestService,
+            AchievementService achievementService,
+            PetGrowthService petGrowthService,
+            QuizService quizService,
+            MissionService missionService,
+            ObjectMapper objectMapper
+    ) {
+        this.quizAttemptRepository = quizAttemptRepository;
+        this.missionRepository = missionRepository;
+        this.missionSetRepository = null;
+        this.missionSetProgressRepository = null;
+        this.questionBankRepository = questionBankRepository;
+        this.questionAnswerKeyRepository = questionAnswerKeyRepository;
+        this.missionAnswerResultRepository = missionAnswerResultRepository;
+        this.missionAttemptRepository = missionAttemptRepository;
+        this.missionDailyProgressRepository = missionDailyProgressRepository;
+        this.childProfileRepository = childProfileRepository;
+        this.childActivityService = childActivityService;
+        this.ticketRepository = ticketRepository;
+        this.streakRecordRepository = streakRecordRepository;
+        this.friendStreakRepository = friendStreakRepository;
+        this.milestoneService = milestoneService;
+        this.dailyQuestService = dailyQuestService;
+        this.weeklyQuestService = weeklyQuestService;
+        this.achievementService = achievementService;
+        this.petGrowthService = petGrowthService;
+        this.quizService = quizService;
+        this.missionService = missionService;
+        this.objectMapper = objectMapper;
+    }
+
     @Transactional
     public SubmitResponse submit(UUID childId, UUID missionId, SubmitRequest request) {
         childActivityService.touchLastActiveAt(childId);
@@ -91,7 +192,7 @@ public class SubmitService {
                 .filter(Mission::isActive)
                 .orElseThrow(() -> new AimongException(ErrorCode.MISSION_NOT_FOUND));
 
-        StageProgressResponse stageProgress = missionService.getMissions(childId).stageProgress();
+        StageProgressResponse stageProgress = missionService.stageProgressForLegacy(childId);
         if (!missionService.isUnlockedForChild(childId, mission, stageProgress)) {
             throw new AimongException(ErrorCode.MISSION_LOCKED);
         }
@@ -102,6 +203,39 @@ public class SubmitService {
         if (!quizAttempt.getChildId().equals(childId) || !mission.getId().equals(quizAttempt.getMissionId())) {
             throw new AimongException(ErrorCode.FORBIDDEN);
         }
+        MissionSet missionSet = quizAttempt.getSetId() == null ? null : missionSetRepository.findById(quizAttempt.getSetId()).orElse(null);
+        return submitValidated(childId, mission, missionSet, quizAttempt, request);
+    }
+
+    @Transactional
+    public SubmitResponse submit(UUID childId, String setId, SubmitRequest request) {
+        childActivityService.touchLastActiveAt(childId);
+        MissionSet missionSet = missionSetRepository.findBySetIdAndActiveTrue(setId)
+                .orElseThrow(() -> new AimongException(ErrorCode.MISSION_SET_NOT_FOUND));
+        if (!missionService.isUnlocked(childId, missionSet)) {
+            throw new AimongException(ErrorCode.MISSION_SET_LOCKED);
+        }
+        Mission mission = missionRepository.findById(missionSet.getMissionId())
+                .filter(Mission::isActive)
+                .orElseThrow(() -> new AimongException(ErrorCode.MISSION_NOT_FOUND));
+        QuizAttempt quizAttempt = quizAttemptRepository.findWithLockById(request.quizAttemptId())
+                .orElseThrow(() -> new AimongException(ErrorCode.QUIZ_ATTEMPT_INVALID));
+        if (!quizAttempt.getChildId().equals(childId)) {
+            throw new AimongException(ErrorCode.FORBIDDEN);
+        }
+        if (quizAttempt.getSetId() == null || !quizAttempt.getSetId().equals(setId)) {
+            throw new AimongException(ErrorCode.MISSION_SET_MISMATCH);
+        }
+        return submitValidated(childId, mission, missionSet, quizAttempt, request);
+    }
+
+    private SubmitResponse submitValidated(
+            UUID childId,
+            Mission mission,
+            MissionSet missionSet,
+            QuizAttempt quizAttempt,
+            SubmitRequest request
+    ) {
         if (quizAttempt.getSubmittedAt() != null) {
             throw new AimongException(ErrorCode.QUIZ_ATTEMPT_ALREADY_SUBMITTED);
         }
@@ -142,6 +276,13 @@ public class SubmitService {
         boolean isPerfect = score == TOTAL_QUESTIONS;
         LocalDate today = KstDateUtils.today();
         LocalDate weekStart = KstDateUtils.currentWeekStart();
+        UUID missionId = mission.getId();
+        String setId = missionSet == null ? quizAttempt.getSetId() : missionSet.getSetId();
+        Integer starLevel = missionSet != null ? Integer.valueOf(missionSet.getStarLevel()) : quizAttempt.getStarLevel();
+        if (starLevel == null) {
+            starLevel = 1;
+        }
+        Integer variantNo = missionSet == null ? null : missionSet.getVariantNo();
         int attemptNo = Math.toIntExact(missionAttemptRepository.countByChildIdAndMissionIdAndAttemptDate(childId, missionId, today)) + 1;
         boolean isReview = quizAttempt.isReview();
         ChildProfile childProfile = childProfileRepository.findById(childId)
@@ -160,6 +301,8 @@ public class SubmitService {
             MissionAttempt reviewAttempt = missionAttemptRepository.save(MissionAttempt.create(
                     childId,
                     missionId,
+                    setId,
+                    starLevel,
                     today,
                     attemptNo,
                     reviewScore,
@@ -168,9 +311,11 @@ public class SubmitService {
                     isPassed,
                     reviewXp
             ));
-            saveAnswerResults(reviewAttempt.getId(), childId, missionId, true, request.answers(), answerKeysById);
+            saveAnswerResults(reviewAttempt.getId(), childId, missionId, setId, true, request.answers(), answerKeysById);
             return buildReviewResponse(
                     childId,
+                    mission,
+                    missionSet,
                     score,
                     wrongCount,
                     isPassed,
@@ -188,6 +333,8 @@ public class SubmitService {
             MissionAttempt failedAttempt = missionAttemptRepository.save(MissionAttempt.create(
                     childId,
                     missionId,
+                    setId,
+                    starLevel,
                     today,
                     attemptNo,
                     score,
@@ -196,29 +343,46 @@ public class SubmitService {
                     false,
                     0
             ));
-            saveAnswerResults(failedAttempt.getId(), childId, missionId, false, request.answers(), answerKeysById);
-            return buildFailureResponse(childId, score, wrongCount, isPerfect, childProfile, streakRecord, results);
+            saveAnswerResults(failedAttempt.getId(), childId, missionId, setId, false, request.answers(), answerKeysById);
+            return buildFailureResponse(childId, mission, missionSet, score, wrongCount, isPerfect, childProfile, streakRecord, results);
         }
 
         boolean streakBonusApplied = isPartnerCompletedToday(childId, today);
         int xpEarned = calculateEarnedXp(normalModeBaseXp, streakBonusApplied);
         int previousLevel = childProfile.getLevel();
+        Set<String> unlockedBeforeCompletion = unlockedIncompleteSetIds(childId);
 
         childProfile.applyMissionXp(xpEarned, today, weekStart);
         childProfile.refreshProfileImageType();
-        missionDailyProgressRepository.save(MissionDailyProgress.create(
-                childId,
-                missionId,
-                today,
-                Instant.now(),
-                score,
-                TOTAL_QUESTIONS,
-                xpEarned
-        ));
+        boolean firstSetCompletion = setId == null
+                || missionSetProgressRepository == null
+                || missionSetProgressRepository.findWithLockByChildIdAndSetId(childId, setId).isEmpty();
+        final int passedScore = score;
+        MissionDailyProgress todayProgress = null;
+        if (firstSetCompletion) {
+            todayProgress = missionDailyProgressRepository.findWithLockByChildIdAndProgressDate(childId, today)
+                    .map(progress -> {
+                        progress.applySetCompletion(missionId, Instant.now(), passedScore, TOTAL_QUESTIONS, xpEarned);
+                        return progress;
+                    })
+                    .orElseGet(() -> missionDailyProgressRepository.save(MissionDailyProgress.create(
+                            childId,
+                            missionId,
+                            today,
+                            Instant.now(),
+                            passedScore,
+                            TOTAL_QUESTIONS,
+                            xpEarned
+                    )));
+        } else {
+            todayProgress = missionDailyProgressRepository.findByChildIdAndProgressDate(childId, today).orElse(null);
+        }
         try {
             MissionAttempt passedAttempt = missionAttemptRepository.save(MissionAttempt.create(
                     childId,
                     missionId,
+                    setId,
+                    starLevel,
                     today,
                     attemptNo,
                     score,
@@ -227,7 +391,24 @@ public class SubmitService {
                     true,
                     xpEarned
             ));
-            saveAnswerResults(passedAttempt.getId(), childId, missionId, false, request.answers(), answerKeysById);
+            saveAnswerResults(passedAttempt.getId(), childId, missionId, setId, false, request.answers(), answerKeysById);
+            if (setId != null) {
+                final Integer progressStarLevel = missionSet == null ? starLevel : missionSet.getStarLevel();
+                final Integer progressVariantNo = missionSet == null ? variantNo : missionSet.getVariantNo();
+                missionSetProgressRepository.findWithLockByChildIdAndSetId(childId, setId)
+                        .ifPresentOrElse(
+                                progress -> progress.improveBestScore(passedScore),
+                                () -> missionSetProgressRepository.save(MissionSetProgress.create(
+                                        childId,
+                                        setId,
+                                        progressStarLevel,
+                                        progressVariantNo,
+                                        passedAttempt.getId(),
+                                        passedScore,
+                                        TOTAL_QUESTIONS
+                                ))
+                        );
+            }
         } catch (RuntimeException exception) {
             throw new AimongException(ErrorCode.SUBMIT_SAVE_FAILED, exception);
         }
@@ -246,6 +427,8 @@ public class SubmitService {
         List<SubmitResponse.RewardResponse> rewards = new ArrayList<>(levelRewards);
         rewards.addAll(toRewardResponses(petGrowthResult.rewards()));
         rewards.addAll(milestoneService.applyStreakRewards(childId, streakRecord));
+        Set<String> unlockedAfterCompletion = new LinkedHashSet<>(unlockedIncompleteSetIds(childId));
+        unlockedAfterCompletion.removeAll(unlockedBeforeCompletion);
 
         return new SubmitResponse(
                 MODE_NORMAL,
@@ -273,12 +456,22 @@ public class SubmitService {
                 childProfile.getProfileImageType().name(),
                 childProfile.getProfileImageType() != com.aimong.backend.domain.auth.entity.ProfileImageType.DEFAULT,
                 false,
-                results
+                results,
+                setId,
+                missionId.toString(),
+                starLevel,
+                variantNo,
+                completedSetCount(childId),
+                missionSet == null ? 0 : starLevelCompletedSetCount(childId, missionSet.getStarLevel()),
+                unlockedAfterCompletion.stream().toList(),
+                todayProgress == null ? streakRecord.getTodayMissionCount() : todayProgress.getCompletedSetCount()
         );
     }
 
     private SubmitResponse buildReviewResponse(
             UUID childId,
+            Mission mission,
+            MissionSet missionSet,
             int score,
             int wrongCount,
             boolean isPassed,
@@ -316,12 +509,22 @@ public class SubmitService {
                 childProfile.getProfileImageType().name(),
                 childProfile.getProfileImageType() != com.aimong.backend.domain.auth.entity.ProfileImageType.DEFAULT,
                 true,
-                results
+                results,
+                missionSet == null ? null : missionSet.getSetId(),
+                mission.getId().toString(),
+                missionSet == null ? null : missionSet.getStarLevel(),
+                missionSet == null ? null : missionSet.getVariantNo(),
+                completedSetCount(childId),
+                missionSet == null ? 0 : starLevelCompletedSetCount(childId, missionSet.getStarLevel()),
+                List.of(),
+                todaySetCount(childId, streakRecord)
         );
     }
 
     private SubmitResponse buildFailureResponse(
             UUID childId,
+            Mission mission,
+            MissionSet missionSet,
             int score,
             int wrongCount,
             boolean isPerfect,
@@ -355,7 +558,15 @@ public class SubmitService {
                 childProfile.getProfileImageType().name(),
                 childProfile.getProfileImageType() != com.aimong.backend.domain.auth.entity.ProfileImageType.DEFAULT,
                 false,
-                results
+                results,
+                missionSet == null ? null : missionSet.getSetId(),
+                mission.getId().toString(),
+                missionSet == null ? null : missionSet.getStarLevel(),
+                missionSet == null ? null : missionSet.getVariantNo(),
+                completedSetCount(childId),
+                missionSet == null ? 0 : starLevelCompletedSetCount(childId, missionSet.getStarLevel()),
+                List.of(),
+                todaySetCount(childId, streakRecord)
         );
     }
 
@@ -364,7 +575,7 @@ public class SubmitService {
             return 0;
         }
         return switch (PetGrade.valueOf(equippedPetGrade)) {
-            case NORMAL -> wrongCount == 0 ? 5 : 0;
+            case NORMAL -> wrongCount == 0 ? 10 : 0;
             case RARE -> wrongCount <= 1 ? 10 : 0;
             case EPIC -> wrongCount <= 2 ? 10 : 0;
             case LEGEND -> wrongCount <= 2 ? 15 : 0;
@@ -395,6 +606,7 @@ public class SubmitService {
             UUID attemptId,
             UUID childId,
             UUID missionId,
+            String setId,
             boolean isReview,
             List<SubmitRequest.AnswerRequest> answers,
             Map<UUID, QuestionAnswerKey> answerKeysById
@@ -408,6 +620,7 @@ public class SubmitService {
                     attemptId,
                     childId,
                     missionId,
+                    setId,
                     questionId,
                     isReview,
                     isCorrect
@@ -549,6 +762,46 @@ public class SubmitService {
         ticketRepository.saveAll(java.util.stream.IntStream.range(0, count)
                 .mapToObj(index -> Ticket.issue(childId, ticketType))
                 .toList());
+    }
+
+    private long completedSetCount(UUID childId) {
+        if (missionSetProgressRepository != null) {
+            return missionSetProgressRepository.countByChildId(childId);
+        }
+        return missionAttemptRepository.countCompletedMission(childId);
+    }
+
+    private long starLevelCompletedSetCount(UUID childId, int starLevel) {
+        if (missionSetRepository == null || missionSetProgressRepository == null) {
+            return 0;
+        }
+        List<String> setIds = missionSetRepository.findAllByActiveTrueOrderByStageAscDisplayOrderAscStarLevelAscVariantNoAscSetIdAsc()
+                .stream()
+                .filter(set -> set.getStarLevel() == starLevel)
+                .map(MissionSet::getSetId)
+                .toList();
+        if (setIds.isEmpty()) {
+            return 0;
+        }
+        return missionSetProgressRepository.countByChildIdAndSetIdIn(childId, setIds);
+    }
+
+    private Set<String> unlockedIncompleteSetIds(UUID childId) {
+        if (missionSetRepository == null || missionSetProgressRepository == null) {
+            return Set.of();
+        }
+        return missionSetRepository.findAllByActiveTrueOrderByStageAscDisplayOrderAscStarLevelAscVariantNoAscSetIdAsc()
+                .stream()
+                .filter(set -> missionService.isUnlocked(childId, set))
+                .filter(set -> !missionSetProgressRepository.existsByChildIdAndSetId(childId, set.getSetId()))
+                .map(MissionSet::getSetId)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    private int todaySetCount(UUID childId, StreakRecord streakRecord) {
+        return missionDailyProgressRepository.findByChildIdAndProgressDate(childId, KstDateUtils.today())
+                .map(MissionDailyProgress::getCompletedSetCount)
+                .orElse(streakRecord.getTodayMissionCount());
     }
 
     private SubmitResponse.RemainingTicketsResponse toRemainingTickets(UUID childId) {

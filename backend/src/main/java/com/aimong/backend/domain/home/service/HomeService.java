@@ -30,6 +30,7 @@ import com.aimong.backend.global.exception.ErrorCode;
 import com.aimong.backend.global.util.KstDateUtils;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
@@ -65,8 +66,9 @@ public class HomeService {
     public HomeResponse getHome(UUID childId) {
         childActivityService.touchLastActiveAt(childId);
         LocalDate today = KstDateUtils.today();
-        ChildProfile childProfile = childProfileRepository.findById(childId)
+        ChildProfile childProfile = childProfileRepository.findWithLockById(childId)
                 .orElseThrow(() -> new AimongException(ErrorCode.CHILD_NOT_FOUND));
+        childProfile.recoverEnergy(Instant.now());
         HomeResponse.TicketSummaryResponse tickets = ticketSummary(childId);
         HomeResponse.StreakSummaryResponse streak = streakSummary(childId, childProfile, today);
         HomeResponse.EquippedPetResponse equippedPet = equippedPet(childProfile);
@@ -75,7 +77,9 @@ public class HomeService {
         return new HomeResponse(
                 today,
                 new HomeResponse.TopStatusResponse(
-                        childProfile.getShieldCount(),
+                        childProfile.getEnergy(),
+                        ChildProfile.MAX_ENERGY,
+                        childProfile.nextEnergyRecoverAt(),
                         childProfile.getTotalXp(),
                         tickets.totalCount(),
                         streak.continuousDays()
@@ -92,7 +96,9 @@ public class HomeService {
                 new HomeResponse.MissionSummaryResponse(
                         missionAttemptRepository.countByChildIdAndAttemptDateAndReviewFalseAndPassedTrue(childId, today),
                         TODAY_TARGET_COUNT,
-                        equippedPet != null && recommendedMission != null,
+                        equippedPet != null && recommendedMission != null
+                                && (recommendedMission.isReviewable()
+                                || childProfile.getEnergy() >= ChildProfile.MISSION_ENERGY_COST),
                         recommendedMission
                 ),
                 streak,

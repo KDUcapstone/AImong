@@ -26,12 +26,11 @@ public class MissionDailyProgress {
     private UUID childId;
 
     @Id
-    @Column(name = "mission_id", nullable = false)
-    private UUID missionId;
-
-    @Id
     @Column(name = "progress_date", nullable = false)
     private LocalDate progressDate;
+
+    @Column(name = "mission_id")
+    private UUID missionId;
 
     @Column(name = "first_attempt_at", nullable = false)
     private Instant firstAttemptAt;
@@ -44,6 +43,12 @@ public class MissionDailyProgress {
 
     @Column(name = "first_xp_earned", nullable = false)
     private int firstXpEarned;
+
+    @Column(name = "completed_set_count", nullable = false)
+    private int completedSetCount;
+
+    @Column(name = "total_xp_earned", nullable = false)
+    private int totalXpEarned;
 
     @Column(name = "review_attempt_count", nullable = false)
     private int reviewAttemptCount;
@@ -65,8 +70,24 @@ public class MissionDailyProgress {
         progress.bestScore = score;
         progress.total = total;
         progress.firstXpEarned = firstXpEarned;
+        progress.completedSetCount = 1;
+        progress.totalXpEarned = firstXpEarned;
         progress.reviewAttemptCount = 0;
         return progress;
+    }
+
+    public void applySetCompletion(UUID missionId, Instant firstAttemptAt, int score, int total, int xpEarned) {
+        if (this.missionId == null) {
+            this.missionId = missionId;
+        }
+        if (this.firstAttemptAt == null || firstAttemptAt.isBefore(this.firstAttemptAt)) {
+            this.firstAttemptAt = firstAttemptAt;
+        }
+        bestScore = Math.max(bestScore, score);
+        this.total = Math.max(this.total, total);
+        completedSetCount += 1;
+        totalXpEarned += xpEarned;
+        firstXpEarned = totalXpEarned;
     }
 
     public void applyReviewAttempt(int score) {
@@ -78,7 +99,6 @@ public class MissionDailyProgress {
     public static class MissionDailyProgressId implements Serializable {
 
         private UUID childId;
-        private UUID missionId;
         private LocalDate progressDate;
 
         @Override
@@ -90,13 +110,12 @@ public class MissionDailyProgress {
                 return false;
             }
             return Objects.equals(childId, that.childId)
-                    && Objects.equals(missionId, that.missionId)
                     && Objects.equals(progressDate, that.progressDate);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(childId, missionId, progressDate);
+            return Objects.hash(childId, progressDate);
         }
     }
 }

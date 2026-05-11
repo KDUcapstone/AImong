@@ -20,6 +20,7 @@ public interface QuestionBankRepository extends JpaRepository<QuestionBank, UUID
             SELECT
                 id,
                 mission_id,
+                set_id,
                 question_type,
                 prompt,
                 options,
