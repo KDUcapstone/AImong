@@ -27,6 +27,15 @@ object HomePathBuilder {
             .groupBy { it.stage }
             .toSortedMap()
 
+        // v2.4: /home 의 recommendedMission.id 가 UUID가 아닐 수 있어(예: "1").
+        // 홈에서 퀴즈 진입은 /missions 목록의 UUID missionId를 우선 사용하도록 보정한다.
+        val resolvedRecommendedMissionId: String? = rec?.let { r ->
+            missions.firstOrNull { it.missionId == r.id }?.missionId
+                ?: missions.firstOrNull { it.stage == r.stage && it.title == r.title }?.missionId
+                ?: missions.firstOrNull { it.title == r.title }?.missionId
+                ?: r.id
+        }
+
         for (stage in 1..3) {
             val stageMissions = groupedByStage[stage] ?: emptyList()
             val sortedMissions = stageMissions
@@ -39,10 +48,10 @@ object HomePathBuilder {
             var nodeCount = 0
 
             sortedMissions.forEachIndexed { index, m ->
-                if (rec != null && m.missionId == rec.id) {
+                if (rec != null && resolvedRecommendedMissionId != null && m.missionId == resolvedRecommendedMissionId) {
                     val todayNav = HomeQuizNavigation(
                         entrySetId = recSetIdStr.orEmpty(),
-                        missionId = rec.id,
+                        missionId = resolvedRecommendedMissionId,
                         starLevel = if (!recSetIdStr.isNullOrBlank()) -1 else 1
                     )
                     items.add(
