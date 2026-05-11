@@ -11,6 +11,7 @@ import android.text.style.ForegroundColorSpan
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.view.animation.CycleInterpolator
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -25,7 +26,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
-import com.google.android.material.chip.Chip
 import com.kduniv.aimong.R
 import com.kduniv.aimong.core.ui.BaseFragment
 import com.kduniv.aimong.databinding.FragmentQuizBinding
@@ -410,23 +410,36 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             // XML 고정 카드 기반 표시
             applyMultipleFixedSelection(selectedKey)
         }
-        // Chip 유형 (FILL, SITUATION)
+        // FILL/SITUATION: 멀티라인 Row 선택지
         else {
             for (i in 0 until binding.layoutOptionsChips.childCount) {
-                val chip = binding.layoutOptionsChips.getChildAt(i) as? Chip ?: continue
-                if (chip.text == userAnswer) {
-                    // 풀이 모드에서는 정오와 무관하게 '내가 고른 보기'만 민트로 통일
-                    if (isSolutionMode || isCorrect) {
-                        chip.setChipBackgroundColorResource(R.color.quiz_mint)
-                        chip.setTextColor(Color.parseColor("#0A1633"))
-                        chip.chipStrokeWidth = 0f
+                val row = binding.layoutOptionsChips.getChildAt(i) as? RelativeLayout ?: continue
+                val raw = row.tag?.toString().orEmpty()
+                if (raw == userAnswer) {
+                    val bg = if (isSolutionMode || isCorrect) {
+                        ContextCompat.getColor(requireContext(), R.color.quiz_mint)
                     } else {
-                        chip.setChipBackgroundColorResource(R.color.quiz_red)
-                        chip.setTextColor(Color.WHITE)
+                        ContextCompat.getColor(requireContext(), R.color.quiz_red)
                     }
+                    val stroke = bg
+                    applyOptionRowStyle(row, bg, stroke)
                 }
             }
         }
+    }
+
+    private fun applyOptionRowStyle(row: RelativeLayout, bgColor: Int, strokeColor: Int) {
+        val density = resources.displayMetrics.density
+        val radius = 16f * density
+        val strokeW = (1f * density).toInt()
+        val drawable = GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            cornerRadius = radius
+            setColor(bgColor)
+            setStroke(strokeW, strokeColor)
+        }
+        row.background = drawable
+        row.findViewWithTag<TextView>("option_text")?.setTextColor(Color.WHITE)
     }
 
     private fun showAnswerFeedback(
@@ -1034,61 +1047,9 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         binding.layoutOptionsChips.chipSpacingVertical = (8 * density).toInt()
         binding.layoutOptionsChips.chipSpacingHorizontal = (8 * density).toInt()
 
-        question.options?.forEach { option ->
-            val chip = Chip(requireContext()).apply {
-                text = option
-                textSize = if (isSituation) 14f else 15f
-                typeface = Typeface.create("sans-serif-black", Typeface.BOLD)
-                isSingleLine = false
-                maxLines = 20
-                ellipsize = null
-                isClickable = true
-                isCheckable = false
-                checkedIcon = null
-                textAlignment = View.TEXT_ALIGNMENT_CENTER
-                setTextColor(Color.WHITE)
-                setEnsureMinTouchTargetSize(false)
-
-                if (isSituation) {
-                    layoutParams = LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT
-                    ).apply {
-                        setMargins(0, 0, 0, (8 * density).toInt())
-                    }
-                    minHeight = (60 * density).toInt()
-                    chipStartPadding = 20 * density
-                    chipEndPadding = 20 * density
-                    // SITUATION도 '선택 시 전체 민트'가 명확히 보이도록 Chip 기반 스타일로 통일
-                    setChipBackgroundColorResource(R.color.home_card_bg)
-                    setChipStrokeColorResource(R.color.home_card_stroke)
-                    chipStrokeWidth = 3f * density
-                } else {
-                    minHeight = (48 * density).toInt()
-                    chipStartPadding = 16 * density
-                    chipEndPadding = 16 * density
-                    setChipBackgroundColorResource(R.color.home_card_bg)
-                    setChipStrokeColorResource(R.color.home_card_stroke)
-                    chipStrokeWidth = 3f * density
-                }
-
-                shapeAppearanceModel = shapeAppearanceModel.toBuilder()
-                    .setAllCornerSizes(if (isSituation) 16 * density else 28 * density)
-                    .build()
-
-                setOnClickListener {
-                    // 시각적 피드백 강화 (애니메이션 및 색상 변경)
-                    animateSelection(this)
-                    
-                    // 체크표시 대신 '선택지 전체 민트'로 통일
-                    setChipBackgroundColorResource(R.color.quiz_mint)
-                    setChipStrokeColorResource(R.color.quiz_mint)
-                    setTextColor(Color.WHITE)
-                    
-                    handleOptionClick(option)
-                }
-            }
-            binding.layoutOptionsChips.addView(chip)
+        // Chip은 멀티라인을 지원하지 않으므로, FILL/SITUATION 선택지는 멀티라인 가능한 Row(카드)로 렌더링한다.
+        question.options.orEmpty().forEachIndexed { index, option ->
+            addOptionButton(binding.layoutOptionsChips, option, index)
         }
     }
 
@@ -1103,16 +1064,14 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             .start()
     }
 
-    private fun addOptionButton(parent: LinearLayout, text: String, index: Int) {
+    private fun addOptionButton(parent: ViewGroup, text: String, index: Int) {
         val density = resources.displayMetrics.density
         val relativeLayout = RelativeLayout(requireContext()).apply {
             tag = text
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                setMargins(0, 0, 0, (8 * density).toInt())
-            }
+            layoutParams = ViewGroup.MarginLayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply { bottomMargin = (8 * density).toInt() }
             setPadding((14 * density).toInt(), (12 * density).toInt(), (14 * density).toInt(), (12 * density).toInt())
             isClickable = true
             isFocusable = true
@@ -1129,6 +1088,9 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             setTextColor(Color.WHITE)
             textSize = 13f
             tag = "option_text"
+            // 긴 보기(상황 판단 등)는 멀티라인로 전부 노출
+            isSingleLine = false
+            maxLines = 10
         }
 
         applyMultipleRowStyle(relativeLayout, isSelected = false)
