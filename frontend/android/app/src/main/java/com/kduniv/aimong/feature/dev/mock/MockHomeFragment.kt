@@ -7,6 +7,7 @@ import com.kduniv.aimong.core.ui.BaseFragment
 import com.kduniv.aimong.core.util.setOnScaleTouchListener
 import com.kduniv.aimong.databinding.FragmentHomeBinding
 import com.kduniv.aimong.feature.home.presentation.HomeLayoutBinder
+import com.kduniv.aimong.feature.home.presentation.HomeQuizNavigation
 import com.kduniv.aimong.feature.home.presentation.QuestListBottomSheet
 import com.kduniv.aimong.feature.home.presentation.StreakCalendarBottomSheet
 
@@ -22,14 +23,14 @@ class MockHomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::
             layoutInflater = layoutInflater,
             getProfileLabel = { MockUiSamples.profileLabel(it) },
             petNameDefault = getString(R.string.home_pet_name_default),
-            onNavigateQuiz = { missionId ->
+            onNavigateQuiz = { nav: HomeQuizNavigation ->
                 findNavController().navigate(
-                    MockHomeFragmentDirections.actionHomeFragmentToQuizFragment(missionId)
+                    MockHomeFragmentDirections.actionHomeFragmentToQuizFragment(
+                        nav.entrySetId,
+                        nav.missionId,
+                        nav.starLevel
+                    )
                 )
-            },
-            onSelectLearningTab = {
-                val bottomNav = requireActivity().findViewById<BottomNavigationView>(R.id.bottom_nav)
-                bottomNav.selectedItemId = R.id.learningFragment
             },
             onOpenQuest = {
                 QuestListBottomSheet.newInstance(canStartMission = true)
@@ -38,7 +39,7 @@ class MockHomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::
         )
 
         binding.tvChipTicket.setOnClickListener {
-            findNavController().navigate(R.id.action_homeFragment_to_gachaFragment)
+            requireActivity().findViewById<BottomNavigationView>(R.id.bottom_nav).selectedItemId = R.id.gachaFragment
         }
         binding.tvChipStreak.setOnClickListener {
             StreakCalendarBottomSheet.newInstance(sampleState.streakDays)

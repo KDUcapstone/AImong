@@ -2,26 +2,53 @@ package com.kduniv.aimong.feature.quiz.data.model
 
 import com.google.gson.annotations.SerializedName
 
+/** GET .../questions 응답 — v2.3 + 레거시 필드 nullable */
 data class QuizQuestionsResponse(
-    @SerializedName("missionId") val missionId: String,
-    @SerializedName("missionTitle") val missionTitle: String,
-    @SerializedName("isReview") val isReview: Boolean,
-    @SerializedName("quizAttemptId") val quizAttemptId: String,
-    @SerializedName("questionCount") val questionCount: Int,
-    @SerializedName("expiresAt") val expiresAt: String,
-    @SerializedName("questions") val questions: List<QuestionResponse>
+    @SerializedName("setId") val setId: Long? = null,
+    @SerializedName("missionId") val missionId: Long? = null,
+    @SerializedName("missionCode") val missionCode: String? = null,
+    @SerializedName("starLevel") val starLevel: Int? = null,
+    @SerializedName("label") val label: String? = null,
+    @SerializedName("variantNo") val variantNo: Int? = null,
+    @SerializedName("missionTitle") val missionTitle: String? = null,
+    @SerializedName("isReview") val isReview: Boolean = false,
+    /** v2.4: attemptId, v2.3 호환: quizAttemptId */
+    @SerializedName(value = "attemptId", alternate = ["quizAttemptId"])
+    val attemptId: String? = null,
+    @SerializedName("questionCount") val questionCount: Int = 10,
+    @SerializedName("expiresAt") val expiresAt: String? = null,
+    @SerializedName("energyCost") val energyCost: Int? = null,
+    @SerializedName("energyBefore") val energyBefore: Int? = null,
+    @SerializedName("energyAfter") val energyAfter: Int? = null,
+    @SerializedName("questions") val questions: List<QuestionResponse> = emptyList()
 )
 
 data class QuestionResponse(
-    @SerializedName("id") val id: String,
-    @SerializedName("type") val type: String, // OX | MULTIPLE | FILL | SITUATION
-    @SerializedName("question") val question: String,
-    @SerializedName("options") val options: List<String>?
+    @SerializedName("questionId") val questionId: Long? = null,
+    @SerializedName("questionNo") val questionNo: Int? = null,
+    @SerializedName("id") val id: String? = null,
+    @SerializedName("type") val type: String,
+    @SerializedName("question") val question: String? = null,
+    @SerializedName("prompt") val prompt: String? = null,
+    @SerializedName("options") val options: List<String>? = null,
+    @SerializedName("choices") val choices: List<String>? = null,
+    @SerializedName("difficulty") val difficulty: String? = null,
+    @SerializedName("answerFormat") val answerFormat: String? = null
 )
 
+/** 레거시 오프라인 동기화용 */
 data class QuizSubmitRequest(
     @SerializedName("quizAttemptId") val quizAttemptId: String,
     @SerializedName("answers") val answers: List<QuizAnswer>
+)
+
+data class MissionSetSubmitRequest(
+    @SerializedName("answers") val answers: List<MissionSetAnswerItem>
+)
+
+data class MissionSetAnswerItem(
+    @SerializedName("questionId") val questionId: Long,
+    @SerializedName("answer") val answer: String
 )
 
 data class QuizAnswer(
@@ -29,36 +56,33 @@ data class QuizAnswer(
     @SerializedName("selected") val selected: String
 )
 
-/** POST …/missions/{missionId}/questions/{questionId}/check — 즉시 피드백 전용, 제출/보상 없음 */
-data class QuizCheckRequest(
-    @SerializedName("quizAttemptId") val quizAttemptId: String,
-    @SerializedName("selected") val selected: String
-)
-
-data class QuizCheckResponseData(
-    @SerializedName("questionId") val questionId: String,
-    @SerializedName("isCorrect") val isCorrect: Boolean,
-    @SerializedName("explanation") val explanation: String
-)
-
 data class QuizSubmitResponse(
+    @SerializedName("attemptId") val attemptId: Long? = null,
+    @SerializedName("setId") val setId: Long? = null,
+    @SerializedName("missionId") val missionId: Long? = null,
+    @SerializedName("starLevel") val starLevel: Int? = null,
+    @SerializedName("variantNo") val variantNo: Int? = null,
     @SerializedName("mode") val mode: String? = null,
     @SerializedName("progressApplied") val progressApplied: Boolean? = null,
     @SerializedName("attemptState") val attemptState: String? = null,
-    @SerializedName("score") val score: Int,
-    @SerializedName("total") val total: Int,
-    @SerializedName("wrongCount") val wrongCount: Int,
-    @SerializedName("isPassed") val isPassed: Boolean,
-    @SerializedName("isPerfect") val isPerfect: Boolean,
+    @SerializedName("score") val score: Int? = null,
+    @SerializedName("correctCount") val correctCount: Int? = null,
+    @SerializedName("questionCount") val questionCount: Int? = null,
+    @SerializedName("total") val total: Int? = null,
+    @SerializedName("wrongCount") val wrongCount: Int? = null,
+    @SerializedName("isPassed") val isPassed: Boolean? = null,
+    @SerializedName("isPerfect") val isPerfect: Boolean? = null,
+    @SerializedName("isFirstClear") val isFirstClear: Boolean? = null,
     @SerializedName("equippedPetGrade") val equippedPetGrade: String? = null,
     @SerializedName("bonusXp") val bonusXp: Int? = null,
     @SerializedName("bonusReason") val bonusReason: String? = null,
-    @SerializedName("xpEarned") val xpEarned: Int,
+    @SerializedName("xpEarned") val xpEarned: Int? = null,
+    @SerializedName("exp") val exp: Int? = null,
     @SerializedName("streakBonusApplied") val streakBonusApplied: Boolean? = null,
     @SerializedName("equippedPetXp") val equippedPetXp: Int? = null,
     @SerializedName("petStage") val petStage: String? = null,
     @SerializedName("petEvolved") val petEvolved: Boolean? = null,
-    @SerializedName("streakDays") val streakDays: Int,
+    @SerializedName("streakDays") val streakDays: Int? = null,
     @SerializedName("todayMissionCount") val todayMissionCount: Int? = null,
     @SerializedName("rewards") val rewards: List<RewardResponse>? = null,
     @SerializedName("remainingTickets") val remainingTickets: RemainingTicketsResponse? = null,
@@ -82,7 +106,7 @@ data class RewardResponse(
 )
 
 data class QuestionResultResponse(
-    @SerializedName("questionId") val questionId: String,
-    @SerializedName("isCorrect") val isCorrect: Boolean,
-    @SerializedName("explanation") val explanation: String
+    @SerializedName("questionId") val questionId: Long? = null,
+    @SerializedName("isCorrect") val isCorrect: Boolean = false,
+    @SerializedName("explanation") val explanation: String = ""
 )

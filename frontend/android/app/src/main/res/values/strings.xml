@@ -20,7 +20,14 @@
     <string name="home_streak_today_kst_fmt">오늘(KST): %1$s</string>
     <string name="home_streak_load_failed">스트릭 캘린더를 불러오지 못했습니다.</string>
     <string name="home_streak_praise_short">대단해요! %1$d일 연속 성장 중!</string>
-    <string name="home_message_until_loaded">학습 탭에서 미션을 확인해 보세요.</string>
+    <string name="home_streak_calendar_no_completion_data">이번 달 완료 날짜는 표시할 수 없어요. 잠시 후 다시 열어 보세요.</string>
+    <string name="home_streak_status_summary_fmt">연속 %1$d일 · 오늘 %2$d회 · 쉴드 %3$d</string>
+    <string name="home_streak_partner_fmt">파트너 %1$s · 오늘 완료: %2$s</string>
+    <string name="home_yes">예</string>
+    <string name="home_no">아니오</string>
+    <string name="home_message_until_loaded">홈에서 미션을 확인해 보세요.</string>
+    <string name="parent_dashboard_title_default">부모 대시보드</string>
+    <string name="parent_dashboard_title_with_nickname">%1$s 님의 대시보드</string>
     <string name="home_pet_name_default">펫</string>
     <string name="home_gacha_ticket_title">가챠 티켓 %1$d장 보유!</string>
     <string name="home_gacha_until_loaded">가챠 안내는 데이터 연동 후 표시됩니다.</string>
@@ -43,6 +50,11 @@
     <string name="quiz_feedback_wrong">😥 아쉬워요!</string>
     <string name="quiz_feedback_correct_xp">🎉 정답이에요! +15 EXP</string>
     <string name="quiz_feedback_wrong_hint">다시 생각해볼까?</string>
+    <string name="quiz_feedback_answer_saved_title">답변이 저장됐어요</string>
+    <string name="quiz_answer_saved_hint">정답 여부는 모든 문제를 푼 뒤 제출하면 확인할 수 있어요.</string>
+    <string name="quiz_timeout_explanation">시간이 초과됐어요. 다음 문제로 넘어가요.</string>
+    <string name="quiz_attempt_recovered_banner">진행 중인 퀴즈를 복구했어요. 이미 답한 문항은 다시 선택할 수 없어요.</string>
+    <string name="quiz_timer_recovered_label">진행 복구됨</string>
     <string name="quiz_btn_next">다음 문제 →</string>
     <string name="quiz_btn_view_result">결과 보기</string>
     <string name="quiz_btn_result_confirm">결과 확인하기</string>
@@ -81,6 +93,7 @@
     <string name="mission_stage_progress_counts">1단계 %1$d · 2단계 %2$d · 3단계 %3$d</string>
     <string name="mission_stage_unlock_hint">2단계: 1단계 3개 이상 클리어 시 · 3단계: 2단계 4개 이상 클리어 시 잠금 해제</string>
     <string name="mission_badge_review">복습</string>
+    <string name="mission_no_playable_star_level">지금 시작할 수 있는 난이도가 없어요.</string>
     <string name="mission_error_retry">다시 시도</string>
 
     <!-- Auth (Google / parent register / child code) -->
@@ -120,4 +133,60 @@
     <string name="quest_reward_ticket_epic">에픽 티켓 %1$d장</string>
     <string name="quest_reward_ticket_generic">티켓 %1$d장</string>
     <string name="quest_reward_generic">보상을 받았어요</string>
+
+    <!-- Bottom nav -->
+    <string name="bottom_nav_home">홈</string>
+    <string name="bottom_nav_learning">학습</string>
+    <string name="bottom_nav_chatbot">챗봇</string>
+    <string name="bottom_nav_gacha">수집</string>
+    <string name="bottom_nav_my">MY</string>
+    <string name="label_ai_practice_chatbot">AI실습(챗봇)</string>
+
+    <!-- Chat (GPT) -->
+    <string name="chat_input_hint">메시지를 입력하세요</string>
+    <string name="chat_send">전송</string>
+    <string name="chat_remaining_calls_fmt">오늘 AI 친구와 %1$d번 더 이야기할 수 있어요</string>
+    <string name="chat_remaining_calls_zero">오늘은 AI 친구와 이야기할 횟수를 다 썼어요. 내일 또 만나요!</string>
+    <string name="chat_remaining_calls_unknown">AI 친구와 대화해 보세요.</string>
+    <string name="chat_char_counter_fmt">%1$d / 200</string>
+    <string name="chat_privacy_blocked_message">개인정보로 보이는 부분이 있어요. 지우거나, 가리고 보내기를 선택할 수 있어요.</string>
+    <string name="chat_privacy_dialog_title">개인정보 입력 주의</string>
+    <string name="chat_privacy_dialog_message">민감해 보이는 부분은 [***]로 가려서 보낼 수 있어요. 그래도 직접 지우고 다시 쓰는 것이 가장 안전해요.</string>
+    <string name="chat_privacy_action_cancel">취소</string>
+    <string name="chat_privacy_action_mask">가리고 보내기</string>
+    <string name="home_mission_tooltip_review">복습하기</string>
+    <string name="quest_retry">다시 시도</string>
+    <string name="quest_load_failed">퀘스트를 불러오지 못했습니다.</string>
+
+    <!-- Pet / Gacha (CHILD) -->
+    <string name="pet_equip_required_for_xp">펫을 장착해야 XP를 얻을 수 있어요!</string>
+    <string name="gacha_screen_title">펫 · 가챠</string>
+    <string name="gacha_ticket_label">티켓 종류</string>
+    <string name="gacha_ticket_normal">일반</string>
+    <string name="gacha_ticket_rare">레어</string>
+    <string name="gacha_ticket_epic">에픽</string>
+    <string name="gacha_pull">뽑기</string>
+    <string name="gacha_refresh">새로고침</string>
+    <string name="gacha_tickets_unknown">티켓 수는 뽑기 후 표시돼요.</string>
+    <string name="gacha_tickets_fmt">티켓 · 일반 %1$d · 레어 %2$d · 에픽 %3$d</string>
+    <string name="gacha_fragments_title">조각</string>
+    <string name="gacha_exchange_title">조각 교환 (신규 펫)</string>
+    <string name="gacha_exchange_grade_hint">등급 (NORMAL/RARE/EPIC/LEGEND)</string>
+    <string name="gacha_exchange_pet_type_hint">petType (예: pet_normal_005)</string>
+    <string name="gacha_exchange_button">교환하기</string>
+    <string name="gacha_exchange_done">교환으로 새 펫을 받았어요.</string>
+    <string name="gacha_owned_pets">보유 펫</string>
+    <string name="gacha_equip">장착</string>
+    <string name="gacha_equipped_label">장착됨</string>
+    <string name="gacha_equipped_fmt">장착: %1$s · %2$s · %3$s · XP %4$d</string>
+    <string name="gacha_probabilities">뽑기 확률</string>
+    <string name="gacha_probabilities_title">뽑기 확률</string>
+    <string name="gacha_probabilities_body" formatted="false">[Lv.1] (0~19)\nNORMAL 75% · RARE 21% · EPIC 3.5% · LEGEND 0.5%\n\n[Lv.2] (20~49)\nNORMAL 66% · RARE 24% · EPIC 7.5% · LEGEND 2.5%\n\n[Lv.3] (50~99)\nNORMAL 56% · RARE 27% · EPIC 13% · LEGEND 4%\n\n[Lv.4] (100+)\nNORMAL 44% · RARE 29% · EPIC 22% · LEGEND 5%\n\nSR 보너스(v1.9)\n- srBonusRaw = srMissCount >= 10 ? (srMissCount - 9) * 0.01 : 0.0\n- 응답 srBonus는 실제 적용치(appliedSrBonus)\n- NORMAL 티켓이 아닌 경우 srBonus는 0.0</string>
+    <string name="gacha_equip_done">장착했어요.</string>
+    <string name="gacha_level_up">가챠 레벨 업! 티켓이 추가됐어요.</string>
+    <string name="gacha_pull_summary_fmt">%1$s (%2$s) · %3$s\n신규: %4$s · 조각 +%5$d\nSR 미스: %6$d · 적용 보너스: %7$.4f\n레벨업: %8$s\n%9$s</string>
+    <string name="gacha_new_yes">예</string>
+    <string name="gacha_new_no">아니오</string>
+    <string name="gacha_level_up_yes">예</string>
+    <string name="gacha_level_up_no">아니오</string>
 </resources>

@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.core.os.bundleOf
+import androidx.core.view.isVisible
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -13,7 +14,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.NavHostFragment
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.tabs.TabLayout
@@ -25,6 +25,7 @@ import com.kduniv.aimong.feature.home.presentation.quest.QuestSheetPeriod
 import com.kduniv.aimong.feature.home.presentation.quest.QuestSheetPrimaryAction
 import com.kduniv.aimong.feature.home.presentation.quest.QuestSheetRow
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
@@ -54,6 +55,10 @@ class QuestListBottomSheet : BottomSheetDialogFragment() {
 
         val canStart = arguments?.getBoolean(ARG_CAN_START_MISSION) ?: true
         viewModel.setCanStartMission(canStart)
+
+        binding.btnCheckAchievements.setOnClickListener {
+            viewModel.onCheckAchievements()
+        }
 
         adapter = QuestListAdapter { row -> onQuestRowClicked(row) }
         binding.rvQuests.layoutManager = LinearLayoutManager(requireContext())
@@ -87,6 +92,8 @@ class QuestListBottomSheet : BottomSheetDialogFragment() {
             binding.tabQuestPeriod.getTabAt(0)?.select()
         }
 
+        binding.btnQuestRetry.setOnClickListener { viewModel.retry() }
+
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
@@ -95,6 +102,17 @@ class QuestListBottomSheet : BottomSheetDialogFragment() {
                 launch {
                     viewModel.loading.collect { loading ->
                         binding.pbQuestLoading.visibility = if (loading) View.VISIBLE else View.GONE
+                        adapter.setSheetLoading(loading)
+                        setQuestTabsEnabled(binding.tabQuestPeriod, !loading)
+                    }
+                }
+                launch {
+                    combine(viewModel.loadError, viewModel.loading) { err, loading ->
+                        err to loading
+                    }.collect { (err, loading) ->
+                        val show = err != null && !loading
+                        binding.layoutQuestError.isVisible = show
+                        if (show) binding.tvQuestError.text = err
                     }
                 }
                 launch {
@@ -113,14 +131,26 @@ class QuestListBottomSheet : BottomSheetDialogFragment() {
         }
     }
 
+    private fun setQuestTabsEnabled(tabLayout: TabLayout, enabled: Boolean) {
+        tabLayout.isEnabled = enabled
+        for (i in 0 until tabLayout.tabCount) {
+            tabLayout.getTabAt(i)?.view?.isClickable = enabled
+        }
+    }
+
     private fun onQuestRowClicked(row: QuestSheetRow) {
         when (row.primaryAction) {
             QuestSheetPrimaryAction.CLAIM ->
                 viewModel.onClaim(row.questType, row.period)
             QuestSheetPrimaryAction.GO_LEARN -> {
                 dismiss()
-                requireActivity().findViewById<BottomNavigationView>(R.id.bottom_nav)
-                    .selectedItemId = R.id.learningFragment
+                val navHost = requireActivity().supportFragmentManager
+                    .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
+                val nav = navHost.navController
+                // 학습 탭(learningFragment)은 제거됨. 홈으로 이동해 스테이지 팝업에서 퀴즈를 시작한다.
+                if (nav.currentDestination?.id != R.id.homeFragment) {
+                    nav.navigate(R.id.homeFragment)
+                }
             }
             QuestSheetPrimaryAction.GO_CHAT -> {
                 dismiss()

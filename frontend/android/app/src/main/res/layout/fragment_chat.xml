@@ -8,34 +8,61 @@
         android:id="@+id/rv_chat"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:layout_constraintBottom_toTopOf="@+id/layout_input"
+        app:layout_constraintBottom_toTopOf="@+id/layout_input_column"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <LinearLayout
-        android:id="@+id/layout_input"
+        android:id="@+id/layout_input_column"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
+        android:orientation="vertical"
         android:padding="8dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
 
-        <EditText
-            android:id="@+id/et_message"
-            android:layout_width="0dp"
+        <TextView
+            android:id="@+id/tv_remaining_calls"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:hint="메시지를 입력하세요" />
+            android:paddingBottom="4dp"
+            android:textSize="13sp"
+            android:visibility="gone" />
 
-        <Button
-            android:id="@+id/btn_send"
-            android:layout_width="wrap_content"
+        <TextView
+            android:id="@+id/tv_char_counter"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="전송" />
+            android:gravity="end"
+            android:paddingBottom="4dp"
+            android:textSize="12sp"
+            android:visibility="gone" />
 
+        <LinearLayout
+            android:id="@+id/layout_input"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <EditText
+                android:id="@+id/et_message"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:hint="@string/chat_input_hint"
+                android:importantForAutofill="no"
+                android:inputType="textMultiLine|textCapSentences"
+                android:maxLength="200"
+                android:maxLines="4" />
+
+            <Button
+                android:id="@+id/btn_send"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/chat_send" />
+        </LinearLayout>
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,6 +1,7 @@
 package com.kduniv.aimong.feature.dev.mock
 
 import com.kduniv.aimong.feature.home.presentation.HomePathItem
+import com.kduniv.aimong.feature.home.presentation.HomeQuizNavigation
 import com.kduniv.aimong.feature.home.presentation.HomeUiState
 import com.kduniv.aimong.feature.home.presentation.QuestItemUiState
 
@@ -30,26 +31,73 @@ object MockUiSamples {
             ),
             pathItems = buildList {
                 add(HomePathItem.SectionHeader(1, "AI가 뭐예요?"))
-                add(HomePathItem.Completed(1, "입문 미션 완료", "📖"))
-                add(HomePathItem.Completed(2, "AI 란 무엇인가", "🤖"))
-                add(HomePathItem.Completed(3, "데이터의 이해", "📊"))
-                add(HomePathItem.Completed(4, "머신러닝의 기초", "🧠"))
-                add(HomePathItem.Completed(5, "딥러닝 알아보기", "💡"))
+                add(
+                    HomePathItem.Completed(
+                        1,
+                        "입문 미션 완료",
+                        "mock-a",
+                        HomeQuizNavigation("", "mock-a", 1),
+                        "📖"
+                    )
+                )
+                add(
+                    HomePathItem.Completed(
+                        2,
+                        "AI 란 무엇인가",
+                        "mock-b",
+                        HomeQuizNavigation("", "mock-b", 1),
+                        "🤖"
+                    )
+                )
+                add(
+                    HomePathItem.Completed(
+                        3,
+                        "데이터의 이해",
+                        "mock-c",
+                        HomeQuizNavigation("", "mock-c", 1),
+                        "📊"
+                    )
+                )
+                add(
+                    HomePathItem.Completed(
+                        4,
+                        "머신러닝의 기초",
+                        "mock-d",
+                        HomeQuizNavigation("", "mock-d", 1),
+                        "🧠"
+                    )
+                )
+                add(
+                    HomePathItem.Completed(
+                        5,
+                        "딥러닝 알아보기",
+                        "mock-e",
+                        HomeQuizNavigation("", "mock-e", 1),
+                        "💡"
+                    )
+                )
                 add(
                     HomePathItem.TodayStart(
-                        missionId = "mock-mission-1",
+                        quizNav = HomeQuizNavigation("100", "mock-mission-1", -1),
                         missionTitle = "오늘의 AI 탐험",
                         enabled = true,
                         icon = "🌟"
                     )
                 )
-                add(HomePathItem.Review(missionId = "mock-mission-2", subtitle = "틀린 문제 복습"))
+                add(
+                    HomePathItem.Review(
+                        quizNav = HomeQuizNavigation("", "mock-mission-2", 2),
+                        subtitle = "틀린 문제 복습"
+                    )
+                )
                 add(HomePathItem.Locked(hint = "내일 열림"))
                 add(HomePathItem.Locked(hint = "이후 오픈"))
                 add(HomePathItem.Locked(hint = "다음 챕터"))
                 add(HomePathItem.SectionHeader(2, "AI 잘 쓰기"))
+                add(HomePathItem.InterStageDivider)
                 repeat(10) { add(HomePathItem.Locked(hint = "준비 중")) }
                 add(HomePathItem.SectionHeader(3, "비판적으로 생각하기"))
+                add(HomePathItem.InterStageDivider)
                 repeat(10) { add(HomePathItem.Locked(hint = "준비 중")) }
             }
         )

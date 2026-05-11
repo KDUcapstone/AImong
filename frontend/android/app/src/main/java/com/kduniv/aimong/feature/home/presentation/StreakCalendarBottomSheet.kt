@@ -23,6 +23,7 @@ import com.kduniv.aimong.R
 import com.kduniv.aimong.feature.home.data.StreakCalendarMapper
 import com.kduniv.aimong.feature.home.domain.model.StreakCalendarResult
 import com.kduniv.aimong.feature.home.domain.repository.HomeRepository
+import com.kduniv.aimong.feature.streak.data.StreakRepository
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -38,7 +39,11 @@ class StreakCalendarBottomSheet : BottomSheetDialogFragment() {
     @Inject
     lateinit var homeRepository: HomeRepository
 
+    @Inject
+    lateinit var streakRepository: StreakRepository
+
     private var viewingYearMonth: String? = null
+    private var cachedStatus: com.kduniv.aimong.feature.streak.data.model.StreakStatusData? = null
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val dialog = super.onCreateDialog(savedInstanceState) as BottomSheetDialog
@@ -69,7 +74,48 @@ class StreakCalendarBottomSheet : BottomSheetDialogFragment() {
             loadAndRender(fallbackStreak)
         }
 
+        loadStatusAndHeader(fallbackStreak)
         loadAndRender(fallbackStreak)
+    }
+
+    private fun loadStatusAndHeader(fallbackStreak: Int) {
+        val root = requireView()
+        viewLifecycleOwner.lifecycleScope.launch {
+            streakRepository.getStreak().fold(
+                onSuccess = { status ->
+                    cachedStatus = status
+                    applyStatusHeader(status, fallbackStreak)
+                },
+                onFailure = { e ->
+                    Snackbar.make(root, e.message ?: getString(R.string.home_streak_load_failed), Snackbar.LENGTH_LONG).show()
+                }
+            )
+        }
+    }
+
+    private fun applyStatusHeader(
+        status: com.kduniv.aimong.feature.streak.data.model.StreakStatusData,
+        fallbackStreak: Int
+    ) {
+        val root = requireView()
+        val streakVal = if (status.continuousDays > 0) status.continuousDays else fallbackStreak
+        root.findViewById<TextView>(R.id.tv_streak_big_number).text = streakVal.toString()
+
+        val tvMessage = root.findViewById<TextView>(R.id.tv_streak_message)
+        val base = getString(
+            R.string.home_streak_status_summary_fmt,
+            status.continuousDays,
+            status.todayMissionCount,
+            status.shieldCount
+        )
+        val partnerLine = status.partner?.let { p ->
+            getString(
+                R.string.home_streak_partner_fmt,
+                p.nickname,
+                if (p.todayCompleted) getString(R.string.home_yes) else getString(R.string.home_no)
+            )
+        }
+        tvMessage.text = listOfNotNull(base, partnerLine).joinToString("\n")
     }
 
     private fun shiftMonth(delta: Int) {
@@ -106,20 +152,30 @@ class StreakCalendarBottomSheet : BottomSheetDialogFragment() {
     private fun bindEmpty(fallbackStreak: Int) {
         val root = requireView()
         
-        root.findViewById<TextView>(R.id.tv_streak_big_number).text = fallbackStreak.toString()
+        if (cachedStatus == null) {
+            root.findViewById<TextView>(R.id.tv_streak_big_number).text = fallbackStreak.toString()
+        }
         
         val tvMessage = root.findViewById<TextView>(R.id.tv_streak_message)
         val ivIcon = root.findViewById<ImageView>(R.id.iv_message_icon)
         val lottiePet = root.findViewById<com.airbnb.lottie.LottieAnimationView>(R.id.lav_streak_pet)
-        
-        if (fallbackStreak > 0) {
-            tvMessage.text = getString(R.string.home_streak_praise_short, fallbackStreak)
-            ivIcon.setImageResource(R.drawable.ic_flame)
-            ivIcon.clearColorFilter()
+
+        val calendarNote = getString(R.string.home_streak_calendar_no_completion_data)
+        tvMessage.maxLines = 5
+        if (cachedStatus == null) {
+            if (fallbackStreak > 0) {
+                tvMessage.text = getString(R.string.home_streak_praise_short, fallbackStreak) + "\n" + calendarNote
+                ivIcon.setImageResource(R.drawable.ic_flame)
+                ivIcon.clearColorFilter()
+            } else {
+                tvMessage.text = getString(R.string.home_streak_load_failed) + "\n" + calendarNote
+                ivIcon.setImageResource(R.drawable.ic_star_filled)
+                ivIcon.setColorFilter(ContextCompat.getColor(requireContext(), R.color.quiz_red))
+            }
         } else {
-            tvMessage.text = "어제 학습이 잠시 멈췄습니다. 지금 연속 학습 기록을 이어가세요!"
-            ivIcon.setImageResource(R.drawable.ic_star_filled)
-            ivIcon.setColorFilter(ContextCompat.getColor(requireContext(), R.color.quiz_red))
+            // 이미 GET /streak 결과를 헤더에 표시했다면, 달력 관련 안내만 덧붙인다.
+            val prev = tvMessage.text?.toString().orEmpty()
+            tvMessage.text = if (prev.isBlank()) calendarNote else prev + "\n" + calendarNote
         }
         lottiePet.setAnimation(R.raw.pet_idle)
         if (!lottiePet.isAnimating) lottiePet.playAnimation()
@@ -128,28 +184,16 @@ class StreakCalendarBottomSheet : BottomSheetDialogFragment() {
         root.findViewById<TextView>(R.id.tv_month_label).text = formatYearMonthLabel(ymStr)
 
         buildWeekdayRow(root)
-        
-        // 목업/에러 시에도 캘린더 마킹이 보이도록 임시 데이터 제공
-        val dummyCompleted = mutableSetOf<LocalDate>()
+
         val ym = YearMonth.parse(ymStr)
-        if (fallbackStreak > 0) {
-            val today = LocalDate.now(ZoneId.of("Asia/Seoul"))
-            if (YearMonth.from(today) == ym) {
-                for (i in 0 until fallbackStreak) {
-                    val d = today.minusDays(i.toLong())
-                    if (YearMonth.from(d) == ym) {
-                        dummyCompleted.add(d)
-                    }
-                }
-            }
-        }
-        
-        buildCalendarCells(root, ym, dummyCompleted, if (fallbackStreak > 0) LocalDate.now(ZoneId.of("Asia/Seoul")) else null)
+        // API 실패 시 완료일을 추정하지 않음 — 빈 그리드 + 상단 스트릭 숫자만 폴백
+        buildCalendarCells(root, ym, emptySet(), null)
         updateNavButtons(root)
     }
 
     private fun bind(result: StreakCalendarResult, fallbackStreak: Int) {
         val root = requireView()
+        root.findViewById<TextView>(R.id.tv_streak_message).maxLines = 2
         val ym = YearMonth.parse(result.yearMonth)
         val completed = result.completedDates.mapNotNull { runCatching { LocalDate.parse(it) }.getOrNull() }.toSet()
         val today = result.today?.let { runCatching { LocalDate.parse(it) }.getOrNull() }

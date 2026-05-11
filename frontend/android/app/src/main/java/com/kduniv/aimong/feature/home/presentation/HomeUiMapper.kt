@@ -107,7 +107,7 @@ internal object HomeUiMapper {
             return "${rec.title}\n지금 도전해 볼까요?"
         }
         if (m.canStartMission) {
-            return "학습 탭에서 오늘의 미션을 시작해 보세요."
+            return "홈에서 오늘의 미션을 시작해 보세요."
         }
         return ""
     }

@@ -2,11 +2,21 @@ package com.kduniv.aimong.core.network
 
 import com.kduniv.aimong.feature.home.data.model.HomeScreenData
 import com.kduniv.aimong.feature.home.data.model.StreakCalendarData
-import com.kduniv.aimong.feature.mission.data.model.MissionListResponse
+import com.kduniv.aimong.feature.home.data.model.ReturnRewardClaimResponseData
+import com.kduniv.aimong.feature.home.data.model.ReturnRewardCheckResponseData
+import com.kduniv.aimong.feature.mission.data.model.MissionsMapResponseData
+import com.kduniv.aimong.feature.parent.data.model.ParentPrivacyLogResponseData
+import com.kduniv.aimong.feature.parent.data.model.ParentWeakPointsResponseData
+import com.kduniv.aimong.feature.parent.data.model.ParentWeeklyStatsResponseData
+import com.kduniv.aimong.feature.parent.data.model.ParentChildSummaryResponseData
 import com.kduniv.aimong.feature.quiz.data.model.QuestionReportRequest
 import com.kduniv.aimong.feature.quiz.data.model.QuestionReportResponseData
-import com.kduniv.aimong.feature.quiz.data.model.QuizCheckRequest
-import com.kduniv.aimong.feature.quiz.data.model.QuizCheckResponseData
+import com.kduniv.aimong.feature.mission.data.model.MissionStatusResponseData
+import com.kduniv.aimong.feature.quiz.data.model.MissionAttemptResponseData
+import com.kduniv.aimong.feature.quiz.data.model.MissionAttemptAbandonRequest
+import com.kduniv.aimong.feature.quiz.data.model.MissionAttemptAbandonResponseData
+import com.kduniv.aimong.feature.quiz.data.model.MissionSetCheckRequest
+import com.kduniv.aimong.feature.quiz.data.model.MissionSetCheckResponseData
 import com.kduniv.aimong.feature.quiz.data.model.QuizQuestionsResponse
 import com.kduniv.aimong.core.network.model.ChildLoginRequest
 import com.kduniv.aimong.core.network.model.ParentRegisterRequest
@@ -15,17 +25,30 @@ import com.kduniv.aimong.feature.quest.data.model.DailyQuestsResponseData
 import com.kduniv.aimong.feature.quest.data.model.QuestClaimRequest
 import com.kduniv.aimong.feature.quest.data.model.QuestClaimResponseData
 import com.kduniv.aimong.feature.quest.data.model.WeeklyQuestsResponseData
-import com.kduniv.aimong.feature.quiz.data.model.QuizSubmitRequest
+import com.kduniv.aimong.feature.quest.data.model.AchievementsResponseData
+import com.kduniv.aimong.feature.quiz.data.model.MissionSetSubmitRequest
 import com.kduniv.aimong.feature.quiz.data.model.QuizSubmitResponse
 import com.kduniv.aimong.core.network.model.ChildLoginResponse
 import com.kduniv.aimong.core.network.model.ParentChildrenResponseData
 import com.kduniv.aimong.core.network.model.ParentFcmTokenRequest
 import com.kduniv.aimong.core.network.model.ParentFcmTokenResponse
+import com.kduniv.aimong.core.network.model.PrivacyEventRequest
+import com.kduniv.aimong.core.network.model.PrivacyEventResponseData
 import com.kduniv.aimong.core.network.model.RegenerateCodeResponse
+import com.kduniv.aimong.feature.gacha.data.model.GachaExchangeData
+import com.kduniv.aimong.feature.gacha.data.model.GachaExchangeRequest
+import com.kduniv.aimong.feature.gacha.data.model.GachaFragmentsData
+import com.kduniv.aimong.feature.gacha.data.model.GachaPullData
+import com.kduniv.aimong.feature.gacha.data.model.GachaPullRequest
+import com.kduniv.aimong.feature.pet.data.model.PetEquipData
+import com.kduniv.aimong.feature.pet.data.model.PetEquipRequest
+import com.kduniv.aimong.feature.pet.data.model.PetListData
+import com.kduniv.aimong.feature.streak.data.model.StreakStatusData
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Path
 import retrofit2.http.Query
 
@@ -88,27 +111,56 @@ interface AimongApiService {
         @Body body: QuestClaimRequest
     ): ApiResponse<QuestClaimResponseData>
 
-    // MISSION
+    // ACHIEVEMENTS (CHILD)
+    @GET("achievements")
+    suspend fun getAchievements(): ApiResponse<AchievementsResponseData>
+
+    // MISSION / LEARNING (v2.3)
     @GET("missions")
-    suspend fun getMissions(): ApiResponse<MissionListResponse>
+    suspend fun getMissions(): ApiResponse<MissionsMapResponseData>
+
+    /** v2.4: 미션 진입 전 상태 조회 */
+    @GET("missions/{missionId}/status")
+    suspend fun getMissionStatus(
+        @Path("missionId") missionId: String
+    ): ApiResponse<MissionStatusResponseData>
 
     @GET("missions/{missionId}/questions")
-    suspend fun getQuestions(
-        @Path("missionId") missionId: String
+    suspend fun getMissionQuestions(
+        @Path("missionId") missionId: String,
+        @Query("starLevel") starLevel: Int
     ): ApiResponse<QuizQuestionsResponse>
 
-    @POST("missions/{missionId}/submit")
-    suspend fun submitQuiz(
-        @Path("missionId") missionId: String,
-        @Body request: QuizSubmitRequest
+    @GET("mission-sets/{setId}/questions")
+    suspend fun getMissionSetQuestions(
+        @Path("setId") setId: String
+    ): ApiResponse<QuizQuestionsResponse>
+
+    @POST("mission-sets/{setId}/submit")
+    suspend fun submitMissionSet(
+        @Path("setId") setId: String,
+        @Body body: MissionSetSubmitRequest
     ): ApiResponse<QuizSubmitResponse>
 
-    @POST("missions/{missionId}/questions/{questionId}/check")
-    suspend fun checkQuestionAnswer(
-        @Path("missionId") missionId: String,
-        @Path("questionId") questionId: String,
-        @Body body: QuizCheckRequest
-    ): ApiResponse<QuizCheckResponseData>
+    /** v2.4: 문항 단위 채점 */
+    @POST("mission-sets/{setId}/check")
+    suspend fun checkMissionSetAnswer(
+        @Path("setId") setId: String,
+        @Body body: MissionSetCheckRequest
+    ): ApiResponse<MissionSetCheckResponseData>
+
+    /** v2.4: 진행 중 attempt 복구 */
+    @GET("mission-attempts/{attemptId}")
+    suspend fun getMissionAttempt(
+        @Path("attemptId") attemptId: String
+    ): ApiResponse<MissionAttemptResponseData>
+
+    /** v2.4: 중도 이탈 */
+    @POST("mission-attempts/{attemptId}/abandon")
+    suspend fun abandonMissionAttempt(
+        @Path("attemptId") attemptId: String,
+        @Body body: MissionAttemptAbandonRequest
+    ): ApiResponse<MissionAttemptAbandonResponseData>
 
     @POST("missions/{missionId}/questions/{questionId}/report")
     suspend fun reportQuestion(
@@ -117,20 +169,88 @@ interface AimongApiService {
         @Body request: QuestionReportRequest
     ): ApiResponse<QuestionReportResponseData>
 
+    // RETURN REWARD (CHILD)
+    @GET("return-reward")
+    suspend fun getReturnReward(): ApiResponse<ReturnRewardCheckResponseData>
+
+    @POST("return-reward/claim")
+    suspend fun claimReturnReward(): ApiResponse<ReturnRewardClaimResponseData>
+
+    // PARENT DASHBOARD (PARENT)
+    @GET("parent/child/{childId}/summary")
+    suspend fun getParentChildSummary(
+        @Header("Authorization") authorization: String,
+        @Path("childId") childId: String
+    ): ApiResponse<ParentChildSummaryResponseData>
+
+    @GET("parent/child/{childId}/weekly-stats")
+    suspend fun getParentChildWeeklyStats(
+        @Header("Authorization") authorization: String,
+        @Path("childId") childId: String
+    ): ApiResponse<ParentWeeklyStatsResponseData>
+
+    @GET("parent/child/{childId}/privacy-log")
+    suspend fun getParentChildPrivacyLog(
+        @Header("Authorization") authorization: String,
+        @Path("childId") childId: String,
+        @Query("page") page: Int? = null,
+        @Query("size") size: Int? = null
+    ): ApiResponse<ParentPrivacyLogResponseData>
+
+    @GET("parent/child/{childId}/weak-points")
+    suspend fun getParentChildWeakPoints(
+        @Header("Authorization") authorization: String,
+        @Path("childId") childId: String,
+        @Query("page") page: Int? = null,
+        @Query("size") size: Int? = null
+    ): ApiResponse<ParentWeakPointsResponseData>
+
     // CHAT
     @POST("chat/send")
     suspend fun sendChatMessage(
         @Body request: ChatMessageRequest
     ): ApiResponse<ChatMessageResponse>
+
+    @POST("privacy/event")
+    suspend fun reportPrivacyEvent(
+        @Body body: PrivacyEventRequest
+    ): ApiResponse<PrivacyEventResponseData>
+
+    // PET (CHILD)
+    @GET("pet")
+    suspend fun getPets(): ApiResponse<PetListData>
+
+    @PUT("pet/equip")
+    suspend fun equipPet(
+        @Body body: PetEquipRequest
+    ): ApiResponse<PetEquipData>
+
+    // GACHA (CHILD)
+    @POST("gacha/pull")
+    suspend fun gachaPull(
+        @Body body: GachaPullRequest
+    ): ApiResponse<GachaPullData>
+
+    @GET("gacha/fragments")
+    suspend fun getGachaFragments(): ApiResponse<GachaFragmentsData>
+
+    @POST("gacha/exchange")
+    suspend fun gachaExchange(
+        @Body body: GachaExchangeRequest
+    ): ApiResponse<GachaExchangeData>
+
+    // STREAK (CHILD)
+    @GET("streak")
+    suspend fun getStreak(): ApiResponse<StreakStatusData>
 }
 
 data class ChatMessageRequest(
     val message: String,
-    val timestamp: Long = System.currentTimeMillis()
+    val masked: Boolean
 )
 
 data class ChatMessageResponse(
     val reply: String,
-    val conversationId: String,
-    val xpEarned: Int? = 0
+    val remainingCalls: Int,
+    val hintSuggestion: String? = null
 )

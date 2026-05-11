@@ -13,56 +13,127 @@ class PrivacyRadar @Inject constructor() {
         EntityExtractorOptions.Builder(EntityExtractorOptions.KOREAN).build()
     )
 
-    // 2차 필터: Regex (명세서 7-2 반영)
     private val patterns = listOf(
-        Regex("""[가-힣]{2,4}(이야|입니다|야|이에요|예요)"""), // 이름
-        Regex("""(초등학교|중학교|고등학교|\w+초|\w+중|\w+고)"""), // 학교
-        Regex("""\d+살|\d+세"""), // 나이
-        Regex("""\d+학년"""), // 학년
-        Regex("""010[- .]?\d{3,4}[- .]?\d{4}"""), // 전화번호
-        Regex("""[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}""") // 이메일
+        Regex("""(초등학교|중학교|고등학교|\w+초|\w+중|\w+고)"""),
+        Regex("""\d+살|\d+세"""),
+        Regex("""\d+학년"""),
+        Regex("""010[- .]?\d{3,4}[- .]?\d{4}"""),
+        Regex("""[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}""")
     )
 
+    private val maskPlaceholder = "[***]"
+
     /**
-     * 입력된 텍스트에 개인정보가 포함되어 있는지 검사합니다.
-     * @return 개인정보가 감지되면 true, 아니면 false
+     * 채팅 입력 검사·UI 하이라이트용: 병합된 민감 구간(문자 인덱스) 목록.
      */
-    suspend fun checkPrivacy(text: String): Boolean {
-        // 1. ML Kit Entity Extraction (1차 필터)
+    suspend fun scanSensitiveRangesForChat(text: String): List<IntRange> =
+        mergeRanges(collectSensitiveRanges(text))
+
+    /**
+     * 채팅 전송용: 개인정보 구간을 마스킹한 문자열과, 치환 여부를 반환합니다.
+     */
+    suspend fun maskForChatSend(text: String): Pair<String, Boolean> {
+        val merged = mergeRanges(collectSensitiveRanges(text))
+        if (merged.isEmpty()) return text to false
+
+        var result = text
+        for (range in merged.sortedByDescending { it.first }) {
+            result = result.replaceRange(range, maskPlaceholder)
+        }
+        return result to true
+    }
+
+    private suspend fun collectSensitiveRanges(text: String): List<IntRange> {
+        val ranges = mutableListOf<IntRange>()
+
         try {
             entityExtractor.downloadModelIfNeeded().await()
-            val entities = entityExtractor.annotate(text).await()
-            if (entities.isNotEmpty()) {
-                val hasSensitiveEntity = entities.any { annotation ->
-                    annotation.entities.any { entity ->
-                        entity.type == Entity.TYPE_PHONE ||
+            val annotations = entityExtractor.annotate(text).await()
+            for (annotation in annotations) {
+                val sensitive = annotation.entities.any { entity ->
+                    entity.type == Entity.TYPE_PHONE ||
                         entity.type == Entity.TYPE_EMAIL ||
                         entity.type == Entity.TYPE_ADDRESS ||
                         entity.type == Entity.TYPE_URL ||
                         entity.type == Entity.TYPE_DATE_TIME
-                    }
                 }
-                if (hasSensitiveEntity) return true
+                if (!sensitive) continue
+                val start = annotation.start
+                val end = annotation.end
+                if (start in 0..text.length && end in start..text.length) {
+                    ranges.add(start until end)
+                }
             }
-        } catch (e: Exception) {
-            // ML Kit 실패 시 Regex로 폴백
+        } catch (_: Exception) {
+            // ML Kit 실패 시 Regex만 사용
         }
 
-        // 2. Regex 필터 (2차 필터)
-        return patterns.any { it.containsMatchIn(text) }
+        for (pattern in patterns) {
+            pattern.findAll(text).forEach { match ->
+                ranges.add(match.range)
+            }
+        }
+
+        return ranges
     }
 
+    private fun mergeRanges(ranges: List<IntRange>): List<IntRange> {
+        if (ranges.isEmpty()) return emptyList()
+        val sorted = ranges.sortedBy { it.first }
+        val out = mutableListOf<IntRange>()
+        var cur = sorted[0]
+        for (i in 1 until sorted.size) {
+            val next = sorted[i]
+            cur = if (next.first <= cur.last + 1) {
+                cur.first..maxOf(cur.last, next.last)
+            } else {
+                out.add(cur)
+                next
+            }
+        }
+        out.add(cur)
+        return out
+    }
+
+    suspend fun checkPrivacy(text: String): Boolean =
+        scanSensitiveRangesForChat(text).isNotEmpty()
+
     /**
-     * 감지된 개인정보의 타입을 반환합니다.
+     * ML Kit 우선, 없으면 Regex 기반 [detectPrivacyType] — `/privacy/event` 용.
      */
+    suspend fun detectedPrivacyApiType(text: String): String {
+        try {
+            entityExtractor.downloadModelIfNeeded().await()
+            val annotations = entityExtractor.annotate(text).await()
+            for (annotation in annotations) {
+                val entity = annotation.entities.firstOrNull { e ->
+                    e.type == Entity.TYPE_PHONE ||
+                        e.type == Entity.TYPE_EMAIL ||
+                        e.type == Entity.TYPE_ADDRESS ||
+                        e.type == Entity.TYPE_URL ||
+                        e.type == Entity.TYPE_DATE_TIME
+                } ?: continue
+                val api = when (entity.type) {
+                    Entity.TYPE_PHONE -> "PHONE"
+                    Entity.TYPE_EMAIL -> "EMAIL"
+                    Entity.TYPE_ADDRESS -> "ADDRESS"
+                    Entity.TYPE_URL -> "URL"
+                    Entity.TYPE_DATE_TIME -> "DATE"
+                    else -> null
+                }
+                if (api != null) return api
+            }
+        } catch (_: Exception) {
+        }
+        return detectPrivacyType(text).toApiDetectedType()
+    }
+
     fun detectPrivacyType(text: String): PrivacyType {
         if (Regex("""(초등학교|중학교|고등학교|\w+초|\w+중|\w+고)""").containsMatchIn(text)) return PrivacyType.SCHOOL
         if (Regex("""\d+살|\d+세""").containsMatchIn(text)) return PrivacyType.AGE
-        if (Regex("""\d+학년""").containsMatchIn(text)) return PrivacyType.ETC // 학년은 ETC로 분류하거나 추가 정의 가능
+        if (Regex("""\d+학년""").containsMatchIn(text)) return PrivacyType.ETC
         if (Regex("""010[- .]?\d{3,4}[- .]?\d{4}""").containsMatchIn(text)) return PrivacyType.PHONE
         if (Regex("""[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}""").containsMatchIn(text)) return PrivacyType.EMAIL
-        if (Regex("""[가-힣]{2,4}(이야|입니다|야|이에요|예요)""").containsMatchIn(text)) return PrivacyType.NAME
-
         return PrivacyType.ETC
     }
 }

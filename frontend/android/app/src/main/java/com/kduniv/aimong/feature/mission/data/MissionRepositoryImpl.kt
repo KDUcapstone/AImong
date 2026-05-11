@@ -1,10 +1,13 @@
 package com.kduniv.aimong.feature.mission.data
 
-import com.kduniv.aimong.core.local.dao.MissionDao
-import com.kduniv.aimong.core.local.entity.MissionEntity
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+import com.kduniv.aimong.core.local.dao.MissionChapterDao
+import com.kduniv.aimong.core.local.entity.MissionChapterEntity
 import com.kduniv.aimong.core.network.AimongApiService
 import com.kduniv.aimong.feature.mission.domain.model.Mission
 import com.kduniv.aimong.feature.mission.domain.model.MissionProgress
+import com.kduniv.aimong.feature.mission.domain.model.MissionStarLevel
 import com.kduniv.aimong.feature.mission.domain.model.Question
 import com.kduniv.aimong.feature.mission.domain.model.QuizResult
 import com.kduniv.aimong.feature.mission.domain.repository.MissionRepository
@@ -12,13 +15,23 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
+private data class StarLevelSnapshot(
+    val starLevel: Int,
+    val label: String,
+    val totalSetCount: Int,
+    val completedSetCount: Int,
+    val isPlayable: Boolean,
+    val isReviewable: Boolean
+)
+
 class MissionRepositoryImpl @Inject constructor(
     private val apiService: AimongApiService,
-    private val missionDao: MissionDao
+    private val missionChapterDao: MissionChapterDao,
+    private val gson: Gson
 ) : MissionRepository {
 
     override fun getMissionsFlow(): Flow<List<Mission>> {
-        return missionDao.getMissions().map { entities ->
+        return missionChapterDao.getChapters().map { entities ->
             entities.map { it.toDomain() }
         }
     }
@@ -27,26 +40,40 @@ class MissionRepositoryImpl @Inject constructor(
         return try {
             val response = apiService.getMissions()
             if (response.success) {
-                val missionEntities = response.data.missions.map {
-                    MissionEntity(
-                        id = it.id,
-                        stage = it.stage,
-                        title = it.title,
-                        description = it.description,
-                        isUnlocked = it.isUnlocked,
-                        isCompleted = it.isCompleted,
-                        completedAt = it.completedAt,
-                        isReviewable = it.isReviewable
-                    )
+                val data = response.data
+                val chapters = data.stages.flatMap { stageDto ->
+                    stageDto.missions.map { m ->
+                        val stars = m.starLevels.map { s ->
+                            StarLevelSnapshot(
+                                starLevel = s.starLevel,
+                                label = s.label,
+                                totalSetCount = s.totalSetCount,
+                                completedSetCount = s.completedSetCount,
+                                isPlayable = s.isPlayable,
+                                isReviewable = s.isReviewable
+                            )
+                        }
+                        MissionChapterEntity(
+                            missionId = m.missionId.toString(),
+                            missionCode = m.missionCode,
+                            stage = stageDto.stage,
+                            title = m.title,
+                            description = m.description,
+                            isUnlocked = m.isUnlocked,
+                            starLevelsJson = gson.toJson(stars)
+                        )
+                    }
                 }
-                missionDao.insertMissions(missionEntities)
-                
-                val progress = MissionProgress(
-                    stage1Completed = response.data.stageProgress.stage1Completed,
-                    stage2Completed = response.data.stageProgress.stage2Completed,
-                    stage3Completed = response.data.stageProgress.stage3Completed
+                missionChapterDao.clearChapters()
+                missionChapterDao.insertChapters(chapters)
+
+                val p = data.progress
+                Result.success(
+                    MissionProgress(
+                        completedSetCount = p?.completedSetCount ?: 0,
+                        totalSetCount = p?.totalSetCount ?: 0
+                    )
                 )
-                Result.success(progress)
             } else {
                 Result.failure(Exception("미션 데이터를 가져오는데 실패했습니다."))
             }
@@ -56,23 +83,37 @@ class MissionRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getQuestions(missionId: String): Result<List<Question>> {
-        // TODO: 실제 API 연동 로직 구현 예정 (UI 작업 우선)
         return Result.success(emptyList())
     }
 
     override suspend fun submitQuiz(missionId: String, answers: List<Int>): Result<QuizResult> {
-        // TODO: 실제 API 연동 로직 구현 예정 (UI 작업 우선)
         return Result.success(QuizResult(0, 0, false, 0, 0))
     }
 
-    private fun MissionEntity.toDomain() = Mission(
-        id = id,
-        stage = stage,
-        title = title,
-        description = description,
-        isUnlocked = isUnlocked,
-        isCompleted = isCompleted,
-        completedAt = completedAt,
-        isReviewable = isReviewable
-    )
+    private fun MissionChapterEntity.toDomain(): Mission {
+        val type = object : TypeToken<List<StarLevelSnapshot>>() {}.type
+        val stars: List<StarLevelSnapshot> = try {
+            gson.fromJson(starLevelsJson, type) ?: emptyList()
+        } catch (_: Exception) {
+            emptyList()
+        }
+        return Mission(
+            missionId = missionId,
+            missionCode = missionCode,
+            stage = stage,
+            title = title,
+            description = description,
+            isUnlocked = isUnlocked,
+            starLevels = stars.map {
+                MissionStarLevel(
+                    starLevel = it.starLevel,
+                    label = it.label,
+                    totalSetCount = it.totalSetCount,
+                    completedSetCount = it.completedSetCount,
+                    isPlayable = it.isPlayable,
+                    isReviewable = it.isReviewable
+                )
+            }
+        )
+    }
 }

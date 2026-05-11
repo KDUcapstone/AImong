@@ -1,29 +1,237 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/scroll_gacha"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/home_bg"
+    android:fillViewport="true">
 
-    <TextView
-        android:id="@+id/tv_gacha_title"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:id="@+id/layout_gacha_root"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="펫 뽑기"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toTopOf="@+id/btn_draw"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:orientation="vertical"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="16dp">
 
-    <Button
-        android:id="@+id/btn_draw"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="1회 뽑기"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        <TextView
+            android:id="@+id/tv_gacha_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/gacha_screen_title"
+            android:textColor="@color/text_white"
+            android:textSize="22sp"
+            android:textStyle="bold" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+        <TextView
+            android:id="@+id/tv_equip_banner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/bg_home_status_chip"
+            android:padding="12dp"
+            android:text="@string/pet_equip_required_for_xp"
+            android:textColor="@color/quiz_mint"
+            android:textSize="14sp"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/card_equipped_pet"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            app:cardBackgroundColor="@color/home_card_bg"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp"
+            app:strokeColor="@color/home_card_stroke"
+            app:strokeWidth="1dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="14dp">
+
+                <TextView
+                    android:id="@+id/tv_equipped_badge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_home_status_chip"
+                    android:paddingHorizontal="10dp"
+                    android:paddingVertical="6dp"
+                    android:text="@string/gacha_equipped_label"
+                    android:textColor="@color/quiz_mint"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tv_equipped_summary"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:layout_weight="1"
+                    android:textColor="@color/text_white"
+                    android:textSize="15sp"
+                    tools:text="pet_normal_001 · NORMAL · GROWTH · XP 12" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <TextView
+            android:id="@+id/tv_tickets_line"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:textColor="@color/text_sub_grey"
+            android:textSize="13sp"
+            tools:text="티켓 · 일반 2 · 레어 0 · 에픽 1" />
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/chips_ticket"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            app:singleSelection="true"
+            app:chipSpacingHorizontal="8dp">
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_ticket_normal"
+                style="@style/Widget.MaterialComponents.Chip.Choice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="@string/gacha_ticket_normal" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_ticket_rare"
+                style="@style/Widget.MaterialComponents.Chip.Choice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/gacha_ticket_rare" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_ticket_epic"
+                style="@style/Widget.MaterialComponents.Chip.Choice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/gacha_ticket_epic" />
+        </com.google.android.material.chip.ChipGroup>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_pull"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:text="@string/gacha_pull" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_probabilities"
+                style="@style/Widget.MaterialComponents.Button.Icon"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="10dp"
+                android:contentDescription="@string/gacha_probabilities"
+                app:icon="@android:drawable/ic_menu_info_details"
+                app:iconTint="@color/text_white" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_refresh"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:text="@string/gacha_refresh" />
+        </LinearLayout>
+
+        <ProgressBar
+            android:id="@+id/pb_gacha"
+            style="?android:attr/progressBarStyleSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="8dp"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/tv_pull_result"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:textColor="@color/text_white"
+            android:textSize="13sp"
+            tools:text="결과: …" />
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            app:cardBackgroundColor="@color/home_card_bg"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp"
+            app:strokeColor="@color/home_card_stroke"
+            app:strokeWidth="1dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="14dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/gacha_fragments_title"
+                    android:textColor="@color/text_white"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tv_fragments_body"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:textColor="@color/text_sub_grey"
+                    android:textSize="13sp"
+                    tools:text="NORMAL: 7/10" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_exchange"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:text="@string/gacha_exchange_button" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/gacha_owned_pets"
+            android:textColor="@color/text_white"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rv_pets"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:nestedScrollingEnabled="false"
+            tools:itemCount="12"
+            tools:listitem="@layout/item_gacha_pet_card" />
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kduniv.aimong.R
 import com.kduniv.aimong.feature.home.domain.GetHomeStatusUseCase
+import com.kduniv.aimong.feature.home.domain.repository.HomeRepository
 import com.kduniv.aimong.feature.home.domain.HomePathBuilder
 import com.kduniv.aimong.feature.mission.domain.repository.MissionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,6 +22,7 @@ import javax.inject.Inject
 class HomeViewModel @Inject constructor(
     private val getHomeStatusUseCase: GetHomeStatusUseCase,
     private val missionRepository: MissionRepository,
+    private val homeRepository: HomeRepository,
     @ApplicationContext private val appContext: Context
 ) : ViewModel() {
 
@@ -57,6 +59,96 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    fun onCheckReturnReward() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(subtleNotice = null, errorMessage = null) }
+            homeRepository.getReturnReward().fold(
+                onSuccess = { d ->
+                    val msg = if (!d.hasReward) {
+                        "복귀 보상 없음"
+                    } else {
+                        val days = d.daysMissed ?: 0
+                        val tickets = d.ticketCount ?: 0
+                        d.message ?: "복귀 보상 있음: ${days}일 결석 · 티켓 $tickets"
+                    }
+                    _uiState.update { it.copy(subtleNotice = msg) }
+                },
+                onFailure = { e ->
+                    _uiState.update {
+                        it.copy(errorMessage = e.message ?: "복귀 보상 조회에 실패했습니다.")
+                    }
+                }
+            )
+        }
+    }
+
+    fun onClaimReturnReward() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(subtleNotice = null, errorMessage = null) }
+            homeRepository.claimReturnReward().fold(
+                onSuccess = { data ->
+                    val rem = data.remainingTickets
+                    if (rem != null) {
+                        applyRemainingTickets(rem.normal, rem.rare, rem.epic)
+                    }
+                    val extra = data.ticketEarned?.let { te ->
+                        val cnt = te.count
+                        if (cnt > 0) " (티켓 ${cnt}장)" else null
+                    } ?: data.rewards.takeIf { it.isNotEmpty() }?.joinToString { r ->
+                        "${r.type} ×${r.count}"
+                    }?.let { " ($it)" }
+                    _uiState.update {
+                        it.copy(subtleNotice = "복귀 보상 수령 완료${extra.orEmpty()}")
+                    }
+                },
+                onFailure = { e ->
+                    _uiState.update {
+                        it.copy(errorMessage = e.message ?: "복귀 보상 수령에 실패했습니다.")
+                    }
+                }
+            )
+        }
+    }
+
+    /** 홈 응답에 복귀 보상이 있으면 GET 확인 후 POST 수령 (수동 버튼 없이 처리) */
+    private fun autoClaimReturnRewardAfterHomeLoad() {
+        viewModelScope.launch {
+            homeRepository.getReturnReward().fold(
+                onSuccess = { check ->
+                    if (!check.hasReward) return@launch
+                    homeRepository.claimReturnReward().fold(
+                        onSuccess = { data ->
+                            val rem = data.remainingTickets
+                            if (rem != null) {
+                                applyRemainingTickets(rem.normal, rem.rare, rem.epic)
+                            }
+                            val extra = data.ticketEarned?.let { te ->
+                                val cnt = te.count
+                                if (cnt > 0) " (티켓 ${cnt}장)" else null
+                            } ?: data.rewards.takeIf { it.isNotEmpty() }?.joinToString { r ->
+                                "${r.type} ×${r.count}"
+                            }?.let { " ($it)" }
+                            _uiState.update {
+                                it.copy(
+                                    returnRewardPending = false,
+                                    subtleNotice = "복귀 보상을 자동으로 수령했습니다${extra.orEmpty()}"
+                                )
+                            }
+                        },
+                        onFailure = {
+                            _uiState.update {
+                                it.copy(
+                                    subtleNotice = "복귀 보상 자동 수령에 실패했습니다. 확인·수령 버튼으로 다시 시도해 주세요."
+                                )
+                            }
+                        }
+                    )
+                },
+                onFailure = { }
+            )
+        }
+    }
+
     private fun loadHome() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null, subtleNotice = null) }
@@ -73,6 +165,9 @@ class HomeViewModel @Inject constructor(
                         subtleNotice = notice
                     )
                     _uiState.value = ui
+                    if (data.returnReward.hasReward) {
+                        autoClaimReturnRewardAfterHomeLoad()
+                    }
                 },
                 onFailure = { e ->
                     _uiState.update {

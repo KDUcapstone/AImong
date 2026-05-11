@@ -24,6 +24,7 @@ class SessionManager @Inject constructor(
         private val KEY_SESSION_VERSION = intPreferencesKey("session_version")
         private val KEY_AUTH_TOKEN = stringPreferencesKey("auth_token")
         private val KEY_PARENT_CHILDREN_JSON = stringPreferencesKey("parent_children_json")
+        private val KEY_PARENT_NICKNAME = stringPreferencesKey("parent_nickname")
     }
 
     val userRole: Flow<String?> = context.dataStore.data.map { preferences ->
@@ -43,9 +44,23 @@ class SessionManager @Inject constructor(
         preferences[KEY_PARENT_CHILDREN_JSON]
     }
 
+    val parentNickname: Flow<String?> = context.dataStore.data.map { preferences ->
+        preferences[KEY_PARENT_NICKNAME]
+    }
+
     suspend fun saveParentChildrenJson(json: String) {
         context.dataStore.edit { preferences ->
             preferences[KEY_PARENT_CHILDREN_JSON] = json
+        }
+    }
+
+    suspend fun saveParentNickname(nickname: String?) {
+        context.dataStore.edit { preferences ->
+            if (nickname.isNullOrBlank()) {
+                preferences.remove(KEY_PARENT_NICKNAME)
+            } else {
+                preferences[KEY_PARENT_NICKNAME] = nickname
+            }
         }
     }
 

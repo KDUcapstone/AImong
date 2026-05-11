@@ -1,22 +1,34 @@
 package com.kduniv.aimong
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.view.View
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.NavOptions
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.NavigationUI
 import androidx.navigation.ui.setupWithNavController
 import com.kduniv.aimong.core.dev.UiMode
+import com.kduniv.aimong.core.network.AuthInterceptor
 import com.kduniv.aimong.core.local.SessionManager
 import com.kduniv.aimong.feature.auth.domain.RegisterChildFcmTokenUseCase
 import com.kduniv.aimong.feature.auth.domain.RegisterParentFcmTokenUseCase
 import com.kduniv.aimong.feature.parent.domain.SyncParentChildrenUseCase
+import com.google.android.material.snackbar.Snackbar
 import com.kduniv.aimong.databinding.ActivityMainBinding
+import com.kduniv.aimong.feature.chat.ChatHintNotifier
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -43,6 +55,9 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var syncParentChildrenUseCase: SyncParentChildrenUseCase
 
+    @Inject
+    lateinit var chatHintNotifier: ChatHintNotifier
+
     private lateinit var binding: ActivityMainBinding
     private lateinit var navController: NavController
     private var mainBackPressedCallback: OnBackPressedCallback? = null
@@ -50,8 +65,16 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        AuthInterceptor.resetLoginRedirectGate()
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val perm = Manifest.permission.POST_NOTIFICATIONS
+            if (ContextCompat.checkSelfPermission(this, perm) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, arrayOf(perm), 1001)
+            }
+        }
 
         val navHostFragment = supportFragmentManager
             .findFragmentById(R.id.nav_host_fragment) as? NavHostFragment
@@ -119,12 +142,37 @@ class MainActivity : AppCompatActivity() {
             }
 
             if (userRole == "CHILD") {
+                lifecycleScope.launch {
+                    repeatOnLifecycle(Lifecycle.State.STARTED) {
+                        chatHintNotifier.hints.collect { hint ->
+                            Snackbar.make(binding.root, hint, Snackbar.LENGTH_LONG).show()
+                        }
+                    }
+                }
+
                 binding.bottomNav.visibility = View.VISIBLE
                 binding.bottomNav.setupWithNavController(navController)
                 binding.bottomNav.itemIconTintList = null
                 
                 binding.bottomNav.setOnItemSelectedListener { item ->
-                    val navigated = NavigationUI.onNavDestinationSelected(item, navController)
+                    val currentId = navController.currentDestination?.id
+                    val targetId = item.itemId
+                    val navigated = if (currentId == targetId) {
+                        true
+                    } else {
+                        val options = NavOptions.Builder()
+                            .setLaunchSingleTop(true)
+                            .setRestoreState(true)
+                            .setPopUpTo(navController.graph.findStartDestination().id, false, true)
+                            .build()
+                        try {
+                            navController.navigate(targetId, null, options)
+                            true
+                        } catch (_: IllegalArgumentException) {
+                            // 그래프에 목적지가 없거나 현재 그래프에서 갈 수 없는 경우
+                            false
+                        }
+                    }
                     if (navigated) {
                         // 바텀바 아이템 클릭 시 바운시 효과
                         for (i in 0 until binding.bottomNav.menu.size()) {
@@ -143,7 +191,12 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 binding.bottomNav.setOnItemReselectedListener { item ->
-                    navController.popBackStack(item.itemId, false)
+                    // reselect 시 항상 해당 탭의 루트로 복귀(pop) 시도.
+                    // 탭 상태가 꼬인 경우를 대비해 pop이 실패하면 navigate로 보정한다.
+                    val popped = navController.popBackStack(item.itemId, false)
+                    if (!popped) {
+                        runCatching { navController.navigate(item.itemId) }
+                    }
                 }
             } else {
                 binding.bottomNav.visibility = View.GONE
@@ -157,7 +210,6 @@ class MainActivity : AppCompatActivity() {
         val topLevelDestinations = when (userRole) {
             "CHILD" -> setOf(
                 R.id.homeFragment,
-                R.id.learningFragment,
                 R.id.chatFragment,
                 R.id.gachaFragment,
                 R.id.myProfileFragment,

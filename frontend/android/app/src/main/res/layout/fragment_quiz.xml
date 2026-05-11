@@ -252,6 +252,19 @@
                         android:text="🚨"
                         android:textSize="14sp" />
                 </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tv_attempt_recover_banner"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="#14243B70"
+                    android:padding="10dp"
+                    android:textColor="@color/text_white"
+                    android:textSize="12sp"
+                    android:visibility="gone"
+                    tools:text="진행 중인 퀴즈를 복구했어요. 이미 답한 문항은 다시 선택할 수 없어요."
+                    tools:visibility="visible" />
             </LinearLayout>
         </androidx.cardview.widget.CardView>
     </androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="6dp"
+    app:cardBackgroundColor="@color/home_card_bg"
+    app:cardCornerRadius="14dp"
+    app:cardElevation="0dp"
+    app:strokeColor="@color/home_card_stroke"
+    app:strokeWidth="1dp">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="10dp">
+
+        <TextView
+            android:id="@+id/tv_badge_equipped"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_home_status_chip"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="4dp"
+            android:text="@string/gacha_equipped_label"
+            android:textColor="@color/quiz_mint"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tv_pet_emoji"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🐾"
+                android:textSize="20sp"
+                tools:ignore="HardcodedText" />
+
+            <TextView
+                android:id="@+id/tv_pet_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:ellipsize="end"
+                android:gravity="center"
+                android:maxLines="1"
+                android:textColor="@color/text_white"
+                android:textSize="12sp"
+                tools:text="pet_rare_003" />
+
+            <TextView
+                android:id="@+id/tv_pet_meta"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:gravity="center"
+                android:textColor="@color/text_sub_grey"
+                android:textSize="11sp"
+                tools:text="RARE · EGG" />
+
+            <TextView
+                android:id="@+id/tv_pet_xp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:gravity="center"
+                android:textColor="@color/quiz_mint"
+                android:textSize="11sp"
+                tools:text="XP 12" />
+        </LinearLayout>
+    </FrameLayout>
+</com.google.android.material.card.MaterialCardView>
+

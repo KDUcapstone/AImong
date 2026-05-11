@@ -13,6 +13,8 @@ import com.kduniv.aimong.core.local.dao.QuizDao
 import com.kduniv.aimong.core.local.entity.QuizMetadataEntity
 import com.kduniv.aimong.core.local.entity.QuizQuestionEntity
 import com.kduniv.aimong.core.local.entity.MissionEntity
+import com.kduniv.aimong.core.local.entity.MissionChapterEntity
+import com.kduniv.aimong.core.local.dao.MissionChapterDao
 
 @Database(
     entities = [
@@ -20,10 +22,11 @@ import com.kduniv.aimong.core.local.entity.MissionEntity
         PetEntity::class,
         OfflineMissionQueueEntity::class,
         MissionEntity::class,
+        MissionChapterEntity::class,
         QuizMetadataEntity::class,
         QuizQuestionEntity::class
     ],
-    version = 6,
+    version = 9,
     exportSchema = false
 )
 abstract class AimongDatabase : RoomDatabase() {
@@ -31,5 +34,6 @@ abstract class AimongDatabase : RoomDatabase() {
     abstract fun petDao(): PetDao
     abstract fun offlineMissionQueueDao(): OfflineMissionQueueDao
     abstract fun missionDao(): MissionDao
+    abstract fun missionChapterDao(): MissionChapterDao
     abstract fun quizDao(): QuizDao
 }

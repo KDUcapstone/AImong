@@ -1,6 +1,7 @@
 package com.kduniv.aimong.feature.quiz.domain.model
 
 data class QuizQuestions(
+    val setId: String,
     val missionId: String,
     val missionTitle: String,
     val isReview: Boolean,
@@ -75,9 +76,3 @@ data class QuestionResult(
     val explanation: String
 )
 
-/** POST …/questions/{questionId}/check 응답 — DB/진행도 미반영 */
-data class QuestionCheckResult(
-    val questionId: String,
-    val isCorrect: Boolean,
-    val explanation: String
-)

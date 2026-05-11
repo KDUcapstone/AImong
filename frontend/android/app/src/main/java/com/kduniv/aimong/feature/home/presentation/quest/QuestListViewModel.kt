@@ -3,6 +3,7 @@ package com.kduniv.aimong.feature.home.presentation.quest
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.kduniv.aimong.R
 import com.kduniv.aimong.feature.quest.domain.repository.QuestRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -32,6 +33,9 @@ class QuestListViewModel @Inject constructor(
     private val _loading = MutableStateFlow(false)
     val loading: StateFlow<Boolean> = _loading.asStateFlow()
 
+    private val _loadError = MutableStateFlow<String?>(null)
+    val loadError: StateFlow<String?> = _loadError.asStateFlow()
+
     private val _selectedPeriod = MutableStateFlow(QuestSheetPeriod.DAILY)
     val selectedPeriod: StateFlow<QuestSheetPeriod> = _selectedPeriod.asStateFlow()
 
@@ -56,25 +60,28 @@ class QuestListViewModel @Inject constructor(
         }
     }
 
+    fun retry() {
+        when (_selectedPeriod.value) {
+            QuestSheetPeriod.DAILY -> loadDaily()
+            QuestSheetPeriod.WEEKLY -> loadWeekly()
+        }
+    }
+
     fun loadDaily() {
         viewModelScope.launch {
             _loading.value = true
+            _loadError.value = null
             questRepository.getDailyQuests().fold(
                 onSuccess = { data ->
                     _rows.value = data.quests.map {
                         QuestSheetMapper.mapItem(it, QuestSheetPeriod.DAILY, canStartMission)
                     }
+                    _loadError.value = null
                 },
                 onFailure = { e ->
-                    val mock = com.kduniv.aimong.feature.dev.mock.MockUiSamples.homeUiState().quests
-                    _rows.value = mock.map { com.kduniv.aimong.feature.home.presentation.quest.QuestSheetRow(
-                        questType = it.id,
-                        title = it.title,
-                        detailText = it.rewardSummary,
-                        period = QuestSheetPeriod.DAILY,
-                        primaryAction = if (it.canStart) com.kduniv.aimong.feature.home.presentation.quest.QuestSheetPrimaryAction.GO_LEARN else if (it.isCompleted) com.kduniv.aimong.feature.home.presentation.quest.QuestSheetPrimaryAction.COMPLETED else com.kduniv.aimong.feature.home.presentation.quest.QuestSheetPrimaryAction.IN_PROGRESS,
-                        actionEnabled = it.canStart
-                    )}
+                    _rows.value = emptyList()
+                    _loadError.value = e.message?.takeIf { it.isNotBlank() }
+                        ?: appContext.getString(R.string.quest_load_failed)
                 }
             )
             _loading.value = false
@@ -84,22 +91,18 @@ class QuestListViewModel @Inject constructor(
     fun loadWeekly() {
         viewModelScope.launch {
             _loading.value = true
+            _loadError.value = null
             questRepository.getWeeklyQuests().fold(
                 onSuccess = { data ->
                     _rows.value = data.quests.map {
                         QuestSheetMapper.mapItem(it, QuestSheetPeriod.WEEKLY, canStartMission)
                     }
+                    _loadError.value = null
                 },
                 onFailure = { e ->
-                    val mock = com.kduniv.aimong.feature.dev.mock.MockUiSamples.homeUiState().quests
-                    _rows.value = mock.map { com.kduniv.aimong.feature.home.presentation.quest.QuestSheetRow(
-                        questType = it.id,
-                        title = it.title + " (위클리)",
-                        detailText = it.rewardSummary,
-                        period = QuestSheetPeriod.WEEKLY,
-                        primaryAction = if (it.canStart) com.kduniv.aimong.feature.home.presentation.quest.QuestSheetPrimaryAction.GO_LEARN else if (it.isCompleted) com.kduniv.aimong.feature.home.presentation.quest.QuestSheetPrimaryAction.COMPLETED else com.kduniv.aimong.feature.home.presentation.quest.QuestSheetPrimaryAction.IN_PROGRESS,
-                        actionEnabled = it.canStart
-                    )}
+                    _rows.value = emptyList()
+                    _loadError.value = e.message?.takeIf { it.isNotBlank() }
+                        ?: appContext.getString(R.string.quest_load_failed)
                 }
             )
             _loading.value = false
@@ -127,6 +130,24 @@ class QuestListViewModel @Inject constructor(
                 onFailure = { e ->
                     _loading.value = false
                     _effects.trySend(QuestSheetEffect.Snackbar(e.message ?: "수령에 실패했습니다."))
+                }
+            )
+        }
+    }
+
+    fun onCheckAchievements() {
+        viewModelScope.launch {
+            _loading.value = true
+            questRepository.getAchievements().fold(
+                onSuccess = { data ->
+                    val completed = data.achievements.count { it.isCompleted }
+                    val total = data.achievements.size
+                    _effects.trySend(QuestSheetEffect.Snackbar("업적 $completed / $total"))
+                    _loading.value = false
+                },
+                onFailure = { e ->
+                    _loading.value = false
+                    _effects.trySend(QuestSheetEffect.Snackbar(e.message ?: "업적 조회에 실패했습니다."))
                 }
             )
         }

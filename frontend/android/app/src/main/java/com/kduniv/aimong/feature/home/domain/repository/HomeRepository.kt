@@ -1,6 +1,8 @@
 package com.kduniv.aimong.feature.home.domain.repository
 
 import com.kduniv.aimong.feature.home.data.model.HomeScreenData
+import com.kduniv.aimong.feature.home.data.model.ReturnRewardCheckResponseData
+import com.kduniv.aimong.feature.home.data.model.ReturnRewardClaimResponseData
 import com.kduniv.aimong.feature.home.domain.model.StreakCalendarResult
 
 interface HomeRepository {
@@ -11,4 +13,10 @@ interface HomeRepository {
      * @param yearMonth `YYYY-MM`. null이면 서버가 KST 현재 월 사용.
      */
     suspend fun getStreakCalendar(yearMonth: String? = null): Result<StreakCalendarResult>
+
+    /** GET /return-reward — CHILD */
+    suspend fun getReturnReward(): Result<ReturnRewardCheckResponseData>
+
+    /** POST /return-reward/claim — CHILD (400 BAD_REQUEST, 409 CONFLICT 등) */
+    suspend fun claimReturnReward(): Result<ReturnRewardClaimResponseData>
 }

@@ -7,9 +7,10 @@ import androidx.room.PrimaryKey
 data class OfflineMissionQueueEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val idempotencyKey: String, // 중복 제출 방지
+    val setId: String,
     val missionId: String,
     val quizAttemptId: String,
-    val answersJson: String, // List<QuizAnswer>를 JSON으로 저장
+    val answersJson: String, // List<MissionSetAnswerItem> JSON
     val attemptDate: Long,
     val isSync: Boolean = false
 )

@@ -9,6 +9,7 @@ import com.kduniv.aimong.core.network.model.ParentChildItem
 import com.kduniv.aimong.databinding.ItemParentChildBinding
 
 class ParentChildAdapter(
+    private val onSelectChild: (String) -> Unit,
     private val onRegenerateCode: (String) -> Unit
 ) : ListAdapter<ParentChildItem, ParentChildAdapter.ViewHolder>(DiffCallback) {
 
@@ -32,6 +33,9 @@ class ParentChildAdapter(
             binding.tvChildXp.text = "누적 XP: ${item.totalXp}"
             binding.tvChildCode.text = item.code
 
+            binding.root.setOnClickListener {
+                onSelectChild(item.childId)
+            }
             binding.btnRegenerateCode.setOnClickListener {
                 onRegenerateCode(item.childId)
             }

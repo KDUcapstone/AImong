@@ -31,23 +31,27 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
             layoutInflater = layoutInflater,
             getProfileLabel = { viewModel.getProfileLabel(it) },
             petNameDefault = getString(R.string.home_pet_name_default),
-            onNavigateQuiz = { missionId ->
+            onNavigateQuiz = { nav ->
                 findNavController().navigate(
-                    HomeFragmentDirections.actionHomeFragmentToQuizFragment(missionId)
+                    HomeFragmentDirections.actionHomeFragmentToQuizFragment(
+                        nav.entrySetId,
+                        nav.missionId,
+                        nav.starLevel
+                    )
                 )
-            },
-            onSelectLearningTab = {
-                val bottomNav = requireActivity().findViewById<BottomNavigationView>(R.id.bottom_nav)
-                bottomNav.selectedItemId = R.id.learningFragment
             },
             onOpenQuest = { openQuestList() }
         )
         binding.tvChipTicket.setOnClickListener { openGacha() }
         binding.tvChipStreak.setOnClickListener { openStreakSheet() }
+
+        binding.btnReturnRewardCheck.setOnClickListener { viewModel.onCheckReturnReward() }
+        binding.btnReturnRewardClaim.setOnClickListener { viewModel.onClaimReturnReward() }
     }
 
     private fun openGacha() {
-        findNavController().navigate(R.id.action_homeFragment_to_gachaFragment)
+        // 탭 상태와 목적지를 항상 동기화해 탭 무반응을 방지한다.
+        requireActivity().findViewById<BottomNavigationView>(R.id.bottom_nav).selectedItemId = R.id.gachaFragment
     }
 
     private fun openQuestList() {

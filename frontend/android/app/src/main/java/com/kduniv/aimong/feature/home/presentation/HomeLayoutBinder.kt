@@ -11,6 +11,7 @@ import com.kduniv.aimong.databinding.ViewHomePathNodeLockedBinding
 import com.kduniv.aimong.databinding.ViewHomePathNodeReviewBinding
 import com.kduniv.aimong.databinding.ViewHomePathNodeStartBinding
 import com.kduniv.aimong.core.util.setOnScaleTouchListener
+import androidx.core.content.ContextCompat
 import kotlin.math.abs
 import kotlin.math.sin
 
@@ -23,8 +24,7 @@ class HomeLayoutBinder(
     private val layoutInflater: LayoutInflater,
     private val getProfileLabel: (String) -> String,
     private val petNameDefault: String,
-    private val onNavigateQuiz: (String) -> Unit,
-    private val onSelectLearningTab: () -> Unit,
+    private val onNavigateQuiz: (HomeQuizNavigation) -> Unit,
     private val onOpenQuest: () -> Unit
 ) {
     private var lastPathItems: List<HomePathItem> = emptyList()
@@ -71,6 +71,7 @@ class HomeLayoutBinder(
 
         val density = binding.root.context.resources.displayMetrics.density
         val amplitude = 60f * density // 지그재그 진폭 설정
+        val reviewLabel = binding.root.context.getString(R.string.home_mission_tooltip_review)
 
         var nodeIndex = 0
         var sectionForRow: HomePathItem.SectionHeader? = null
@@ -96,19 +97,27 @@ class HomeLayoutBinder(
                 sectionForRow = item as HomePathItem.SectionHeader
                 continue
             }
-            
+
+            if (item === HomePathItem.InterStageDivider) {
+                addInterStageDivider(density)
+                continue
+            }
+
             val translation = (sin(nodeIndex.toDouble() * Math.PI / 2) * amplitude).toFloat()
 
             when (item) {
                 is HomePathItem.SectionHeader -> {
                     // 리스트 렌더링에서 제외
                 }
+                HomePathItem.InterStageDivider -> {
+                    // 루프 상단에서 처리됨
+                }
                 is HomePathItem.Completed -> {
                     val row = ViewHomePathNodeCompletedBinding.inflate(inflater, binding.layoutMissionPath, false)
                     row.btnNode.translationX = translation
                     row.btnNode.text = item.icon
                     row.btnNode.setOnClickListener {
-                        showTooltip(row.btnNode, item.title, "완료됨", null)
+                        showTooltip(row.btnNode, item.title, reviewLabel, item.quizNav)
                     }
                     row.btnNode.setOnScaleTouchListener()
                     row.root.setTag(R.id.home_path_section_tag, sectionForRow)
@@ -123,7 +132,12 @@ class HomeLayoutBinder(
                     row.btnNode.text = item.icon
                     row.btnNode.alpha = if (item.enabled) 1f else 0.5f
                     row.btnNode.setOnClickListener {
-                        showTooltip(row.btnNode, item.missionTitle, "시작하기", if (item.enabled) item.missionId else null)
+                        showTooltip(
+                            row.btnNode,
+                            item.missionTitle,
+                            "시작하기",
+                            if (item.enabled) item.quizNav else null
+                        )
                     }
                     row.btnNode.setOnScaleTouchListener()
                     if (!row.lottiePet.isAnimating) row.lottiePet.playAnimation()
@@ -135,7 +149,7 @@ class HomeLayoutBinder(
                     val row = ViewHomePathNodeReviewBinding.inflate(inflater, binding.layoutMissionPath, false)
                     row.btnNode.translationX = translation
                     row.btnNode.setOnClickListener {
-                        showTooltip(row.btnNode, "복습 미션", item.subtitle, item.missionId)
+                        showTooltip(row.btnNode, item.subtitle, reviewLabel, item.quizNav)
                     }
                     row.btnNode.setOnScaleTouchListener()
                     row.root.setTag(R.id.home_path_section_tag, sectionForRow)
@@ -197,6 +211,32 @@ class HomeLayoutBinder(
         if (section == null) return
         binding.tvHomeBrand.text = "섹션 ${section.stage}"
         binding.tvHomeTitle.text = section.title
+
+        // 섹션별 배너 색상 분기
+        val bannerRes = when (section.stage) {
+            1 -> R.drawable.bg_home_section_banner_stage1
+            2 -> R.drawable.bg_home_section_banner_stage2
+            3 -> R.drawable.bg_home_section_banner_stage3
+            else -> R.drawable.bg_home_section_banner_gradient
+        }
+        binding.layoutSectionBanner.setBackgroundResource(bannerRes)
+    }
+
+    private fun addInterStageDivider(density: Float) {
+        val v = View(binding.root.context).apply {
+            setBackgroundColor(ContextCompat.getColor(context, R.color.home_card_stroke))
+        }
+        val lp = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            (2 * density).toInt().coerceAtLeast(1)
+        ).apply {
+            // 스테이지 경계는 "여기서 끊긴다"가 보이도록 여백을 더 줌
+            leftMargin = (24 * density).toInt()
+            rightMargin = (24 * density).toInt()
+            topMargin = (12 * density).toInt()
+            bottomMargin = (12 * density).toInt()
+        }
+        binding.layoutMissionPath.addView(v, lp)
     }
 
     private fun offsetTopInScrollContent(view: View): Int {
@@ -214,7 +254,7 @@ class HomeLayoutBinder(
         nodeView: View,
         title: String,
         subtitle: String?,
-        missionId: String?
+        quizNav: HomeQuizNavigation?
     ) {
         val tooltip = binding.layoutFloatingTooltip
         tooltip.isVisible = true
@@ -227,11 +267,11 @@ class HomeLayoutBinder(
             binding.tvTooltipSubtitle.isVisible = false
         }
         
-        if (missionId != null) {
+        if (quizNav != null && quizNav.canNavigate()) {
             binding.btnTooltipStart.isEnabled = true
             binding.btnTooltipStart.alpha = 1.0f
             binding.btnTooltipStart.setOnClickListener {
-                onNavigateQuiz(missionId)
+                onNavigateQuiz(quizNav)
                 tooltip.isVisible = false
             }
         } else {

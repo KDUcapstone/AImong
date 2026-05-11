@@ -15,13 +15,23 @@ class QuestListAdapter(
     private val onRowInteraction: (QuestSheetRow) -> Unit
 ) : ListAdapter<QuestSheetRow, QuestListAdapter.QuestViewHolder>(Diff) {
 
+    private var sheetLoading: Boolean = false
+
+    /** 바텀시트에서 목록을 다시 불러오는 동안 행의 주요 버튼을 누르지 못하게 합니다. */
+    fun setSheetLoading(loading: Boolean) {
+        if (sheetLoading == loading) return
+        sheetLoading = loading
+        val n = itemCount
+        if (n > 0) notifyItemRangeChanged(0, n)
+    }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): QuestViewHolder {
         val binding = ItemHomeQuestBinding.inflate(LayoutInflater.from(parent.context), parent, false)
         return QuestViewHolder(binding, onRowInteraction)
     }
 
     override fun onBindViewHolder(holder: QuestViewHolder, position: Int) {
-        holder.bind(getItem(position))
+        holder.bind(getItem(position), sheetLoading)
     }
 
     class QuestViewHolder(
@@ -29,8 +39,9 @@ class QuestListAdapter(
         private val onRowInteraction: (QuestSheetRow) -> Unit
     ) : RecyclerView.ViewHolder(binding.root) {
 
-        fun bind(row: QuestSheetRow) {
+        fun bind(row: QuestSheetRow, sheetLoading: Boolean) {
             val ctx = binding.root.context
+            val loading = sheetLoading
             binding.tvQuestTitle.text = row.title
             binding.tvQuestReward.text = row.detailText
             binding.tvQuestEmoji.text = "🏆"
@@ -50,19 +61,22 @@ class QuestListAdapter(
                     label = ctx.getString(R.string.quest_action_claim)
                     bgRes = R.drawable.bg_btn_primary
                     textColorRes = R.color.text_white
-                    containerAlpha = if (row.actionEnabled) 1f else 0.45f
+                    val enabled = row.actionEnabled && !loading
+                    containerAlpha = if (enabled) 1f else 0.45f
                 }
                 QuestSheetPrimaryAction.GO_LEARN -> {
                     label = ctx.getString(R.string.quest_action_go_learn)
                     bgRes = R.drawable.bg_btn_primary
                     textColorRes = R.color.text_white
-                    containerAlpha = if (row.actionEnabled) 1f else 0.45f
+                    val enabled = row.actionEnabled && !loading
+                    containerAlpha = if (enabled) 1f else 0.45f
                 }
                 QuestSheetPrimaryAction.GO_CHAT -> {
                     label = ctx.getString(R.string.quest_action_go_chat)
                     bgRes = R.drawable.bg_btn_primary
                     textColorRes = R.color.text_white
-                    containerAlpha = if (row.actionEnabled) 1f else 0.45f
+                    val enabled = row.actionEnabled && !loading
+                    containerAlpha = if (enabled) 1f else 0.45f
                 }
                 QuestSheetPrimaryAction.IN_PROGRESS -> {
                     label = ctx.getString(R.string.quest_action_in_progress)
@@ -78,6 +92,7 @@ class QuestListAdapter(
             binding.btnActionContainer.alpha = containerAlpha
 
             binding.btnActionContainer.setOnClickListener {
+                if (loading) return@setOnClickListener
                 when (row.primaryAction) {
                     QuestSheetPrimaryAction.CLAIM,
                     QuestSheetPrimaryAction.GO_LEARN,

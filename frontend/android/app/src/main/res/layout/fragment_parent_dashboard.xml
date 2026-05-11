@@ -32,16 +32,177 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rv_children"
+    <LinearLayout
+        android:id="@+id/layout_parent_api_buttons"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:orientation="vertical"
+        android:paddingHorizontal="20dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_title">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_sync_children"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="자녀목록 갱신 (/parent/children)"
+            android:textColor="@color/white"
+            app:cornerRadius="12dp"
+            app:strokeColor="#243B70" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_fetch_summary"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="자녀 요약 (/summary)"
+            android:textColor="@color/white"
+            app:cornerRadius="12dp"
+            app:strokeColor="#243B70" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_fetch_weekly_stats"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="주간 통계 (/weekly-stats)"
+            android:textColor="@color/white"
+            app:cornerRadius="12dp"
+            app:strokeColor="#243B70" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_fetch_privacy_log"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="개인정보 감지 (/privacy-log)"
+            android:textColor="@color/white"
+            app:cornerRadius="12dp"
+            app:strokeColor="#243B70" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_fetch_weak_points"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="약점 분석 (/weak-points)"
+            android:textColor="@color/white"
+            app:cornerRadius="12dp"
+            app:strokeColor="#243B70" />
+    </LinearLayout>
+
+    <ScrollView
+        android:id="@+id/scroll_parent_dashboard"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_marginTop="24dp"
+        android:layout_marginTop="14dp"
         android:clipToPadding="false"
-        android:paddingHorizontal="20dp"
-        android:paddingBottom="100dp"
+        android:paddingBottom="24dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_title"
-        tools:listitem="@layout/item_parent_child" />
+        app:layout_constraintTop_toBottomOf="@id/layout_parent_api_buttons">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="20dp">
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                app:cardBackgroundColor="#1A2B52"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="0dp">
+
+                <TextView
+                    android:id="@+id/tv_parent_summary"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="16dp"
+                    android:text="요약: -"
+                    android:textColor="@color/white"
+                    android:textSize="14sp" />
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                app:cardBackgroundColor="#1A2B52"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="0dp">
+
+                <TextView
+                    android:id="@+id/tv_parent_weekly_stats"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="16dp"
+                    android:text="주간 통계: -"
+                    android:textColor="@color/white"
+                    android:textSize="14sp" />
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                app:cardBackgroundColor="#1A2B52"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="0dp">
+
+                <TextView
+                    android:id="@+id/tv_parent_privacy_log"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="16dp"
+                    android:text="개인정보 감지: -"
+                    android:textColor="@color/white"
+                    android:textSize="14sp" />
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                app:cardBackgroundColor="#1A2B52"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="0dp">
+
+                <TextView
+                    android:id="@+id/tv_parent_weak_points"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="16dp"
+                    android:text="약점 분석: -"
+                    android:textColor="@color/white"
+                    android:textSize="14sp" />
+            </com.google.android.material.card.MaterialCardView>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:layout_marginBottom="10dp"
+                android:text="자녀 목록 (카드를 탭해서 선택)"
+                android:textColor="#8A96AD"
+                android:textSize="13sp" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rv_children"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:clipToPadding="false"
+                android:paddingBottom="24dp"
+                tools:listitem="@layout/item_parent_child" />
+        </LinearLayout>
+    </ScrollView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
