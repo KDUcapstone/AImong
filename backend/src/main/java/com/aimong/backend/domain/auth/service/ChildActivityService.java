@@ -21,6 +21,9 @@ public class ChildActivityService {
     public void touchLastActiveAt(UUID childId) {
         ChildProfile childProfile = childProfileRepository.findById(childId)
                 .orElseThrow(() -> new AimongException(ErrorCode.CHILD_NOT_FOUND));
+        if (childProfile.getDeletedAt() != null) {
+            throw new AimongException(ErrorCode.CHILD_NOT_FOUND);
+        }
         childProfile.touchLastActiveAt(Instant.now());
     }
 }

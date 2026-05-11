@@ -66,6 +66,7 @@ public class ParentDashboardService {
                 childProfile.getShieldCount(),
                 missionAttemptRepository.countFirstCompletedMissionBetween(childId, weekStart, today),
                 missionAttemptRepository.countCompletedMission(childId),
+                childProfile.getLevel(),
                 childProfile.getLastActiveAt()
         );
     }
@@ -89,7 +90,7 @@ public class ParentDashboardService {
                 weekStart,
                 weekEnd,
                 dailyStats.stream().mapToInt(ParentWeeklyStatsResponse.DailyStatResponse::xpEarned).sum(),
-                dailyStats.stream().mapToInt(ParentWeeklyStatsResponse.DailyStatResponse::missionCount).sum(),
+                dailyStats.stream().mapToInt(ParentWeeklyStatsResponse.DailyStatResponse::completedSetCount).sum(),
                 dailyStats
         );
     }
@@ -141,7 +142,7 @@ public class ParentDashboardService {
     }
 
     private ChildProfile validateOwnership(String parentId, UUID childId) {
-        ChildProfile childProfile = childProfileRepository.findById(childId)
+        ChildProfile childProfile = childProfileRepository.findByIdAndDeletedAtIsNull(childId)
                 .orElseThrow(() -> new AimongException(ErrorCode.CHILD_NOT_FOUND));
         if (!childProfile.getParentAccount().getParentId().equals(parentId)) {
             throw new AimongException(ErrorCode.FORBIDDEN);
@@ -153,7 +154,7 @@ public class ParentDashboardService {
         return new ParentWeeklyStatsResponse.DailyStatResponse(
                 date,
                 date.getDayOfWeek().name().substring(0, 3),
-                stat == null ? 0 : Math.toIntExact(stat.missionCount()),
+                stat == null ? 0 : Math.toIntExact(stat.completedSetCount()),
                 stat == null ? 0 : Math.toIntExact(stat.xpEarned())
         );
     }

@@ -1,12 +1,15 @@
 package com.aimong.backend.domain.mission.controller;
 
 import com.aimong.backend.domain.mission.dto.MissionListResponse;
+import com.aimong.backend.domain.mission.dto.MissionQuestionCheckRequest;
 import com.aimong.backend.domain.mission.dto.MissionQuestionsResponse;
+import com.aimong.backend.domain.mission.dto.QuestionCheckResponse;
 import com.aimong.backend.domain.mission.dto.QuestionReportRequest;
 import com.aimong.backend.domain.mission.dto.QuestionReportResponse;
 import com.aimong.backend.domain.mission.dto.SubmitRequest;
 import com.aimong.backend.domain.mission.dto.SubmitResponse;
 import com.aimong.backend.domain.mission.service.MissionService;
+import com.aimong.backend.domain.mission.service.QuestionCheckService;
 import com.aimong.backend.domain.mission.service.QuizService;
 import com.aimong.backend.domain.mission.service.SubmitService;
 import com.aimong.backend.domain.mission.service.question.QuestionQualityReviewService;
@@ -38,6 +41,7 @@ public class MissionController {
     private final MissionService missionService;
     private final QuizService quizService;
     private final SubmitService submitService;
+    private final QuestionCheckService questionCheckService;
     private final QuestionQualityReviewService questionQualityReviewService;
 
     @Operation(
@@ -81,7 +85,7 @@ public class MissionController {
 
     @Operation(
             summary = "미션 문제 조회",
-            description = "승인된 고정 문제 10문항과 quizAttemptId를 반환합니다",
+            description = "승인된 고정 문제 10문항과 attemptId를 반환합니다",
             security = @SecurityRequirement(name = CHILD_SECURITY)
     )
     @ApiResponses({
@@ -95,15 +99,17 @@ public class MissionController {
                                 "missionId": "3f1a2b4c-1111-2222-3333-444455556666",
                                 "missionTitle": "AI가 뭐예요?",
                                 "isReview": false,
-                                "quizAttemptId": "8e8c7d6a-1111-2222-3333-444455556666",
+                                "attemptId": "8e8c7d6a-1111-2222-3333-444455556666",
                                 "questionCount": 10,
                                 "expiresAt": "2026-03-29T10:00:00Z",
                                 "questions": [
                                   {
-                                    "id": "7d7c6b5a-1111-2222-3333-444455556666",
+                                    "questionId": "7d7c6b5a-1111-2222-3333-444455556666",
+                                    "questionNo": 1,
                                     "type": "OX",
-                                    "question": "AI는 항상 정확한 정보를 말한다.",
-                                    "options": null
+                                    "prompt": "AI는 항상 정확한 정보를 말한다.",
+                                    "choices": null,
+                                    "answerFormat": "TEXT"
                                   }
                                 ]
                               },
@@ -144,18 +150,18 @@ public class MissionController {
             required = true,
             content = @Content(mediaType = "application/json", examples = @ExampleObject(value = """
                     {
-                      "quizAttemptId": "8e8c7d6a-1111-2222-3333-444455556666",
+                      "attemptId": "8e8c7d6a-1111-2222-3333-444455556666",
                       "answers": [
-                        { "questionId": "q_001", "selected": "false" },
-                        { "questionId": "q_002", "selected": "없는 정보를 사실처럼 말함" },
-                        { "questionId": "q_003", "selected": "프롬프트" },
-                        { "questionId": "q_004", "selected": "AI에게 힌트만 받도록 권유한다" },
-                        { "questionId": "q_005", "selected": "다른 자료로 확인한다" },
-                        { "questionId": "q_006", "selected": "No" },
-                        { "questionId": "q_007", "selected": "No" },
-                        { "questionId": "q_008", "selected": "No" },
-                        { "questionId": "q_009", "selected": "No" },
-                        { "questionId": "q_010", "selected": "No" }
+                        { "questionId": "q_001", "answer": "false" },
+                        { "questionId": "q_002", "answer": "없는 정보를 사실처럼 말함" },
+                        { "questionId": "q_003", "answer": "프롬프트" },
+                        { "questionId": "q_004", "answer": "AI에게 힌트만 받도록 권유한다" },
+                        { "questionId": "q_005", "answer": "다른 자료로 확인한다" },
+                        { "questionId": "q_006", "answer": "No" },
+                        { "questionId": "q_007", "answer": "No" },
+                        { "questionId": "q_008", "answer": "No" },
+                        { "questionId": "q_009", "answer": "No" },
+                        { "questionId": "q_010", "answer": "No" }
                       ]
                     }
                     """))
@@ -171,8 +177,11 @@ public class MissionController {
                                 "mode": "normal",
                                 "progressApplied": true,
                                 "attemptState": "submitted",
-                                "score": 8,
+                                "score": 80,
                                 "total": 10,
+                                "correctCount": 8,
+                                "questionCount": 10,
+                                "isFirstClear": true,
                                 "wrongCount": 2,
                                 "isPassed": true,
                                 "isPerfect": false,
@@ -253,6 +262,21 @@ public class MissionController {
             Authentication authentication
     ) {
         return ApiResponse.success(submitService.submit(extractChildId(authentication), missionId, request));
+    }
+
+    @PostMapping("/{missionId}/questions/{questionId}/check")
+    public ApiResponse<QuestionCheckResponse> checkQuestion(
+            @PathVariable UUID missionId,
+            @PathVariable UUID questionId,
+            @Valid @RequestBody MissionQuestionCheckRequest request,
+            Authentication authentication
+    ) {
+        return ApiResponse.success(questionCheckService.check(
+                extractChildId(authentication),
+                missionId,
+                questionId,
+                request.answer()
+        ));
     }
 
     @PostMapping("/{missionId}/questions/{questionId}/report")

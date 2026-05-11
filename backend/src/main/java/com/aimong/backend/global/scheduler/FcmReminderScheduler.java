@@ -28,7 +28,7 @@ public class FcmReminderScheduler {
     @Scheduled(cron = "0 50 8 * * *", zone = "Asia/Seoul")
     @Transactional
     public void flushQueuedPrivacyAlerts() {
-        parentAccountRepository.findAll()
+        parentAccountRepository.findAllByDeletedAtIsNull()
                 .forEach(fcmNotificationService::flushQueuedPrivacyAlerts);
     }
 
@@ -36,7 +36,10 @@ public class FcmReminderScheduler {
     @Transactional
     public void sendMissedLearningReminders() {
         LocalDate today = KstDateUtils.today();
-        for (ChildProfile childProfile : childProfileRepository.findAll()) {
+        for (ChildProfile childProfile : childProfileRepository.findAllByDeletedAtIsNull()) {
+            if (childProfile.getParentAccount().isDeleted()) {
+                continue;
+            }
             LocalDate baseDate = streakRecordRepository.findById(childProfile.getId())
                     .map(record -> record.getLastCompletedDate() != null
                             ? record.getLastCompletedDate()

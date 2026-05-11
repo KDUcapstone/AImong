@@ -31,12 +31,39 @@ public class ParentAccount {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
+
     public static ParentAccount create(String firebaseUid, String email) {
-        return new ParentAccount(firebaseUid, email, null, null);
+        return new ParentAccount(firebaseUid, email, null, null, null);
     }
 
     public void updateFcmToken(String fcmToken) {
         this.fcmToken = fcmToken;
+    }
+
+    public void updateEmail(String email) {
+        if (email != null && !email.isBlank()) {
+            this.email = email;
+        }
+    }
+
+    public void clearFcmToken() {
+        this.fcmToken = null;
+    }
+
+    public boolean isDeleted() {
+        return deletedAt != null;
+    }
+
+    public void reactivate(String email) {
+        this.deletedAt = null;
+        updateEmail(email);
+    }
+
+    public void withdraw(Instant deletedAt) {
+        this.fcmToken = null;
+        this.deletedAt = deletedAt;
     }
 
     @PrePersist

@@ -8,8 +8,9 @@ public record ParentChildSummaryResponse(
         int totalXp,
         int continuousDays,
         int shieldCount,
-        long weeklyMissionCount,
-        long totalMissionCount,
+        long weeklyCompletedSetCount,
+        long totalCompletedSetCount,
+        int currentLevelNo,
         Instant lastActiveAt
 ) {
 }

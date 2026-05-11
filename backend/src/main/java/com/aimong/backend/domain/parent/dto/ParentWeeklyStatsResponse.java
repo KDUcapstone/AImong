@@ -14,7 +14,7 @@ public record ParentWeeklyStatsResponse(
     public record DailyStatResponse(
             LocalDate date,
             String dayOfWeek,
-            int missionCount,
+            int completedSetCount,
             int xpEarned
     ) {
     }

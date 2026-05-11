@@ -28,6 +28,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.IntStream;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -190,7 +191,7 @@ public class QuizService {
                 quizAttempt.getId(),
                 missionQuestionProperties.setSize(),
                 quizAttempt.getExpiresAt(),
-                selectedQuestions.stream().map(this::toQuestionResponse).toList()
+                toQuestionResponses(selectedQuestions)
         );
     }
 
@@ -240,7 +241,7 @@ public class QuizService {
                 quizAttempt.getId(),
                 missionQuestionProperties.setSize(),
                 quizAttempt.getExpiresAt(),
-                selectedQuestions.stream().map(this::toQuestionResponse).toList()
+                toQuestionResponses(selectedQuestions)
         );
     }
 
@@ -283,13 +284,22 @@ public class QuizService {
         }
     }
 
-    private QuestionResponse toQuestionResponse(QuestionBank question) {
+    private List<QuestionResponse> toQuestionResponses(List<QuestionBank> questions) {
+        return IntStream.range(0, questions.size())
+                .mapToObj(index -> toQuestionResponse(questions.get(index), index + 1))
+                .toList();
+    }
+
+    private QuestionResponse toQuestionResponse(QuestionBank question, int questionNo) {
+        List<String> choices = readOptions(question.getOptionsJson());
         return new QuestionResponse(
                 question.getId(),
+                questionNo,
                 question.getQuestionType().name(),
+                question.getDifficulty() == null ? null : question.getDifficulty().name(),
                 question.getPrompt(),
-                readOptions(question.getOptionsJson()),
-                question.getDifficulty() == null ? null : question.getDifficulty().name()
+                choices,
+                QuestionResponse.answerFormatFor(choices)
         );
     }
 

@@ -12,13 +12,35 @@ import org.springframework.data.jpa.repository.Query;
 
 public interface ChildProfileRepository extends JpaRepository<ChildProfile, UUID> {
 
-    Optional<ChildProfile> findByCode(String code);
+    Optional<ChildProfile> findByCodeAndDeletedAtIsNull(String code);
 
-    boolean existsByCode(String code);
+    default Optional<ChildProfile> findByCode(String code) {
+        return findByCodeAndDeletedAtIsNull(code);
+    }
 
-    long countByParentAccountParentId(String parentId);
+    boolean existsByCodeAndDeletedAtIsNull(String code);
 
-    List<ChildProfile> findAllByParentAccountParentIdOrderByCreatedAtAsc(String parentId);
+    default boolean existsByCode(String code) {
+        return existsByCodeAndDeletedAtIsNull(code);
+    }
+
+    long countByParentAccountParentIdAndDeletedAtIsNull(String parentId);
+
+    default long countByParentAccountParentId(String parentId) {
+        return countByParentAccountParentIdAndDeletedAtIsNull(parentId);
+    }
+
+    List<ChildProfile> findAllByParentAccountParentIdAndDeletedAtIsNullOrderByCreatedAtAsc(String parentId);
+
+    default List<ChildProfile> findAllByParentAccountParentIdOrderByCreatedAtAsc(String parentId) {
+        return findAllByParentAccountParentIdAndDeletedAtIsNullOrderByCreatedAtAsc(parentId);
+    }
+
+    List<ChildProfile> findAllByDeletedAtIsNull();
+
+    Optional<ChildProfile> findByIdAndDeletedAtIsNull(UUID id);
+
+    List<ChildProfile> findAllByParentAccountParentId(String parentId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<ChildProfile> findWithLockById(UUID id);

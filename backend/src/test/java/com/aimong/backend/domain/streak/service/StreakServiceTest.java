@@ -50,7 +50,7 @@ class StreakServiceTest {
 
         assertThat(response.continuousDays()).isEqualTo(1);
         assertThat(response.lastCompletedDate()).isEqualTo(yesterday);
-        assertThat(response.todayMissionCount()).isZero();
+        assertThat(response.todaySetCount()).isZero();
         assertThat(response.partner()).isNull();
         verify(childActivityService).touchLastActiveAt(childId);
     }
@@ -70,7 +70,7 @@ class StreakServiceTest {
 
         var response = service.getStreak(childId);
 
-        assertThat(response.todayMissionCount()).isEqualTo(1);
+        assertThat(response.todaySetCount()).isEqualTo(1);
         assertThat(response.shieldCount()).isEqualTo(2);
         assertThat(response.partner()).isNull();
     }

@@ -1,11 +1,20 @@
 package com.aimong.backend.domain.auth.controller;
 
+import com.aimong.backend.domain.auth.dto.DeleteChildResponse;
+import com.aimong.backend.domain.auth.dto.DeleteFcmTokenResponse;
 import com.aimong.backend.domain.auth.dto.FcmTokenRequest;
 import com.aimong.backend.domain.auth.dto.FcmTokenResponse;
+import com.aimong.backend.domain.auth.dto.LogoutResponse;
+import com.aimong.backend.domain.auth.dto.ParentChildDetailResponse;
 import com.aimong.backend.domain.auth.dto.ParentChildrenResponse;
+import com.aimong.backend.domain.auth.dto.ParentMeResponse;
 import com.aimong.backend.domain.auth.dto.ParentRegisterRequest;
 import com.aimong.backend.domain.auth.dto.ParentRegisterResponse;
 import com.aimong.backend.domain.auth.dto.RegenerateCodeResponse;
+import com.aimong.backend.domain.auth.dto.UpdateChildProfileRequest;
+import com.aimong.backend.domain.auth.dto.UpdateChildProfileResponse;
+import com.aimong.backend.domain.auth.dto.WithdrawParentRequest;
+import com.aimong.backend.domain.auth.dto.WithdrawParentResponse;
 import com.aimong.backend.domain.auth.service.ParentAuthService;
 import com.aimong.backend.global.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -18,8 +27,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -69,7 +80,7 @@ public class ParentAuthController {
     public ApiResponse<ParentRegisterResponse> register(
             @Valid @RequestBody ParentRegisterRequest request
     ) {
-        return ApiResponse.success(parentAuthService.register(currentPrincipalName(), request));
+        return ApiResponse.success(parentAuthService.register(currentPrincipalName(), currentFirebaseEmail(), request));
     }
 
     @Operation(
@@ -174,7 +185,64 @@ public class ParentAuthController {
         return ApiResponse.success(parentAuthService.getChildren(currentPrincipalName()));
     }
 
+    @PostMapping("/children")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ApiResponse<ParentRegisterResponse> addChild(
+            @Valid @RequestBody ParentRegisterRequest request
+    ) {
+        return ApiResponse.success(parentAuthService.addChild(currentPrincipalName(), currentFirebaseEmail(), request));
+    }
+
+    @GetMapping("/children/{childId}")
+    public ApiResponse<ParentChildDetailResponse> getChild(
+            @PathVariable String childId
+    ) {
+        return ApiResponse.success(parentAuthService.getChild(currentPrincipalName(), childId));
+    }
+
+    @PatchMapping("/children/{childId}")
+    public ApiResponse<UpdateChildProfileResponse> updateChild(
+            @PathVariable String childId,
+            @Valid @RequestBody UpdateChildProfileRequest request
+    ) {
+        return ApiResponse.success(parentAuthService.updateChild(currentPrincipalName(), childId, request));
+    }
+
+    @DeleteMapping("/children/{childId}")
+    public ApiResponse<DeleteChildResponse> deleteChild(
+            @PathVariable String childId
+    ) {
+        return ApiResponse.success(parentAuthService.deleteChild(currentPrincipalName(), childId));
+    }
+
+    @GetMapping("/me")
+    public ApiResponse<ParentMeResponse> getMe() {
+        return ApiResponse.success(parentAuthService.getMe(currentPrincipalName()));
+    }
+
+    @DeleteMapping("/fcm-token")
+    public ApiResponse<DeleteFcmTokenResponse> deleteFcmToken() {
+        return ApiResponse.success(parentAuthService.deleteFcmToken(currentPrincipalName()));
+    }
+
+    @PostMapping("/logout")
+    public ApiResponse<LogoutResponse> logout() {
+        return ApiResponse.success(parentAuthService.logout(currentPrincipalName()));
+    }
+
+    @DeleteMapping("/account")
+    public ApiResponse<WithdrawParentResponse> withdraw(
+            @RequestBody(required = false) WithdrawParentRequest request
+    ) {
+        return ApiResponse.success(parentAuthService.withdraw(currentPrincipalName(), request));
+    }
+
     private String currentPrincipalName() {
         return SecurityContextHolder.getContext().getAuthentication().getName();
+    }
+
+    private String currentFirebaseEmail() {
+        Object credentials = SecurityContextHolder.getContext().getAuthentication().getCredentials();
+        return credentials instanceof String email ? email : null;
     }
 }

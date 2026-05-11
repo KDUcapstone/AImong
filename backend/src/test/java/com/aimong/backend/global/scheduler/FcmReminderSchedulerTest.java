@@ -31,7 +31,7 @@ class FcmReminderSchedulerTest {
     void flushQueuedPrivacyAlertsDelegatesForEveryParent() {
         ParentAccount parent = ParentAccount.create("parent-id", "parent@example.com");
         parent.updateFcmToken("parent-fcm-token");
-        when(parentAccountRepository.findAll()).thenReturn(List.of(parent));
+        when(parentAccountRepository.findAllByDeletedAtIsNull()).thenReturn(List.of(parent));
 
         scheduler().flushQueuedPrivacyAlerts();
 
@@ -43,7 +43,7 @@ class FcmReminderSchedulerTest {
         ChildProfile child = childProfile();
         StreakRecord streakRecord = StreakRecord.create(child.getId());
         streakRecord.recordMissionCompletion(KstDateUtils.today().minusDays(3));
-        when(childProfileRepository.findAll()).thenReturn(List.of(child));
+        when(childProfileRepository.findAllByDeletedAtIsNull()).thenReturn(List.of(child));
         when(streakRecordRepository.findById(child.getId())).thenReturn(Optional.of(streakRecord));
 
         scheduler().sendMissedLearningReminders();
@@ -56,7 +56,7 @@ class FcmReminderSchedulerTest {
         ChildProfile child = childProfile();
         StreakRecord streakRecord = StreakRecord.create(child.getId());
         streakRecord.recordMissionCompletion(KstDateUtils.today().minusDays(2));
-        when(childProfileRepository.findAll()).thenReturn(List.of(child));
+        when(childProfileRepository.findAllByDeletedAtIsNull()).thenReturn(List.of(child));
         when(streakRecordRepository.findById(child.getId())).thenReturn(Optional.of(streakRecord));
 
         scheduler().sendMissedLearningReminders();

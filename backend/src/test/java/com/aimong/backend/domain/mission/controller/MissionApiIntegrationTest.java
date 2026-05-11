@@ -17,6 +17,7 @@ import com.aimong.backend.domain.mission.dto.QuestionResponse;
 import com.aimong.backend.domain.mission.dto.SubmitRequest;
 import com.aimong.backend.domain.mission.dto.SubmitResponse;
 import com.aimong.backend.domain.mission.service.MissionService;
+import com.aimong.backend.domain.mission.service.MissionSetReportService;
 import com.aimong.backend.domain.mission.service.QuestionCheckService;
 import com.aimong.backend.domain.mission.service.QuizService;
 import com.aimong.backend.domain.mission.service.SubmitService;
@@ -58,6 +59,9 @@ class MissionApiIntegrationTest {
 
     @MockitoBean
     private QuestionCheckService questionCheckService;
+
+    @MockitoBean
+    private MissionSetReportService missionSetReportService;
 
     @MockitoBean
     private QuestionQualityReviewService questionQualityReviewService;
@@ -110,9 +114,18 @@ class MissionApiIntegrationTest {
                 .andExpect(jsonPath("$.data.variantNo").value(1))
                 .andExpect(jsonPath("$.data.title").value("Privacy Safety"))
                 .andExpect(jsonPath("$.data.isReview").value(true))
-                .andExpect(jsonPath("$.data.quizAttemptId").value(quizAttemptId.toString()))
+                .andExpect(jsonPath("$.data.attemptId").value(quizAttemptId.toString()))
+                .andExpect(jsonPath("$.data.quizAttemptId").doesNotExist())
                 .andExpect(jsonPath("$.data.questionCount").value(10))
+                .andExpect(jsonPath("$.data.questions[0].questionId").exists())
+                .andExpect(jsonPath("$.data.questions[0].questionNo").value(1))
                 .andExpect(jsonPath("$.data.questions[0].type").value("OX"))
+                .andExpect(jsonPath("$.data.questions[0].prompt").value("Should you share a password?"))
+                .andExpect(jsonPath("$.data.questions[0].choices[0]").value("Yes"))
+                .andExpect(jsonPath("$.data.questions[0].answerFormat").value("SINGLE_CHOICE"))
+                .andExpect(jsonPath("$.data.questions[0].id").doesNotExist())
+                .andExpect(jsonPath("$.data.questions[0].question").doesNotExist())
+                .andExpect(jsonPath("$.data.questions[0].options").doesNotExist())
                 .andExpect(jsonPath("$.data.questions[0].answer").doesNotExist())
                 .andExpect(jsonPath("$.data.questions[0].answerPayload").doesNotExist())
                 .andExpect(jsonPath("$.data.questions[0].answer_payload").doesNotExist())
@@ -135,8 +148,12 @@ class MissionApiIntegrationTest {
                 "normal",
                 true,
                 "submitted",
+                quizAttemptId,
+                100,
                 10,
                 10,
+                10,
+                true,
                 0,
                 true,
                 true,
@@ -152,7 +169,7 @@ class MissionApiIntegrationTest {
                 3,
                 1,
                 false,
-                List.of(new SubmitResponse.RewardResponse("XP", null, null, 10, "MISSION_CLEAR")),
+                new SubmitResponse.RewardsResponse(0, 10, List.of()),
                 new SubmitResponse.RemainingTicketsResponse(2, 0, 1),
                 "SPROUT",
                 false,
@@ -184,11 +201,14 @@ class MissionApiIntegrationTest {
                 .andExpect(jsonPath("$.requestId").exists())
                 .andExpect(jsonPath("$.data.mode").value("normal"))
                 .andExpect(jsonPath("$.data.progressApplied").value(true))
+                .andExpect(jsonPath("$.data.isFirstClear").value(true))
                 .andExpect(jsonPath("$.data.attemptState").value("submitted"))
-                .andExpect(jsonPath("$.data.score").value(10))
+                .andExpect(jsonPath("$.data.score").value(100))
                 .andExpect(jsonPath("$.data.todayMissionCount").value(1))
                 .andExpect(jsonPath("$.data.streakBonusApplied").value(false))
-                .andExpect(jsonPath("$.data.rewards[0].amount").value(10))
+                .andExpect(jsonPath("$.data.rewards.coin").value(0))
+                .andExpect(jsonPath("$.data.rewards.exp").value(10))
+                .andExpect(jsonPath("$.data.rewards.fragments").isArray())
                 .andExpect(jsonPath("$.data.remainingTickets.normal").value(2))
                 .andExpect(jsonPath("$.data.profileImageType").value("SPROUT"))
                 .andExpect(jsonPath("$.data.results[0].questionId").value(answers.get(0).questionId()))

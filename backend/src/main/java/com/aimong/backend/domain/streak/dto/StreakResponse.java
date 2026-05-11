@@ -6,7 +6,7 @@ import java.util.UUID;
 public record StreakResponse(
         int continuousDays,
         LocalDate lastCompletedDate,
-        int todayMissionCount,
+        int todaySetCount,
         int shieldCount,
         PartnerResponse partner
 ) {

@@ -1,9 +1,12 @@
 package com.aimong.backend.domain.auth.service;
 
+import com.aimong.backend.domain.auth.dto.ChildMeResponse;
 import com.aimong.backend.domain.auth.dto.ChildLoginRequest;
 import com.aimong.backend.domain.auth.dto.ChildLoginResponse;
+import com.aimong.backend.domain.auth.dto.DeleteFcmTokenResponse;
 import com.aimong.backend.domain.auth.dto.FcmTokenRequest;
 import com.aimong.backend.domain.auth.dto.FcmTokenResponse;
+import com.aimong.backend.domain.auth.dto.LogoutResponse;
 import com.aimong.backend.domain.auth.entity.ChildProfile;
 import com.aimong.backend.domain.auth.repository.ChildProfileRepository;
 import com.aimong.backend.domain.auth.support.LoginAttemptService;
@@ -77,5 +80,37 @@ public class ChildAuthService {
         childProfile.updateFcmToken(request.fcmToken());
         childActivityService.touchLastActiveAt(childId);
         return new FcmTokenResponse(true);
+    }
+
+    @Transactional
+    public ChildMeResponse getMe(UUID childId) {
+        ChildProfile childProfile = childProfileRepository.findByIdAndDeletedAtIsNull(childId)
+                .orElseThrow(() -> new AimongException(ErrorCode.CHILD_NOT_FOUND));
+        childProfile.touchLastActiveAt(Instant.now());
+        return new ChildMeResponse(
+                childProfile.getId(),
+                childProfile.getNickname(),
+                childProfile.getProfileImageType().name(),
+                childProfile.getTotalXp(),
+                childProfile.getFcmToken() != null,
+                childProfile.getLastActiveAt()
+        );
+    }
+
+    @Transactional
+    public LogoutResponse logout(UUID childId) {
+        ChildProfile childProfile = childProfileRepository.findByIdAndDeletedAtIsNull(childId)
+                .orElseThrow(() -> new AimongException(ErrorCode.CHILD_NOT_FOUND));
+        childProfile.logout();
+        return new LogoutResponse(true);
+    }
+
+    @Transactional
+    public DeleteFcmTokenResponse deleteFcmToken(UUID childId) {
+        ChildProfile childProfile = childProfileRepository.findByIdAndDeletedAtIsNull(childId)
+                .orElseThrow(() -> new AimongException(ErrorCode.CHILD_NOT_FOUND));
+        childProfile.clearFcmToken();
+        childActivityService.touchLastActiveAt(childId);
+        return new DeleteFcmTokenResponse(true);
     }
 }

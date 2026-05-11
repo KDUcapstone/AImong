@@ -19,6 +19,7 @@ import lombok.NoArgsConstructor;
 public class MissionAttempt {
 
     @Id
+    @Column(name = "attempt_id")
     private UUID id;
 
     @Column(name = "child_id", nullable = false)
@@ -27,7 +28,7 @@ public class MissionAttempt {
     @Column(name = "mission_id", nullable = false)
     private UUID missionId;
 
-    @Column(name = "set_id", length = 32)
+    @Column(name = "set_id", nullable = false, length = 32)
     private String setId;
 
     @Column(name = "star_level", nullable = false)

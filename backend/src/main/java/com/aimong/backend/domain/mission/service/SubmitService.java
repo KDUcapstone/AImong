@@ -18,6 +18,7 @@ import com.aimong.backend.domain.mission.entity.MissionSet;
 import com.aimong.backend.domain.mission.entity.MissionSetProgress;
 import com.aimong.backend.domain.mission.entity.QuestionAnswerKey;
 import com.aimong.backend.domain.mission.entity.QuizAttempt;
+import com.aimong.backend.domain.mission.entity.QuizAttemptStatus;
 import com.aimong.backend.domain.mission.repository.MissionAnswerResultRepository;
 import com.aimong.backend.domain.mission.repository.MissionAttemptRepository;
 import com.aimong.backend.domain.mission.repository.MissionDailyProgressRepository;
@@ -197,8 +198,7 @@ public class SubmitService {
             throw new AimongException(ErrorCode.MISSION_LOCKED);
         }
 
-        QuizAttempt quizAttempt = quizAttemptRepository.findWithLockById(request.quizAttemptId())
-                .orElseThrow(() -> new AimongException(ErrorCode.QUIZ_ATTEMPT_INVALID));
+        QuizAttempt quizAttempt = resolveQuizAttempt(childId, missionId, request.quizAttemptId());
 
         if (!quizAttempt.getChildId().equals(childId) || !mission.getId().equals(quizAttempt.getMissionId())) {
             throw new AimongException(ErrorCode.FORBIDDEN);
@@ -218,8 +218,7 @@ public class SubmitService {
         Mission mission = missionRepository.findById(missionSet.getMissionId())
                 .filter(Mission::isActive)
                 .orElseThrow(() -> new AimongException(ErrorCode.MISSION_NOT_FOUND));
-        QuizAttempt quizAttempt = quizAttemptRepository.findWithLockById(request.quizAttemptId())
-                .orElseThrow(() -> new AimongException(ErrorCode.QUIZ_ATTEMPT_INVALID));
+        QuizAttempt quizAttempt = resolveQuizAttempt(childId, setId, request.quizAttemptId());
         if (!quizAttempt.getChildId().equals(childId)) {
             throw new AimongException(ErrorCode.FORBIDDEN);
         }
@@ -229,6 +228,34 @@ public class SubmitService {
         return submitValidated(childId, mission, missionSet, quizAttempt, request);
     }
 
+    private QuizAttempt resolveQuizAttempt(UUID childId, UUID missionId, UUID quizAttemptId) {
+        if (quizAttemptId != null) {
+            return quizAttemptRepository.findWithLockById(quizAttemptId)
+                    .orElseThrow(() -> new AimongException(ErrorCode.QUIZ_ATTEMPT_INVALID));
+        }
+        return quizAttemptRepository.findFirstByChildIdAndMissionIdAndStatusAndExpiresAtAfterOrderByCreatedAtDesc(
+                        childId,
+                        missionId,
+                        QuizAttemptStatus.IN_PROGRESS,
+                        Instant.now()
+                )
+                .orElseThrow(() -> new AimongException(ErrorCode.QUIZ_ATTEMPT_INVALID));
+    }
+
+    private QuizAttempt resolveQuizAttempt(UUID childId, String setId, UUID quizAttemptId) {
+        if (quizAttemptId != null) {
+            return quizAttemptRepository.findWithLockById(quizAttemptId)
+                    .orElseThrow(() -> new AimongException(ErrorCode.QUIZ_ATTEMPT_INVALID));
+        }
+        return quizAttemptRepository.findFirstByChildIdAndSetIdAndStatusAndExpiresAtAfterOrderByCreatedAtDesc(
+                        childId,
+                        setId,
+                        QuizAttemptStatus.IN_PROGRESS,
+                        Instant.now()
+                )
+                .orElseThrow(() -> new AimongException(ErrorCode.QUIZ_ATTEMPT_INVALID));
+    }
+
     private SubmitResponse submitValidated(
             UUID childId,
             Mission mission,
@@ -236,10 +263,17 @@ public class SubmitService {
             QuizAttempt quizAttempt,
             SubmitRequest request
     ) {
-        if (quizAttempt.getSubmittedAt() != null) {
+        if (quizAttempt.getStatus() == QuizAttemptStatus.SUBMITTED || quizAttempt.getSubmittedAt() != null) {
             throw new AimongException(ErrorCode.QUIZ_ATTEMPT_ALREADY_SUBMITTED);
         }
+        if (quizAttempt.getStatus() == QuizAttemptStatus.ABANDONED) {
+            throw new AimongException(ErrorCode.ATTEMPT_ABANDONED);
+        }
+        if (quizAttempt.getStatus() == QuizAttemptStatus.EXPIRED) {
+            throw new AimongException(ErrorCode.ATTEMPT_EXPIRED);
+        }
         if (!quizAttempt.getExpiresAt().isAfter(Instant.now())) {
+            quizAttempt.markExpired();
             throw new AimongException(ErrorCode.ATTEMPT_EXPIRED);
         }
         List<UUID> questionIds = quizService.parseQuestionIds(quizAttempt.getQuestionIdsJson());
@@ -259,7 +293,7 @@ public class SubmitService {
         for (SubmitRequest.AnswerRequest answer : request.answers()) {
             UUID questionId = parseQuestionId(answer.questionId());
             QuestionAnswerKey answerKey = answerKeysById.get(questionId);
-            boolean isCorrect = answerKey != null && matchesAnswerPayload(answerKey.getAnswerPayload(), answer.selected());
+            boolean isCorrect = answerKey != null && matchesAnswerPayload(answerKey.getAnswerPayload(), answer.answer());
             if (isCorrect) {
                 score++;
             }
@@ -316,6 +350,7 @@ public class SubmitService {
                     childId,
                     mission,
                     missionSet,
+                    quizAttempt.getId(),
                     score,
                     wrongCount,
                     isPassed,
@@ -344,7 +379,7 @@ public class SubmitService {
                     0
             ));
             saveAnswerResults(failedAttempt.getId(), childId, missionId, setId, false, request.answers(), answerKeysById);
-            return buildFailureResponse(childId, mission, missionSet, score, wrongCount, isPerfect, childProfile, streakRecord, results);
+            return buildFailureResponse(childId, mission, missionSet, quizAttempt.getId(), score, wrongCount, isPerfect, childProfile, streakRecord, results);
         }
 
         boolean streakBonusApplied = isPartnerCompletedToday(childId, today);
@@ -401,6 +436,8 @@ public class SubmitService {
                                 () -> missionSetProgressRepository.save(MissionSetProgress.create(
                                         childId,
                                         setId,
+                                        missionId,
+                                        missionSet == null ? null : Integer.valueOf(missionSet.getStage()),
                                         progressStarLevel,
                                         progressVariantNo,
                                         passedAttempt.getId(),
@@ -434,8 +471,12 @@ public class SubmitService {
                 MODE_NORMAL,
                 true,
                 ATTEMPT_STATE_SUBMITTED,
+                quizAttempt.getId(),
+                responseScore(score, TOTAL_QUESTIONS),
+                TOTAL_QUESTIONS,
                 score,
                 TOTAL_QUESTIONS,
+                firstSetCompletion,
                 wrongCount,
                 true,
                 isPerfect,
@@ -451,7 +492,7 @@ public class SubmitService {
                 streakRecord.getContinuousDays(),
                 streakRecord.getTodayMissionCount(),
                 streakBonusApplied,
-                rewards,
+                rewardsEnvelope(xpEarned, rewards),
                 toRemainingTickets(childId),
                 childProfile.getProfileImageType().name(),
                 childProfile.getProfileImageType() != com.aimong.backend.domain.auth.entity.ProfileImageType.DEFAULT,
@@ -472,6 +513,7 @@ public class SubmitService {
             UUID childId,
             Mission mission,
             MissionSet missionSet,
+            UUID attemptId,
             int score,
             int wrongCount,
             boolean isPassed,
@@ -487,8 +529,12 @@ public class SubmitService {
                 MODE_REVIEW,
                 false,
                 ATTEMPT_STATE_SUBMITTED,
+                attemptId,
+                responseScore(score, TOTAL_QUESTIONS),
+                TOTAL_QUESTIONS,
                 score,
                 TOTAL_QUESTIONS,
+                false,
                 wrongCount,
                 isPassed,
                 isPerfect,
@@ -504,7 +550,7 @@ public class SubmitService {
                 streakRecord.getContinuousDays(),
                 streakRecord.getTodayMissionCount(),
                 false,
-                List.of(),
+                rewardsEnvelope(0, List.of()),
                 toRemainingTickets(childId),
                 childProfile.getProfileImageType().name(),
                 childProfile.getProfileImageType() != com.aimong.backend.domain.auth.entity.ProfileImageType.DEFAULT,
@@ -525,6 +571,7 @@ public class SubmitService {
             UUID childId,
             Mission mission,
             MissionSet missionSet,
+            UUID attemptId,
             int score,
             int wrongCount,
             boolean isPerfect,
@@ -536,8 +583,12 @@ public class SubmitService {
                 MODE_NORMAL,
                 false,
                 ATTEMPT_STATE_SUBMITTED,
+                attemptId,
+                responseScore(score, TOTAL_QUESTIONS),
+                TOTAL_QUESTIONS,
                 score,
                 TOTAL_QUESTIONS,
+                false,
                 wrongCount,
                 false,
                 isPerfect,
@@ -553,7 +604,7 @@ public class SubmitService {
                 streakRecord.getContinuousDays(),
                 streakRecord.getTodayMissionCount(),
                 false,
-                List.of(),
+                rewardsEnvelope(0, List.of()),
                 toRemainingTickets(childId),
                 childProfile.getProfileImageType().name(),
                 childProfile.getProfileImageType() != com.aimong.backend.domain.auth.entity.ProfileImageType.DEFAULT,
@@ -580,6 +631,24 @@ public class SubmitService {
             case EPIC -> wrongCount <= 2 ? 10 : 0;
             case LEGEND -> wrongCount <= 2 ? 15 : 0;
         };
+    }
+
+    private int responseScore(int correctCount, int total) {
+        if (total <= 0) {
+            return 0;
+        }
+        return correctCount * 100 / total;
+    }
+
+    private SubmitResponse.RewardsResponse rewardsEnvelope(int xpEarned, List<SubmitResponse.RewardResponse> rewards) {
+        List<SubmitResponse.FragmentResponse> fragments = rewards.stream()
+                .filter(reward -> "FRAGMENT".equals(reward.type()))
+                .map(reward -> new SubmitResponse.FragmentResponse(
+                        reward.ticketType(),
+                        reward.count() == null ? 0 : reward.count()
+                ))
+                .toList();
+        return new SubmitResponse.RewardsResponse(0, xpEarned, fragments);
     }
 
     private int calculateNormalModeBaseXp(boolean isPerfect, int bonusXp) {
@@ -615,7 +684,7 @@ public class SubmitService {
         for (SubmitRequest.AnswerRequest answer : answers) {
             UUID questionId = parseQuestionId(answer.questionId());
             QuestionAnswerKey answerKey = answerKeysById.get(questionId);
-            boolean isCorrect = answerKey != null && matchesAnswerPayload(answerKey.getAnswerPayload(), answer.selected());
+            boolean isCorrect = answerKey != null && matchesAnswerPayload(answerKey.getAnswerPayload(), answer.answer());
             results.add(MissionAnswerResult.create(
                     attemptId,
                     childId,

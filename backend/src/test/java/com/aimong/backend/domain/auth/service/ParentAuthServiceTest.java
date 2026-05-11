@@ -52,6 +52,7 @@ class ParentAuthServiceTest {
 
         ParentRegisterResponse response = parentAuthService.register(
                 "firebase-uid",
+                "parent@example.com",
                 new ParentRegisterRequest("test-child")
         );
 
@@ -63,13 +64,14 @@ class ParentAuthServiceTest {
     }
 
     @Test
-    void registerRejectsWhenParentAlreadyHasThreeChildren() {
+    void registerRejectsWhenParentAlreadyHasFiveChildren() {
         when(parentAccountRepository.findWithLockByParentId("firebase-uid"))
                 .thenReturn(Optional.of(ParentAccount.create("firebase-uid", "parent@example.com")));
-        when(childProfileRepository.countByParentAccountParentId("firebase-uid")).thenReturn(3L);
+        when(childProfileRepository.countByParentAccountParentId("firebase-uid")).thenReturn(5L);
 
         assertThatThrownBy(() -> parentAuthService.register(
                 "firebase-uid",
+                "parent@example.com",
                 new ParentRegisterRequest("test-child")
         ))
                 .isInstanceOf(AimongException.class)
@@ -79,7 +81,7 @@ class ParentAuthServiceTest {
 
     @Test
     void regenerateCodeRejectsInvalidChildIdFormat() {
-        when(parentAccountRepository.findByParentId("firebase-uid"))
+        when(parentAccountRepository.findByParentIdAndDeletedAtIsNull("firebase-uid"))
                 .thenReturn(Optional.of(ParentAccount.create("firebase-uid", "parent@example.com")));
 
         assertThatThrownBy(() -> parentAuthService.regenerateCode("firebase-uid", "not-a-uuid"))

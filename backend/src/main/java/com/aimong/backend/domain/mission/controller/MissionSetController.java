@@ -2,12 +2,14 @@ package com.aimong.backend.domain.mission.controller;
 
 import com.aimong.backend.domain.mission.dto.MissionQuestionsResponse;
 import com.aimong.backend.domain.mission.dto.MissionSetCheckRequest;
+import com.aimong.backend.domain.mission.dto.MissionSetReportResponse;
 import com.aimong.backend.domain.mission.dto.QuestionCheckResponse;
 import com.aimong.backend.domain.mission.dto.QuestionReportRequest;
 import com.aimong.backend.domain.mission.dto.QuestionReportResponse;
 import com.aimong.backend.domain.mission.dto.SubmitRequest;
 import com.aimong.backend.domain.mission.dto.SubmitResponse;
 import com.aimong.backend.domain.mission.service.QuestionCheckService;
+import com.aimong.backend.domain.mission.service.MissionSetReportService;
 import com.aimong.backend.domain.mission.service.QuizService;
 import com.aimong.backend.domain.mission.service.SubmitService;
 import com.aimong.backend.domain.mission.service.question.QuestionQualityReviewService;
@@ -31,6 +33,7 @@ public class MissionSetController {
     private final QuizService quizService;
     private final SubmitService submitService;
     private final QuestionCheckService questionCheckService;
+    private final MissionSetReportService missionSetReportService;
     private final QuestionQualityReviewService questionQualityReviewService;
 
     @GetMapping("/{setId}/questions")
@@ -57,6 +60,14 @@ public class MissionSetController {
             Authentication authentication
     ) {
         return ApiResponse.success(questionCheckService.check(extractChildId(authentication), setId, request));
+    }
+
+    @GetMapping("/{setId}/report")
+    public ApiResponse<MissionSetReportResponse> getReport(
+            @PathVariable String setId,
+            Authentication authentication
+    ) {
+        return ApiResponse.success(missionSetReportService.getReport(extractChildId(authentication), setId));
     }
 
     @PostMapping("/{setId}/questions/{questionId}/report")

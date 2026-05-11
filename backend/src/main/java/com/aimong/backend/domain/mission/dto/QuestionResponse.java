@@ -4,13 +4,19 @@ import java.util.List;
 import java.util.UUID;
 
 public record QuestionResponse(
-        UUID id,
+        UUID questionId,
+        int questionNo,
         String type,
-        String question,
-        List<String> options,
-        String difficulty
+        String difficulty,
+        String prompt,
+        List<String> choices,
+        String answerFormat
 ) {
-    public QuestionResponse(UUID id, String type, String question, List<String> options) {
-        this(id, type, question, options, null);
+    public QuestionResponse(UUID questionId, String type, String prompt, List<String> choices) {
+        this(questionId, 1, type, null, prompt, choices, answerFormatFor(choices));
+    }
+
+    public static String answerFormatFor(List<String> choices) {
+        return choices == null || choices.isEmpty() ? "TEXT" : "SINGLE_CHOICE";
     }
 }

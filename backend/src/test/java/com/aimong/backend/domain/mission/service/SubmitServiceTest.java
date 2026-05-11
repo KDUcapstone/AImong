@@ -85,6 +85,7 @@ class SubmitServiceTest {
 
         assertThat(response.isPassed()).isFalse();
         assertThat(response.progressApplied()).isFalse();
+        assertThat(response.isFirstClear()).isFalse();
 
         ArgumentCaptor<MissionAttempt> attemptCaptor = ArgumentCaptor.forClass(MissionAttempt.class);
         verify(missionAttemptRepository).save(attemptCaptor.capture());
@@ -110,6 +111,7 @@ class SubmitServiceTest {
 
         assertThat(response.mode()).isEqualTo("review");
         assertThat(response.progressApplied()).isFalse();
+        assertThat(response.isFirstClear()).isFalse();
         assertThat(response.isReview()).isTrue();
         assertThat(response.xpEarned()).isZero();
 
@@ -138,6 +140,7 @@ class SubmitServiceTest {
 
         assertThat(response.mode()).isEqualTo("normal");
         assertThat(response.progressApplied()).isTrue();
+        assertThat(response.isFirstClear()).isTrue();
         assertThat(response.xpEarned()).isEqualTo(20);
         assertThat(response.isReview()).isFalse();
 
@@ -161,7 +164,7 @@ class SubmitServiceTest {
         SubmitResponse response = service.submit(fixture.childId(), fixture.missionId(), fixture.request());
 
         assertThat(response.isPassed()).isTrue();
-        assertThat(response.score()).isEqualTo(10);
+        assertThat(response.score()).isEqualTo(100);
     }
 
     @Test
@@ -172,7 +175,7 @@ class SubmitServiceTest {
         SubmitResponse response = service.submit(fixture.childId(), fixture.missionId(), fixture.request());
 
         assertThat(response.isPassed()).isTrue();
-        assertThat(response.score()).isEqualTo(10);
+        assertThat(response.score()).isEqualTo(100);
     }
 
     @Test
@@ -183,7 +186,7 @@ class SubmitServiceTest {
         SubmitResponse response = service.submit(fixture.childId(), fixture.missionId(), fixture.request());
 
         assertThat(response.isPassed()).isTrue();
-        assertThat(response.score()).isEqualTo(10);
+        assertThat(response.score()).isEqualTo(100);
     }
 
     @Test
@@ -194,7 +197,7 @@ class SubmitServiceTest {
         SubmitResponse response = service.submit(fixture.childId(), fixture.missionId(), fixture.request());
 
         assertThat(response.isPassed()).isTrue();
-        assertThat(response.score()).isEqualTo(10);
+        assertThat(response.score()).isEqualTo(100);
     }
 
     @Test
@@ -205,7 +208,7 @@ class SubmitServiceTest {
         SubmitResponse response = service.submit(fixture.childId(), fixture.missionId(), fixture.request());
 
         assertThat(response.isPassed()).isTrue();
-        assertThat(response.score()).isEqualTo(10);
+        assertThat(response.score()).isEqualTo(100);
     }
 
     @Test

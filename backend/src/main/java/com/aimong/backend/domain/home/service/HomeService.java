@@ -6,6 +6,7 @@ import com.aimong.backend.domain.auth.service.ChildActivityService;
 import com.aimong.backend.domain.gacha.entity.TicketType;
 import com.aimong.backend.domain.gacha.repository.TicketRepository;
 import com.aimong.backend.domain.home.dto.HomeResponse;
+import com.aimong.backend.domain.home.dto.EnergyResponse;
 import com.aimong.backend.domain.home.dto.StreakCalendarResponse;
 import com.aimong.backend.domain.mission.dto.StageProgressResponse;
 import com.aimong.backend.domain.mission.entity.Mission;
@@ -13,7 +14,10 @@ import com.aimong.backend.domain.mission.entity.MissionDailyProgress;
 import com.aimong.backend.domain.mission.repository.MissionAttemptRepository;
 import com.aimong.backend.domain.mission.repository.MissionDailyProgressRepository;
 import com.aimong.backend.domain.mission.repository.MissionRepository;
+import com.aimong.backend.domain.mission.repository.MissionSetProgressRepository;
+import com.aimong.backend.domain.mission.repository.MissionSetRepository;
 import com.aimong.backend.domain.mission.service.MissionService;
+import com.aimong.backend.domain.mission.entity.MissionSet;
 import com.aimong.backend.domain.pet.entity.Pet;
 import com.aimong.backend.domain.pet.repository.PetRepository;
 import com.aimong.backend.domain.quest.entity.DailyQuest;
@@ -55,6 +59,8 @@ public class HomeService {
     private final MissionRepository missionRepository;
     private final MissionAttemptRepository missionAttemptRepository;
     private final MissionDailyProgressRepository missionDailyProgressRepository;
+    private final MissionSetRepository missionSetRepository;
+    private final MissionSetProgressRepository missionSetProgressRepository;
     private final MissionService missionService;
     private final StreakRecordRepository streakRecordRepository;
     private final FriendStreakRepository friendStreakRepository;
@@ -72,7 +78,10 @@ public class HomeService {
         HomeResponse.TicketSummaryResponse tickets = ticketSummary(childId);
         HomeResponse.StreakSummaryResponse streak = streakSummary(childId, childProfile, today);
         HomeResponse.EquippedPetResponse equippedPet = equippedPet(childProfile);
-        HomeResponse.RecommendedMissionResponse recommendedMission = recommendedMission(childId, today);
+        HomeResponse.RecommendedMissionResponse recommendedMission = recommendedMission(childId);
+        int todayCompletedCount = missionDailyProgressRepository.findByChildIdAndProgressDate(childId, today)
+                .map(MissionDailyProgress::getCompletedSetCount)
+                .orElse(0);
 
         return new HomeResponse(
                 today,
@@ -94,7 +103,7 @@ public class HomeService {
                 ),
                 equippedPet,
                 new HomeResponse.MissionSummaryResponse(
-                        missionAttemptRepository.countByChildIdAndAttemptDateAndReviewFalseAndPassedTrue(childId, today),
+                        todayCompletedCount,
                         TODAY_TARGET_COUNT,
                         equippedPet != null && recommendedMission != null
                                 && (recommendedMission.isReviewable()
@@ -136,6 +145,29 @@ public class HomeService {
         );
     }
 
+    @Transactional
+    public EnergyResponse getEnergy(UUID childId) {
+        childActivityService.touchLastActiveAt(childId);
+        ChildProfile childProfile = childProfileRepository.findWithLockById(childId)
+                .orElseThrow(() -> new AimongException(ErrorCode.CHILD_NOT_FOUND));
+        childProfile.recoverEnergy(Instant.now());
+        Instant nextRecoverAt = childProfile.nextEnergyRecoverAt();
+        Instant fullRecoverAt = null;
+        if (nextRecoverAt != null) {
+            int missingEnergy = ChildProfile.MAX_ENERGY - childProfile.getEnergy();
+            fullRecoverAt = childProfile.getEnergyRecoveredAt()
+                    .plusSeconds((long) missingEnergy * ChildProfile.ENERGY_RECOVERY_MINUTES * 60L);
+        }
+        return new EnergyResponse(
+                childProfile.getEnergy(),
+                ChildProfile.MAX_ENERGY,
+                nextRecoverAt,
+                fullRecoverAt,
+                ChildProfile.ENERGY_RECOVERY_MINUTES,
+                ChildProfile.MISSION_ENERGY_COST
+        );
+    }
+
     private HomeResponse.EquippedPetResponse equippedPet(ChildProfile childProfile) {
         if (childProfile.getEquippedPetId() == null) {
             return null;
@@ -153,7 +185,24 @@ public class HomeService {
                 .orElse(null);
     }
 
-    private HomeResponse.RecommendedMissionResponse recommendedMission(UUID childId, LocalDate today) {
+    private HomeResponse.RecommendedMissionResponse recommendedMission(UUID childId) {
+        List<MissionSet> unlockedSets = missionSetRepository
+                .findAllByActiveTrueOrderByStageAscDisplayOrderAscStarLevelAscVariantNoAscSetIdAsc()
+                .stream()
+                .filter(set -> missionService.isUnlocked(childId, set))
+                .toList();
+        return unlockedSets.stream()
+                .filter(set -> !missionSetProgressRepository.existsByChildIdAndSetId(childId, set.getSetId()))
+                .findFirst()
+                .map(set -> toRecommendedMission(set, false))
+                .orElseGet(() -> unlockedSets.stream()
+                        .filter(set -> missionSetProgressRepository.existsByChildIdAndSetId(childId, set.getSetId()))
+                        .findFirst()
+                        .map(set -> toRecommendedMission(set, true))
+                        .orElse(null));
+    }
+
+    private HomeResponse.RecommendedMissionResponse legacyRecommendedMission(UUID childId, LocalDate today) {
         StageProgressResponse stageProgress = new StageProgressResponse(
                 missionAttemptRepository.countCompletedMissionByStage(childId, (short) 1),
                 missionAttemptRepository.countCompletedMissionByStage(childId, (short) 2),
@@ -181,12 +230,45 @@ public class HomeService {
 
     private HomeResponse.RecommendedMissionResponse toRecommendedMission(Mission mission, boolean reviewable) {
         return new HomeResponse.RecommendedMissionResponse(
+                null,
                 mission.getId(),
+                mission.getMissionCode(),
+                1,
+                1,
+                1,
                 mission.getStage(),
+                difficultyForStar(1),
                 mission.getTitle(),
                 mission.getDescription(),
+                true,
                 reviewable
         );
+    }
+
+    private HomeResponse.RecommendedMissionResponse toRecommendedMission(MissionSet set, boolean reviewable) {
+        return new HomeResponse.RecommendedMissionResponse(
+                set.getSetId(),
+                set.getMissionId(),
+                set.getMissionCode(),
+                set.getStarLevel(),
+                set.getVariantNo(),
+                set.getStarLevel(),
+                set.getStage(),
+                difficultyForStar(set.getStarLevel()),
+                set.getTitle(),
+                set.getDescription(),
+                true,
+                reviewable
+        );
+    }
+
+    private String difficultyForStar(int starLevel) {
+        return switch (starLevel) {
+            case 1 -> "LOW";
+            case 2 -> "MEDIUM";
+            case 3 -> "HIGH";
+            default -> null;
+        };
     }
 
     private HomeResponse.StreakSummaryResponse streakSummary(UUID childId, ChildProfile childProfile, LocalDate today) {
