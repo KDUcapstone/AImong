@@ -1,6 +1,7 @@
 package com.kduniv.aimong.feature.home.presentation
 
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.widget.LinearLayout
 import androidx.core.view.isVisible
@@ -42,8 +43,12 @@ class HomeLayoutBinder(
             }
 
             // 배경 스크롤/터치 시 툴팁 숨기기
-            scrollPath.setOnTouchListener { _, _ ->
-                layoutFloatingTooltip.isVisible = false
+            scrollPath.setOnTouchListener { _, ev ->
+                // 노드 탭 직후(UP)까지 툴팁이 바로 사라져 '안 눌린 것처럼' 보이는 현상을 방지:
+                // 실제 스크롤(드래그)일 때만 숨긴다.
+                if (ev.actionMasked == MotionEvent.ACTION_MOVE) {
+                    layoutFloatingTooltip.isVisible = false
+                }
                 false
             }
             containerMissionPath.setOnClickListener {
@@ -64,8 +69,10 @@ class HomeLayoutBinder(
         binding.containerMissionPath.setOnClickListener {
             binding.layoutFloatingTooltip.isVisible = false
         }
-        binding.scrollPath.setOnTouchListener { _, _ ->
-            binding.layoutFloatingTooltip.isVisible = false
+        binding.scrollPath.setOnTouchListener { _, ev ->
+            if (ev.actionMasked == MotionEvent.ACTION_MOVE) {
+                binding.layoutFloatingTooltip.isVisible = false
+            }
             false
         }
 
@@ -116,9 +123,12 @@ class HomeLayoutBinder(
                     val row = ViewHomePathNodeCompletedBinding.inflate(inflater, binding.layoutMissionPath, false)
                     row.btnNode.translationX = translation
                     row.btnNode.text = item.icon
-                    row.btnNode.setOnClickListener {
+                    val open = {
                         showTooltip(row.btnNode, item.title, reviewLabel, item.quizNav)
                     }
+                    row.btnNode.setOnClickListener { open() }
+                    row.root.isClickable = true
+                    row.root.setOnClickListener { open() }
                     row.btnNode.setOnScaleTouchListener()
                     row.root.setTag(R.id.home_path_section_tag, sectionForRow)
                     binding.layoutMissionPath.addView(row.root, rowLp)
@@ -131,14 +141,17 @@ class HomeLayoutBinder(
                     
                     row.btnNode.text = item.icon
                     row.btnNode.alpha = if (item.enabled) 1f else 0.5f
-                    row.btnNode.setOnClickListener {
+                    val open = {
                         showTooltip(
                             row.btnNode,
                             item.missionTitle,
-                            "시작하기",
+                            null,
                             if (item.enabled) item.quizNav else null
                         )
                     }
+                    row.btnNode.setOnClickListener { open() }
+                    row.root.isClickable = true
+                    row.root.setOnClickListener { open() }
                     row.btnNode.setOnScaleTouchListener()
                     if (!row.lottiePet.isAnimating) row.lottiePet.playAnimation()
                     row.root.setTag(R.id.home_path_section_tag, sectionForRow)
@@ -156,14 +169,17 @@ class HomeLayoutBinder(
 
                     row.btnNode.text = item.icon
                     row.btnNode.alpha = if (item.enabled) 1f else 0.5f
-                    row.btnNode.setOnClickListener {
+                    val open = {
                         showTooltip(
                             row.btnNode,
                             item.missionTitle,
-                            "시작하기",
+                            null,
                             if (item.enabled) item.quizNav else null
                         )
                     }
+                    row.btnNode.setOnClickListener { open() }
+                    row.root.isClickable = true
+                    row.root.setOnClickListener { open() }
                     row.btnNode.setOnScaleTouchListener()
                     row.root.setTag(R.id.home_path_section_tag, sectionForRow)
                     binding.layoutMissionPath.addView(row.root, rowLp)
@@ -172,9 +188,12 @@ class HomeLayoutBinder(
                 is HomePathItem.Review -> {
                     val row = ViewHomePathNodeReviewBinding.inflate(inflater, binding.layoutMissionPath, false)
                     row.btnNode.translationX = translation
-                    row.btnNode.setOnClickListener {
+                    val open = {
                         showTooltip(row.btnNode, item.subtitle, reviewLabel, item.quizNav)
                     }
+                    row.btnNode.setOnClickListener { open() }
+                    row.root.isClickable = true
+                    row.root.setOnClickListener { open() }
                     row.btnNode.setOnScaleTouchListener()
                     row.root.setTag(R.id.home_path_section_tag, sectionForRow)
                     binding.layoutMissionPath.addView(row.root, rowLp)
@@ -183,9 +202,12 @@ class HomeLayoutBinder(
                 is HomePathItem.Locked -> {
                     val row = ViewHomePathNodeLockedBinding.inflate(inflater, binding.layoutMissionPath, false)
                     row.btnNode.translationX = translation
-                    row.btnNode.setOnClickListener {
+                    val open = {
                         showTooltip(row.btnNode, "잠김", item.hint, null)
                     }
+                    row.btnNode.setOnClickListener { open() }
+                    row.root.isClickable = true
+                    row.root.setOnClickListener { open() }
                     row.btnNode.setOnScaleTouchListener()
                     row.root.setTag(R.id.home_path_section_tag, sectionForRow)
                     binding.layoutMissionPath.addView(row.root, rowLp)
