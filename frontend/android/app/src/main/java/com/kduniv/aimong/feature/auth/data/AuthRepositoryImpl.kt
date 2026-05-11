@@ -2,6 +2,8 @@ package com.kduniv.aimong.feature.auth.data
 
 import com.kduniv.aimong.core.network.AimongApiService
 import com.kduniv.aimong.core.network.ApiErrorMapper
+import com.kduniv.aimong.core.network.model.ChildLogoutResponse
+import com.kduniv.aimong.core.network.model.ChildMeResponseData
 import com.kduniv.aimong.core.network.model.ChildLoginRequest
 import com.kduniv.aimong.core.network.model.ChildLoginResponse
 import com.kduniv.aimong.core.network.model.ParentFcmTokenRequest
@@ -82,6 +84,47 @@ class AuthRepositoryImpl @Inject constructor(
             apiService.registerChildFcmToken(
                 body = ParentFcmTokenRequest(fcmToken = fcmToken.trim())
             )
+            Result.success(Unit)
+        } catch (_: HttpException) {
+            Result.success(Unit)
+        } catch (_: IOException) {
+            Result.success(Unit)
+        } catch (_: Exception) {
+            Result.success(Unit)
+        }
+    }
+
+    override suspend fun getChildMe(): Result<ChildMeResponseData> {
+        return try {
+            val response = apiService.getChildMe()
+            if (response.success) Result.success(response.data)
+            else Result.failure(Exception(ApiErrorMapper.userMessageForApiError(response.error)))
+        } catch (e: HttpException) {
+            Result.failure(Exception(ApiErrorMapper.userMessageForHttpException(e)))
+        } catch (e: IOException) {
+            Result.failure(Exception("연결을 확인한 뒤 다시 시도해주세요."))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun logoutChild(): Result<ChildLogoutResponse> {
+        return try {
+            val response = apiService.childLogout()
+            if (response.success) Result.success(response.data)
+            else Result.failure(Exception(ApiErrorMapper.userMessageForApiError(response.error)))
+        } catch (e: HttpException) {
+            Result.failure(Exception(ApiErrorMapper.userMessageForHttpException(e)))
+        } catch (e: IOException) {
+            Result.failure(Exception("연결을 확인한 뒤 다시 시도해주세요."))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun deleteChildFcmToken(): Result<Unit> {
+        return try {
+            apiService.deleteChildFcmToken()
             Result.success(Unit)
         } catch (_: HttpException) {
             Result.success(Unit)

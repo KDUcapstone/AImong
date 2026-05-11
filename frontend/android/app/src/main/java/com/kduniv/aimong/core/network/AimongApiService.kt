@@ -29,9 +29,16 @@ import com.kduniv.aimong.feature.quest.data.model.AchievementsResponseData
 import com.kduniv.aimong.feature.quiz.data.model.MissionSetSubmitRequest
 import com.kduniv.aimong.feature.quiz.data.model.QuizSubmitResponse
 import com.kduniv.aimong.core.network.model.ChildLoginResponse
+import com.kduniv.aimong.core.network.model.ChildLogoutResponse
+import com.kduniv.aimong.core.network.model.ChildMeResponseData
+import com.kduniv.aimong.core.network.model.NotificationSettingsRequest
+import com.kduniv.aimong.core.network.model.NotificationSettingsResponseData
+import com.kduniv.aimong.core.network.model.ParentAddChildRequest
+import com.kduniv.aimong.core.network.model.ParentChildDetailResponseData
 import com.kduniv.aimong.core.network.model.ParentChildrenResponseData
 import com.kduniv.aimong.core.network.model.ParentFcmTokenRequest
 import com.kduniv.aimong.core.network.model.ParentFcmTokenResponse
+import com.kduniv.aimong.core.network.model.ParentMeResponseData
 import com.kduniv.aimong.core.network.model.PrivacyEventRequest
 import com.kduniv.aimong.core.network.model.PrivacyEventResponseData
 import com.kduniv.aimong.core.network.model.RegenerateCodeResponse
@@ -48,6 +55,8 @@ import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
+import retrofit2.http.PATCH
+import retrofit2.http.DELETE
 import retrofit2.http.PUT
 import retrofit2.http.Path
 import retrofit2.http.Query
@@ -73,6 +82,26 @@ interface AimongApiService {
         @Header("Authorization") authorization: String
     ): ApiResponse<ParentChildrenResponseData>
 
+    /** 부모 단일 자녀 상세 — Firebase ID 토큰 (PARENT) */
+    @GET("parent/children/{childId}")
+    suspend fun getParentChildDetail(
+        @Header("Authorization") authorization: String,
+        @Path("childId") childId: String
+    ): ApiResponse<ParentChildDetailResponseData>
+
+    /** 부모 계정 정보 — Firebase ID 토큰 (PARENT) */
+    @GET("parent/me")
+    suspend fun getParentMe(
+        @Header("Authorization") authorization: String
+    ): ApiResponse<ParentMeResponseData>
+
+    /** 둘째 이상 자녀 추가 — Firebase ID 토큰 (PARENT) */
+    @POST("parent/children")
+    suspend fun addParentChild(
+        @Header("Authorization") authorization: String,
+        @Body body: ParentAddChildRequest
+    ): ApiResponse<ParentRegisterResponse>
+
     /** 자녀 등록 완료된 부모용 - 연결 코드 재발급 */
     @retrofit2.http.PUT("parent/child/{childId}/regenerate-code")
     suspend fun regenerateChildCode(
@@ -86,11 +115,52 @@ interface AimongApiService {
         @Body body: ChildLoginRequest
     ): ApiResponse<ChildLoginResponse>
 
+    /** 자녀 세션 확인 — `AuthInterceptor`가 세션 JWT(CHILD) 부착 */
+    @GET("child/me")
+    suspend fun getChildMe(): ApiResponse<ChildMeResponseData>
+
+    /** 자녀 로그아웃 — `AuthInterceptor`가 세션 JWT(CHILD) 부착 */
+    @POST("child/logout")
+    suspend fun childLogout(): ApiResponse<ChildLogoutResponse>
+
     /** 자녀 FCM 토큰 등록·갱신 — `AuthInterceptor`가 세션 JWT(CHILD) 부착 */
     @POST("child/fcm-token")
     suspend fun registerChildFcmToken(
         @Body body: ParentFcmTokenRequest
     ): ApiResponse<ParentFcmTokenResponse>
+
+    /** 부모 FCM 토큰 해제 — Firebase ID 토큰 (PARENT) */
+    @DELETE("parent/fcm-token")
+    suspend fun deleteParentFcmToken(
+        @Header("Authorization") authorization: String
+    ): ApiResponse<ParentFcmTokenResponse>
+
+    /** 자녀 FCM 토큰 해제 — `AuthInterceptor`가 세션 JWT(CHILD) 부착 */
+    @DELETE("child/fcm-token")
+    suspend fun deleteChildFcmToken(): ApiResponse<ParentFcmTokenResponse>
+
+    /** 알림 설정 조회 — CHILD는 interceptor 사용 */
+    @GET("notification/settings")
+    suspend fun getNotificationSettings(): ApiResponse<NotificationSettingsResponseData>
+
+    /** 알림 설정 조회 — PARENT는 Firebase ID 토큰 필요 */
+    @GET("notification/settings")
+    suspend fun getNotificationSettingsParent(
+        @Header("Authorization") authorization: String
+    ): ApiResponse<NotificationSettingsResponseData>
+
+    /** 알림 설정 변경 — CHILD는 interceptor 사용 */
+    @PATCH("notification/settings")
+    suspend fun patchNotificationSettings(
+        @Body body: NotificationSettingsRequest
+    ): ApiResponse<NotificationSettingsResponseData>
+
+    /** 알림 설정 변경 — PARENT는 Firebase ID 토큰 필요 */
+    @PATCH("notification/settings")
+    suspend fun patchNotificationSettingsParent(
+        @Header("Authorization") authorization: String,
+        @Body body: NotificationSettingsRequest
+    ): ApiResponse<NotificationSettingsResponseData>
 
     @GET("home")
     suspend fun getHome(): ApiResponse<HomeScreenData>

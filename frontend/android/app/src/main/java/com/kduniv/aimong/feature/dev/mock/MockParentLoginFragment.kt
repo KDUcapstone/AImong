@@ -1,10 +1,8 @@
 package com.kduniv.aimong.feature.dev.mock
 
-import android.graphics.Color
 import androidx.navigation.fragment.findNavController
 import com.kduniv.aimong.R
 import com.kduniv.aimong.core.ui.BaseFragment
-import com.kduniv.aimong.core.util.setGradientText
 import com.kduniv.aimong.core.util.setOnScaleTouchListener
 import com.kduniv.aimong.databinding.FragmentParentLoginBinding
 
@@ -12,12 +10,6 @@ import com.kduniv.aimong.databinding.FragmentParentLoginBinding
 class MockParentLoginFragment : BaseFragment<FragmentParentLoginBinding>(FragmentParentLoginBinding::inflate) {
 
     override fun initView() {
-        binding.tvLoginTitle.setGradientText(
-            Color.parseColor("#448AFF"),
-            Color.parseColor("#7C4DFF"),
-            Color.parseColor("#A040FF")
-        )
-
         binding.btnBack.apply {
             setOnScaleTouchListener()
             setOnClickListener {

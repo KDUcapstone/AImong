@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Tailwind: from-green-500 (#22C55E) to-emerald-500 (#10B981) -->
+    <gradient
+        android:angle="315"
+        android:startColor="#22C55E"
+        android:endColor="#10B981"
+        android:type="linear" />
+    <corners android:radius="20dp" />
+</shape>

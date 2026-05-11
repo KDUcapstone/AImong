@@ -4,16 +4,15 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_auth_gradient">
+    android:background="@drawable/bg_parent_login_bg">
 
     <ImageView
         android:id="@+id/btn_back"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
         android:layout_marginStart="16dp"
-        android:layout_marginTop="52dp"
-        android:padding="12dp"
-        android:src="@drawable/ic_back_white"
+        android:layout_marginTop="16dp"
+        android:src="@drawable/ic_back"
         android:clickable="true"
         android:focusable="true"
         android:background="?attr/selectableItemBackgroundBorderless"
@@ -21,68 +20,96 @@
         app:layout_constraintTop_toTopOf="parent"
         tools:ignore="ContentDescription" />
 
-    <TextView
-        android:id="@+id/tv_login_title"
-        android:layout_width="wrap_content"
+    <!-- Center content (phone-screen centered) -->
+    <LinearLayout
+        android:id="@+id/layout_parent_login_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="120dp"
-        android:text="부모 로그인"
-        android:textColor="@color/text_white"
-        android:textSize="32sp"
-        android:textStyle="bold"
-        android:letterSpacing="-0.02"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginHorizontal="24dp"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <TextView
-        android:id="@+id/tv_login_desc"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:gravity="center"
-        android:text="아이의 성장을 함께하고\n안전하게 관리해보세요"
-        android:textColor="#A0B0D0"
-        android:textSize="16sp"
-        android:lineSpacingExtra="4dp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_login_title" />
+        app:layout_constraintVertical_bias="0.5">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/btn_google_login"
-        android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:layout_marginHorizontal="32dp"
-        android:layout_marginTop="60dp"
-        android:background="@drawable/bg_glass_card"
-        android:clickable="true"
-        android:focusable="true"
-        app:layout_constraintTop_toBottomOf="@id/tv_login_desc">
+        <FrameLayout
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:layout_marginBottom="18dp"
+            android:background="@drawable/bg_parent_login_logo"
+            android:elevation="6dp">
 
-        <ImageView
-            android:id="@+id/iv_google_logo"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:layout_marginStart="24dp"
-            android:src="@drawable/ic_google_logo"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            tools:ignore="ContentDescription" />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:text="A"
+                android:textColor="@color/white"
+                android:textSize="30sp"
+                android:textStyle="bold"
+                tools:ignore="HardcodedText" />
+        </FrameLayout>
 
         <TextView
+            android:id="@+id/tv_login_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Google 계정으로 계속하기"
-            android:textColor="@color/text_white"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            android:text="부모 로그인"
+            android:textColor="#000000"
+            android:textSize="24sp"
+            android:textStyle="bold" />
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+        <TextView
+            android:id="@+id/tv_login_desc"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:text="자녀의 AI 학습을 함께 관리해요"
+            android:textColor="#4B5563"
+            android:textSize="14sp" />
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/btn_google_login"
+            android:layout_width="match_parent"
+            android:layout_height="64dp"
+            android:layout_marginTop="40dp"
+            android:background="@drawable/bg_parent_google_button"
+            android:clickable="true"
+            android:focusable="true"
+            android:paddingHorizontal="18dp"
+            android:paddingVertical="14dp"
+            android:elevation="2dp">
+
+            <ImageView
+                android:id="@+id/iv_google_logo"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_google_logo"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                tools:ignore="ContentDescription" />
+
+            <TextView
+                android:id="@+id/tv_google_cta"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:gravity="center"
+                android:text="Google로 계속하기"
+                android:textColor="#1F2937"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toEndOf="@id/iv_google_logo"
+                app:layout_constraintTop_toTopOf="parent" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

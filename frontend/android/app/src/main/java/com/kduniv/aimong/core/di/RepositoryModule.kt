@@ -22,6 +22,8 @@ import com.kduniv.aimong.feature.streak.data.StreakRepository
 import com.kduniv.aimong.feature.streak.data.StreakRepositoryImpl
 import com.kduniv.aimong.core.privacy.PrivacyRepository
 import com.kduniv.aimong.core.privacy.PrivacyRepositoryImpl
+import com.kduniv.aimong.feature.settings.data.NotificationSettingsRepository
+import com.kduniv.aimong.feature.settings.data.NotificationSettingsRepositoryImpl
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -97,4 +99,10 @@ abstract class RepositoryModule {
     abstract fun bindPrivacyRepository(
         impl: PrivacyRepositoryImpl
     ): PrivacyRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindNotificationSettingsRepository(
+        impl: NotificationSettingsRepositoryImpl
+    ): NotificationSettingsRepository
 }

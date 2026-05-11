@@ -14,5 +14,11 @@ data class ParentChildItem(
     @SerializedName("nickname") val nickname: String,
     @SerializedName("code") val code: String,
     @SerializedName("profileImageType") val profileImageType: String,
-    @SerializedName("totalXp") val totalXp: Int
+    @SerializedName("totalXp") val totalXp: Int,
+    /** v2.0: 자녀 FCM 토큰 유무(원문 미노출) */
+    @SerializedName("hasFcmToken") val hasFcmToken: Boolean? = null,
+    /** v2.0: 마지막 활동 시각(미연동 판단에 사용 가능) */
+    @SerializedName("lastActiveAt") val lastActiveAt: String? = null,
+    /** v2.0: 생성 시각 */
+    @SerializedName("createdAt") val createdAt: String? = null
 )

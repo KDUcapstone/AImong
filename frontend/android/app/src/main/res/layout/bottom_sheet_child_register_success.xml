@@ -48,7 +48,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:text="발급된 코드로 자녀 앱에서 로그인해주세요."
+        android:text="아직 자녀가 코드를 입력하지 않았어요! 아래 코드를 자녀 앱에 입력해주세요."
         android:textColor="#8A96AD"
         android:textSize="14sp"
         app:layout_constraintEnd_toEndOf="parent"

@@ -52,10 +52,11 @@ class ParentDashboardFragment : BaseFragment<FragmentParentDashboardBinding>(Fra
         binding.rvChildren.adapter = adapter
 
         binding.btnSyncChildren.setOnClickListener { viewModel.syncChildren() }
-        binding.btnFetchSummary.setOnClickListener { viewModel.fetchSummary() }
-        binding.btnFetchWeeklyStats.setOnClickListener { viewModel.fetchWeeklyStats() }
-        binding.btnFetchPrivacyLog.setOnClickListener { viewModel.fetchPrivacyLog() }
-        binding.btnFetchWeakPoints.setOnClickListener { viewModel.fetchWeakPoints() }
+        // v2.0 기준: 대시보드 진입/연동 판단은 자녀 상세(/parent/children/{childId})로 통일
+        binding.btnFetchSummary.setOnClickListener { viewModel.fetchChildDetail() }
+        binding.btnFetchWeeklyStats.setOnClickListener { viewModel.fetchChildDetail() }
+        binding.btnFetchPrivacyLog.setOnClickListener { viewModel.fetchChildDetail() }
+        binding.btnFetchWeakPoints.setOnClickListener { viewModel.fetchChildDetail() }
 
         binding.btnLogout.setOnClickListener {
             FirebaseAuth.getInstance().signOut()
@@ -87,45 +88,20 @@ class ParentDashboardFragment : BaseFragment<FragmentParentDashboardBinding>(Fra
                     }
                 }
                 launch {
-                    viewModel.summary.collect { s ->
-                        if (s == null) return@collect
+                    viewModel.childDetail.collect { d ->
+                        if (d == null) return@collect
+                        val linked = d.lastActiveAt != null
                         binding.tvParentSummary.text =
-                            "요약\n- 닉네임: ${s.nickname}\n- XP: ${s.totalXp}\n- 스트릭: ${s.continuousDays}일\n- 실드: ${s.shieldCount}\n- 주간 완료 세트: ${s.weeklyCompletedSetCount}\n- 총 완료 세트: ${s.totalCompletedSetCount}\n- 현재 레벨: ${s.currentLevelNo}\n- 마지막 활동: ${s.lastActiveAt ?: "-"}"
-                    }
-                }
-                launch {
-                    viewModel.weeklyStats.collect { w ->
-                        if (w == null) return@collect
-                        val lines = w.dailyStats.joinToString(separator = "\n") { d ->
-                            "- ${d.dayOfWeek}(${d.date}): 완료 ${d.completedSetCount}, XP ${d.xpEarned}"
-                        }
-                        binding.tvParentWeeklyStats.text =
-                            "주간 통계 (${w.weekStart ?: "-"} ~ ${w.weekEnd ?: "-"})\n- 주간 XP: ${w.totalWeeklyXp}\n- 주간 완료 세트: ${w.totalWeeklyMissions}\n$lines"
-                    }
-                }
-                launch {
-                    viewModel.privacyLog.collect { p ->
-                        if (p == null) return@collect
-                        val lines = p.events.joinToString(separator = "\n") { e ->
-                            "- ${e.detectedType} (masked=${e.masked}) @ ${e.detectedAt}"
-                        }
-                        binding.tvParentPrivacyLog.text =
-                            "개인정보 감지\n- weekly: ${p.weeklyCount}\n- total: ${p.totalCount}\n$lines"
-                    }
-                }
-                launch {
-                    viewModel.weakPoints.collect { wp ->
-                        if (wp == null) return@collect
-                        val lines = wp.weakPoints.joinToString(separator = "\n") { it ->
-                            val title = it.setTitle ?: it.missionTitle ?: "-"
-                            val stage = it.stage?.let { s -> "S$s" } ?: "-"
-                            val diff = it.starLevel?.let { sl -> "★$sl" }
-                                ?: it.levelNo?.let { l -> "L$l" }
-                                ?: "-"
-                            "- $title ($diff/$stage) 오답률 ${it.incorrectRate}, 시도 ${it.attemptCount}"
-                        }
-                        binding.tvParentWeakPoints.text =
-                            "약점 분석 (${wp.analyzedPeriod ?: "최근"})\n- total: ${wp.totalCount}\n$lines"
+                            if (linked) {
+                                "자녀 상태\n- 닉네임: ${d.nickname}\n- XP: ${d.totalXp}\n- 연동: 완료\n- 마지막 활동: ${d.lastActiveAt}"
+                            } else {
+                                "자녀 상태\n아직 자녀가 코드를 입력하지 않았어요!\n- 닉네임: ${d.nickname}\n- 코드: ${d.code}\n- 연동: 대기"
+                            }
+
+                        // 기존 카드들은 v2-only에서 레거시 호출을 하지 않도록 우선 비워둠(추후 목업 UI로 교체 예정)
+                        binding.tvParentWeeklyStats.text = "주간 통계: (v2 전환 중)"
+                        binding.tvParentPrivacyLog.text = "개인정보 감지: (v2 전환 중)"
+                        binding.tvParentWeakPoints.text = "약점 분석: (v2 전환 중)"
                     }
                 }
                 launch {

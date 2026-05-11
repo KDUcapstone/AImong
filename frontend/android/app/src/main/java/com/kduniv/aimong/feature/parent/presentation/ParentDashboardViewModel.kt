@@ -2,12 +2,9 @@ package com.kduniv.aimong.feature.parent.presentation
 
 import androidx.lifecycle.viewModelScope
 import com.kduniv.aimong.core.network.model.ParentChildItem
+import com.kduniv.aimong.core.network.model.ParentChildDetailResponseData
 import com.kduniv.aimong.core.ui.BaseViewModel
 import com.kduniv.aimong.feature.parent.data.ParentRepository
-import com.kduniv.aimong.feature.parent.data.model.ParentChildSummaryResponseData
-import com.kduniv.aimong.feature.parent.data.model.ParentPrivacyLogResponseData
-import com.kduniv.aimong.feature.parent.data.model.ParentWeakPointsResponseData
-import com.kduniv.aimong.feature.parent.data.model.ParentWeeklyStatsResponseData
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,17 +27,8 @@ class ParentDashboardViewModel @Inject constructor(
     private val _selectedChildId = MutableStateFlow<String?>(null)
     val selectedChildId: StateFlow<String?> = _selectedChildId
 
-    private val _summary = MutableStateFlow<ParentChildSummaryResponseData?>(null)
-    val summary: StateFlow<ParentChildSummaryResponseData?> = _summary.asStateFlow()
-
-    private val _weeklyStats = MutableStateFlow<ParentWeeklyStatsResponseData?>(null)
-    val weeklyStats: StateFlow<ParentWeeklyStatsResponseData?> = _weeklyStats.asStateFlow()
-
-    private val _privacyLog = MutableStateFlow<ParentPrivacyLogResponseData?>(null)
-    val privacyLog: StateFlow<ParentPrivacyLogResponseData?> = _privacyLog.asStateFlow()
-
-    private val _weakPoints = MutableStateFlow<ParentWeakPointsResponseData?>(null)
-    val weakPoints: StateFlow<ParentWeakPointsResponseData?> = _weakPoints.asStateFlow()
+    private val _childDetail = MutableStateFlow<ParentChildDetailResponseData?>(null)
+    val childDetail: StateFlow<ParentChildDetailResponseData?> = _childDetail.asStateFlow()
 
     val children: StateFlow<List<ParentChildItem>> = parentRepository.observeCachedParentChildren()
         .stateIn(
@@ -51,7 +39,10 @@ class ParentDashboardViewModel @Inject constructor(
 
     fun selectChild(childId: String) {
         _selectedChildId.value = childId
-        viewModelScope.launch { _messageEvent.emit("선택된 자녀: $childId") }
+        viewModelScope.launch {
+            _messageEvent.emit("선택된 자녀: $childId")
+            fetchChildDetail()
+        }
     }
 
     fun regenerateChildCode(childId: String) {
@@ -80,56 +71,17 @@ class ParentDashboardViewModel @Inject constructor(
         }
     }
 
-    fun fetchSummary() = fetchWithSelectedChild(
-        actionName = "요약",
+    fun fetchChildDetail() = fetchWithSelectedChild(
+        actionName = "자녀상세",
         block = { id ->
-            parentRepository.getChildSummary(id).fold(
-                onSuccess = { s ->
-                    _summary.value = s
-                    "요약: XP ${s.totalXp}, 스트릭 ${s.continuousDays}일, 주간완료 ${s.weeklyCompletedSetCount}"
+            parentRepository.getParentChildDetail(id).fold(
+                onSuccess = { d ->
+                    _childDetail.value = d
+                    val linked = d.lastActiveAt != null
+                    if (linked) "연동됨: ${d.nickname} (XP ${d.totalXp})"
+                    else "아직 자녀가 코드를 입력하지 않았어요! (코드 ${d.code})"
                 },
-                onFailure = { e -> e.message ?: "요약 조회 실패" }
-            )
-        }
-    )
-
-    fun fetchWeeklyStats() = fetchWithSelectedChild(
-        actionName = "주간통계",
-        block = { id ->
-            parentRepository.getWeeklyStats(id).fold(
-                onSuccess = { s ->
-                    _weeklyStats.value = s
-                    "주간통계: ${s.weekStart}~${s.weekEnd} XP ${s.totalWeeklyXp}, 완료 ${s.totalWeeklyMissions}"
-                },
-                onFailure = { e -> e.message ?: "주간통계 조회 실패" }
-            )
-        }
-    )
-
-    fun fetchPrivacyLog(page: Int = 0, size: Int = 20) = fetchWithSelectedChild(
-        actionName = "개인정보로그",
-        block = { id ->
-            parentRepository.getPrivacyLog(id, page = page, size = size).fold(
-                onSuccess = { s ->
-                    _privacyLog.value = s
-                    "개인정보로그: weekly ${s.weeklyCount}, total ${s.totalCount}, events ${s.events.size}"
-                },
-                onFailure = { e -> e.message ?: "개인정보로그 조회 실패" }
-            )
-        }
-    )
-
-    fun fetchWeakPoints(page: Int = 0, size: Int = 20) = fetchWithSelectedChild(
-        actionName = "약점분석",
-        block = { id ->
-            parentRepository.getWeakPoints(id, page = page, size = size).fold(
-                onSuccess = { s ->
-                    _weakPoints.value = s
-                    val top = s.weakPoints.firstOrNull()
-                    if (top == null) "약점분석: 데이터 없음"
-                    else "약점: ${top.missionTitle ?: "-"} 오답률 ${top.incorrectRate}, 시도 ${top.attemptCount}"
-                },
-                onFailure = { e -> e.message ?: "약점분석 조회 실패" }
+                onFailure = { e -> e.message ?: "자녀 상세 조회 실패" }
             )
         }
     )

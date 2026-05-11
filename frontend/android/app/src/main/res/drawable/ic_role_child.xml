@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- child/baby icon (filled), distinct from parent -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M12,11.6c1.9,0 3.4,-1.5 3.4,-3.4S13.9,4.8 12,4.8 8.6,6.3 8.6,8.2 10.1,11.6 12,11.6z" />
+    <!-- hair tuft -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M10.2,5.7c0.6,-1.0 1.9,-1.6 3.2,-1.2 0.8,0.2 1.4,0.8 1.7,1.5 -0.7,-0.3 -1.5,-0.2 -2.1,0.3 -0.6,0.5 -1.5,0.6 -2.1,0.2 -0.3,-0.2 -0.5,-0.5 -0.7,-0.8z" />
+    <!-- small body -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M12,13.1c-3.2,0 -5.9,2.0 -5.9,4.5 0,0.9 0.7,1.6 1.6,1.6h8.6c0.9,0 1.6,-0.7 1.6,-1.6 0,-2.5 -2.7,-4.5 -5.9,-4.5z" />
+</vector>
