@@ -282,6 +282,8 @@ class HomeLayoutBinder(
     ) {
         val tooltip = binding.layoutFloatingTooltip
         tooltip.isVisible = true
+        // 툴팁이 노드를 덮고 있을 때 터치가 '먹통'처럼 느껴지지 않도록, 툴팁 탭은 닫기로 처리한다.
+        tooltip.setOnClickListener { tooltip.isVisible = false }
         binding.tvTooltipTitle.text = title
         
         if (subtitle != null) {

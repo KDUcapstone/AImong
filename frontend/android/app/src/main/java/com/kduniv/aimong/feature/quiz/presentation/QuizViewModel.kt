@@ -73,6 +73,8 @@ class QuizViewModel @Inject constructor(
     /** v2.4: 진행 중 attempt 복구용 */
     private var attemptId: String? = null
     private var answeredQuestionIds: Set<String> = emptySet()
+    private val isRecoveredAttempt: Boolean
+        get() = attemptId?.isNotBlank() == true && answeredQuestionIds.isNotEmpty()
 
     init {
         fetchQuestions()
@@ -94,7 +96,13 @@ class QuizViewModel @Inject constructor(
                     // 프로세스 재생성/복원 등으로 currentIndex가 남아 있을 수 있어, 새 문제 세트 기준으로 안전 보정
                     val last = (questions.questions.size - 1).coerceAtLeast(0)
                     val clamped = currentQuestionIndex.value.coerceIn(0, last)
-                    savedStateHandle["currentIndex"] = clamped
+                    // 복구된 attempt면, 이미 답한 문항을 자동 스킵해 '멈춘 느낌'을 방지한다.
+                    val startIndex = if (isRecoveredAttempt) {
+                        firstUnansweredIndexFrom(clamped, questions.questions)
+                    } else {
+                        clamped
+                    }
+                    savedStateHandle["currentIndex"] = startIndex
                     _uiState.value = QuizUiState.QuestionLoaded(questions)
                     startTimer(questions.expiresAt)
                 }
@@ -306,7 +314,13 @@ class QuizViewModel @Inject constructor(
         }
 
         if (currentIndex < questions.size - 1) {
-            savedStateHandle["currentIndex"] = currentIndex + 1 // 인덱스 저장
+            val desired = currentIndex + 1
+            val nextIndex = if (isRecoveredAttempt) {
+                firstUnansweredIndexFrom(desired, questions)
+            } else {
+                desired
+            }
+            savedStateHandle["currentIndex"] = nextIndex // 인덱스 저장
             if (_isSolutionMode.value) {
                 showCurrentSolution()
             } else {
@@ -380,7 +394,8 @@ class QuizViewModel @Inject constructor(
                 _uiState.value = QuizUiState.Error("문제 정보가 없습니다.")
                 return@launch
             }
-            if (!isAnswerSetCompleteForFullSubmit(qs)) {
+            // v2.4 attempt 복구 시에는 서버가 기존 답안을 알고 있을 수 있어, 10문항 완전 제출을 강제하지 않는다.
+            if (!isRecoveredAttempt && !isAnswerSetCompleteForFullSubmit(qs)) {
                 _uiState.value = QuizUiState.Error("10개 문항에 모두 답한 뒤 제출할 수 있습니다.")
                 return@launch
             }
@@ -451,6 +466,18 @@ class QuizViewModel @Inject constructor(
     }
 
     fun isAnsweredAlready(questionId: String): Boolean = answeredQuestionIds.contains(questionId)
+
+    private fun firstUnansweredIndexFrom(start: Int, questions: List<Question>): Int {
+        if (questions.isEmpty()) return 0
+        var i = start.coerceIn(0, questions.lastIndex)
+        while (i <= questions.lastIndex) {
+            val qid = questions[i].id
+            if (!answeredQuestionIds.contains(qid)) return i
+            i++
+        }
+        // 모두 answered면 마지막을 유지(이후 결과/종료로 가는 UX는 Fragment에서 처리)
+        return questions.lastIndex
+    }
 
     suspend fun abandonCurrentAttemptIfAny(reason: String): Result<Unit> {
         val id = attemptId?.takeIf { it.isNotBlank() } ?: return Result.success(Unit)

@@ -227,6 +227,14 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                     binding.btnResRetry.isEnabled = true
                     binding.btnResRetry.alpha = 1f
                 }
+                // Error 상태에서 '다시 시도'로 덮어쓴 리스너/텍스트가 남아있을 수 있어 원복
+                if (binding.btnNextQuestion.text?.toString() == "다시 시도") {
+                    binding.btnNextQuestion.text = getString(R.string.quiz_btn_next)
+                    binding.btnNextQuestion.setOnClickListener {
+                        binding.layoutFeedbackPanel.visibility = View.GONE
+                        viewModel.nextQuestion()
+                    }
+                }
                 updateQuestion(viewModel.currentQuestionIndex.value)
             }
             is QuizUiState.AnswerChecked -> {
@@ -727,6 +735,12 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                 binding.tvTimer.setTextColor(Color.parseColor("#8A96AD"))
                 timer?.cancel()
                 timer = null
+                // 복구된 문항에서는 선택 대신 "다음"으로 진행할 수 있게 보장
+                binding.btnNextQuestion.text = getString(R.string.quiz_btn_next)
+                binding.btnNextQuestion.setOnClickListener {
+                    binding.layoutFeedbackPanel.visibility = View.GONE
+                    viewModel.nextQuestion()
+                }
             } else {
                 binding.tvAttemptRecoverBanner.visibility = View.GONE
                 if (!viewModel.isSolutionMode.value) {
