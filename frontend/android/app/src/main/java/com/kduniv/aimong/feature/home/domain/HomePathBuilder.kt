@@ -30,7 +30,7 @@ object HomePathBuilder {
         for (stage in 1..3) {
             val stageMissions = groupedByStage[stage] ?: emptyList()
             val sortedMissions = stageMissions
-                .sortedBy { it.missionId.toIntOrNull() ?: 0 }
+                .sortedBy { missionOrderKey(it.missionCode, it.title) }
                 .take(10)
 
             val stageTitle = STAGE_TITLES[stage] ?: "단계 $stage"
@@ -75,6 +75,16 @@ object HomePathBuilder {
                             subtitle = m.title
                         )
                     )
+                } else if (m.isUnlocked && m.starLevels.any { it.isPlayable }) {
+                    val star = m.starLevels.firstOrNull { it.isPlayable }?.starLevel?.takeIf { it in 1..3 } ?: 1
+                    items.add(
+                        HomePathItem.Start(
+                            quizNav = HomeQuizNavigation("", m.missionId, star),
+                            missionTitle = m.title,
+                            enabled = true,
+                            icon = "▶"
+                        )
+                    )
                 } else if (!m.isUnlocked) {
                     items.add(HomePathItem.Locked(hint = "잠김"))
                 } else {
@@ -94,5 +104,17 @@ object HomePathBuilder {
         }
 
         return items
+    }
+
+    private fun missionOrderKey(missionCode: String, title: String): Int {
+        // 예: "S1-M10" -> 10. 파싱 실패 시 0.
+        val idx = missionCode.indexOf("-M")
+        if (idx >= 0) {
+            val n = missionCode.substring(idx + 2).toIntOrNull()
+            if (n != null) return n
+        }
+        // 일부 서버는 "S1M10" 같은 형식일 수 있어 숫자만 추출 시도
+        val digits = missionCode.filter { it.isDigit() }
+        return digits.toIntOrNull() ?: title.filter { it.isDigit() }.toIntOrNull() ?: 0
     }
 }

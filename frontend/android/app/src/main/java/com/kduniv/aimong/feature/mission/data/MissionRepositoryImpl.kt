@@ -54,7 +54,7 @@ class MissionRepositoryImpl @Inject constructor(
                             )
                         }
                         MissionChapterEntity(
-                            missionId = m.missionId.toString(),
+                            missionId = m.missionId,
                             missionCode = m.missionCode,
                             stage = stageDto.stage,
                             title = m.title,

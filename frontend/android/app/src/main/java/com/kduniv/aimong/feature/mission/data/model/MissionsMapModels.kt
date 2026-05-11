@@ -15,7 +15,8 @@ data class MissionStageV23Dto(
 )
 
 data class MissionV23Dto(
-    @SerializedName("missionId") val missionId: Long = 0,
+    /** v2.4: UUID string */
+    @SerializedName("missionId") val missionId: String = "",
     @SerializedName("missionCode") val missionCode: String = "",
     @SerializedName("title") val title: String = "",
     @SerializedName("description") val description: String = "",

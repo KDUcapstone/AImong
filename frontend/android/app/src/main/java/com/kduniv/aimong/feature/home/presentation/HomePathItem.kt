@@ -32,6 +32,14 @@ sealed class HomePathItem {
         val icon: String = "🌟"
     ) : HomePathItem()
 
+    /** 일반 미션 시작 노드(오늘 추천이 아닌 경우) — C안: Start 스타일로 통일 */
+    data class Start(
+        val quizNav: HomeQuizNavigation,
+        val missionTitle: String,
+        val enabled: Boolean,
+        val icon: String = "▶"
+    ) : HomePathItem()
+
     data class Review(
         val quizNav: HomeQuizNavigation,
         val subtitle: String

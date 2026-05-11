@@ -145,6 +145,30 @@ class HomeLayoutBinder(
                     binding.layoutMissionPath.addView(row.root, rowLp)
                     nodeIndex++
                 }
+                is HomePathItem.Start -> {
+                    val row = ViewHomePathNodeStartBinding.inflate(inflater, binding.layoutMissionPath, false)
+                    row.btnNode.translationX = translation
+                    row.lottiePet.translationX = translation
+
+                    // 일반 Start는 펫/애니메이션 없이 버튼만 사용
+                    row.lottiePet.cancelAnimation()
+                    row.lottiePet.visibility = View.GONE
+
+                    row.btnNode.text = item.icon
+                    row.btnNode.alpha = if (item.enabled) 1f else 0.5f
+                    row.btnNode.setOnClickListener {
+                        showTooltip(
+                            row.btnNode,
+                            item.missionTitle,
+                            "시작하기",
+                            if (item.enabled) item.quizNav else null
+                        )
+                    }
+                    row.btnNode.setOnScaleTouchListener()
+                    row.root.setTag(R.id.home_path_section_tag, sectionForRow)
+                    binding.layoutMissionPath.addView(row.root, rowLp)
+                    nodeIndex++
+                }
                 is HomePathItem.Review -> {
                     val row = ViewHomePathNodeReviewBinding.inflate(inflater, binding.layoutMissionPath, false)
                     row.btnNode.translationX = translation
