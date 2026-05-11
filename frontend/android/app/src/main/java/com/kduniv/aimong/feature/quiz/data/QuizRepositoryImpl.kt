@@ -179,8 +179,7 @@ class QuizRepositoryImpl @Inject constructor(
         answers: Map<String, String>
     ): kotlin.Result<QuizResult> {
         val items = answers.mapNotNull { (qid, ans) ->
-            val id = qid.toLongOrNull() ?: return@mapNotNull null
-            MissionSetAnswerItem(questionId = id, answer = ans)
+            MissionSetAnswerItem(questionId = qid, answer = ans)
         }
         if (items.size != answers.size) {
             return kotlin.Result.failure(Exception("답안 형식이 올바르지 않습니다."))
@@ -217,7 +216,7 @@ class QuizRepositoryImpl @Inject constructor(
 
     override suspend fun checkAnswer(
         setId: String,
-        questionId: Long,
+        questionId: String,
         answer: String
     ): kotlin.Result<MissionSetCheckResponseData> {
         return try {

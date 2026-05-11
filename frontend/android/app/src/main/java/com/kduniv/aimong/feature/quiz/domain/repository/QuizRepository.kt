@@ -18,7 +18,7 @@ interface QuizRepository {
     suspend fun syncOfflineMissions(): Result<Unit>
 
     /** v2.4: 문항 단위 채점 */
-    suspend fun checkAnswer(setId: String, questionId: Long, answer: String): Result<MissionSetCheckResponseData>
+    suspend fun checkAnswer(setId: String, questionId: String, answer: String): Result<MissionSetCheckResponseData>
 
     /** v2.4: 진행 중 attempt 복구 */
     suspend fun getAttempt(attemptId: String): Result<MissionAttemptResponseData>

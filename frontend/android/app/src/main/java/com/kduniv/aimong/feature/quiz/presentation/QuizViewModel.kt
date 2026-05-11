@@ -274,11 +274,7 @@ class QuizViewModel @Inject constructor(
                 return@launch
             }
             val setId = qs.setId
-            val qidLong = questionId.toLongOrNull()
-                ?: return@launch kotlin.run {
-                    _uiState.value = QuizUiState.Error("문항 식별자가 올바르지 않습니다.")
-                }
-            quizRepository.checkAnswer(setId, qidLong, answer)
+            quizRepository.checkAnswer(setId, questionId, answer)
                 .onSuccess { checked ->
                     val exp = checked.explanation ?: appContext.getString(R.string.quiz_answer_saved_hint)
                     _uiState.value = QuizUiState.AnswerChecked(

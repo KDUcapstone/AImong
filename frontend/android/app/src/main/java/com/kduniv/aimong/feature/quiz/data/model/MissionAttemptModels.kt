@@ -32,12 +32,12 @@ data class MissionAttemptAbandonResponseData(
 
 /** v2.4: POST /mission-sets/{setId}/check */
 data class MissionSetCheckRequest(
-    @SerializedName("questionId") val questionId: Long,
+    @SerializedName("questionId") val questionId: String,
     @SerializedName("answer") val answer: String
 )
 
 data class MissionSetCheckResponseData(
-    @SerializedName("questionId") val questionId: Long,
+    @SerializedName("questionId") val questionId: String,
     @SerializedName("isCorrect") val isCorrect: Boolean = false,
     @SerializedName("correctAnswer") val correctAnswer: String? = null,
     @SerializedName("explanation") val explanation: String? = null

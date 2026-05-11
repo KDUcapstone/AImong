@@ -26,7 +26,8 @@ data class QuizQuestionsResponse(
 )
 
 data class QuestionResponse(
-    @SerializedName("questionId") val questionId: Long? = null,
+    /** v2.4: 서버가 문자열 questionId(UUID 등)를 줄 수 있어 String으로 수용 */
+    @SerializedName("questionId") val questionId: String? = null,
     @SerializedName("questionNo") val questionNo: Int? = null,
     @SerializedName("id") val id: String? = null,
     @SerializedName("type") val type: String,
@@ -49,7 +50,7 @@ data class MissionSetSubmitRequest(
 )
 
 data class MissionSetAnswerItem(
-    @SerializedName("questionId") val questionId: Long,
+    @SerializedName("questionId") val questionId: String,
     @SerializedName("answer") val answer: String
 )
 
@@ -108,7 +109,7 @@ data class RewardResponse(
 )
 
 data class QuestionResultResponse(
-    @SerializedName("questionId") val questionId: Long? = null,
+    @SerializedName("questionId") val questionId: String? = null,
     @SerializedName("isCorrect") val isCorrect: Boolean = false,
     @SerializedName("explanation") val explanation: String = ""
 )
