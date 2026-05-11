@@ -58,7 +58,8 @@ data class MissionSummaryDto(
 data class RecommendedMissionDto(
     @SerializedName(value = "id", alternate = ["missionId"])
     val id: String,
-    @SerializedName("setId") val setId: Long? = null,
+    /** v2.4: 서버가 문자열 setId(예: "S0101-L1")를 줄 수 있어 String으로 수용 */
+    @SerializedName("setId") val setId: String? = null,
     @SerializedName("stage") val stage: Int,
     @SerializedName("title") val title: String,
     @SerializedName("description") val description: String,

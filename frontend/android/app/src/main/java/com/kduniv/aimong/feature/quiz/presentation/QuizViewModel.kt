@@ -119,7 +119,7 @@ class QuizViewModel @Inject constructor(
                     .onSuccess { attempt ->
                         answeredQuestionIds = attempt.answeredQuestionIds.map { it.toString() }.toSet()
                     }
-                quizRepository.getQuestionsBySetId(inProgress.setId.toString())
+                quizRepository.getQuestionsBySetId(inProgress.setId)
             } else {
                 attemptId = null
                 answeredQuestionIds = emptySet()

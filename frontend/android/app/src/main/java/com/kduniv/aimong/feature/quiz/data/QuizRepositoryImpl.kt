@@ -70,9 +70,9 @@ class QuizRepositoryImpl @Inject constructor(
     }
 
     private suspend fun mapAndPersist(data: QuizQuestionsResponse): kotlin.Result<QuizQuestions> {
-        val setId = data.setId?.toString()?.takeIf { it != "0" && it.isNotBlank() }
+        val setId = data.setId?.trim()?.takeIf { it != "0" && it.isNotBlank() }
             ?: return kotlin.Result.failure(Exception("세트 정보가 없습니다."))
-        val missionId = data.missionId?.toString().orEmpty()
+        val missionId = data.missionId?.trim().orEmpty()
         val title = data.missionTitle?.takeIf { it.isNotBlank() }
             ?: data.label.orEmpty().ifBlank { "학습" }
         val expiresAt = data.expiresAt?.takeIf { it.isNotBlank() } ?: "2099-12-31T23:59:59Z"

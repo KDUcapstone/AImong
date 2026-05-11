@@ -4,8 +4,10 @@ import com.google.gson.annotations.SerializedName
 
 /** GET .../questions 응답 — v2.3 + 레거시 필드 nullable */
 data class QuizQuestionsResponse(
-    @SerializedName("setId") val setId: Long? = null,
-    @SerializedName("missionId") val missionId: Long? = null,
+    /** v2.4: 서버가 문자열 setId를 줄 수 있어 String으로 수용 */
+    @SerializedName("setId") val setId: String? = null,
+    /** v2.4: missionId가 UUID(String)일 수 있어 String으로 수용 */
+    @SerializedName("missionId") val missionId: String? = null,
     @SerializedName("missionCode") val missionCode: String? = null,
     @SerializedName("starLevel") val starLevel: Int? = null,
     @SerializedName("label") val label: String? = null,
@@ -58,8 +60,8 @@ data class QuizAnswer(
 
 data class QuizSubmitResponse(
     @SerializedName("attemptId") val attemptId: Long? = null,
-    @SerializedName("setId") val setId: Long? = null,
-    @SerializedName("missionId") val missionId: Long? = null,
+    @SerializedName("setId") val setId: String? = null,
+    @SerializedName("missionId") val missionId: String? = null,
     @SerializedName("starLevel") val starLevel: Int? = null,
     @SerializedName("variantNo") val variantNo: Int? = null,
     @SerializedName("mode") val mode: String? = null,

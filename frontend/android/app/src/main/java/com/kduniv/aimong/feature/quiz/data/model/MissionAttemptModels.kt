@@ -5,14 +5,16 @@ import com.google.gson.annotations.SerializedName
 /** v2.4: GET /mission-attempts/{attemptId} */
 data class MissionAttemptResponseData(
     @SerializedName("attemptId") val attemptId: String,
-    @SerializedName("setId") val setId: Long,
-    @SerializedName("missionId") val missionId: Long? = null,
+    /** v2.4: 서버가 문자열 setId를 줄 수 있어 String으로 수용 */
+    @SerializedName("setId") val setId: String,
+    /** v2.4: missionId가 UUID/String일 수 있어 String으로 수용 */
+    @SerializedName("missionId") val missionId: String? = null,
     @SerializedName("starLevel") val starLevel: Int? = null,
     @SerializedName("status") val status: String? = null,
     @SerializedName("isReview") val isReview: Boolean = false,
     @SerializedName("expiresAt") val expiresAt: String? = null,
     @SerializedName("remainingSeconds") val remainingSeconds: Int? = null,
-    @SerializedName("answeredQuestionIds") val answeredQuestionIds: List<Long> = emptyList(),
+    @SerializedName("answeredQuestionIds") val answeredQuestionIds: List<String> = emptyList(),
     @SerializedName("questionCount") val questionCount: Int? = null
 )
 
