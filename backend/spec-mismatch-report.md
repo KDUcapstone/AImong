@@ -79,12 +79,12 @@
 문서 일부:
 - `POST /missions/{missionId}/questions/{questionId}/report`
 
-구현:
-- `POST /api/mission-sets/{setId}/questions/{questionId}/report`
+처리 후 구현:
+- `POST /api/missions/{missionId}/questions/{questionId}/report`
 
 현재 구현 기준 정본 경로:
 ```text
-POST /api/mission-sets/{setId}/questions/{questionId}/report
+POST /api/missions/{missionId}/questions/{questionId}/report
 ```
 
 ## 5. ERD `mission_answer_results.selected_answer` 누락
