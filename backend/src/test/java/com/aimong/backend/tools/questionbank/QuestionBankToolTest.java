@@ -48,7 +48,7 @@ class QuestionBankToolTest {
                       "type": "MULTIPLE",
                       "question": "AI가 학습 자료를 바탕으로 판단한다는 설명으로 알맞은 것은?",
                       "options": ["배운 예시를 바탕으로 판단한다", "무조건 정답만 말한다", "전기를 아끼려고 답한다", "기분을 읽고 답한다"],
-                      "answer": 0,
+                      "answer": 1,
                       "explanation": "AI는 학습한 자료를 바탕으로 답을 고릅니다.",
                       "contentTags": ["FACT"],
                       "curriculumRef": "KERIS-1 Ch2.1 pp.27-29",
@@ -84,7 +84,7 @@ class QuestionBankToolTest {
                       "type": "FILL",
                       "question": "개인정보는 AI 질문에 ____ 않는 것이 좋다.",
                       "options": ["넣지", "많이", "자주", "먼저"],
-                      "answer": [0],
+                      "answer": [1],
                       "explanation": "개인정보를 넣으면 안전하지 않을 수 있습니다.",
                       "contentTags": ["PRIVACY", "SAFETY"],
                       "curriculumRef": "KERIS-1 Ch3.4 pp.119-154",
@@ -105,7 +105,7 @@ class QuestionBankToolTest {
 
         String sql = Files.readString(output);
         assertThat(sql).contains("INSERT INTO missions (id, stage, title, mission_code, description, unlock_condition, is_active) VALUES");
-        assertThat(sql).contains("INSERT INTO question_bank (id, mission_id, question_type, prompt, options, content_tags, curriculum_ref, difficulty, source_type, generation_phase, pack_no, difficulty_band, question_pool_status, is_active) VALUES");
+        assertThat(sql).contains("INSERT INTO question_bank (id, mission_id, question_type, prompt, options, content_tags, curriculum_ref, difficulty, source_type, generation_phase, pack_no, question_pool_status, is_active) VALUES");
         assertThat(sql).contains("$aimong$PREGENERATED$aimong$");
         assertThat(sql).contains("$aimong$ACTIVE$aimong$");
         assertThat(sql).contains("$aimong$LOW$aimong$");
@@ -117,7 +117,7 @@ class QuestionBankToolTest {
         assertThat(sql).contains("UPDATE missions SET is_active = FALSE WHERE mission_code IS NULL OR mission_code NOT IN");
         assertThat(sql).contains("UPDATE question_bank SET is_active = FALSE WHERE mission_id IN (SELECT id FROM missions WHERE is_active = FALSE)");
         assertThat(sql).contains("pack_no = EXCLUDED.pack_no");
-        assertThat(sql).contains("difficulty_band = EXCLUDED.difficulty_band");
+        assertThat(sql).doesNotContain("difficulty_band = EXCLUDED.difficulty_band");
         assertThat(sql).contains("question_pool_status = EXCLUDED.question_pool_status");
     }
 }

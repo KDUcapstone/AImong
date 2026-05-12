@@ -2,16 +2,25 @@ package com.aimong.backend.domain.mission.service;
 
 import com.aimong.backend.domain.auth.service.ChildActivityService;
 import com.aimong.backend.domain.mission.dto.MissionSetReportResponse;
+import com.aimong.backend.domain.mission.entity.MissionAttempt;
 import com.aimong.backend.domain.mission.entity.MissionAnswerResult;
 import com.aimong.backend.domain.mission.entity.MissionSet;
-import com.aimong.backend.domain.mission.entity.MissionSetProgress;
 import com.aimong.backend.domain.mission.repository.MissionAnswerResultRepository;
-import com.aimong.backend.domain.mission.repository.MissionSetProgressRepository;
+import com.aimong.backend.domain.mission.repository.MissionAttemptRepository;
+import com.aimong.backend.domain.mission.repository.QuestionAnswerKeyRepository;
+import com.aimong.backend.domain.mission.entity.QuestionAnswerKey;
 import com.aimong.backend.domain.mission.repository.MissionSetRepository;
 import com.aimong.backend.global.exception.AimongException;
 import com.aimong.backend.global.exception.ErrorCode;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,10 +29,14 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class MissionSetReportService {
 
+    private static final int MISSION_CLEAR_COIN = 30;
+
     private final MissionSetRepository missionSetRepository;
-    private final MissionSetProgressRepository missionSetProgressRepository;
     private final MissionAnswerResultRepository missionAnswerResultRepository;
+    private final MissionAttemptRepository missionAttemptRepository;
+    private final QuestionAnswerKeyRepository questionAnswerKeyRepository;
     private final ChildActivityService childActivityService;
+    private final ObjectMapper objectMapper;
 
     @Transactional(readOnly = true)
     public MissionSetReportResponse getReport(UUID childId, String setId) {
@@ -31,34 +44,93 @@ public class MissionSetReportService {
         MissionSet missionSet = missionSetRepository.findById(setId)
                 .filter(MissionSet::isActive)
                 .orElseThrow(() -> new AimongException(ErrorCode.MISSION_SET_NOT_FOUND));
-        MissionSetProgress progress = missionSetProgressRepository.findByChildIdAndSetId(childId, setId)
-                .orElse(null);
-
-        List<MissionSetReportResponse.ResultResponse> results = progress == null
-                || progress.getFirstPassedAttemptId() == null
-                ? List.of()
-                : missionAnswerResultRepository.findAllByChildIdAndAttemptIdOrderByCreatedAtAsc(
-                                childId,
-                                progress.getFirstPassedAttemptId()
-                        )
-                        .stream()
-                        .map(result -> new MissionSetReportResponse.ResultResponse(
-                                result.getQuestionId(),
-                                result.isCorrect()
-                        ))
-                        .toList();
+        MissionAttempt attempt = missionAttemptRepository.findFirstByChildIdAndSetIdOrderBySubmittedAtDesc(childId, setId)
+                .orElseThrow(() -> new AimongException(ErrorCode.REPORT_NOT_FOUND));
+        List<MissionAnswerResult> answerResults = missionAnswerResultRepository
+                .findAllByChildIdAndAttemptIdOrderByCreatedAtAsc(childId, attempt.getId());
+        Map<UUID, QuestionAnswerKey> answerKeys = questionAnswerKeyRepository
+                .findAllByQuestionIdIn(answerResults.stream().map(MissionAnswerResult::getQuestionId).toList())
+                .stream()
+                .collect(Collectors.toMap(QuestionAnswerKey::getQuestionId, Function.identity()));
+        int correctCount = (int) answerResults.stream().filter(MissionAnswerResult::isCorrect).count();
+        int questionCount = answerResults.size();
 
         return new MissionSetReportResponse(
+                attempt.getId(),
                 missionSet.getSetId(),
                 missionSet.getMissionId(),
+                missionSet.getMissionCode(),
                 missionSet.getStarLevel(),
                 missionSet.getVariantNo(),
-                progress != null,
-                progress == null ? null : progress.getBestScore(),
-                progress == null ? null : progress.getTotal(),
-                progress == null ? null : progress.getFirstPassedAttemptId(),
-                progress == null ? null : progress.getCompletedAt(),
-                results
+                responseScore(attempt.getScore(), attempt.getTotal()),
+                correctCount,
+                questionCount - correctCount,
+                questionCount,
+                attempt.isPassed(),
+                questionCount > 0 && correctCount == questionCount,
+                attempt.isReview(),
+                attempt.getSubmittedAt(),
+                new MissionSetReportResponse.RewardsResponse(
+                        coinEarned(attempt),
+                        attempt.getXpEarned(),
+                        List.of()
+                ),
+                IntStream.range(0, answerResults.size())
+                        .mapToObj(index -> toResultResponse(index, answerResults.get(index), answerKeys))
+                        .toList()
         );
+    }
+
+    private int coinEarned(MissionAttempt attempt) {
+        return attempt.isPassed() && !attempt.isReview() ? MISSION_CLEAR_COIN : 0;
+    }
+
+    private int responseScore(int correctCount, int total) {
+        if (total <= 0) {
+            return 0;
+        }
+        return correctCount * 100 / total;
+    }
+
+    private MissionSetReportResponse.ResultResponse toResultResponse(
+            int index,
+            MissionAnswerResult result,
+            Map<UUID, QuestionAnswerKey> answerKeys
+    ) {
+        QuestionAnswerKey answerKey = answerKeys.get(result.getQuestionId());
+        return new MissionSetReportResponse.ResultResponse(
+                result.getQuestionId(),
+                index + 1,
+                result.isCorrect(),
+                answerKey == null ? null : correctAnswer(answerKey.getAnswerPayload()),
+                result.getSelectedAnswer(),
+                answerKey == null ? null : answerKey.getExplanation()
+        );
+    }
+
+    private String correctAnswer(String answerPayload) {
+        try {
+            JsonNode root = objectMapper.readTree(answerPayload);
+            if (root == null || root.isNull()) {
+                return null;
+            }
+            if (root.isTextual() || root.isNumber() || root.isBoolean()) {
+                return root.asText();
+            }
+            if (root.has("value")) {
+                return root.get("value").asText();
+            }
+            if (root.has("values") && root.get("values").isArray()) {
+                List<String> values = new java.util.ArrayList<>();
+                root.get("values").forEach(value -> values.add(value.asText()));
+                return String.join(", ", values);
+            }
+            if (root.has("index")) {
+                return root.get("index").asText();
+            }
+            return null;
+        } catch (JsonProcessingException exception) {
+            throw new AimongException(ErrorCode.INTERNAL_SERVER_ERROR, exception);
+        }
     }
 }

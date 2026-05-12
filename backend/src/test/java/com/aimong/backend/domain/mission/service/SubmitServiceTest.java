@@ -86,6 +86,7 @@ class SubmitServiceTest {
         assertThat(response.isPassed()).isFalse();
         assertThat(response.progressApplied()).isFalse();
         assertThat(response.isFirstClear()).isFalse();
+        assertThat(response.rewards().coin()).isZero();
 
         ArgumentCaptor<MissionAttempt> attemptCaptor = ArgumentCaptor.forClass(MissionAttempt.class);
         verify(missionAttemptRepository).save(attemptCaptor.capture());
@@ -114,6 +115,7 @@ class SubmitServiceTest {
         assertThat(response.isFirstClear()).isFalse();
         assertThat(response.isReview()).isTrue();
         assertThat(response.xpEarned()).isZero();
+        assertThat(response.rewards().coin()).isZero();
 
         ArgumentCaptor<MissionAttempt> attemptCaptor = ArgumentCaptor.forClass(MissionAttempt.class);
         verify(missionAttemptRepository).save(attemptCaptor.capture());
@@ -143,6 +145,7 @@ class SubmitServiceTest {
         assertThat(response.isFirstClear()).isTrue();
         assertThat(response.xpEarned()).isEqualTo(20);
         assertThat(response.isReview()).isFalse();
+        assertThat(response.rewards().coin()).isEqualTo(30);
 
         ArgumentCaptor<MissionAttempt> attemptCaptor = ArgumentCaptor.forClass(MissionAttempt.class);
         verify(missionAttemptRepository).save(attemptCaptor.capture());

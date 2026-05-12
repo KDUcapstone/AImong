@@ -64,8 +64,6 @@ public record HomeResponse(
             String setId,
             UUID missionId,
             String missionCode,
-            int starLevel,
-            int variantNo,
             int levelNo,
             short stage,
             String difficulty,

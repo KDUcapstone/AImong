@@ -20,6 +20,8 @@ public interface MissionAttemptRepository extends JpaRepository<MissionAttempt, 
 
     long countByChildIdAndReviewFalseAndPassedTrue(UUID childId);
 
+    Optional<MissionAttempt> findFirstByChildIdAndSetIdOrderBySubmittedAtDesc(UUID childId, String setId);
+
     @Query(value = """
             select count(distinct coalesce(ma.set_id, ma.mission_id::text))
             from mission_attempts ma

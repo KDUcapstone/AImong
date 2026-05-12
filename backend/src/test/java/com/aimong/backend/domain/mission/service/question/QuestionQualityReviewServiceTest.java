@@ -76,7 +76,6 @@ class QuestionQualityReviewServiceTest {
                 "STATIC",
                 GenerationPhase.PREGENERATED,
                 null,
-                DifficultyBand.MEDIUM,
                 QuestionPoolStatus.ACTIVE
         );
         return question;

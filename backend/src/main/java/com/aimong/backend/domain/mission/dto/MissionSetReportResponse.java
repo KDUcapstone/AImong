@@ -5,20 +5,44 @@ import java.util.List;
 import java.util.UUID;
 
 public record MissionSetReportResponse(
+        UUID attemptId,
         String setId,
         UUID missionId,
+        String missionCode,
         int starLevel,
         int variantNo,
-        boolean completed,
-        Integer bestScore,
-        Integer total,
-        UUID firstAttemptId,
-        Instant completedAt,
+        int score,
+        int correctCount,
+        int wrongCount,
+        int questionCount,
+        boolean isPassed,
+        boolean isPerfect,
+        boolean isReview,
+        Instant submittedAt,
+        RewardsResponse rewards,
         List<ResultResponse> results
 ) {
-    public record ResultResponse(
-            UUID questionId,
-            boolean isCorrect
+    public record RewardsResponse(
+            int coin,
+            int exp,
+            List<FragmentResponse> fragments
     ) {
     }
+
+    public record FragmentResponse(
+            String grade,
+            int count
+    ) {
+    }
+
+    public record ResultResponse(
+            UUID questionId,
+            int questionNo,
+            boolean isCorrect,
+            String correctAnswer,
+            String submittedAnswer,
+            String explanation
+    ) {
+    }
+
 }

@@ -42,7 +42,7 @@ public class MissionQuestionSetFactory {
     }
 
     public List<QuestionBank> create(String setId, UUID missionId, UUID childId, boolean isReview) {
-        return create(missionId, childId, 1, isReview);
+        return create(setId, missionId, 1, childId, isReview);
     }
 
     public List<QuestionBank> create(String setId, UUID missionId, int starLevel, UUID childId, boolean isReview) {
@@ -57,7 +57,17 @@ public class MissionQuestionSetFactory {
         List<QuestionBank> lowPool = approvedQuestionProvider.findActiveQuestionsByMissionIdAndDifficulty(missionId, DifficultyBand.LOW);
         List<QuestionBank> mediumPool = approvedQuestionProvider.findActiveQuestionsByMissionIdAndDifficulty(missionId, DifficultyBand.MEDIUM);
         List<QuestionBank> highPool = approvedQuestionProvider.findActiveQuestionsByMissionIdAndDifficulty(missionId, DifficultyBand.HIGH);
+        return selectQuestionSet(missionId, childId, starLevel, lowPool, mediumPool, highPool);
+    }
 
+    private List<QuestionBank> selectQuestionSet(
+            UUID missionId,
+            UUID childId,
+            int starLevel,
+            List<QuestionBank> lowPool,
+            List<QuestionBank> mediumPool,
+            List<QuestionBank> highPool
+    ) {
         DifficultyQuota quota = DifficultyQuota.forStarLevel(starLevel);
         Set<UUID> attemptedQuestionIds = attemptedQuestionIds(childId, missionId);
         List<QuestionBank> selected = new java.util.ArrayList<>(missionQuestionProperties.setSize());

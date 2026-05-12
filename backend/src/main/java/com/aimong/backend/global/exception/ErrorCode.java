@@ -38,6 +38,7 @@ public enum ErrorCode {
     ATTEMPT_ABANDONED(HttpStatus.CONFLICT, "ATTEMPT_ABANDONED", "포기한 문제 세트입니다."),
     ATTEMPT_ALREADY_CLOSED(HttpStatus.CONFLICT, "ATTEMPT_ALREADY_CLOSED", "이미 종료된 문제 시도입니다."),
     ATTEMPT_NOT_FOUND(HttpStatus.NOT_FOUND, "ATTEMPT_NOT_FOUND", "문제 시도를 찾을 수 없습니다."),
+    REPORT_NOT_FOUND(HttpStatus.NOT_FOUND, "REPORT_NOT_FOUND", "풀이 리포트를 찾을 수 없습니다."),
     CODE_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", "코드 생성에 실패했습니다."),
     CODE_GENERATION_FAILED_WITH_RETRY(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", "코드 생성에 실패했습니다. 다시 시도해 주세요."),
     NICKNAME_REQUIRED(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "닉네임을 입력해 주세요."),

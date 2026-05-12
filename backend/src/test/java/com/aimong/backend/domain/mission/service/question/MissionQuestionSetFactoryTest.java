@@ -31,7 +31,7 @@ class MissionQuestionSetFactoryTest {
         MissionQuestionSetFactory factory = factory();
         UUID missionId = UUID.randomUUID();
 
-        stubPools(missionId, 8, 3, 2);
+        stubMissionPools(missionId, 8, 3, 2);
 
         List<QuestionBank> selected = factory.create(missionId, UUID.randomUUID(), false);
 
@@ -46,7 +46,7 @@ class MissionQuestionSetFactoryTest {
         MissionQuestionSetFactory factory = factory();
         UUID missionId = UUID.randomUUID();
 
-        stubPools(missionId, 4, 6, 3);
+        stubMissionPools(missionId, 4, 6, 3);
 
         List<QuestionBank> selected = factory.create(missionId, UUID.randomUUID(), 2, false);
 
@@ -61,7 +61,7 @@ class MissionQuestionSetFactoryTest {
         MissionQuestionSetFactory factory = factory();
         UUID missionId = UUID.randomUUID();
 
-        stubPools(missionId, 3, 4, 6);
+        stubMissionPools(missionId, 3, 4, 6);
 
         List<QuestionBank> selected = factory.create(missionId, UUID.randomUUID(), 3, false);
 
@@ -96,15 +96,31 @@ class MissionQuestionSetFactoryTest {
         MissionQuestionSetFactory factory = factory();
         UUID missionId = UUID.randomUUID();
 
-        stubPools(missionId, 9, 9, 9);
+        stubMissionPools(missionId, 9, 9, 9);
 
         assertThat(factory.create(missionId, UUID.randomUUID(), true)).hasSize(10);
+    }
+
+    @Test
+    void setIdBasedCreateUsesMissionPoolsForApiCompatibility() {
+        MissionQuestionSetFactory factory = factory();
+        UUID missionId = UUID.randomUUID();
+        String setId = "S0101-L1";
+
+        stubMissionPools(missionId, 8, 3, 2);
+
+        List<QuestionBank> selected = factory.create(setId, missionId, 1, UUID.randomUUID(), false);
+
+        assertThat(selected).hasSize(10);
+        assertThat(selected.stream().filter(question -> question.getDifficulty() == DifficultyBand.LOW).count()).isEqualTo(7);
+        assertThat(selected.stream().filter(question -> question.getDifficulty() == DifficultyBand.MEDIUM).count()).isEqualTo(2);
+        assertThat(selected.stream().filter(question -> question.getDifficulty() == DifficultyBand.HIGH).count()).isEqualTo(1);
     }
 
     private void assertMissionSetNotReady(int lowCount, int mediumCount, int highCount) {
         MissionQuestionSetFactory factory = factory();
         UUID missionId = UUID.randomUUID();
-        stubPools(missionId, lowCount, mediumCount, highCount);
+        stubMissionPools(missionId, lowCount, mediumCount, highCount);
 
         assertThatThrownBy(() -> factory.create(missionId, UUID.randomUUID(), false))
                 .isInstanceOf(AimongException.class)
@@ -119,7 +135,7 @@ class MissionQuestionSetFactoryTest {
         );
     }
 
-    private void stubPools(UUID missionId, int lowCount, int mediumCount, int highCount) {
+    private void stubMissionPools(UUID missionId, int lowCount, int mediumCount, int highCount) {
         List<QuestionBank> lowPool = createQuestions(lowCount, DifficultyBand.LOW);
         List<QuestionBank> mediumPool = createQuestions(mediumCount, DifficultyBand.MEDIUM);
         List<QuestionBank> highPool = createQuestions(highCount, DifficultyBand.HIGH);

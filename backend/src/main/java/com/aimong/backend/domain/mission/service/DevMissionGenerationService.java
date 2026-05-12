@@ -194,7 +194,7 @@ public class DevMissionGenerationService {
                 savedQuestionId,
                 candidate.question(),
                 candidate.options(),
-                candidate.answer(),
+                toExternalAnswer(candidate),
                 candidate.explanation(),
                 candidate.contentTags(),
                 candidate.curriculumRef(),
@@ -203,6 +203,20 @@ public class DevMissionGenerationService {
                 candidate.difficulty(),
                 questionValidationService.validate(validationRequest).scores()
         );
+    }
+
+    private Object toExternalAnswer(StructuredQuestionSchema candidate) {
+        return switch (candidate.type()) {
+            case MULTIPLE, SITUATION -> candidate.answer() instanceof Integer index
+                    ? index + 1
+                    : candidate.answer();
+            case FILL -> candidate.answer() instanceof List<?> answers
+                    ? answers.stream()
+                            .map(value -> value instanceof Integer index ? index + 1 : value)
+                            .toList()
+                    : candidate.answer();
+            case OX -> candidate.answer();
+        };
     }
 
     private int inferNumericDifficulty(short stage, DifficultyBand difficultyBand) {

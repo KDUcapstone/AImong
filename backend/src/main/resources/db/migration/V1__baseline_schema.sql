@@ -9,7 +9,7 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 DO $$ BEGIN
-    CREATE TYPE difficulty_band_enum AS ENUM ('LOW', 'MEDIUM', 'HIGH');
+    CREATE TYPE question_difficulty_enum AS ENUM ('LOW', 'MEDIUM', 'HIGH');
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 DO $$ BEGIN
@@ -17,11 +17,19 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 DO $$ BEGIN
-    CREATE TYPE generation_phase_enum AS ENUM ('PREGENERATED', 'RUNTIME');
+    CREATE TYPE question_generation_phase_enum AS ENUM ('PREGENERATED', 'RUNTIME');
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 DO $$ BEGIN
     CREATE TYPE question_pool_status_enum AS ENUM ('ACTIVE', 'QUARANTINED', 'RETIRED');
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+    CREATE TYPE question_quality_issue_source_enum AS ENUM ('USER_REPORT', 'SERVING_REVALIDATION');
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+    CREATE TYPE question_quality_issue_status_enum AS ENUM ('OPEN', 'QUARANTINED', 'RESOLVED', 'DISMISSED');
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 DO $$ BEGIN
@@ -57,21 +65,40 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 DO $$ BEGIN
-    CREATE TYPE privacy_detected_type_enum AS ENUM ('NAME', 'SCHOOL', 'AGE', 'PHONE', 'EMAIL', 'ADDRESS', 'DATE', 'URL', 'ETC');
+    CREATE TYPE privacy_detected_type_enum AS ENUM ('NAME', 'SCHOOL', 'AGE', 'PHONE', 'EMAIL', 'ADDRESS', 'DATE', 'URL');
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+    CREATE TYPE attempt_status_enum AS ENUM ('IN_PROGRESS', 'SUBMITTED', 'EXPIRED', 'ABANDONED');
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
+    CREATE DOMAIN child_code AS TEXT CHECK (VALUE ~ '^[0-9]{6}$');
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 CREATE TABLE IF NOT EXISTS public.parent_accounts (
     parent_id TEXT PRIMARY KEY,
     email TEXT,
     fcm_token TEXT,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    deleted_at TIMESTAMPTZ
+);
+
+CREATE TABLE IF NOT EXISTS public.parent_notification_settings (
+    parent_id TEXT PRIMARY KEY REFERENCES public.parent_accounts(parent_id) ON DELETE CASCADE,
+    privacy_alert_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    study_reminder_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    return_reward_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    quest_reward_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    marketing_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS public.child_profiles (
     child_id UUID PRIMARY KEY,
     parent_id TEXT NOT NULL REFERENCES public.parent_accounts(parent_id) ON DELETE CASCADE,
     nickname TEXT NOT NULL,
-    code VARCHAR(6) NOT NULL UNIQUE,
+    code child_code UNIQUE,
     starter_issued BOOLEAN NOT NULL DEFAULT FALSE,
     total_xp INT NOT NULL DEFAULT 0 CHECK (total_xp >= 0),
     today_xp INT NOT NULL DEFAULT 0 CHECK (today_xp >= 0),
@@ -89,7 +116,8 @@ CREATE TABLE IF NOT EXISTS public.child_profiles (
     energy_recovered_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     last_active_at TIMESTAMPTZ,
-    CONSTRAINT chk_child_profiles_code CHECK (code ~ '^[0-9]{6}$'),
+    deleted_at TIMESTAMPTZ,
+    CONSTRAINT chk_child_profiles_code CHECK (code IS NULL OR code ~ '^[0-9]{6}$'),
     CONSTRAINT child_profiles_energy_check CHECK (energy BETWEEN 0 AND 20)
 );
 
@@ -97,7 +125,7 @@ CREATE INDEX IF NOT EXISTS idx_child_profiles_parent ON public.child_profiles(pa
 
 CREATE TABLE IF NOT EXISTS public.missions (
     id UUID PRIMARY KEY,
-    stage SMALLINT NOT NULL CHECK (stage BETWEEN 1 AND 16),
+    stage SMALLINT NOT NULL CHECK (stage BETWEEN 1 AND 3),
     title TEXT NOT NULL,
     mission_code VARCHAR(16) UNIQUE,
     description TEXT,
@@ -112,9 +140,9 @@ CREATE TABLE IF NOT EXISTS public.mission_sets (
     star_level SMALLINT NOT NULL CHECK (star_level BETWEEN 1 AND 3),
     variant_no SMALLINT NOT NULL CHECK (variant_no > 0),
     stage SMALLINT NOT NULL CHECK (stage BETWEEN 1 AND 3),
-    difficulty difficulty_band_enum NOT NULL,
     title TEXT NOT NULL,
-    description TEXT,
+    description TEXT NOT NULL DEFAULT '',
+    question_count SMALLINT NOT NULL DEFAULT 10 CHECK (question_count = 10),
     display_order INT NOT NULL,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     CONSTRAINT uq_mission_sets_mission_star_variant UNIQUE (mission_id, star_level, variant_no)
@@ -130,14 +158,12 @@ CREATE TABLE IF NOT EXISTS public.question_bank (
     question_type question_type_enum NOT NULL,
     prompt TEXT NOT NULL,
     options JSONB,
-    content_tags JSONB,
+    content_tags JSONB NOT NULL DEFAULT '[]'::jsonb,
     curriculum_ref TEXT NOT NULL,
-    difficulty difficulty_band_enum NOT NULL,
-    legacy_numeric_difficulty SMALLINT,
+    difficulty question_difficulty_enum NOT NULL,
     source_type question_source_enum NOT NULL DEFAULT 'STATIC',
-    generation_phase generation_phase_enum DEFAULT 'PREGENERATED',
+    generation_phase question_generation_phase_enum NOT NULL DEFAULT 'PREGENERATED',
     pack_no SMALLINT,
-    difficulty_band difficulty_band_enum,
     question_pool_status question_pool_status_enum NOT NULL DEFAULT 'ACTIVE',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     is_active BOOLEAN NOT NULL DEFAULT TRUE
@@ -164,8 +190,8 @@ CREATE TABLE IF NOT EXISTS private.question_quality_issues (
     question_id UUID NOT NULL REFERENCES public.question_bank(id) ON DELETE CASCADE,
     mission_id UUID NOT NULL REFERENCES public.missions(id) ON DELETE CASCADE,
     reported_by_child_id UUID,
-    issue_source VARCHAR(32) NOT NULL CHECK (issue_source IN ('USER_REPORT', 'SERVING_REVALIDATION')),
-    issue_status VARCHAR(32) NOT NULL CHECK (issue_status IN ('OPEN', 'QUARANTINED', 'RESOLVED', 'DISMISSED')),
+    issue_source question_quality_issue_source_enum NOT NULL,
+    issue_status question_quality_issue_status_enum NOT NULL DEFAULT 'OPEN',
     reason_code VARCHAR(64) NOT NULL,
     detail_text TEXT,
     validation_decision VARCHAR(32),
@@ -182,13 +208,21 @@ CREATE TABLE IF NOT EXISTS public.quiz_attempts (
     id UUID PRIMARY KEY,
     child_id UUID NOT NULL REFERENCES public.child_profiles(child_id) ON DELETE CASCADE,
     mission_id UUID NOT NULL REFERENCES public.missions(id) ON DELETE CASCADE,
-    set_id VARCHAR(32) REFERENCES public.mission_sets(set_id),
+    set_id VARCHAR(32) NOT NULL REFERENCES public.mission_sets(set_id),
     star_level SMALLINT NOT NULL CHECK (star_level BETWEEN 1 AND 3),
     question_ids_json JSONB NOT NULL,
+    answered_question_ids_json JSONB NOT NULL DEFAULT '[]'::jsonb,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     expires_at TIMESTAMPTZ NOT NULL,
     is_review BOOLEAN NOT NULL DEFAULT FALSE,
-    submitted_at TIMESTAMPTZ
+    submitted_at TIMESTAMPTZ,
+    status attempt_status_enum NOT NULL DEFAULT 'IN_PROGRESS',
+    abandoned_at TIMESTAMPTZ,
+    abandon_reason VARCHAR(64),
+    CONSTRAINT chk_quiz_attempts_submitted_consistency CHECK ((status = 'SUBMITTED') = (submitted_at IS NOT NULL)),
+    CONSTRAINT chk_quiz_attempts_abandoned_consistency CHECK ((status = 'ABANDONED') = (abandoned_at IS NOT NULL)),
+    CONSTRAINT chk_quiz_attempts_submitted_after_created CHECK (submitted_at IS NULL OR submitted_at >= created_at),
+    CONSTRAINT chk_quiz_attempts_abandoned_after_created CHECK (abandoned_at IS NULL OR abandoned_at >= created_at)
 );
 
 CREATE INDEX IF NOT EXISTS idx_quiz_attempts_child_mission
@@ -197,10 +231,10 @@ CREATE INDEX IF NOT EXISTS idx_quiz_attempts_child_set
     ON public.quiz_attempts(child_id, set_id, created_at DESC);
 
 CREATE TABLE IF NOT EXISTS public.mission_attempts (
-    id UUID PRIMARY KEY,
+    attempt_id UUID PRIMARY KEY,
     child_id UUID NOT NULL REFERENCES public.child_profiles(child_id) ON DELETE CASCADE,
     mission_id UUID NOT NULL REFERENCES public.missions(id) ON DELETE CASCADE,
-    set_id VARCHAR(32) REFERENCES public.mission_sets(set_id),
+    set_id VARCHAR(32) NOT NULL REFERENCES public.mission_sets(set_id),
     star_level SMALLINT NOT NULL CHECK (star_level BETWEEN 1 AND 3),
     attempt_date DATE NOT NULL,
     attempt_no INT NOT NULL,
@@ -210,7 +244,8 @@ CREATE TABLE IF NOT EXISTS public.mission_attempts (
     is_passed BOOLEAN NOT NULL DEFAULT FALSE,
     xp_earned INT NOT NULL DEFAULT 0 CHECK (xp_earned >= 0),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT chk_mission_attempts_score_lte_total CHECK (score <= total)
 );
 
 CREATE INDEX IF NOT EXISTS idx_mission_attempts_child_mission_date
@@ -224,11 +259,12 @@ CREATE INDEX IF NOT EXISTS idx_mission_attempts_child_star_date
 
 CREATE TABLE IF NOT EXISTS public.mission_answer_results (
     result_id UUID PRIMARY KEY,
-    attempt_id UUID NOT NULL REFERENCES public.mission_attempts(id) ON DELETE CASCADE,
+    attempt_id UUID NOT NULL REFERENCES public.mission_attempts(attempt_id) ON DELETE CASCADE,
     child_id UUID NOT NULL REFERENCES public.child_profiles(child_id) ON DELETE CASCADE,
     mission_id UUID NOT NULL REFERENCES public.missions(id) ON DELETE CASCADE,
     set_id VARCHAR(32) REFERENCES public.mission_sets(set_id),
     question_id UUID NOT NULL REFERENCES public.question_bank(id) ON DELETE CASCADE,
+    selected_answer TEXT,
     is_review BOOLEAN NOT NULL DEFAULT FALSE,
     is_correct BOOLEAN NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -274,12 +310,16 @@ ALTER TABLE public.child_profiles
 CREATE TABLE IF NOT EXISTS public.mission_set_progress (
     child_id UUID NOT NULL REFERENCES public.child_profiles(child_id) ON DELETE CASCADE,
     set_id VARCHAR(32) NOT NULL REFERENCES public.mission_sets(set_id) ON DELETE CASCADE,
-    completed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    best_score INT NOT NULL CHECK (best_score >= 0),
+    mission_id UUID NOT NULL REFERENCES public.missions(id) ON DELETE CASCADE,
+    stage SMALLINT NOT NULL CHECK (stage BETWEEN 1 AND 3),
+    completed_at TIMESTAMPTZ,
+    best_score SMALLINT CHECK (best_score >= 0),
     total INT NOT NULL CHECK (total > 0),
-    first_attempt_id UUID REFERENCES public.mission_attempts(id) ON DELETE SET NULL,
+    first_passed_attempt_id UUID REFERENCES public.mission_attempts(attempt_id) ON DELETE SET NULL,
     star_level SMALLINT NOT NULL CHECK (star_level BETWEEN 1 AND 3),
     variant_no SMALLINT NOT NULL CHECK (variant_no > 0),
+    completed BOOLEAN NOT NULL DEFAULT FALSE,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     PRIMARY KEY (child_id, set_id)
 );
 
@@ -323,6 +363,7 @@ CREATE TABLE IF NOT EXISTS public.streak_records (
     continuous_days INT NOT NULL DEFAULT 0 CHECK (continuous_days >= 0),
     last_completed_date DATE,
     today_mission_count INT NOT NULL DEFAULT 0 CHECK (today_mission_count >= 0),
+    shield_count INT NOT NULL DEFAULT 0 CHECK (shield_count >= 0),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -455,19 +496,15 @@ SELECT
     content_tags,
     curriculum_ref,
     difficulty,
-    legacy_numeric_difficulty,
     source_type,
     generation_phase,
-    pack_no,
-    difficulty_band,
-    question_pool_status,
-    created_at,
-    is_active
+    created_at
 FROM public.question_bank
 WHERE is_active = TRUE
   AND question_pool_status = 'ACTIVE';
 
 ALTER TABLE public.parent_accounts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.parent_notification_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.child_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.missions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.mission_sets ENABLE ROW LEVEL SECURITY;
@@ -498,6 +535,8 @@ ALTER TABLE public.fcm_notification_events ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS backend_parent_accounts_all ON public.parent_accounts;
 CREATE POLICY backend_parent_accounts_all ON public.parent_accounts FOR ALL USING (TRUE) WITH CHECK (TRUE);
+DROP POLICY IF EXISTS backend_parent_notification_settings_all ON public.parent_notification_settings;
+CREATE POLICY backend_parent_notification_settings_all ON public.parent_notification_settings FOR ALL USING (TRUE) WITH CHECK (TRUE);
 DROP POLICY IF EXISTS backend_child_profiles_all ON public.child_profiles;
 CREATE POLICY backend_child_profiles_all ON public.child_profiles FOR ALL USING (TRUE) WITH CHECK (TRUE);
 DROP POLICY IF EXISTS backend_missions_all ON public.missions;

@@ -36,6 +36,9 @@ public class MissionAnswerResult {
     @Column(name = "question_id", nullable = false)
     private UUID questionId;
 
+    @Column(name = "selected_answer", columnDefinition = "text")
+    private String selectedAnswer;
+
     @Column(name = "is_review", nullable = false)
     private boolean review;
 
@@ -50,10 +53,11 @@ public class MissionAnswerResult {
             UUID childId,
             UUID missionId,
             UUID questionId,
+            String selectedAnswer,
             boolean isReview,
             boolean isCorrect
     ) {
-        return create(attemptId, childId, missionId, null, questionId, isReview, isCorrect);
+        return create(attemptId, childId, missionId, null, questionId, selectedAnswer, isReview, isCorrect);
     }
 
     public static MissionAnswerResult create(
@@ -62,6 +66,7 @@ public class MissionAnswerResult {
             UUID missionId,
             String setId,
             UUID questionId,
+            String selectedAnswer,
             boolean isReview,
             boolean isCorrect
     ) {
@@ -72,6 +77,7 @@ public class MissionAnswerResult {
         result.missionId = missionId;
         result.setId = setId;
         result.questionId = questionId;
+        result.selectedAnswer = selectedAnswer;
         result.review = isReview;
         result.correct = isCorrect;
         return result;

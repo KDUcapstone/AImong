@@ -180,17 +180,13 @@ public class QuizService {
                 missionSet.getMissionCode(),
                 missionSet.getStarLevel(),
                 missionSet.getVariantNo(),
-                missionSet.getStage(),
                 missionSet.starLabel(),
-                missionSet.getTitle(),
-                missionSet.getDescription(),
                 isReview,
                 energyCost,
                 energyBefore,
                 energyAfter,
                 quizAttempt.getId(),
                 missionQuestionProperties.setSize(),
-                quizAttempt.getExpiresAt(),
                 toQuestionResponses(selectedQuestions)
         );
     }
@@ -230,17 +226,13 @@ public class QuizService {
                 null,
                 1,
                 1,
-                mission.getStage(),
                 MissionQuestionsResponse.labelForStar(1),
-                mission.getTitle(),
-                mission.getDescription(),
                 isReview,
                 0,
                 null,
                 null,
                 quizAttempt.getId(),
                 missionQuestionProperties.setSize(),
-                quizAttempt.getExpiresAt(),
                 toQuestionResponses(selectedQuestions)
         );
     }

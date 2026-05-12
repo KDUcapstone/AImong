@@ -64,6 +64,7 @@ public class SubmitService {
     private static final int TOTAL_QUESTIONS = 10;
     private static final int BASE_XP = 10;
     private static final int PERFECT_BONUS_XP = 10;
+    private static final int MISSION_CLEAR_COIN = 30;
     private static final String MODE_NORMAL = "normal";
     private static final String MODE_REVIEW = "review";
     private static final String ATTEMPT_STATE_SUBMITTED = "submitted";
@@ -492,7 +493,7 @@ public class SubmitService {
                 streakRecord.getContinuousDays(),
                 streakRecord.getTodayMissionCount(),
                 streakBonusApplied,
-                rewardsEnvelope(xpEarned, rewards),
+                rewardsEnvelope(MISSION_CLEAR_COIN, xpEarned, rewards),
                 toRemainingTickets(childId),
                 childProfile.getProfileImageType().name(),
                 childProfile.getProfileImageType() != com.aimong.backend.domain.auth.entity.ProfileImageType.DEFAULT,
@@ -550,7 +551,7 @@ public class SubmitService {
                 streakRecord.getContinuousDays(),
                 streakRecord.getTodayMissionCount(),
                 false,
-                rewardsEnvelope(0, List.of()),
+                rewardsEnvelope(0, 0, List.of()),
                 toRemainingTickets(childId),
                 childProfile.getProfileImageType().name(),
                 childProfile.getProfileImageType() != com.aimong.backend.domain.auth.entity.ProfileImageType.DEFAULT,
@@ -604,7 +605,7 @@ public class SubmitService {
                 streakRecord.getContinuousDays(),
                 streakRecord.getTodayMissionCount(),
                 false,
-                rewardsEnvelope(0, List.of()),
+                rewardsEnvelope(0, 0, List.of()),
                 toRemainingTickets(childId),
                 childProfile.getProfileImageType().name(),
                 childProfile.getProfileImageType() != com.aimong.backend.domain.auth.entity.ProfileImageType.DEFAULT,
@@ -640,7 +641,7 @@ public class SubmitService {
         return correctCount * 100 / total;
     }
 
-    private SubmitResponse.RewardsResponse rewardsEnvelope(int xpEarned, List<SubmitResponse.RewardResponse> rewards) {
+    private SubmitResponse.RewardsResponse rewardsEnvelope(int coinEarned, int xpEarned, List<SubmitResponse.RewardResponse> rewards) {
         List<SubmitResponse.FragmentResponse> fragments = rewards.stream()
                 .filter(reward -> "FRAGMENT".equals(reward.type()))
                 .map(reward -> new SubmitResponse.FragmentResponse(
@@ -648,7 +649,7 @@ public class SubmitService {
                         reward.count() == null ? 0 : reward.count()
                 ))
                 .toList();
-        return new SubmitResponse.RewardsResponse(0, xpEarned, fragments);
+        return new SubmitResponse.RewardsResponse(coinEarned, xpEarned, fragments);
     }
 
     private int calculateNormalModeBaseXp(boolean isPerfect, int bonusXp) {
@@ -691,6 +692,7 @@ public class SubmitService {
                     missionId,
                     setId,
                     questionId,
+                    answer.answer(),
                     isReview,
                     isCorrect
             ));

@@ -1,6 +1,8 @@
 package com.aimong.backend.domain.home.controller;
 
 import com.aimong.backend.domain.home.dto.BootstrapResponse;
+import com.aimong.backend.domain.home.dto.EnergyAddRequest;
+import com.aimong.backend.domain.home.dto.EnergyAddResponse;
 import com.aimong.backend.domain.home.dto.EnergyResponse;
 import com.aimong.backend.domain.home.dto.HomeResponse;
 import com.aimong.backend.domain.home.dto.StreakCalendarResponse;
@@ -8,10 +10,13 @@ import com.aimong.backend.domain.home.service.BootstrapService;
 import com.aimong.backend.domain.home.service.HomeService;
 import com.aimong.backend.global.response.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -46,5 +51,13 @@ public class HomeController {
     @GetMapping("/energy")
     public ApiResponse<EnergyResponse> getEnergy(Authentication authentication) {
         return ApiResponse.success(homeService.getEnergy(UUID.fromString(authentication.getName())));
+    }
+
+    @PostMapping("/energy/add")
+    public ApiResponse<EnergyAddResponse> addEnergy(
+            @Valid @RequestBody EnergyAddRequest request,
+            Authentication authentication
+    ) {
+        return ApiResponse.success(homeService.addEnergy(UUID.fromString(authentication.getName()), request));
     }
 }

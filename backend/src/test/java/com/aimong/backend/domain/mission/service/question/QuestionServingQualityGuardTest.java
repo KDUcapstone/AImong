@@ -56,7 +56,6 @@ class QuestionServingQualityGuardTest {
                 "STATIC",
                 GenerationPhase.PREGENERATED,
                 (short) 1,
-                DifficultyBand.LOW,
                 QuestionPoolStatus.ACTIVE
         );
         QuestionAnswerKey answerKey = QuestionAnswerKey.create(

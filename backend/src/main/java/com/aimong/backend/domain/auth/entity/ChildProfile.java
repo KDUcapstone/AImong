@@ -243,6 +243,14 @@ public class ChildProfile {
         return true;
     }
 
+    public void addEnergy(int amount, Instant now) {
+        recoverEnergy(now);
+        energy = Math.min(MAX_ENERGY, energy + amount);
+        if (energy >= MAX_ENERGY) {
+            energyRecoveredAt = now;
+        }
+    }
+
     public Instant nextEnergyRecoverAt() {
         if (energy >= MAX_ENERGY) {
             return null;

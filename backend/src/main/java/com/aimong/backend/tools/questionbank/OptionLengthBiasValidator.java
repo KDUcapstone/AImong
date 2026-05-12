@@ -16,7 +16,11 @@ public final class OptionLengthBiasValidator {
             if (question.type() != QuestionType.MULTIPLE && question.type() != QuestionType.SITUATION) {
                 continue;
             }
-            if (question.options() == null || question.options().isEmpty() || !(question.answer() instanceof Integer answerIndex)) {
+            if (question.options() == null || question.options().isEmpty() || !(question.answer() instanceof Integer answerNumber)) {
+                continue;
+            }
+            int answerIndex = answerNumber >= 1 ? answerNumber - 1 : answerNumber;
+            if (answerIndex < 0 || answerIndex >= question.options().size()) {
                 continue;
             }
             evaluatedCount++;

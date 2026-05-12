@@ -27,17 +27,15 @@ public interface QuestionBankRepository extends JpaRepository<QuestionBank, UUID
                 content_tags,
                 curriculum_ref,
                 difficulty,
-                legacy_numeric_difficulty,
                 source_type,
                 generation_phase,
                 pack_no,
-                difficulty_band,
                 question_pool_status,
                 created_at,
                 is_active
             FROM public.question_bank
             WHERE mission_id = :missionId
-              AND difficulty = CAST(:difficulty AS difficulty_band_enum)
+              AND difficulty = CAST(:difficulty AS question_difficulty_enum)
               AND is_active = TRUE
               AND question_pool_status = CAST('ACTIVE' AS question_pool_status_enum)
             """, nativeQuery = true)
@@ -61,8 +59,6 @@ public interface QuestionBankRepository extends JpaRepository<QuestionBank, UUID
     long countByMissionIdAndIsActiveTrueAndPackNo(UUID missionId, Short packNo);
 
     long countByMissionIdAndIsActiveTrueAndDifficulty(UUID missionId, DifficultyBand difficulty);
-
-    long countByMissionIdAndIsActiveTrueAndDifficultyBand(UUID missionId, DifficultyBand difficultyBand);
 
     @Query("""
             select q.packNo

@@ -110,7 +110,7 @@ public final class QuestionBankSqlExporter {
 
         sql.append("INSERT INTO question_bank (")
                 .append("id, mission_id, question_type, prompt, options, content_tags, curriculum_ref, difficulty, ")
-                .append("source_type, generation_phase, pack_no, difficulty_band, question_pool_status, is_active")
+                .append("source_type, generation_phase, pack_no, question_pool_status, is_active")
                 .append(") VALUES\n");
         for (int index = 0; index < bank.questions().size(); index++) {
             AuditQuestion question = bank.questions().get(index);
@@ -127,8 +127,7 @@ public final class QuestionBankSqlExporter {
                     .append(sqlString(defaultString(question.sourceType(), "STATIC"))).append(", ")
                     .append(sqlString(defaultGenerationPhase(question))).append(", ")
                     .append(question.packNo() == null ? "NULL" : question.packNo()).append(", ")
-                    .append(question.difficultyBand() == null ? "NULL" : sqlString(question.difficultyBand().name()))
-                    .append(", ").append(sqlString(QuestionPoolStatus.ACTIVE.name())).append(", TRUE)");
+                    .append(sqlString(QuestionPoolStatus.ACTIVE.name())).append(", TRUE)");
             sql.append(index < bank.questions().size() - 1 ? ",\n" : "\n");
         }
         sql.append("ON CONFLICT (id) DO UPDATE SET\n")
@@ -142,7 +141,6 @@ public final class QuestionBankSqlExporter {
                 .append("    source_type = EXCLUDED.source_type,\n")
                 .append("    generation_phase = EXCLUDED.generation_phase,\n")
                 .append("    pack_no = EXCLUDED.pack_no,\n")
-                .append("    difficulty_band = EXCLUDED.difficulty_band,\n")
                 .append("    question_pool_status = EXCLUDED.question_pool_status,\n")
                 .append("    is_active = TRUE;\n\n");
 
@@ -173,27 +171,23 @@ public final class QuestionBankSqlExporter {
     }
 
     private String toAnswerPayload(QuestionDraft question) {
-        if ("MULTIPLE".equals(question.type()) || "SITUATION".equals(question.type())) {
-            return toJson(question.options().get((Integer) question.answer()));
-        }
-        if ("FILL".equals(question.type())) {
-            @SuppressWarnings("unchecked")
-            int index = ((java.util.List<Integer>) question.answer()).getFirst();
-            return toJson(question.options().get(index));
-        }
-        return toJson(question.answer());
+        return toJson(toExternalAnswer(question.type(), question.answer()));
     }
 
     private String toAnswerPayload(AuditQuestion question) {
-        if (question.type() == QuestionType.MULTIPLE || question.type() == QuestionType.SITUATION) {
-            return toJson(question.options().get((Integer) question.answer()));
-        }
-        if (question.type() == QuestionType.FILL) {
-            @SuppressWarnings("unchecked")
-            int index = ((java.util.List<Integer>) question.answer()).getFirst();
-            return toJson(question.options().get(index));
-        }
         return toJson(question.answer());
+    }
+
+    private Object toExternalAnswer(String type, Object answer) {
+        if (("MULTIPLE".equals(type) || "SITUATION".equals(type)) && answer instanceof Integer index) {
+            return index + 1;
+        }
+        if ("FILL".equals(type) && answer instanceof java.util.List<?> answers) {
+            return answers.stream()
+                    .map(value -> value instanceof Integer index ? index + 1 : value)
+                    .toList();
+        }
+        return answer;
     }
 
     private String toJson(Object value) {

@@ -5,6 +5,8 @@ import com.aimong.backend.domain.auth.repository.ChildProfileRepository;
 import com.aimong.backend.domain.auth.service.ChildActivityService;
 import com.aimong.backend.domain.gacha.entity.TicketType;
 import com.aimong.backend.domain.gacha.repository.TicketRepository;
+import com.aimong.backend.domain.home.dto.EnergyAddRequest;
+import com.aimong.backend.domain.home.dto.EnergyAddResponse;
 import com.aimong.backend.domain.home.dto.HomeResponse;
 import com.aimong.backend.domain.home.dto.EnergyResponse;
 import com.aimong.backend.domain.home.dto.StreakCalendarResponse;
@@ -152,20 +154,42 @@ public class HomeService {
                 .orElseThrow(() -> new AimongException(ErrorCode.CHILD_NOT_FOUND));
         childProfile.recoverEnergy(Instant.now());
         Instant nextRecoverAt = childProfile.nextEnergyRecoverAt();
-        Instant fullRecoverAt = null;
-        if (nextRecoverAt != null) {
-            int missingEnergy = ChildProfile.MAX_ENERGY - childProfile.getEnergy();
-            fullRecoverAt = childProfile.getEnergyRecoveredAt()
-                    .plusSeconds((long) missingEnergy * ChildProfile.ENERGY_RECOVERY_MINUTES * 60L);
-        }
         return new EnergyResponse(
                 childProfile.getEnergy(),
                 ChildProfile.MAX_ENERGY,
                 nextRecoverAt,
-                fullRecoverAt,
+                fullRecoverAt(childProfile, nextRecoverAt),
                 ChildProfile.ENERGY_RECOVERY_MINUTES,
                 ChildProfile.MISSION_ENERGY_COST
         );
+    }
+
+    @Transactional
+    public EnergyAddResponse addEnergy(UUID childId, EnergyAddRequest request) {
+        childActivityService.touchLastActiveAt(childId);
+        ChildProfile childProfile = childProfileRepository.findWithLockById(childId)
+                .orElseThrow(() -> new AimongException(ErrorCode.CHILD_NOT_FOUND));
+        Instant now = Instant.now();
+        childProfile.recoverEnergy(now);
+        int before = childProfile.getEnergy();
+        childProfile.addEnergy(request.amount(), now);
+        Instant nextRecoverAt = childProfile.nextEnergyRecoverAt();
+        return new EnergyAddResponse(
+                childProfile.getEnergy(),
+                ChildProfile.MAX_ENERGY,
+                childProfile.getEnergy() - before,
+                nextRecoverAt,
+                fullRecoverAt(childProfile, nextRecoverAt)
+        );
+    }
+
+    private Instant fullRecoverAt(ChildProfile childProfile, Instant nextRecoverAt) {
+        if (nextRecoverAt == null) {
+            return null;
+        }
+        int missingEnergy = ChildProfile.MAX_ENERGY - childProfile.getEnergy();
+        return childProfile.getEnergyRecoveredAt()
+                .plusSeconds((long) missingEnergy * ChildProfile.ENERGY_RECOVERY_MINUTES * 60L);
     }
 
     private HomeResponse.EquippedPetResponse equippedPet(ChildProfile childProfile) {
@@ -234,8 +258,6 @@ public class HomeService {
                 mission.getId(),
                 mission.getMissionCode(),
                 1,
-                1,
-                1,
                 mission.getStage(),
                 difficultyForStar(1),
                 mission.getTitle(),
@@ -250,8 +272,6 @@ public class HomeService {
                 set.getSetId(),
                 set.getMissionId(),
                 set.getMissionCode(),
-                set.getStarLevel(),
-                set.getVariantNo(),
                 set.getStarLevel(),
                 set.getStage(),
                 difficultyForStar(set.getStarLevel()),

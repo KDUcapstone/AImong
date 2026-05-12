@@ -25,7 +25,6 @@ import com.aimong.backend.domain.mission.service.question.QuestionQualityReviewS
 import com.aimong.backend.global.filter.FirebaseParentAuthFilter;
 import com.aimong.backend.global.filter.JwtAuthFilter;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -83,17 +82,13 @@ class MissionApiIntegrationTest {
                 "S0101",
                 1,
                 1,
-                1,
                 MissionQuestionsResponse.labelForStar(1),
-                "Privacy Safety",
-                null,
                 true,
                 0,
                 null,
                 null,
                 quizAttemptId,
                 10,
-                Instant.parse("2026-04-14T12:00:00Z"),
                 List.of(new QuestionResponse(UUID.randomUUID(), "OX", "Should you share a password?", List.of("Yes", "No")))
         );
 
@@ -112,7 +107,10 @@ class MissionApiIntegrationTest {
                 .andExpect(jsonPath("$.data.missionId").value(missionId.toString()))
                 .andExpect(jsonPath("$.data.starLevel").value(1))
                 .andExpect(jsonPath("$.data.variantNo").value(1))
-                .andExpect(jsonPath("$.data.title").value("Privacy Safety"))
+                .andExpect(jsonPath("$.data.stage").doesNotExist())
+                .andExpect(jsonPath("$.data.title").doesNotExist())
+                .andExpect(jsonPath("$.data.description").doesNotExist())
+                .andExpect(jsonPath("$.data.expiresAt").doesNotExist())
                 .andExpect(jsonPath("$.data.isReview").value(true))
                 .andExpect(jsonPath("$.data.attemptId").value(quizAttemptId.toString()))
                 .andExpect(jsonPath("$.data.quizAttemptId").doesNotExist())
@@ -169,7 +167,7 @@ class MissionApiIntegrationTest {
                 3,
                 1,
                 false,
-                new SubmitResponse.RewardsResponse(0, 10, List.of()),
+                new SubmitResponse.RewardsResponse(30, 10, List.of()),
                 new SubmitResponse.RemainingTicketsResponse(2, 0, 1),
                 "SPROUT",
                 false,
@@ -185,9 +183,9 @@ class MissionApiIntegrationTest {
                 1
         );
 
-        given(submitService.submit(eq(childId), eq(missionId), any(SubmitRequest.class))).willReturn(response);
+        given(submitService.submit(eq(childId), eq("S0101-L1"), any(SubmitRequest.class))).willReturn(response);
 
-        mockMvc.perform(post("/missions/{missionId}/submit", missionId)
+        mockMvc.perform(post("/mission-sets/{setId}/submit", "S0101-L1")
                         .principal(new UsernamePasswordAuthenticationToken(
                                 childId.toString(),
                                 null,
@@ -206,7 +204,7 @@ class MissionApiIntegrationTest {
                 .andExpect(jsonPath("$.data.score").value(100))
                 .andExpect(jsonPath("$.data.todayMissionCount").value(1))
                 .andExpect(jsonPath("$.data.streakBonusApplied").value(false))
-                .andExpect(jsonPath("$.data.rewards.coin").value(0))
+                .andExpect(jsonPath("$.data.rewards.coin").value(30))
                 .andExpect(jsonPath("$.data.rewards.exp").value(10))
                 .andExpect(jsonPath("$.data.rewards.fragments").isArray())
                 .andExpect(jsonPath("$.data.remainingTickets.normal").value(2))
@@ -268,7 +266,7 @@ class MissionApiIntegrationTest {
                                 1
                         ))
                 )),
-                new MissionListResponse.ProgressResponse(1, 1, 1)
+                new MissionListResponse.ProgressResponse(1, 1)
         );
 
         given(missionService.getMissions(childId)).willReturn(response);
