@@ -94,6 +94,10 @@ class QuizViewModel @Inject constructor(
             loadResult
                 .onSuccess { questions ->
                     cachedQuestions = questions
+                    val aid = questions.quizAttemptId.trim()
+                    if (aid.isNotEmpty()) {
+                        attemptId = aid
+                    }
                     _isReviewMode.value = questions.isReview
                     // 프로세스 재생성/복원 등으로 currentIndex가 남아 있을 수 있어, 새 문제 세트 기준으로 안전 보정
                     val last = (questions.questions.size - 1).coerceAtLeast(0)

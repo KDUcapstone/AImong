@@ -133,9 +133,6 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             binding.layoutFeedbackPanel.visibility = View.GONE
             viewModel.nextQuestion()
         }
-        binding.btnFeedbackRetry.setOnClickListener {
-            binding.layoutFeedbackPanel.visibility = View.GONE
-        }
         binding.btnOxO.setOnClickListener { 
             animateSelection(it)
             applyOxPendingSelection("O")
@@ -346,8 +343,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         markCorrectAnswer(state.question, state.userAnswer, state.isCorrect)
         
         showAnswerFeedback(state.question, state.isCorrect, state.explanation, state.userAnswer, null, false)
-        binding.btnFeedbackRetry.visibility = View.GONE // 풀이 모드에선 다시보기 불필요
-        
+
         val targetSize = if (lives <= 0) maxPlayedIndex else total - 1
         val isLast = index >= targetSize
         binding.btnNextQuestion.text = if (isLast) "결과로 돌아가기" else "다음 풀이 →"
@@ -442,6 +438,22 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         row.findViewWithTag<TextView>("option_text")?.setTextColor(Color.WHITE)
     }
 
+    private fun popQuizToHomeAfterAbandon(reason: String) {
+        lifecycleScope.launch {
+            try {
+                viewModel.abandonCurrentAttemptIfAny(reason)
+            } catch (_: Exception) {
+            }
+            if (!isAdded) return@launch
+            Toast.makeText(requireContext(), R.string.quiz_hearts_exhausted_toast, Toast.LENGTH_SHORT).show()
+            val nav = findNavController()
+            val popped = runCatching { nav.popBackStack(R.id.homeFragment, false) }.getOrDefault(false)
+            if (!popped) {
+                nav.popBackStack()
+            }
+        }
+    }
+
     private fun showAnswerFeedback(
         question: Question,
         isCorrect: Boolean,
@@ -450,6 +462,12 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         correctAnswer: String? = null,
         deferImmediateCorrectness: Boolean = false
     ) {
+        binding.layoutQuizResult.visibility = View.GONE
+        binding.layoutHintButton.visibility = View.GONE
+        if (!viewModel.isSolutionMode.value) {
+            binding.tvQuizModeBanner.visibility = View.GONE
+        }
+
         if (deferImmediateCorrectness) {
             binding.layoutFeedbackPanel.visibility = View.VISIBLE
             binding.tvFeedbackTitle.text = getString(R.string.quiz_feedback_answer_saved_title)
@@ -462,15 +480,11 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             val isFailedByLives = lives <= 0
             val isLast = (viewModel.currentQuestionIndex.value >= (binding.pbQuizProgress.max - 1))
 
-            if (isFailedByLives) {
-                binding.btnNextQuestion.text = getString(R.string.quiz_btn_view_result)
+            if (isFailedByLives && !viewModel.isSolutionMode.value) {
+                binding.btnNextQuestion.text = getString(R.string.quiz_btn_return_home)
                 binding.btnNextQuestion.setOnClickListener {
                     binding.layoutFeedbackPanel.visibility = View.GONE
-                    if (viewModel.isReviewMode.value && !viewModel.isSolutionMode.value) {
-                        viewModel.finishReviewImmediatelyOnWrong(explanation)
-                    } else {
-                        viewModel.finishQuizEarly()
-                    }
+                    popQuizToHomeAfterAbandon("LIVES_EXHAUSTED")
                 }
             } else {
                 binding.btnNextQuestion.text =
@@ -486,7 +500,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         markCorrectAnswer(question, userAnswer, isCorrect)
 
         binding.layoutFeedbackPanel.visibility = View.VISIBLE
-        
+
         if (!isCorrect) {
             // 풀이 모드에서는 패널티/흔들림/하트 감소 없음
             if (!viewModel.isSolutionMode.value) {
@@ -498,28 +512,15 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             }
         }
 
-        // 마지막 문제인 경우 또는 라이프가 0인 경우 버튼 텍스트 변경
-        val questions = viewModel.uiState.value.let { 
-            if (it is QuizUiState.QuestionLoaded) it.quizQuestions.questions 
-            else (viewModel.uiState.value as? QuizUiState.AnswerChecked)?.let { 
-                // 이 시점에는 QuestionLoaded 정보가 캐시되어 있어야 함
-                null // 실제로는 캐시된 정보를 쓰거나 ViewModel에서 확인 필요
-            }
-        }
-        
         val isFailedByLives = lives <= 0
         val isLast = (viewModel.currentQuestionIndex.value >= (binding.pbQuizProgress.max - 1))
-        
-        if (isFailedByLives) {
-            binding.btnNextQuestion.text = getString(R.string.quiz_btn_view_result)
+
+        if (isFailedByLives && !viewModel.isSolutionMode.value) {
+            // 미션 성공/결과 화면 없이 이탈 처리 — attempt abandon 후 홈
+            binding.btnNextQuestion.text = getString(R.string.quiz_btn_return_home)
             binding.btnNextQuestion.setOnClickListener {
                 binding.layoutFeedbackPanel.visibility = View.GONE
-                // 복습(하트 1개) 오답으로 실패했을 때도 피드백 패널은 보여주고, 버튼으로 결과로 이동
-                if (viewModel.isReviewMode.value && !viewModel.isSolutionMode.value) {
-                    viewModel.finishReviewImmediatelyOnWrong(explanation)
-                } else {
-                    viewModel.finishQuizEarly()
-                }
+                popQuizToHomeAfterAbandon("LIVES_EXHAUSTED")
             }
         } else {
             binding.btnNextQuestion.text = if (isLast) getString(R.string.quiz_btn_view_result) else getString(R.string.quiz_btn_next)
@@ -915,6 +916,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         binding.btnOxX.isClickable = true
         binding.btnOxO.alpha = 1f
         binding.btnOxX.alpha = 1f
+        binding.layoutHintButton.visibility = View.VISIBLE
     }
 
     private fun setupMultipleFixedOptions(options: List<String>) {
@@ -1209,6 +1211,8 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
     }
 
     private fun showFeedback(title: String, content: String) {
+        binding.layoutQuizResult.visibility = View.GONE
+        binding.layoutHintButton.visibility = View.GONE
         binding.layoutFeedbackPanel.visibility = View.VISIBLE
         binding.tvFeedbackTitle.text = title
         binding.tvFeedbackContent.text = content

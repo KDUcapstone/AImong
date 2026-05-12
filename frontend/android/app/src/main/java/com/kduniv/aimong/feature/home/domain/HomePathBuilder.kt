@@ -58,7 +58,8 @@ object HomePathBuilder {
                         HomePathItem.TodayStart(
                             quizNav = todayNav,
                             missionTitle = rec.title,
-                            enabled = canStart
+                            // 서버가 아직 canStartMission=false를 주더라도, 추천 세트(setId)가 있으면 진입 시도 가능하게 한다.
+                            enabled = canStart || !recSetIdStr.isNullOrBlank()
                         )
                     )
                 } else if (m.starLevels.any { it.isCompleted }) {

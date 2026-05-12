@@ -113,9 +113,10 @@ class HomeViewModel @Inject constructor(
     private fun loadHome() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null, subtleNotice = null) }
+            // 홈 경로는 /missions 목록과 맞물리므로, 먼저 미션 캐시를 갱신한 뒤 홈·경로를 구성한다.
+            missionRepository.refreshMissions()
             getHomeStatusUseCase().fold(
                 onSuccess = { data ->
-                    missionRepository.refreshMissions()
                     val missions = missionRepository.getMissionsFlow().first()
                     val path = HomePathBuilder.build(data, missions)
                     val notice = computeServerDayNotice(data.serverDate)
