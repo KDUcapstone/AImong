@@ -9,7 +9,7 @@ data class GachaPullRequest(
 data class GachaPullResultDto(
     @SerializedName("petId") val petId: String,
     @SerializedName("petType") val petType: String,
-    @SerializedName("petName") val petName: String,
+    @SerializedName("petName") val petName: String? = null,
     @SerializedName("grade") val grade: String,
     @SerializedName("isNew") val isNew: Boolean,
     @SerializedName("fragmentsGot") val fragmentsGot: Int

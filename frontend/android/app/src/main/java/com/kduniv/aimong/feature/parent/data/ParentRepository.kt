@@ -1,6 +1,12 @@
 package com.kduniv.aimong.feature.parent.data
 
 import com.kduniv.aimong.core.network.model.ParentChildItem
+import com.kduniv.aimong.core.network.model.ParentRegisterResponse
+import com.kduniv.aimong.core.network.model.ParentAccountDeleteRequest
+import com.kduniv.aimong.core.network.model.ParentChildDetailData
+import com.kduniv.aimong.core.network.model.ParentChildPatchResponseData
+import com.kduniv.aimong.core.network.model.ParentMeData
+import com.kduniv.aimong.core.network.model.PatchParentChildRequest
 import com.kduniv.aimong.feature.parent.data.model.ParentChildSummaryResponseData
 import com.kduniv.aimong.feature.parent.data.model.ParentPrivacyLogResponseData
 import com.kduniv.aimong.feature.parent.data.model.ParentWeakPointsResponseData
@@ -20,4 +26,20 @@ interface ParentRepository {
     suspend fun getWeeklyStats(childId: String): Result<ParentWeeklyStatsResponseData>
     suspend fun getPrivacyLog(childId: String, page: Int = 0, size: Int = 20): Result<ParentPrivacyLogResponseData>
     suspend fun getWeakPoints(childId: String, page: Int = 0, size: Int = 20): Result<ParentWeakPointsResponseData>
+
+    /** 로그아웃 전 서버 부모 FCM 해제 — Firebase ID 토큰 */
+    suspend fun deleteParentFcmToken(firebaseIdToken: String): Result<Unit>
+
+    suspend fun getParentMe(): Result<ParentMeData>
+
+    suspend fun addParentChild(nickname: String): Result<ParentRegisterResponse>
+
+    suspend fun getParentChildDetail(childId: String): Result<ParentChildDetailData>
+
+    suspend fun patchParentChild(childId: String, body: PatchParentChildRequest): Result<ParentChildPatchResponseData>
+
+    suspend fun deleteParentChild(childId: String): Result<Unit>
+
+    /** `confirm: true` 본문 — 호출 전 UI 확인 필수 */
+    suspend fun deleteParentAccount(firebaseIdToken: String): Result<Unit>
 }

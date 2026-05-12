@@ -8,6 +8,7 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.kduniv.aimong.core.local.dao.OfflineMissionQueueDao
 import com.kduniv.aimong.core.network.AimongApiService
+import com.kduniv.aimong.core.network.toResult
 import com.kduniv.aimong.feature.quiz.data.model.MissionSetAnswerItem
 import com.kduniv.aimong.feature.quiz.data.model.MissionSetSubmitRequest
 import dagger.assisted.Assisted
@@ -35,8 +36,7 @@ class QuizSyncWorker @AssistedInject constructor(
                 val answers: List<MissionSetAnswerItem> = gson.fromJson(entity.answersJson, answersType)
                 val request = MissionSetSubmitRequest(answers = answers)
 
-                val response = apiService.submitMissionSet(entity.setId, request)
-                if (response.success) {
+                if (apiService.submitMissionSet(entity.setId, request).toResult().isSuccess) {
                     offlineDao.markAsSynced(entity.id)
                 } else {
                     hasError = true

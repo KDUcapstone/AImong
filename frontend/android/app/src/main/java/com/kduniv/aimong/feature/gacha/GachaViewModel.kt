@@ -165,7 +165,7 @@ class GachaViewModel @Inject constructor(
         val t = data.remainingTickets
         return appContext.getString(
             R.string.gacha_pull_summary_fmt,
-            r.petName,
+            r.petName?.takeIf { it.isNotBlank() } ?: r.petType,
             r.petType,
             r.grade,
             if (r.isNew) appContext.getString(R.string.gacha_new_yes) else appContext.getString(R.string.gacha_new_no),

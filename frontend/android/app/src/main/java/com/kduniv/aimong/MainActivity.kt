@@ -1,5 +1,7 @@
 package com.kduniv.aimong
 
+import android.content.Intent
+import android.net.Uri
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
@@ -21,8 +23,12 @@ import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.NavigationUI
 import androidx.navigation.ui.setupWithNavController
 import com.kduniv.aimong.core.dev.UiMode
+import com.kduniv.aimong.BuildConfig
 import com.kduniv.aimong.core.network.AuthInterceptor
 import com.kduniv.aimong.core.local.SessionManager
+import com.kduniv.aimong.core.util.AppVersionUtils
+import com.kduniv.aimong.feature.home.domain.repository.AppBootstrapRepository
+import com.kduniv.aimong.feature.auth.domain.ChildSessionValidateUseCase
 import com.kduniv.aimong.feature.auth.domain.RegisterChildFcmTokenUseCase
 import com.kduniv.aimong.feature.auth.domain.RegisterParentFcmTokenUseCase
 import com.kduniv.aimong.feature.parent.domain.SyncParentChildrenUseCase
@@ -32,6 +38,7 @@ import com.kduniv.aimong.feature.chat.ChatHintNotifier
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
 import javax.inject.Inject
 
 
@@ -58,6 +65,12 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var chatHintNotifier: ChatHintNotifier
 
+    @Inject
+    lateinit var appBootstrapRepository: AppBootstrapRepository
+
+    @Inject
+    lateinit var childSessionValidateUseCase: ChildSessionValidateUseCase
+
     private lateinit var binding: ActivityMainBinding
     private lateinit var navController: NavController
     private var mainBackPressedCallback: OnBackPressedCallback? = null
@@ -82,6 +95,38 @@ class MainActivity : AppCompatActivity() {
             navController = navHostFragment.navController
             setupNavigation(savedInstanceState)
         }
+
+        if (!UiMode.useStubNav) {
+            lifecycleScope.launch { runBootstrapIfNeeded() }
+        }
+    }
+
+    private suspend fun runBootstrapIfNeeded() {
+        appBootstrapRepository.getBootstrap().fold(
+            onSuccess = { data ->
+                val outdated = AppVersionUtils.isBelowMinimum(
+                    BuildConfig.VERSION_NAME,
+                    data.minimumAppVersion
+                )
+                if (data.forceUpdateRequired || outdated) {
+                    runOnUiThread { showForceUpdateDialog() }
+                }
+            },
+            onFailure = { }
+        )
+    }
+
+    private fun showForceUpdateDialog() {
+        AlertDialog.Builder(this)
+            .setTitle(R.string.force_update_title)
+            .setMessage(R.string.force_update_message)
+            .setCancelable(false)
+            .setPositiveButton(R.string.force_update_go_store) { _, _ ->
+                val uri = Uri.parse("https://play.google.com/store/apps/details?id=${BuildConfig.APPLICATION_ID}")
+                startActivity(Intent(Intent.ACTION_VIEW, uri))
+                finish()
+            }
+            .show()
     }
 
     private fun setupNavigation(savedInstanceState: Bundle?) {
@@ -138,6 +183,19 @@ class MainActivity : AppCompatActivity() {
 
                 if (userRole == "CHILD") {
                     registerChildFcmTokenUseCase(requireChildSession = true)
+                    childSessionValidateUseCase().fold(
+                        onSuccess = { },
+                        onFailure = { e ->
+                            val code = (e.cause as? HttpException)?.code()
+                            if (code != 401) {
+                                Snackbar.make(
+                                    binding.root,
+                                    e.message ?: "세션을 확인하지 못했습니다.",
+                                    Snackbar.LENGTH_LONG
+                                ).show()
+                            }
+                        }
+                    )
                 }
             }
 

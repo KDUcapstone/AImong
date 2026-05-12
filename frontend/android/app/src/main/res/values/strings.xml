@@ -189,4 +189,33 @@
     <string name="gacha_new_no">아니오</string>
     <string name="gacha_level_up_yes">예</string>
     <string name="gacha_level_up_no">아니오</string>
+
+    <!-- FCM: 부모 GACHA_LEVEL_UP (data-only 폴백) -->
+    <string name="fcm_gacha_level_up_title_default">아이몽 가챠 레벨 업</string>
+    <string name="fcm_gacha_level_up_body_default">자녀의 아이몽이 더 강해졌어요. 함께 축하해 주세요.</string>
+    <string name="fcm_gacha_level_up_pull_count_fmt">누적 뽑기 %1$s회 구간</string>
+
+    <!-- Energy (v2.7) -->
+    <string name="energy_sheet_title">에너지</string>
+    <string name="energy_value_fmt">%1$d / %2$d</string>
+    <string name="energy_next_recover_fmt">다음 1회 회복 예정: %1$s</string>
+    <string name="energy_next_recover_unknown">다음 회복 시각은 가득 찼을 때 비어 있을 수 있어요.</string>
+    <string name="energy_mission_cost_fmt">미션 시작 시 소모: %1$d</string>
+    <string name="energy_add_five">에너지 +5</string>
+    <string name="energy_load_failed">에너지 정보를 불러오지 못했습니다.</string>
+    <string name="energy_add_failed">에너지 추가에 실패했습니다.</string>
+
+    <!-- Bootstrap / force update -->
+    <string name="force_update_title">업데이트가 필요해요</string>
+    <string name="force_update_message">최신 버전으로 업데이트한 뒤 다시 실행해 주세요.</string>
+    <string name="force_update_go_store">스토어로 이동</string>
+
+    <string name="parent_me_fetch">내 계정 (/parent/me)</string>
+    <string name="parent_add_child">자녀 추가 (POST /parent/children)</string>
+    <string name="parent_add_child_hint">새 자녀 닉네임 (1~20자)</string>
+    <string name="child_logout">로그아웃</string>
+    <string name="child_logout_confirm">로그아웃할까요? 이 기기의 자녀 세션이 서버에서 만료돼요.</string>
+
+    <string name="mock_home_energy_refreshed">에너지가 반영됐어요.</string>
+    <string name="mock_energy_next_recover_hint">목업: 다음 1회 회복은 예시로 10분 간격이에요.</string>
 </resources>

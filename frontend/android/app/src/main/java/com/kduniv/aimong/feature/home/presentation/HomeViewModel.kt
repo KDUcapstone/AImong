@@ -52,7 +52,7 @@ class HomeViewModel @Inject constructor(
             else "일반 $normal · 레어 $rare · 에픽 $epic"
             s.copy(
                 normalTickets = normal,
-                srBonus = rare + epic,
+                rareEpicTicketCount = rare + epic,
                 gachaDescription = desc,
                 topTicketCount = normal + rare + epic
             )
@@ -110,45 +110,6 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    /** 홈 응답에 복귀 보상이 있으면 GET 확인 후 POST 수령 (수동 버튼 없이 처리) */
-    private fun autoClaimReturnRewardAfterHomeLoad() {
-        viewModelScope.launch {
-            homeRepository.getReturnReward().fold(
-                onSuccess = { check ->
-                    if (!check.hasReward) return@launch
-                    homeRepository.claimReturnReward().fold(
-                        onSuccess = { data ->
-                            val rem = data.remainingTickets
-                            if (rem != null) {
-                                applyRemainingTickets(rem.normal, rem.rare, rem.epic)
-                            }
-                            val extra = data.ticketEarned?.let { te ->
-                                val cnt = te.count
-                                if (cnt > 0) " (티켓 ${cnt}장)" else null
-                            } ?: data.rewards.takeIf { it.isNotEmpty() }?.joinToString { r ->
-                                "${r.type} ×${r.count}"
-                            }?.let { " ($it)" }
-                            _uiState.update {
-                                it.copy(
-                                    returnRewardPending = false,
-                                    subtleNotice = "복귀 보상을 자동으로 수령했습니다${extra.orEmpty()}"
-                                )
-                            }
-                        },
-                        onFailure = {
-                            _uiState.update {
-                                it.copy(
-                                    subtleNotice = "복귀 보상 자동 수령에 실패했습니다. 확인·수령 버튼으로 다시 시도해 주세요."
-                                )
-                            }
-                        }
-                    )
-                },
-                onFailure = { }
-            )
-        }
-    }
-
     private fun loadHome() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null, subtleNotice = null) }
@@ -165,9 +126,6 @@ class HomeViewModel @Inject constructor(
                         subtleNotice = notice
                     )
                     _uiState.value = ui
-                    if (data.returnReward.hasReward) {
-                        autoClaimReturnRewardAfterHomeLoad()
-                    }
                 },
                 onFailure = { e ->
                     _uiState.update {

@@ -2,6 +2,7 @@ package com.kduniv.aimong.feature.quiz.data
 
 import com.kduniv.aimong.feature.quiz.data.model.QuestionResponse
 import com.kduniv.aimong.feature.quiz.domain.model.Question
+import com.kduniv.aimong.feature.quiz.domain.model.QuestionDifficulty
 import com.kduniv.aimong.feature.quiz.domain.model.QuestionType
 import com.kduniv.aimong.feature.quiz.domain.model.QuizQuestions
 import java.time.Instant
@@ -35,12 +36,14 @@ internal object QuizSessionRules {
                 ?: r.question?.takeIf { it.isNotBlank() }
                 ?: return kotlin.Result.failure(Exception("문항 내용이 비어 있습니다."))
             val opts = r.choices?.takeIf { it.isNotEmpty() } ?: r.options
+            val difficulty = QuestionDifficulty.parse(r.difficulty)
             out.add(
                 Question(
                     id = qid,
                     type = type,
                     question = text,
-                    options = opts
+                    options = opts,
+                    difficulty = difficulty
                 )
             )
         }

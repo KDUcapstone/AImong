@@ -2,6 +2,7 @@ package com.kduniv.aimong.feature.quest.data
 
 import com.kduniv.aimong.core.network.AimongApiService
 import com.kduniv.aimong.core.network.ApiErrorMapper
+import com.kduniv.aimong.core.network.toResult
 import com.kduniv.aimong.feature.quest.data.model.DailyQuestsResponseData
 import com.kduniv.aimong.feature.quest.data.model.QuestClaimRequest
 import com.kduniv.aimong.feature.quest.data.model.QuestClaimResponseData
@@ -17,9 +18,7 @@ class QuestRepositoryImpl @Inject constructor(
 ) : QuestRepository {
 
     override suspend fun getDailyQuests(): Result<DailyQuestsResponseData> = try {
-        val response = apiService.getDailyQuests()
-        if (response.success) Result.success(response.data)
-        else Result.failure(Exception(ApiErrorMapper.userMessageForApiError(response.error)))
+        apiService.getDailyQuests().toResult()
     } catch (e: HttpException) {
         Result.failure(Exception(ApiErrorMapper.userMessageForHttpException(e)))
     } catch (e: IOException) {
@@ -29,9 +28,7 @@ class QuestRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getWeeklyQuests(): Result<WeeklyQuestsResponseData> = try {
-        val response = apiService.getWeeklyQuests()
-        if (response.success) Result.success(response.data)
-        else Result.failure(Exception(ApiErrorMapper.userMessageForApiError(response.error)))
+        apiService.getWeeklyQuests().toResult()
     } catch (e: HttpException) {
         Result.failure(Exception(ApiErrorMapper.userMessageForHttpException(e)))
     } catch (e: IOException) {
@@ -41,9 +38,7 @@ class QuestRepositoryImpl @Inject constructor(
     }
 
     override suspend fun claimQuest(questType: String, period: String): Result<QuestClaimResponseData> = try {
-        val response = apiService.claimQuest(QuestClaimRequest(questType, period))
-        if (response.success) Result.success(response.data)
-        else Result.failure(Exception(ApiErrorMapper.userMessageForApiError(response.error)))
+        apiService.claimQuest(QuestClaimRequest(questType, period)).toResult()
     } catch (e: HttpException) {
         Result.failure(Exception(ApiErrorMapper.userMessageForHttpException(e)))
     } catch (e: IOException) {
@@ -53,9 +48,7 @@ class QuestRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getAchievements(): Result<AchievementsResponseData> = try {
-        val response = apiService.getAchievements()
-        if (response.success) Result.success(response.data)
-        else Result.failure(Exception(ApiErrorMapper.userMessageForApiError(response.error)))
+        apiService.getAchievements().toResult()
     } catch (e: HttpException) {
         Result.failure(Exception(ApiErrorMapper.userMessageForHttpException(e)))
     } catch (e: IOException) {

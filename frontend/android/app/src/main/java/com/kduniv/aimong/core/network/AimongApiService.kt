@@ -1,5 +1,9 @@
 package com.kduniv.aimong.core.network
 
+import com.kduniv.aimong.feature.home.data.model.BootstrapResponseData
+import com.kduniv.aimong.feature.home.data.model.EnergyAddRequest
+import com.kduniv.aimong.feature.home.data.model.EnergyAddResponseData
+import com.kduniv.aimong.feature.home.data.model.EnergyStateData
 import com.kduniv.aimong.feature.home.data.model.HomeScreenData
 import com.kduniv.aimong.feature.home.data.model.StreakCalendarData
 import com.kduniv.aimong.feature.home.data.model.ReturnRewardClaimResponseData
@@ -19,6 +23,18 @@ import com.kduniv.aimong.feature.quiz.data.model.MissionSetCheckRequest
 import com.kduniv.aimong.feature.quiz.data.model.MissionSetCheckResponseData
 import com.kduniv.aimong.feature.quiz.data.model.QuizQuestionsResponse
 import com.kduniv.aimong.core.network.model.ChildLoginRequest
+import com.kduniv.aimong.core.network.model.ChildLoginResponse
+import com.kduniv.aimong.core.network.model.ChildLogoutData
+import com.kduniv.aimong.core.network.model.ChildMeData
+import com.kduniv.aimong.core.network.model.DeletedFlagData
+import com.kduniv.aimong.core.network.model.NotificationSettingsData
+import com.kduniv.aimong.core.network.model.NotificationSettingsPatchRequest
+import com.kduniv.aimong.core.network.model.ParentAccountDeleteRequest
+import com.kduniv.aimong.core.network.model.ParentChildDetailData
+import com.kduniv.aimong.core.network.model.ParentChildPatchResponseData
+import com.kduniv.aimong.core.network.model.ParentMeData
+import com.kduniv.aimong.core.network.model.ParentWithdrawData
+import com.kduniv.aimong.core.network.model.PatchParentChildRequest
 import com.kduniv.aimong.core.network.model.ParentRegisterRequest
 import com.kduniv.aimong.core.network.model.ParentRegisterResponse
 import com.kduniv.aimong.feature.quest.data.model.DailyQuestsResponseData
@@ -27,8 +43,8 @@ import com.kduniv.aimong.feature.quest.data.model.QuestClaimResponseData
 import com.kduniv.aimong.feature.quest.data.model.WeeklyQuestsResponseData
 import com.kduniv.aimong.feature.quest.data.model.AchievementsResponseData
 import com.kduniv.aimong.feature.quiz.data.model.MissionSetSubmitRequest
+import com.kduniv.aimong.feature.quiz.data.model.MissionSetReportResponseData
 import com.kduniv.aimong.feature.quiz.data.model.QuizSubmitResponse
-import com.kduniv.aimong.core.network.model.ChildLoginResponse
 import com.kduniv.aimong.core.network.model.ParentChildrenResponseData
 import com.kduniv.aimong.core.network.model.ParentFcmTokenRequest
 import com.kduniv.aimong.core.network.model.ParentFcmTokenResponse
@@ -45,8 +61,11 @@ import com.kduniv.aimong.feature.pet.data.model.PetEquipRequest
 import com.kduniv.aimong.feature.pet.data.model.PetListData
 import com.kduniv.aimong.feature.streak.data.model.StreakStatusData
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.HTTP
 import retrofit2.http.Header
+import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Path
@@ -92,6 +111,69 @@ interface AimongApiService {
         @Body body: ParentFcmTokenRequest
     ): ApiResponse<ParentFcmTokenResponse>
 
+    @GET("child/me")
+    suspend fun getChildMe(): ApiResponse<ChildMeData>
+
+    @POST("child/logout")
+    suspend fun childLogout(): ApiResponse<ChildLogoutData>
+
+    @DELETE("child/fcm-token")
+    suspend fun deleteChildFcmToken(): ApiResponse<DeletedFlagData>
+
+    @DELETE("parent/fcm-token")
+    suspend fun deleteParentFcmToken(
+        @Header("Authorization") authorization: String
+    ): ApiResponse<DeletedFlagData>
+
+    @GET("parent/me")
+    suspend fun getParentMe(
+        @Header("Authorization") authorization: String
+    ): ApiResponse<ParentMeData>
+
+    /** 둘째 이상 자녀 추가 — 본문은 최초 온보딩과 동일 */
+    @POST("parent/children")
+    suspend fun addParentChild(
+        @Header("Authorization") authorization: String,
+        @Body body: ParentRegisterRequest
+    ): ApiResponse<ParentRegisterResponse>
+
+    @GET("parent/children/{childId}")
+    suspend fun getParentChildDetail(
+        @Header("Authorization") authorization: String,
+        @Path("childId") childId: String
+    ): ApiResponse<ParentChildDetailData>
+
+    @PATCH("parent/children/{childId}")
+    suspend fun patchParentChild(
+        @Header("Authorization") authorization: String,
+        @Path("childId") childId: String,
+        @Body body: PatchParentChildRequest
+    ): ApiResponse<ParentChildPatchResponseData>
+
+    @DELETE("parent/children/{childId}")
+    suspend fun deleteParentChild(
+        @Header("Authorization") authorization: String,
+        @Path("childId") childId: String
+    ): ApiResponse<DeletedFlagData>
+
+    @HTTP(method = "DELETE", path = "parent/account", hasBody = true)
+    suspend fun deleteParentAccount(
+        @Header("Authorization") authorization: String,
+        @Body body: ParentAccountDeleteRequest
+    ): ApiResponse<ParentWithdrawData>
+
+    @GET("notification/settings")
+    suspend fun getNotificationSettings(): ApiResponse<NotificationSettingsData>
+
+    @PATCH("notification/settings")
+    suspend fun patchNotificationSettings(
+        @Body body: NotificationSettingsPatchRequest
+    ): ApiResponse<NotificationSettingsData>
+
+    /** 앱 부팅 시 초기 상태 — Authorization 선택(없으면 게스트). */
+    @GET("app/bootstrap")
+    suspend fun getBootstrap(): ApiResponse<BootstrapResponseData>
+
     @GET("home")
     suspend fun getHome(): ApiResponse<HomeScreenData>
 
@@ -99,6 +181,12 @@ interface AimongApiService {
     suspend fun getStreakCalendar(
         @Query("yearMonth") yearMonth: String? = null
     ): ApiResponse<StreakCalendarData>
+
+    @GET("energy")
+    suspend fun getEnergy(): ApiResponse<EnergyStateData>
+
+    @POST("energy/add")
+    suspend fun addEnergy(@Body body: EnergyAddRequest): ApiResponse<EnergyAddResponseData>
 
     @GET("quests/daily")
     suspend fun getDailyQuests(): ApiResponse<DailyQuestsResponseData>
@@ -135,6 +223,12 @@ interface AimongApiService {
     suspend fun getMissionSetQuestions(
         @Path("setId") setId: String
     ): ApiResponse<QuizQuestionsResponse>
+
+    /** v2.5: 세트 제출 결과 리포트 조회 */
+    @GET("mission-sets/{setId}/report")
+    suspend fun getMissionSetReport(
+        @Path("setId") setId: String
+    ): ApiResponse<MissionSetReportResponseData>
 
     @POST("mission-sets/{setId}/submit")
     suspend fun submitMissionSet(

@@ -21,6 +21,9 @@ data class ChildLoginResponse(
     @SerializedName("childId") val childId: String,
     @SerializedName("nickname") val nickname: String,
     @SerializedName("sessionToken") val sessionToken: String,
+    /** API v1.5 세션 버전. 없으면 클라이언트에서 1로 간주. */
+    @SerializedName(value = "sessionVersion", alternate = ["session_version"])
+    val sessionVersion: Int? = null,
     @SerializedName("profileImageType") val profileImageType: String,
     @SerializedName("totalXp") val totalXp: Int
 )

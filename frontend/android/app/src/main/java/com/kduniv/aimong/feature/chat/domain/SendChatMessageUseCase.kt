@@ -3,6 +3,7 @@ package com.kduniv.aimong.feature.chat.domain
 import com.kduniv.aimong.core.network.ApiErrorMapper
 import com.kduniv.aimong.core.network.ChatMessageRequest
 import com.kduniv.aimong.core.network.ChatMessageResponse
+import com.kduniv.aimong.core.network.toResult
 import com.kduniv.aimong.core.privacy.PrivacyRadar
 import com.kduniv.aimong.feature.chat.domain.repository.ChatRepository
 import retrofit2.HttpException
@@ -40,14 +41,10 @@ class SendChatMessageUseCase @Inject constructor(
         }
 
         return try {
-            val response = chatRepository.sendChatMessage(
+            val data = chatRepository.sendChatMessage(
                 ChatMessageRequest(message = trimmed, masked = false)
-            )
-            if (response.success) {
-                Result.Success(response.data, trimmed)
-            } else {
-                Result.Error(ApiErrorMapper.userMessageForApiError(response.error))
-            }
+            ).toResult().getOrThrow()
+            Result.Success(data, trimmed)
         } catch (e: HttpException) {
             Result.Error(ApiErrorMapper.userMessageForHttpException(e))
         } catch (_: IOException) {
@@ -74,14 +71,10 @@ class SendChatMessageUseCase @Inject constructor(
         }
 
         return try {
-            val response = chatRepository.sendChatMessage(
+            val data = chatRepository.sendChatMessage(
                 ChatMessageRequest(message = toSend, masked = true)
-            )
-            if (response.success) {
-                Result.Success(response.data, toSend)
-            } else {
-                Result.Error(ApiErrorMapper.userMessageForApiError(response.error))
-            }
+            ).toResult().getOrThrow()
+            Result.Success(data, toSend)
         } catch (e: HttpException) {
             Result.Error(ApiErrorMapper.userMessageForHttpException(e))
         } catch (_: IOException) {

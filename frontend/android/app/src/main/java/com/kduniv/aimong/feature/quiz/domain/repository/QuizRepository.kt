@@ -26,6 +26,9 @@ interface QuizRepository {
     /** v2.4: 중도 이탈 */
     suspend fun abandonAttempt(attemptId: String, reason: String): Result<MissionAttemptAbandonResponseData>
 
+    /** v2.5: 세트 제출 결과 리포트(결과 화면 보강) */
+    suspend fun getMissionSetReport(setId: String): Result<QuizResult>
+
     suspend fun reportQuestion(
         missionId: String,
         questionId: String,

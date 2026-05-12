@@ -1,6 +1,9 @@
 package com.kduniv.aimong.feature.quiz.data.model
 
+import com.google.gson.annotations.JsonAdapter
 import com.google.gson.annotations.SerializedName
+import com.kduniv.aimong.feature.quiz.data.gson.AttemptIdStringAdapter
+import com.kduniv.aimong.feature.quiz.data.gson.SubmitRewardsListAdapter
 
 /** GET .../questions 응답 — v2.3 + 레거시 필드 nullable */
 data class QuizQuestionsResponse(
@@ -60,7 +63,9 @@ data class QuizAnswer(
 )
 
 data class QuizSubmitResponse(
-    @SerializedName("attemptId") val attemptId: Long? = null,
+    @SerializedName("attemptId")
+    @JsonAdapter(AttemptIdStringAdapter::class)
+    val attemptId: String? = null,
     @SerializedName("setId") val setId: String? = null,
     @SerializedName("missionId") val missionId: String? = null,
     @SerializedName("starLevel") val starLevel: Int? = null,
@@ -87,7 +92,9 @@ data class QuizSubmitResponse(
     @SerializedName("petEvolved") val petEvolved: Boolean? = null,
     @SerializedName("streakDays") val streakDays: Int? = null,
     @SerializedName("todayMissionCount") val todayMissionCount: Int? = null,
-    @SerializedName("rewards") val rewards: List<RewardResponse>? = null,
+    @SerializedName("rewards")
+    @JsonAdapter(SubmitRewardsListAdapter::class)
+    val rewards: List<RewardResponse>? = null,
     @SerializedName("remainingTickets") val remainingTickets: RemainingTicketsResponse? = null,
     @SerializedName("results") val results: List<QuestionResultResponse>? = null,
     @SerializedName("currentLevel") val currentLevel: Int? = null,

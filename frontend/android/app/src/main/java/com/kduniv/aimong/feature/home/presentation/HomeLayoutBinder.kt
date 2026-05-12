@@ -32,7 +32,7 @@ class HomeLayoutBinder(
 
     fun bind(state: HomeUiState) {
         with(binding) {
-            tvChipHeart.text = "❤️ ${state.heartCount}"
+            tvChipEnergy.text = "🔋 ${state.energyCurrent}/${state.energyMax}"
             tvChipXp.text = "⚡ ${state.topStatusXp}"
             tvChipTicket.text = "🎟 ${state.topTicketCount}"
             tvChipStreak.text = "🔥 ${state.streakDays}일"

@@ -96,6 +96,28 @@
             android:textColor="@color/white"
             app:cornerRadius="12dp"
             app:strokeColor="#243B70" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_parent_me"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="@string/parent_me_fetch"
+            android:textColor="@color/white"
+            app:cornerRadius="12dp"
+            app:strokeColor="#243B70" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_add_child"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="@string/parent_add_child"
+            android:textColor="@color/white"
+            app:cornerRadius="12dp"
+            app:strokeColor="#243B70" />
     </LinearLayout>
 
     <ScrollView

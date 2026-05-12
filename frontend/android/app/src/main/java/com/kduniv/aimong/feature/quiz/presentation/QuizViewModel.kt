@@ -14,6 +14,8 @@ import com.kduniv.aimong.feature.quiz.domain.model.QuizResult
 import com.kduniv.aimong.feature.quiz.domain.repository.QuizRepository
 import com.kduniv.aimong.R
 import com.kduniv.aimong.core.network.AimongApiService
+import com.kduniv.aimong.core.network.toResult
+import com.kduniv.aimong.feature.quiz.domain.model.AttemptStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Job
@@ -115,11 +117,8 @@ class QuizViewModel @Inject constructor(
     /** v2.4: missions/{missionId}/status로 진행중 attempt가 있으면 복구, 없으면 새 출제 */
     private suspend fun loadByMissionWithStatus(missionId: String, starLevel: Int): kotlin.Result<QuizQuestions> {
         return try {
-            val statusResp = apiService.getMissionStatus(missionId)
-            if (!statusResp.success) {
-                return kotlin.Result.failure(Exception(com.kduniv.aimong.core.network.ApiErrorMapper.userMessageForApiError(statusResp.error)))
-            }
-            val inProgress = statusResp.data.inProgressAttempt
+            val statusData = apiService.getMissionStatus(missionId).toResult().getOrThrow()
+            val inProgress = statusData.inProgressAttempt
             if (inProgress != null) {
                 attemptId = inProgress.attemptId
                 // 문서대로: attempt 복구는 상태만 내려오므로, 상태 조회 후 setId로 문제를 다시 로드한다.
@@ -133,7 +132,7 @@ class QuizViewModel @Inject constructor(
                 answeredQuestionIds = emptySet()
                 quizRepository.getQuestionsByMission(missionId, starLevel)
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             kotlin.Result.failure(e)
         }
     }
@@ -372,7 +371,7 @@ class QuizViewModel @Inject constructor(
         quizResult = QuizResult(
             mode = "review",
             progressApplied = false,
-            attemptState = "in_progress",
+            attemptState = AttemptStatus.IN_PROGRESS.name,
             score = score,
             total = results.size,
             wrongCount = wrongCount,
@@ -409,8 +408,13 @@ class QuizViewModel @Inject constructor(
             )
                 .onSuccess { result ->
                     solutionAnswerSnapshot = userAnswers.toMap()
-                    quizResult = result
-                    _uiState.value = QuizUiState.Finished(result)
+                    val merged = if (result.results.isEmpty()) {
+                        quizRepository.getMissionSetReport(qsNonNull.setId).getOrElse { result }
+                    } else {
+                        result
+                    }
+                    quizResult = merged
+                    _uiState.value = QuizUiState.Finished(merged)
                 }
                 .onFailure {
                     _uiState.value = QuizUiState.Error(it.message ?: "Failed to submit quiz")

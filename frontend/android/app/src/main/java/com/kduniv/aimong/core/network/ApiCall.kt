@@ -5,12 +5,7 @@ import java.io.IOException
 
 suspend fun <T> runApi(block: suspend () -> ApiResponse<T>): Result<T> {
     return try {
-        val response = block()
-        if (response.success) {
-            Result.success(response.data)
-        } else {
-            Result.failure(Exception(ApiErrorMapper.userMessageForApiError(response.error)))
-        }
+        block().toResult()
     } catch (e: HttpException) {
         Result.failure(Exception(ApiErrorMapper.userMessageForHttpException(e)))
     } catch (_: IOException) {

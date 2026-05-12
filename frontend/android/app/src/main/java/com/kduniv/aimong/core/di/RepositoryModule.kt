@@ -2,11 +2,15 @@ package com.kduniv.aimong.core.di
 
 import com.kduniv.aimong.feature.auth.data.AuthRepositoryImpl
 import com.kduniv.aimong.feature.auth.data.AuthRepository
+import com.kduniv.aimong.feature.auth.data.NotificationRepositoryImpl
+import com.kduniv.aimong.feature.auth.data.NotificationRepository
 import com.kduniv.aimong.feature.gacha.data.GachaRepository
 import com.kduniv.aimong.feature.gacha.data.GachaRepositoryImpl
+import com.kduniv.aimong.feature.home.data.AppBootstrapRepositoryImpl
 import com.kduniv.aimong.feature.home.data.HomeRepositoryImpl
 import com.kduniv.aimong.feature.home.data.PetRepository
 import com.kduniv.aimong.feature.home.data.PetRepositoryImpl
+import com.kduniv.aimong.feature.home.domain.repository.AppBootstrapRepository
 import com.kduniv.aimong.feature.home.domain.repository.HomeRepository
 import com.kduniv.aimong.feature.mission.data.MissionRepositoryImpl
 import com.kduniv.aimong.feature.mission.domain.repository.MissionRepository
@@ -40,9 +44,21 @@ abstract class RepositoryModule {
 
     @Binds
     @Singleton
+    abstract fun bindNotificationRepository(
+        impl: NotificationRepositoryImpl
+    ): NotificationRepository
+
+    @Binds
+    @Singleton
     abstract fun bindHomeRepository(
         homeRepositoryImpl: HomeRepositoryImpl
     ): HomeRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindAppBootstrapRepository(
+        impl: AppBootstrapRepositoryImpl
+    ): AppBootstrapRepository
 
     @Binds
     @Singleton

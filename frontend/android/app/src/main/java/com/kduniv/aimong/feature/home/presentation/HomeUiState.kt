@@ -17,16 +17,22 @@ data class HomeUiState(
     val homeState: HomeState = HomeState.IDLE,
     val petMessage: String = "",
     
-    /** 상단 하트 칩 — topStatus.heartCount */
-    val heartCount: Int = 0,
+    /** 상단 에너지 칩 — topStatus.energy / maxEnergy */
+    val energyCurrent: Int = 0,
+    val energyMax: Int = 20,
+    /** ISO8601, 에너지 바텀시트 등에서 표시 */
+    val nextEnergyRecoverAt: String? = null,
     /** 상단 XP 칩 — topStatus.xp */
     val topStatusXp: Int = 0,
 
     val normalTickets: Int = 0,
     val shieldCount: Int = 0,
     
-    // 가챠 관련
-    val srBonus: Int = 0,
+    /**
+     * 레어·에픽 티켓 장수 합(홈 요약용).
+     * `POST /gacha/pull` 응답의 `srBonus`(확률 보정 실수)와는 무관하다.
+     */
+    val rareEpicTicketCount: Int = 0,
     val gachaDescription: String = "",
 
     // 오늘의 퀘스트

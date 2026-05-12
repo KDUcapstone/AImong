@@ -24,7 +24,10 @@ class AimongFcmService : FirebaseMessagingService() {
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
-        // 타입별 처리은 추후 (PRIVACY_ALERT, 미학습 알림 등)
+        if (GachaLevelUpNotificationHelper.showIfApplicable(this, remoteMessage)) {
+            return
+        }
+        // 그 외 타입(PRIVACY_ALERT, 미학습 알림 등)은 추후 확장
     }
 
     override fun onNewToken(token: String) {

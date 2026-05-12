@@ -17,9 +17,13 @@ data class HomeScreenData(
 )
 
 data class TopStatusDto(
-    /** BE 가이드: 첫 값은 shieldCount — JSON 키가 heartCount 또는 shieldCount */
-    @SerializedName(value = "heartCount", alternate = ["shieldCount"])
-    val heartCount: Int = 0,
+    /**
+     * v2.7: `energy` — 레거시 BE는 `heartCount`/`shieldCount` 키만 줄 수 있어 alternate 유지.
+     */
+    @SerializedName(value = "energy", alternate = ["heartCount", "shieldCount"])
+    val energy: Int = 0,
+    @SerializedName("maxEnergy") val maxEnergy: Int? = null,
+    @SerializedName("nextEnergyRecoverAt") val nextEnergyRecoverAt: String? = null,
     /** profile.totalXp 와 동일한 요약값 — xp 또는 totalXp */
     @SerializedName(value = "xp", alternate = ["totalXp"])
     val xp: Int = 0,
@@ -49,7 +53,8 @@ data class EquippedPetDto(
 )
 
 data class MissionSummaryDto(
-    @SerializedName("todayCompletedCount") val todayCompletedCount: Int = 0,
+    @SerializedName(value = "todayCompletedCount", alternate = ["todaySetCount"])
+    val todayCompletedCount: Int = 0,
     @SerializedName("todayTargetCount") val todayTargetCount: Int = 0,
     @SerializedName("canStartMission") val canStartMission: Boolean = false,
     @SerializedName("recommendedMission") val recommendedMission: RecommendedMissionDto? = null
@@ -60,9 +65,13 @@ data class RecommendedMissionDto(
     val id: String,
     /** v2.4: 서버가 문자열 setId(예: "S0101-L1")를 줄 수 있어 String으로 수용 */
     @SerializedName("setId") val setId: String? = null,
+    @SerializedName("missionCode") val missionCode: String? = null,
+    @SerializedName("levelNo") val levelNo: Int? = null,
+    @SerializedName("difficulty") val difficulty: String? = null,
     @SerializedName("stage") val stage: Int,
     @SerializedName("title") val title: String,
     @SerializedName("description") val description: String,
+    @SerializedName("isUnlocked") val isUnlocked: Boolean? = null,
     @SerializedName("isReviewable") val isReviewable: Boolean = false
 )
 

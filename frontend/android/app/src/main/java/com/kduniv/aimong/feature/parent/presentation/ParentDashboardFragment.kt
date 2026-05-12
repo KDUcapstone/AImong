@@ -1,6 +1,8 @@
 package com.kduniv.aimong.feature.parent.presentation
 
 import android.content.Intent
+import android.widget.EditText
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -9,13 +11,15 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
 import com.kduniv.aimong.MainActivity
-import com.kduniv.aimong.R
 import com.kduniv.aimong.core.local.SessionManager
+import com.kduniv.aimong.R
+import com.kduniv.aimong.feature.parent.data.ParentRepository
 import com.kduniv.aimong.core.network.model.ParentChildItem
 import com.kduniv.aimong.core.ui.BaseFragment
 import com.kduniv.aimong.databinding.FragmentParentDashboardBinding
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -26,6 +30,9 @@ class ParentDashboardFragment : BaseFragment<FragmentParentDashboardBinding>(Fra
 
     @Inject
     lateinit var sessionManager: SessionManager
+
+    @Inject
+    lateinit var parentRepository: ParentRepository
 
     private fun titleForParentDashboard(nickname: String?): String {
         val n = nickname?.trim().orEmpty()
@@ -57,9 +64,19 @@ class ParentDashboardFragment : BaseFragment<FragmentParentDashboardBinding>(Fra
         binding.btnFetchPrivacyLog.setOnClickListener { viewModel.fetchPrivacyLog() }
         binding.btnFetchWeakPoints.setOnClickListener { viewModel.fetchWeakPoints() }
 
+        binding.btnParentMe.setOnClickListener { viewModel.fetchParentMe() }
+        binding.btnAddChild.setOnClickListener { showAddChildDialog() }
+
         binding.btnLogout.setOnClickListener {
-            FirebaseAuth.getInstance().signOut()
             viewLifecycleOwner.lifecycleScope.launch {
+                val user = FirebaseAuth.getInstance().currentUser
+                runCatching {
+                    val token = user?.getIdToken(false)?.await()?.token
+                    if (!token.isNullOrBlank()) {
+                        parentRepository.deleteParentFcmToken(token)
+                    }
+                }
+                FirebaseAuth.getInstance().signOut()
                 sessionManager.clearSession()
                 val intent = Intent(requireContext(), MainActivity::class.java).apply {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
@@ -68,6 +85,21 @@ class ParentDashboardFragment : BaseFragment<FragmentParentDashboardBinding>(Fra
                 startActivity(intent)
             }
         }
+    }
+
+    private fun showAddChildDialog() {
+        val input = EditText(requireContext()).apply {
+            hint = getString(R.string.parent_add_child_hint)
+        }
+        AlertDialog.Builder(requireContext())
+            .setTitle(R.string.parent_add_child)
+            .setView(input)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                val name = input.text?.toString()?.trim().orEmpty()
+                if (name.isNotEmpty()) viewModel.addChild(name)
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
     }
 
     override fun initObserver() {
@@ -109,8 +141,10 @@ class ParentDashboardFragment : BaseFragment<FragmentParentDashboardBinding>(Fra
                         val lines = p.events.joinToString(separator = "\n") { e ->
                             "- ${e.detectedType} (masked=${e.masked}) @ ${e.detectedAt}"
                         }
+                        val pagesNote =
+                            if (p.totalPages > 0) "\n- totalPages: ${p.totalPages}" else ""
                         binding.tvParentPrivacyLog.text =
-                            "개인정보 감지\n- weekly: ${p.weeklyCount}\n- total: ${p.totalCount}\n$lines"
+                            "개인정보 감지\n- weekly: ${p.weeklyCount}\n- total: ${p.totalCount}$pagesNote\n$lines"
                     }
                 }
                 launch {
@@ -124,8 +158,10 @@ class ParentDashboardFragment : BaseFragment<FragmentParentDashboardBinding>(Fra
                                 ?: "-"
                             "- $title ($diff/$stage) 오답률 ${it.incorrectRate}, 시도 ${it.attemptCount}"
                         }
+                        val wpPages =
+                            if (wp.totalPages > 0) "\n- totalPages: ${wp.totalPages}" else ""
                         binding.tvParentWeakPoints.text =
-                            "약점 분석 (${wp.analyzedPeriod ?: "최근"})\n- total: ${wp.totalCount}\n$lines"
+                            "약점 분석 (${wp.analyzedPeriod ?: "최근"})\n- total: ${wp.totalCount}$wpPages\n$lines"
                     }
                 }
                 launch {

@@ -1,6 +1,7 @@
 package com.kduniv.aimong.feature.home.presentation
 
 import androidx.fragment.app.viewModels
+import androidx.fragment.app.setFragmentResultListener
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -26,6 +27,14 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
     }
 
     override fun initView() {
+        childFragmentManager.setFragmentResultListener(
+            EnergyBottomSheet.REQUEST_KEY,
+            viewLifecycleOwner
+        ) { _, bundle ->
+            if (bundle.getBoolean(EnergyBottomSheet.EXTRA_REFRESH_HOME, false)) {
+                viewModel.onHomeResumed()
+            }
+        }
         homeLayoutBinder = HomeLayoutBinder(
             binding = binding,
             layoutInflater = layoutInflater,
@@ -42,6 +51,9 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
             },
             onOpenQuest = { openQuestList() }
         )
+        binding.tvChipEnergy.setOnClickListener {
+            EnergyBottomSheet.newInstance().show(childFragmentManager, "energy_sheet")
+        }
         binding.tvChipTicket.setOnClickListener { openGacha() }
         binding.tvChipStreak.setOnClickListener { openStreakSheet() }
 

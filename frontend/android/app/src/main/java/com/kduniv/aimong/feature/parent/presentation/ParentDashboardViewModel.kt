@@ -80,6 +80,34 @@ class ParentDashboardViewModel @Inject constructor(
         }
     }
 
+    fun addChild(nickname: String) {
+        viewModelScope.launch {
+            parentRepository.addParentChild(nickname).fold(
+                onSuccess = { r ->
+                    _messageEvent.emit("자녀 추가 완료: ${r.nickname} · 코드 ${r.code}")
+                },
+                onFailure = { e ->
+                    _messageEvent.emit(e.message ?: "자녀 추가에 실패했습니다.")
+                }
+            )
+        }
+    }
+
+    fun fetchParentMe() {
+        viewModelScope.launch {
+            parentRepository.getParentMe().fold(
+                onSuccess = { me ->
+                    _messageEvent.emit(
+                        "parent/me: email=${me.email ?: "-"}, 자녀 ${me.childrenCount ?: 0}명, FCM=${me.hasFcmToken == true}"
+                    )
+                },
+                onFailure = { e ->
+                    _messageEvent.emit(e.message ?: "parent/me 조회 실패")
+                }
+            )
+        }
+    }
+
     fun fetchSummary() = fetchWithSelectedChild(
         actionName = "요약",
         block = { id ->
@@ -112,7 +140,9 @@ class ParentDashboardViewModel @Inject constructor(
             parentRepository.getPrivacyLog(id, page = page, size = size).fold(
                 onSuccess = { s ->
                     _privacyLog.value = s
-                    "개인정보로그: weekly ${s.weeklyCount}, total ${s.totalCount}, events ${s.events.size}"
+                    "개인정보로그: weekly ${s.weeklyCount}, total ${s.totalCount}" +
+                        (if (s.totalPages > 0) ", pages ${s.totalPages}" else "") +
+                        ", events ${s.events.size}"
                 },
                 onFailure = { e -> e.message ?: "개인정보로그 조회 실패" }
             )

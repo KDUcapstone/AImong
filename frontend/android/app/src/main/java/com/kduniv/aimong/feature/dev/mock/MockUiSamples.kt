@@ -7,6 +7,16 @@ import com.kduniv.aimong.feature.home.presentation.QuestItemUiState
 
 object MockUiSamples {
 
+    /** 목업 홈·에너지 시트에서만 사용. `addMockEnergy`로 변경 가능 */
+    var mockEnergyCurrent: Int = 12
+        private set
+
+    const val MOCK_ENERGY_MAX: Int = 20
+
+    fun addMockEnergy(amount: Int) {
+        mockEnergyCurrent = (mockEnergyCurrent + amount).coerceIn(0, MOCK_ENERGY_MAX)
+    }
+
     fun homeUiState(): HomeUiState {
         return HomeUiState(
             nickname = "목업",
@@ -18,7 +28,9 @@ object MockUiSamples {
             petMaxXp = 200,
             petLevel = 3,
             petMessage = "오늘도 AI 탐험 화이팅!",
-            heartCount = 3,
+            energyCurrent = mockEnergyCurrent,
+            energyMax = MOCK_ENERGY_MAX,
+            nextEnergyRecoverAt = null,
             topStatusXp = 1520,
             normalTickets = 2,
             topTicketCount = 4,

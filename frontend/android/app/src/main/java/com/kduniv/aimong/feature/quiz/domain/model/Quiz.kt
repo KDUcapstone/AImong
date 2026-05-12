@@ -16,7 +16,9 @@ data class Question(
     val id: String,
     val type: QuestionType,
     val question: String,
-    val options: List<String>?
+    val options: List<String>?,
+    /** API v1.5 문항 난이도. 없거나 파싱 실패 시 null. */
+    val difficulty: QuestionDifficulty? = null
 )
 
 enum class QuestionType {
@@ -27,7 +29,7 @@ data class QuizResult(
     /** 서버 `normal` | `review` */
     val mode: String = "normal",
     val progressApplied: Boolean = false,
-    val attemptState: String = "submitted",
+    val attemptState: String = AttemptStatus.SUBMITTED.name,
     val streakBonusApplied: Boolean = false,
     val score: Int,
     val total: Int,
@@ -73,6 +75,10 @@ data class QuizReward(
 data class QuestionResult(
     val questionId: String,
     val isCorrect: Boolean,
-    val explanation: String
+    val explanation: String,
+    /** v2.5 리포트 API 등 확장 필드 */
+    val questionNo: Int? = null,
+    val correctAnswer: String? = null,
+    val submittedAnswer: String? = null
 )
 

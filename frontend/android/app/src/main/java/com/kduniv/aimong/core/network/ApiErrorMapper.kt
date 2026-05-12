@@ -29,15 +29,18 @@ object ApiErrorMapper {
             null
         }
         val parsed = body?.let { parseErrorEnvelope(it) }?.error
+        // 바디에 v1.5 `error` 객체가 있으면 HTTP 상태와 무관하게 code 기반 메시지 우선
+        if (parsed != null) {
+            return userMessageForCode(parsed.code, parsed.message)
+        }
         return when {
-            parsed != null -> userMessageForCode(parsed.code, parsed.message)
-            code == 400 -> "요청 형식이 올바르지 않습니다."
+            code == 400 -> userMessageForCode("BAD_REQUEST", null)
             code == 401 -> userMessageForCode("UNAUTHORIZED", null)
             code == 403 -> userMessageForCode("FORBIDDEN", null)
             code == 404 -> userMessageForCode("NOT_FOUND", null)
             code == 429 -> userMessageForCode("TOO_MANY_REQUESTS", null)
             code == 504 -> userMessageForCode("GATEWAY_TIMEOUT", null)
-            code == 409 -> "요청을 처리할 수 없습니다. 문제를 다시 불러오거나 이전 화면으로 돌아가 주세요."
+            code == 409 -> userMessageForCode("CONFLICT", null)
             code in 500..599 ->
                 "서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요."
             else -> "문제를 불러오지 못했습니다 (${code})"
@@ -59,21 +62,30 @@ object ApiErrorMapper {
             // 미션·자녀 로그인 등 공통 — 구체 문구는 서버 message 우선
             "NOT_FOUND" -> "요청한 정보를 찾을 수 없습니다."
             "TOO_MANY_REQUESTS" -> "잠시 후 다시 시도해주세요."
-            "FORBIDDEN" -> "아직 잠긴 미션이에요. 이전 단계를 먼저 완료해주세요."
+            "FORBIDDEN" -> "접근이 제한되었거나 아직 이용할 수 없는 단계예요."
+            "VALIDATION_ERROR" -> "입력 값을 다시 확인해 주세요."
             "MISSION_SET_NOT_READY" -> "문제 세트를 준비하는 데 실패했습니다. 잠시 후 다시 시도해주세요."
+            "MISSION_SET_NOT_FOUND" -> "문제 세트를 찾을 수 없어요."
             "INVALID_STAR_LEVEL" -> "난이도(별) 선택이 올바르지 않아요."
+            "INVALID_ANSWER_FORMAT" -> "답안 형식이 문제 유형과 맞지 않아요."
             "MISSION_NOT_FOUND" -> "미션을 찾을 수 없어요."
             "MISSION_LOCKED" -> "아직 열리지 않은 미션이에요."
             "INSUFFICIENT_ENERGY" -> "에너지가 부족해요. 잠시 후 다시 도전해 주세요."
             "UNAUTHORIZED" -> "로그인이 필요합니다."
             "ATTEMPT_EXPIRED" -> "문제 세션이 만료되었어요. 다시 문제를 불러와주세요."
+            "ATTEMPT_NOT_FOUND" -> "문제 세션을 찾을 수 없어요."
             "ATTEMPT_ALREADY_SUBMITTED" -> "이미 제출한 문제 세트예요."
+            "ATTEMPT_ALREADY_CLOSED" -> "이미 종료된 문제 세션이에요."
             "QUESTION_NOT_FOUND" -> "문항을 찾을 수 없습니다."
-            "INTERNAL_ERROR" -> "서버 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요."
+            "REPORT_NOT_FOUND" -> "결과 정보를 찾을 수 없어요."
+            "INTERNAL_ERROR", "INTERNAL_SERVER_ERROR" ->
+                "서버 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요."
             "GATEWAY_TIMEOUT" -> "AI 친구가 생각 중이에요. 다시 시도해볼까요?"
-            "BAD_REQUEST" -> null
-            // 복귀 보상 409, 펫 중복 등 — 서버 message 없을 때만 사용
-            "CONFLICT" -> "이미 처리된 요청이에요."
+            "BAD_REQUEST" ->
+                "요청을 확인해 주세요. (티켓·조각 보유량 또는 입력값)"
+            // 복귀 보상 409, 가챠 교환 중복 펫 등 — 서버 message 없을 때만 사용
+            "CONFLICT" -> "이미 보유한 펫이거나 처리된 요청이에요."
+            "CHILD_LIMIT_EXCEEDED" -> "등록 가능한 자녀 수를 초과했습니다."
             else -> null
         }
         return base ?: "문제를 불러오지 못했습니다."
