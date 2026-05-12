@@ -16,7 +16,9 @@ data class Question(
     val id: String,
     val type: QuestionType,
     val question: String,
-    val options: List<String>?
+    val options: List<String>?,
+    /** GET questions의 `answerFormat` — check/submit 시 답 문자열 규칙(미지정 시 보기 문구 전송) */
+    val answerFormat: String? = null
 )
 
 enum class QuestionType {

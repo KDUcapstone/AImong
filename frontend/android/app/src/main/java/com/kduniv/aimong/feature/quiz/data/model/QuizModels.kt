@@ -33,7 +33,8 @@ data class QuestionResponse(
     @SerializedName("options") val options: List<String>? = null,
     @SerializedName("choices") val choices: List<String>? = null,
     @SerializedName("difficulty") val difficulty: String? = null,
-    @SerializedName("answerFormat") val answerFormat: String? = null
+    @SerializedName(value = "answerFormat", alternate = ["answer_format"])
+    val answerFormat: String? = null
 )
 
 /** 레거시 오프라인 동기화용 */

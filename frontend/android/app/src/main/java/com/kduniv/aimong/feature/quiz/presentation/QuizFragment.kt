@@ -393,12 +393,12 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                 }
             }
         } 
-        // 객관식(MULTIPLE): 서버·저장 답은 "1"~"4" (1-based 인덱스)
+        // 객관식·칩: 저장 답은 1-based 인덱스 또는 보기 문구일 수 있음(check 페이로드와 동일)
         else if (question.type == QuestionType.MULTIPLE) {
-            val idx = userAnswer.trim().toIntOrNull()?.minus(1)?.coerceIn(0, 3) ?: return
-            applyMultipleFixedSelectionByIndex(idx)
+            val idx = choiceIndexFromUserAnswer(question, userAnswer) ?: return
+            applyMultipleFixedSelectionByIndex(idx.coerceIn(0, 3))
         } else if (question.type == QuestionType.FILL || question.type == QuestionType.SITUATION) {
-            val chosen = userAnswer.trim().toIntOrNull()?.minus(1) ?: return
+            val chosen = choiceIndexFromUserAnswer(question, userAnswer) ?: return
             for (i in 0 until binding.layoutOptionsChips.childCount) {
                 val chip = binding.layoutOptionsChips.getChildAt(i) as? Chip ?: continue
                 if (i == chosen) {
@@ -436,9 +436,22 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         }
     }
 
+    /** 사용자 답(번호 문자열 또는 보기 문구) → options 내 0-based 인덱스 */
+    private fun choiceIndexFromUserAnswer(question: Question, userAnswer: String): Int? {
+        val t = userAnswer.trim()
+        val opts = question.options ?: return null
+        val n = t.toIntOrNull()
+        if (n != null && n in 1..opts.size) return n - 1
+        val i = opts.indexOfFirst { it == t }
+        return i.takeIf { it >= 0 }
+    }
+
     private fun choiceIndexToDisplayText(question: Question, answerKey: String): String? {
-        val idx = answerKey.trim().toIntOrNull()?.minus(1) ?: return null
-        return question.options?.getOrNull(idx)
+        val t = answerKey.trim()
+        if (t.isEmpty()) return null
+        t.toIntOrNull()?.minus(1)?.let { i -> question.options?.getOrNull(i)?.let { return it } }
+        if (question.options?.any { it == t } == true) return t
+        return t
     }
 
     private fun formatCorrectAnswerLine(question: Question, correctAnswer: String?): String? {
@@ -453,7 +466,11 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
 
     private fun popQuizToHomeAfterAbandon(reason: String) {
         lifecycleScope.launch {
-            viewModel.abandonCurrentAttemptIfAny(reason)
+            try {
+                viewModel.abandonCurrentAttemptIfAny(reason)
+            } catch (_: Exception) {
+            }
+            if (!isAdded) return@launch
             Toast.makeText(requireContext(), R.string.quiz_hearts_exhausted_toast, Toast.LENGTH_SHORT).show()
             findNavController().popBackStack()
         }
@@ -479,19 +496,11 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             val isFailedByLives = lives <= 0
             val isLast = (viewModel.currentQuestionIndex.value >= (binding.pbQuizProgress.max - 1))
 
-            if (isFailedByLives) {
-                if (viewModel.isReviewMode.value && !viewModel.isSolutionMode.value) {
-                    binding.btnNextQuestion.text = getString(R.string.quiz_btn_view_result)
-                    binding.btnNextQuestion.setOnClickListener {
-                        binding.layoutFeedbackPanel.visibility = View.GONE
-                        viewModel.finishReviewImmediatelyOnWrong(explanation)
-                    }
-                } else {
-                    binding.btnNextQuestion.text = getString(R.string.quiz_btn_home)
-                    binding.btnNextQuestion.setOnClickListener {
-                        binding.layoutFeedbackPanel.visibility = View.GONE
-                        popQuizToHomeAfterAbandon("LIVES_EXHAUSTED")
-                    }
+            if (isFailedByLives && !viewModel.isSolutionMode.value) {
+                binding.btnNextQuestion.text = getString(R.string.quiz_btn_home)
+                binding.btnNextQuestion.setOnClickListener {
+                    binding.layoutFeedbackPanel.visibility = View.GONE
+                    popQuizToHomeAfterAbandon("LIVES_EXHAUSTED")
                 }
             } else {
                 binding.btnNextQuestion.text =
@@ -519,31 +528,14 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             }
         }
 
-        // 마지막 문제인 경우 또는 라이프가 0인 경우 버튼 텍스트 변경
-        val questions = viewModel.uiState.value.let { 
-            if (it is QuizUiState.QuestionLoaded) it.quizQuestions.questions 
-            else (viewModel.uiState.value as? QuizUiState.AnswerChecked)?.let { 
-                // 이 시점에는 QuestionLoaded 정보가 캐시되어 있어야 함
-                null // 실제로는 캐시된 정보를 쓰거나 ViewModel에서 확인 필요
-            }
-        }
-        
         val isFailedByLives = lives <= 0
         val isLast = (viewModel.currentQuestionIndex.value >= (binding.pbQuizProgress.max - 1))
         
-        if (isFailedByLives) {
-            if (viewModel.isReviewMode.value && !viewModel.isSolutionMode.value) {
-                binding.btnNextQuestion.text = getString(R.string.quiz_btn_view_result)
-                binding.btnNextQuestion.setOnClickListener {
-                    binding.layoutFeedbackPanel.visibility = View.GONE
-                    viewModel.finishReviewImmediatelyOnWrong(explanation)
-                }
-            } else {
-                binding.btnNextQuestion.text = getString(R.string.quiz_btn_home)
-                binding.btnNextQuestion.setOnClickListener {
-                    binding.layoutFeedbackPanel.visibility = View.GONE
-                    popQuizToHomeAfterAbandon("LIVES_EXHAUSTED")
-                }
+        if (isFailedByLives && !viewModel.isSolutionMode.value) {
+            binding.btnNextQuestion.text = getString(R.string.quiz_btn_home)
+            binding.btnNextQuestion.setOnClickListener {
+                binding.layoutFeedbackPanel.visibility = View.GONE
+                popQuizToHomeAfterAbandon("LIVES_EXHAUSTED")
             }
         } else {
             binding.btnNextQuestion.text = if (isLast) getString(R.string.quiz_btn_view_result) else getString(R.string.quiz_btn_next)
