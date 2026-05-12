@@ -44,6 +44,7 @@
     <string name="quiz_btn_solution">풀이 보기</string>
     <string name="quiz_btn_retry">복습하기</string>
     <string name="quiz_btn_home">홈으로</string>
+    <string name="quiz_btn_return_home">홈으로 돌아가기</string>
 
     <!-- Quiz Feedback -->
     <string name="quiz_feedback_correct">🎉 정답이에요!</string>

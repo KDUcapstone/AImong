@@ -472,7 +472,11 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             }
             if (!isAdded) return@launch
             Toast.makeText(requireContext(), R.string.quiz_hearts_exhausted_toast, Toast.LENGTH_SHORT).show()
-            findNavController().popBackStack()
+            val nav = findNavController()
+            val popped = runCatching { nav.popBackStack(R.id.homeFragment, false) }.getOrDefault(false)
+            if (!popped) {
+                nav.popBackStack()
+            }
         }
     }
 
@@ -484,6 +488,12 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         correctAnswer: String? = null,
         deferImmediateCorrectness: Boolean = false
     ) {
+        // 결과 오버레이·모드 배너가 피드백과 겹쳐 ‘다시 도전하기/다시보기’처럼 보이지 않게 정리
+        binding.layoutQuizResult.visibility = View.GONE
+        if (!viewModel.isSolutionMode.value) {
+            binding.tvQuizModeBanner.visibility = View.GONE
+        }
+
         if (deferImmediateCorrectness) {
             binding.layoutFeedbackPanel.visibility = View.VISIBLE
             binding.tvFeedbackTitle.text = getString(R.string.quiz_feedback_answer_saved_title)
@@ -497,7 +507,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             val isLast = (viewModel.currentQuestionIndex.value >= (binding.pbQuizProgress.max - 1))
 
             if (isFailedByLives && !viewModel.isSolutionMode.value) {
-                binding.btnNextQuestion.text = getString(R.string.quiz_btn_home)
+                binding.btnNextQuestion.text = getString(R.string.quiz_btn_return_home)
                 binding.btnNextQuestion.setOnClickListener {
                     binding.layoutFeedbackPanel.visibility = View.GONE
                     popQuizToHomeAfterAbandon("LIVES_EXHAUSTED")
@@ -532,7 +542,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         val isLast = (viewModel.currentQuestionIndex.value >= (binding.pbQuizProgress.max - 1))
         
         if (isFailedByLives && !viewModel.isSolutionMode.value) {
-            binding.btnNextQuestion.text = getString(R.string.quiz_btn_home)
+            binding.btnNextQuestion.text = getString(R.string.quiz_btn_return_home)
             binding.btnNextQuestion.setOnClickListener {
                 binding.layoutFeedbackPanel.visibility = View.GONE
                 popQuizToHomeAfterAbandon("LIVES_EXHAUSTED")
