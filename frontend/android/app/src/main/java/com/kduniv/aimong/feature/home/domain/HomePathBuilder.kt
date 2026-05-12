@@ -18,7 +18,11 @@ object HomePathBuilder {
 
     fun build(data: HomeScreenData, missions: List<Mission>): List<HomePathItem> {
         val rec = data.missionSummary.recommendedMission
-        val canStart = data.missionSummary.canStartMission
+        val summary = data.missionSummary
+        val canStart = summary.canStartMission
+        val dailyQuotaActive = summary.todayTargetCount > 0
+        val underDailyQuota = !dailyQuotaActive || summary.todayCompletedCount < summary.todayTargetCount
+        val todayStartEnabled = canStart || (rec != null && underDailyQuota)
         val items = mutableListOf<HomePathItem>()
 
         val recSetIdStr = rec?.setId?.toString()?.takeIf { it != "0" && it.isNotBlank() }
@@ -49,7 +53,7 @@ object HomePathBuilder {
                         HomePathItem.TodayStart(
                             quizNav = todayNav,
                             missionTitle = rec.title,
-                            enabled = canStart
+                            enabled = todayStartEnabled
                         )
                     )
                 } else if (m.starLevels.any { it.isCompleted }) {

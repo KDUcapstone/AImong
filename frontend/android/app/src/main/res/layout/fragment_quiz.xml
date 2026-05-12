@@ -629,34 +629,17 @@
                 android:lineSpacingExtra="4dp"
                 android:textColor="#C0C8D8"
                 android:textSize="14sp" />
-            <LinearLayout
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_next_question"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="64dp"
                 android:layout_marginTop="24dp"
-                android:orientation="horizontal">
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btn_feedback_retry"
-                    android:layout_width="0dp"
-                    android:layout_height="64dp"
-                    android:layout_weight="1"
-                    android:backgroundTint="#1A2B52"
-                    android:text="다시보기"
-                    android:textAllCaps="false"
-                    android:textColor="#8A96AD"
-                    app:cornerRadius="16dp" />
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btn_next_question"
-                    android:layout_width="0dp"
-                    android:layout_height="64dp"
-                    android:layout_marginStart="12dp"
-                    android:layout_weight="2"
-                    android:backgroundTint="#00FFB2"
-                    android:text="다음 문제 →"
-                    android:textAllCaps="false"
-                    android:textColor="#0A1633"
-                    android:textStyle="bold"
-                    app:cornerRadius="16dp" />
-            </LinearLayout>
+                android:backgroundTint="#00FFB2"
+                android:text="다음 문제 →"
+                android:textAllCaps="false"
+                android:textColor="#0A1633"
+                android:textStyle="bold"
+                app:cornerRadius="16dp" />
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 

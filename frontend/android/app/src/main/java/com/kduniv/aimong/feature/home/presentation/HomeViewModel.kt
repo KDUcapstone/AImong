@@ -154,7 +154,19 @@ class HomeViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true, errorMessage = null, subtleNotice = null) }
             getHomeStatusUseCase().fold(
                 onSuccess = { data ->
-                    missionRepository.refreshMissions()
+                    missionRepository.refreshMissions().fold(
+                        onSuccess = { },
+                        onFailure = { e ->
+                            _uiState.update {
+                                it.copy(
+                                    isLoading = false,
+                                    errorMessage = e.message?.takeIf { m -> m.isNotBlank() }
+                                        ?: "미션 목록을 불러오지 못했습니다."
+                                )
+                            }
+                            return@launch
+                        }
+                    )
                     val missions = missionRepository.getMissionsFlow().first()
                     val path = HomePathBuilder.build(data, missions)
                     val notice = computeServerDayNotice(data.serverDate)
