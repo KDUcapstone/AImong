@@ -13,6 +13,8 @@ import com.aimong.backend.domain.mission.dto.MissionListResponse;
 import com.aimong.backend.domain.mission.dto.MissionQuestionsResponse;
 import com.aimong.backend.domain.mission.dto.MissionSetCheckRequest;
 import com.aimong.backend.domain.mission.dto.QuestionCheckResponse;
+import com.aimong.backend.domain.mission.dto.QuestionReportRequest;
+import com.aimong.backend.domain.mission.dto.QuestionReportResponse;
 import com.aimong.backend.domain.mission.dto.QuestionResponse;
 import com.aimong.backend.domain.mission.dto.SubmitRequest;
 import com.aimong.backend.domain.mission.dto.SubmitResponse;
@@ -239,6 +241,38 @@ class MissionApiIntegrationTest {
                 .andExpect(jsonPath("$.data.explanation").value("Do not share passwords."))
                 .andExpect(jsonPath("$.data.xpEarned").doesNotExist())
                 .andExpect(jsonPath("$.data.rewards").doesNotExist());
+    }
+
+    @Test
+    void reportQuestionUsesMissionBasedApiPath() throws Exception {
+        UUID childId = UUID.randomUUID();
+        UUID missionId = UUID.randomUUID();
+        UUID questionId = UUID.randomUUID();
+        UUID issueId = UUID.randomUUID();
+        QuestionReportRequest request = new QuestionReportRequest("SAFETY", "Not suitable");
+        QuestionReportResponse response = new QuestionReportResponse(questionId, issueId, "OPEN", false);
+
+        given(questionQualityReviewService.reportQuestion(
+                eq(childId),
+                eq(missionId),
+                eq(questionId),
+                any(QuestionReportRequest.class)
+        )).willReturn(response);
+
+        mockMvc.perform(post("/missions/{missionId}/questions/{questionId}/report", missionId, questionId)
+                        .principal(new UsernamePasswordAuthenticationToken(
+                                childId.toString(),
+                                null,
+                                Collections.emptyList()
+                        ))
+                        .contentType(APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsBytes(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.questionId").value(questionId.toString()))
+                .andExpect(jsonPath("$.data.issueId").value(issueId.toString()))
+                .andExpect(jsonPath("$.data.issueStatus").value("OPEN"))
+                .andExpect(jsonPath("$.data.quarantined").value(false));
     }
 
     @Test
