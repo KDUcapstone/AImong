@@ -45,7 +45,10 @@
     <string name="quiz_btn_retry">복습하기</string>
     <string name="quiz_btn_home">홈으로</string>
     <string name="quiz_btn_return_home">홈으로 돌아가기</string>
+    <string name="quiz_btn_refill_hearts">하트 채우기</string>
     <string name="quiz_hearts_exhausted_toast">하트를 모두 사용했어요.</string>
+    <string name="home_energy_insufficient_toast">에너지가 부족해요!</string>
+    <string name="home_go_energy_charge">에너지 충전</string>
 
     <!-- Quiz Feedback -->
     <string name="quiz_feedback_correct">🎉 정답이에요!</string>

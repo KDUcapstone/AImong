@@ -41,13 +41,26 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
             getProfileLabel = { viewModel.getProfileLabel(it) },
             petNameDefault = getString(R.string.home_pet_name_default),
             onNavigateQuiz = { nav ->
-                findNavController().navigate(
-                    HomeFragmentDirections.actionHomeFragmentToQuizFragment(
-                        nav.entrySetId,
-                        nav.missionId,
-                        nav.starLevel
+                val st = viewModel.uiState.value
+                if (!st.canStartMission || st.energyCurrent < 1) {
+                    Snackbar.make(
+                        binding.root,
+                        getString(R.string.home_energy_insufficient_toast),
+                        Snackbar.LENGTH_LONG
                     )
-                )
+                        .setAction(getString(R.string.home_go_energy_charge)) {
+                            EnergyBottomSheet.newInstance().show(childFragmentManager, "energy_sheet")
+                        }
+                        .show()
+                } else {
+                    findNavController().navigate(
+                        HomeFragmentDirections.actionHomeFragmentToQuizFragment(
+                            nav.entrySetId,
+                            nav.missionId,
+                            nav.starLevel
+                        )
+                    )
+                }
             },
             onOpenQuest = { openQuestList() }
         )

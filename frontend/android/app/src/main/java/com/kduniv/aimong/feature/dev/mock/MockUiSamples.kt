@@ -34,6 +34,7 @@ object MockUiSamples {
             topStatusXp = 1520,
             normalTickets = 2,
             topTicketCount = 4,
+            canStartMission = true,
             gachaDescription = "목업: 실제 연동 시 서버 문구가 표시됩니다.",
             todayQuestProgress = "2/3",
             quests = listOf(

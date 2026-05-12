@@ -630,10 +630,23 @@
                 android:textColor="#C0C8D8"
                 android:textSize="14sp" />
             <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_feedback_refill_hearts"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="24dp"
+                android:visibility="gone"
+                android:text="@string/quiz_btn_refill_hearts"
+                android:textAllCaps="false"
+                android:textColor="#C0C8D8"
+                app:cornerRadius="16dp"
+                app:strokeColor="#8A96AD"
+                app:strokeWidth="1dp" />
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_next_question"
                 android:layout_width="match_parent"
                 android:layout_height="64dp"
-                android:layout_marginTop="24dp"
+                android:layout_marginTop="12dp"
                 android:backgroundTint="#00FFB2"
                 android:text="다음 문제 →"
                 android:textAllCaps="false"

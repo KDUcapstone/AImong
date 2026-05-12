@@ -44,13 +44,26 @@ class MockHomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::
             getProfileLabel = { MockUiSamples.profileLabel(it) },
             petNameDefault = getString(R.string.home_pet_name_default),
             onNavigateQuiz = { nav: HomeQuizNavigation ->
-                findNavController().navigate(
-                    MockHomeFragmentDirections.actionHomeFragmentToQuizFragment(
-                        nav.entrySetId,
-                        nav.missionId,
-                        nav.starLevel
+                val st = sampleState
+                if (!st.canStartMission || st.energyCurrent < 1) {
+                    Snackbar.make(
+                        binding.root,
+                        getString(R.string.home_energy_insufficient_toast),
+                        Snackbar.LENGTH_LONG
                     )
-                )
+                        .setAction(getString(R.string.home_go_energy_charge)) {
+                            EnergyBottomSheet.newInstance().show(childFragmentManager, "energy_sheet")
+                        }
+                        .show()
+                } else {
+                    findNavController().navigate(
+                        MockHomeFragmentDirections.actionHomeFragmentToQuizFragment(
+                            nav.entrySetId,
+                            nav.missionId,
+                            nav.starLevel
+                        )
+                    )
+                }
             },
             onOpenQuest = {
                 QuestListBottomSheet.newInstance(canStartMission = true)

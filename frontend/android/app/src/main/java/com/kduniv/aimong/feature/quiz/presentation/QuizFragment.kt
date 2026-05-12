@@ -34,6 +34,7 @@ import com.kduniv.aimong.feature.quiz.domain.model.QuestionType
 import com.kduniv.aimong.feature.quiz.domain.model.QuizResult
 import com.kduniv.aimong.feature.quiz.domain.model.QuizReward
 import com.kduniv.aimong.feature.quiz.domain.model.QuizQuestions
+import com.kduniv.aimong.feature.home.presentation.EnergyBottomSheet
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -112,6 +113,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             maxPlayedIndex = 0
 
             binding.layoutFeedbackPanel.visibility = View.GONE
+            binding.btnFeedbackRefillHearts.visibility = View.GONE
             binding.layoutQuizResult.visibility = View.GONE
             unlockOptionsForNewQuestion()
             resetOxButtons()
@@ -131,7 +133,11 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             // 결과 화면에서 "다시하기"를 누른 직후(두 번째 텀 로딩 중)엔 이전 텀의 피드백/전이와 충돌하지 않게 막는다.
             if (isRetryingFromResult) return@setOnClickListener
             binding.layoutFeedbackPanel.visibility = View.GONE
+            binding.btnFeedbackRefillHearts.visibility = View.GONE
             viewModel.nextQuestion()
+        }
+        binding.btnFeedbackRefillHearts.setOnClickListener {
+            EnergyBottomSheet.newInstance().show(parentFragmentManager, "energy_sheet_quiz")
         }
         binding.btnOxO.setOnClickListener { 
             animateSelection(it)
@@ -229,6 +235,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                     binding.btnNextQuestion.text = getString(R.string.quiz_btn_next)
                     binding.btnNextQuestion.setOnClickListener {
                         binding.layoutFeedbackPanel.visibility = View.GONE
+                        binding.btnFeedbackRefillHearts.visibility = View.GONE
                         viewModel.nextQuestion()
                     }
                 }
@@ -278,6 +285,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                     binding.btnNextQuestion.text = "다시 시도"
                     binding.btnNextQuestion.setOnClickListener {
                         binding.layoutFeedbackPanel.visibility = View.GONE
+                        binding.btnFeedbackRefillHearts.visibility = View.GONE
                         unlockOptionsForNewQuestion()
                         // 문항 타이머는 현 문항에서 이어서 진행
                         if (!viewModel.isSolutionMode.value && binding.layoutQuizResult.visibility != View.VISIBLE) {
@@ -350,6 +358,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         
         binding.btnNextQuestion.setOnClickListener {
             binding.layoutFeedbackPanel.visibility = View.GONE
+            binding.btnFeedbackRefillHearts.visibility = View.GONE
             if (isLast) {
                 viewModel.finishQuizEarly() // 결과 화면으로 전환
             } else {
@@ -454,6 +463,16 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         }
     }
 
+    private fun bindLivesExhaustedFeedbackActions() {
+        binding.btnFeedbackRefillHearts.visibility = View.VISIBLE
+        binding.btnNextQuestion.text = getString(R.string.quiz_btn_return_home)
+        binding.btnNextQuestion.setOnClickListener {
+            binding.layoutFeedbackPanel.visibility = View.GONE
+            binding.btnFeedbackRefillHearts.visibility = View.GONE
+            popQuizToHomeAfterAbandon("LIVES_EXHAUSTED")
+        }
+    }
+
     private fun showAnswerFeedback(
         question: Question,
         isCorrect: Boolean,
@@ -464,6 +483,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
     ) {
         binding.layoutQuizResult.visibility = View.GONE
         binding.layoutHintButton.visibility = View.GONE
+        binding.btnFeedbackRefillHearts.visibility = View.GONE
         if (!viewModel.isSolutionMode.value) {
             binding.tvQuizModeBanner.visibility = View.GONE
         }
@@ -481,11 +501,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             val isLast = (viewModel.currentQuestionIndex.value >= (binding.pbQuizProgress.max - 1))
 
             if (isFailedByLives && !viewModel.isSolutionMode.value) {
-                binding.btnNextQuestion.text = getString(R.string.quiz_btn_return_home)
-                binding.btnNextQuestion.setOnClickListener {
-                    binding.layoutFeedbackPanel.visibility = View.GONE
-                    popQuizToHomeAfterAbandon("LIVES_EXHAUSTED")
-                }
+                bindLivesExhaustedFeedbackActions()
             } else {
                 binding.btnNextQuestion.text =
                     if (isLast) getString(R.string.quiz_btn_view_result) else getString(R.string.quiz_btn_next)
@@ -517,11 +533,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
 
         if (isFailedByLives && !viewModel.isSolutionMode.value) {
             // 미션 성공/결과 화면 없이 이탈 처리 — attempt abandon 후 홈
-            binding.btnNextQuestion.text = getString(R.string.quiz_btn_return_home)
-            binding.btnNextQuestion.setOnClickListener {
-                binding.layoutFeedbackPanel.visibility = View.GONE
-                popQuizToHomeAfterAbandon("LIVES_EXHAUSTED")
-            }
+            bindLivesExhaustedFeedbackActions()
         } else {
             binding.btnNextQuestion.text = if (isLast) getString(R.string.quiz_btn_view_result) else getString(R.string.quiz_btn_next)
             binding.btnNextQuestion.setOnClickListener {
@@ -555,6 +567,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         // 어떤 경로로든 결과로 진입 시, 하단 슬라이드(피드백) 정리
         timer?.cancel()
         binding.layoutFeedbackPanel.visibility = View.GONE
+        binding.btnFeedbackRefillHearts.visibility = View.GONE
         binding.cardReviewBadge.visibility = View.GONE
 
         binding.layoutQuizResult.visibility = View.VISIBLE
@@ -753,6 +766,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                 binding.btnNextQuestion.text = getString(R.string.quiz_btn_next)
                 binding.btnNextQuestion.setOnClickListener {
                     binding.layoutFeedbackPanel.visibility = View.GONE
+                    binding.btnFeedbackRefillHearts.visibility = View.GONE
                     viewModel.nextQuestion()
                 }
             } else {
@@ -1213,6 +1227,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
     private fun showFeedback(title: String, content: String) {
         binding.layoutQuizResult.visibility = View.GONE
         binding.layoutHintButton.visibility = View.GONE
+        binding.btnFeedbackRefillHearts.visibility = View.GONE
         binding.layoutFeedbackPanel.visibility = View.VISIBLE
         binding.tvFeedbackTitle.text = title
         binding.tvFeedbackContent.text = content
