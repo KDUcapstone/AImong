@@ -17,6 +17,7 @@ import com.aimong.backend.domain.mission.entity.MissionDailyProgress;
 import com.aimong.backend.domain.mission.entity.MissionSet;
 import com.aimong.backend.domain.mission.entity.MissionSetProgress;
 import com.aimong.backend.domain.mission.entity.QuestionAnswerKey;
+import com.aimong.backend.domain.mission.entity.QuestionBank;
 import com.aimong.backend.domain.mission.entity.QuizAttempt;
 import com.aimong.backend.domain.mission.entity.QuizAttemptStatus;
 import com.aimong.backend.domain.mission.repository.MissionAnswerResultRepository;
@@ -41,12 +42,10 @@ import com.aimong.backend.global.exception.AimongException;
 import com.aimong.backend.global.exception.ErrorCode;
 import com.aimong.backend.global.util.KstDateUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -90,6 +89,7 @@ public class SubmitService {
     private final PetGrowthService petGrowthService;
     private final QuizService quizService;
     private final MissionService missionService;
+    private final QuestionAnswerMatcher questionAnswerMatcher;
     private final ObjectMapper objectMapper;
 
     @Autowired
@@ -115,6 +115,7 @@ public class SubmitService {
             PetGrowthService petGrowthService,
             QuizService quizService,
             MissionService missionService,
+            QuestionAnswerMatcher questionAnswerMatcher,
             ObjectMapper objectMapper
     ) {
         this.quizAttemptRepository = quizAttemptRepository;
@@ -138,6 +139,7 @@ public class SubmitService {
         this.petGrowthService = petGrowthService;
         this.quizService = quizService;
         this.missionService = missionService;
+        this.questionAnswerMatcher = questionAnswerMatcher;
         this.objectMapper = objectMapper;
     }
 
@@ -184,6 +186,7 @@ public class SubmitService {
         this.petGrowthService = petGrowthService;
         this.quizService = quizService;
         this.missionService = missionService;
+        this.questionAnswerMatcher = new QuestionAnswerMatcher(objectMapper);
         this.objectMapper = objectMapper;
     }
 
@@ -283,9 +286,11 @@ public class SubmitService {
         Map<UUID, QuestionAnswerKey> answerKeysById = questionAnswerKeyRepository.findAllByQuestionIdIn(questionIds)
                 .stream()
                 .collect(LinkedHashMap::new, (map, key) -> map.put(key.getQuestionId(), key), Map::putAll);
+        Map<UUID, QuestionBank> questionsById = questionBankRepository.findAllByIdIn(questionIds)
+                .stream()
+                .collect(LinkedHashMap::new, (map, question) -> map.put(question.getId(), question), Map::putAll);
 
-        if (questionBankRepository.findAllByIdIn(questionIds).size() != TOTAL_QUESTIONS
-                || answerKeysById.size() != TOTAL_QUESTIONS) {
+        if (questionsById.size() != TOTAL_QUESTIONS || answerKeysById.size() != TOTAL_QUESTIONS) {
             throw new AimongException(ErrorCode.INTERNAL_SERVER_ERROR);
         }
 
@@ -294,7 +299,10 @@ public class SubmitService {
         for (SubmitRequest.AnswerRequest answer : request.answers()) {
             UUID questionId = parseQuestionId(answer.questionId());
             QuestionAnswerKey answerKey = answerKeysById.get(questionId);
-            boolean isCorrect = answerKey != null && matchesAnswerPayload(answerKey.getAnswerPayload(), answer.answer());
+            QuestionBank question = questionsById.get(questionId);
+            boolean isCorrect = answerKey != null
+                    && question != null
+                    && questionAnswerMatcher.matches(question, answerKey.getAnswerPayload(), answer.answer());
             if (isCorrect) {
                 score++;
             }
@@ -346,7 +354,7 @@ public class SubmitService {
                     isPassed,
                     reviewXp
             ));
-            saveAnswerResults(reviewAttempt.getId(), childId, missionId, setId, true, request.answers(), answerKeysById);
+            saveAnswerResults(reviewAttempt.getId(), childId, missionId, setId, true, request.answers(), answerKeysById, questionsById);
             return buildReviewResponse(
                     childId,
                     mission,
@@ -379,7 +387,7 @@ public class SubmitService {
                     false,
                     0
             ));
-            saveAnswerResults(failedAttempt.getId(), childId, missionId, setId, false, request.answers(), answerKeysById);
+            saveAnswerResults(failedAttempt.getId(), childId, missionId, setId, false, request.answers(), answerKeysById, questionsById);
             return buildFailureResponse(childId, mission, missionSet, quizAttempt.getId(), score, wrongCount, isPerfect, childProfile, streakRecord, results);
         }
 
@@ -427,7 +435,7 @@ public class SubmitService {
                     true,
                     xpEarned
             ));
-            saveAnswerResults(passedAttempt.getId(), childId, missionId, setId, false, request.answers(), answerKeysById);
+            saveAnswerResults(passedAttempt.getId(), childId, missionId, setId, false, request.answers(), answerKeysById, questionsById);
             if (setId != null) {
                 final Integer progressStarLevel = missionSet == null ? starLevel : missionSet.getStarLevel();
                 final Integer progressVariantNo = missionSet == null ? variantNo : missionSet.getVariantNo();
@@ -679,13 +687,17 @@ public class SubmitService {
             String setId,
             boolean isReview,
             List<SubmitRequest.AnswerRequest> answers,
-            Map<UUID, QuestionAnswerKey> answerKeysById
+            Map<UUID, QuestionAnswerKey> answerKeysById,
+            Map<UUID, QuestionBank> questionsById
     ) {
         List<MissionAnswerResult> results = new ArrayList<>();
         for (SubmitRequest.AnswerRequest answer : answers) {
             UUID questionId = parseQuestionId(answer.questionId());
             QuestionAnswerKey answerKey = answerKeysById.get(questionId);
-            boolean isCorrect = answerKey != null && matchesAnswerPayload(answerKey.getAnswerPayload(), answer.answer());
+            QuestionBank question = questionsById.get(questionId);
+            boolean isCorrect = answerKey != null
+                    && question != null
+                    && questionAnswerMatcher.matches(question, answerKey.getAnswerPayload(), answer.answer());
             results.add(MissionAnswerResult.create(
                     attemptId,
                     childId,
@@ -758,75 +770,6 @@ public class SubmitService {
         } catch (IllegalArgumentException exception) {
             throw new AimongException(ErrorCode.BAD_REQUEST);
         }
-    }
-
-    private boolean matchesAnswerPayload(String answerPayload, String selected) {
-        Set<String> expectedValues = parseExpectedAnswerValues(answerPayload);
-        String normalizedSelected = normalizeAnswerText(selected);
-        return expectedValues.stream()
-                .map(this::normalizeAnswerText)
-                .anyMatch(normalizedSelected::equals);
-    }
-
-    private Set<String> parseExpectedAnswerValues(String answerPayload) {
-        try {
-            JsonNode root = objectMapper.readTree(answerPayload);
-            Set<String> values = new HashSet<>();
-            collectExpectedAnswerValues(root, values);
-            return values;
-        } catch (JsonProcessingException exception) {
-            throw new AimongException(ErrorCode.INTERNAL_SERVER_ERROR, exception);
-        }
-    }
-
-    private void collectExpectedAnswerValues(JsonNode node, Set<String> values) {
-        if (node == null || node.isNull()) {
-            return;
-        }
-        if (node.isTextual() || node.isNumber() || node.isBoolean()) {
-            addAnswerValue(values, node.asText());
-            return;
-        }
-        if (node.isArray()) {
-            node.forEach(child -> collectExpectedAnswerValues(child, values));
-            return;
-        }
-        if (node.has("value")) {
-            addAnswerValue(values, node.get("value").asText());
-        }
-        if (node.has("values") && node.get("values").isArray()) {
-            List<String> fillValues = new ArrayList<>();
-            node.get("values").forEach(valueNode -> {
-                String value = valueNode.asText();
-                addAnswerValue(values, value);
-                fillValues.add(value);
-            });
-            if (!fillValues.isEmpty()) {
-                addAnswerValue(values, String.join(",", fillValues));
-                addAnswerValue(values, String.join(" ", fillValues));
-            }
-        }
-        if (node.has("index")) {
-            addAnswerValue(values, node.get("index").asText());
-        }
-    }
-
-    private void addAnswerValue(Set<String> values, String value) {
-        values.add(value);
-        if ("true".equalsIgnoreCase(value)) {
-            values.add("O");
-            values.add("o");
-            values.add("true");
-        }
-        if ("false".equalsIgnoreCase(value)) {
-            values.add("X");
-            values.add("x");
-            values.add("false");
-        }
-    }
-
-    private String normalizeAnswerText(String value) {
-        return value == null ? "" : value.trim();
     }
 
     private void grantTickets(UUID childId, TicketType ticketType, int count) {

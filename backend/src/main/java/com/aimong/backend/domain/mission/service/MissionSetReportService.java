@@ -7,14 +7,13 @@ import com.aimong.backend.domain.mission.entity.MissionAnswerResult;
 import com.aimong.backend.domain.mission.entity.MissionSet;
 import com.aimong.backend.domain.mission.repository.MissionAnswerResultRepository;
 import com.aimong.backend.domain.mission.repository.MissionAttemptRepository;
+import com.aimong.backend.domain.mission.repository.QuestionBankRepository;
 import com.aimong.backend.domain.mission.repository.QuestionAnswerKeyRepository;
 import com.aimong.backend.domain.mission.entity.QuestionAnswerKey;
+import com.aimong.backend.domain.mission.entity.QuestionBank;
 import com.aimong.backend.domain.mission.repository.MissionSetRepository;
 import com.aimong.backend.global.exception.AimongException;
 import com.aimong.backend.global.exception.ErrorCode;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -35,8 +34,9 @@ public class MissionSetReportService {
     private final MissionAnswerResultRepository missionAnswerResultRepository;
     private final MissionAttemptRepository missionAttemptRepository;
     private final QuestionAnswerKeyRepository questionAnswerKeyRepository;
+    private final QuestionBankRepository questionBankRepository;
     private final ChildActivityService childActivityService;
-    private final ObjectMapper objectMapper;
+    private final QuestionAnswerMatcher questionAnswerMatcher;
 
     @Transactional(readOnly = true)
     public MissionSetReportResponse getReport(UUID childId, String setId) {
@@ -52,6 +52,10 @@ public class MissionSetReportService {
                 .findAllByQuestionIdIn(answerResults.stream().map(MissionAnswerResult::getQuestionId).toList())
                 .stream()
                 .collect(Collectors.toMap(QuestionAnswerKey::getQuestionId, Function.identity()));
+        Map<UUID, QuestionBank> questions = questionBankRepository
+                .findAllByIdIn(answerResults.stream().map(MissionAnswerResult::getQuestionId).toList())
+                .stream()
+                .collect(Collectors.toMap(QuestionBank::getId, Function.identity()));
         int correctCount = (int) answerResults.stream().filter(MissionAnswerResult::isCorrect).count();
         int questionCount = answerResults.size();
 
@@ -76,7 +80,7 @@ public class MissionSetReportService {
                         List.of()
                 ),
                 IntStream.range(0, answerResults.size())
-                        .mapToObj(index -> toResultResponse(index, answerResults.get(index), answerKeys))
+                        .mapToObj(index -> toResultResponse(index, answerResults.get(index), answerKeys, questions))
                         .toList()
         );
     }
@@ -95,42 +99,18 @@ public class MissionSetReportService {
     private MissionSetReportResponse.ResultResponse toResultResponse(
             int index,
             MissionAnswerResult result,
-            Map<UUID, QuestionAnswerKey> answerKeys
+            Map<UUID, QuestionAnswerKey> answerKeys,
+            Map<UUID, QuestionBank> questions
     ) {
         QuestionAnswerKey answerKey = answerKeys.get(result.getQuestionId());
+        QuestionBank question = questions.get(result.getQuestionId());
         return new MissionSetReportResponse.ResultResponse(
                 result.getQuestionId(),
                 index + 1,
                 result.isCorrect(),
-                answerKey == null ? null : correctAnswer(answerKey.getAnswerPayload()),
+                answerKey == null || question == null ? null : questionAnswerMatcher.displayAnswer(question, answerKey.getAnswerPayload()),
                 result.getSelectedAnswer(),
                 answerKey == null ? null : answerKey.getExplanation()
         );
-    }
-
-    private String correctAnswer(String answerPayload) {
-        try {
-            JsonNode root = objectMapper.readTree(answerPayload);
-            if (root == null || root.isNull()) {
-                return null;
-            }
-            if (root.isTextual() || root.isNumber() || root.isBoolean()) {
-                return root.asText();
-            }
-            if (root.has("value")) {
-                return root.get("value").asText();
-            }
-            if (root.has("values") && root.get("values").isArray()) {
-                List<String> values = new java.util.ArrayList<>();
-                root.get("values").forEach(value -> values.add(value.asText()));
-                return String.join(", ", values);
-            }
-            if (root.has("index")) {
-                return root.get("index").asText();
-            }
-            return null;
-        } catch (JsonProcessingException exception) {
-            throw new AimongException(ErrorCode.INTERNAL_SERVER_ERROR, exception);
-        }
     }
 }
