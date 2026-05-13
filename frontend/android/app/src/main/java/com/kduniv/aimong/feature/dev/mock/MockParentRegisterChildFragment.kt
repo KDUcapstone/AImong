@@ -1,18 +1,21 @@
 package com.kduniv.aimong.feature.dev.mock
 
 import android.content.Intent
-import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
+import com.google.android.material.snackbar.Snackbar
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import com.kduniv.aimong.MainActivity
 import com.kduniv.aimong.R
 import com.kduniv.aimong.core.local.SessionManager
+import com.kduniv.aimong.core.network.model.ParentChildItem
 import com.kduniv.aimong.core.network.model.ParentRegisterResponse
 import com.kduniv.aimong.core.ui.BaseFragment
 import com.kduniv.aimong.core.util.setOnScaleTouchListener
 import com.kduniv.aimong.databinding.FragmentParentRegisterChildBinding
-import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.util.UUID
 import javax.inject.Inject
@@ -24,6 +27,11 @@ class MockParentRegisterChildFragment :
 
     @Inject
     lateinit var sessionManager: SessionManager
+
+    @Inject
+    lateinit var gson: Gson
+
+    private val childListType = object : TypeToken<MutableList<ParentChildItem>>() {}.type
 
     override fun initView() {
         binding.btnBack.setOnClickListener {
@@ -59,12 +67,13 @@ class MockParentRegisterChildFragment :
 
     private fun showSuccessDialog(data: ParentRegisterResponse) {
         val bottomSheet = com.kduniv.aimong.feature.auth.presentation.ChildRegisterSuccessBottomSheet.newInstance(data)
-        bottomSheet.onConfirmClick = { navigateParentHome() }
+        bottomSheet.onConfirmClick = { navigateParentHome(data) }
         bottomSheet.show(parentFragmentManager, "child_register_success")
     }
 
-    private fun navigateParentHome() {
+    private fun navigateParentHome(lastRegistered: ParentRegisterResponse) {
         viewLifecycleOwner.lifecycleScope.launch {
+            persistMockChildToCache(lastRegistered)
             sessionManager.saveSession("PARENT", 1, "")
             val intent = Intent(requireContext(), MainActivity::class.java).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
@@ -72,6 +81,29 @@ class MockParentRegisterChildFragment :
             }
             startActivity(intent)
         }
+    }
+
+    private suspend fun persistMockChildToCache(data: ParentRegisterResponse) {
+        val currentJson = sessionManager.parentChildrenJson.first()
+        val list: MutableList<ParentChildItem> = if (currentJson.isNullOrBlank()) {
+            mutableListOf()
+        } else {
+            runCatching { gson.fromJson<MutableList<ParentChildItem>>(currentJson, childListType) }
+                .getOrElse { mutableListOf() }
+        }
+        list.add(
+            ParentChildItem(
+                childId = data.childId,
+                nickname = data.nickname,
+                code = data.code,
+                profileImageType = "DEFAULT",
+                totalXp = 0,
+                hasFcmToken = false,
+                lastActiveAt = null,
+                createdAt = null
+            )
+        )
+        sessionManager.saveParentChildrenJson(gson.toJson(list))
     }
 
     override fun initObserver() {}

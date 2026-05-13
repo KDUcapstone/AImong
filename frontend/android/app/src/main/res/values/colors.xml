@@ -31,6 +31,7 @@
 
     <!-- 텍스트 -->
     <color name="text_white">#FFFFFF</color>
+    <color name="aimong_bottom_nav_bg">#050C1F</color>
     <color name="text_grey">#9E9E9E</color>
     <color name="text_sub_grey">#757575</color>
     <color name="chat_privacy_highlight">#66FF6D00</color>

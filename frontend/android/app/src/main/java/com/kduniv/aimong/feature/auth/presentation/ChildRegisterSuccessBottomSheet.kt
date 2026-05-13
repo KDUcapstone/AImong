@@ -1,10 +1,16 @@
 package com.kduniv.aimong.feature.auth.presentation
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import com.google.android.material.snackbar.Snackbar
 import com.kduniv.aimong.R
 import com.kduniv.aimong.core.network.model.ParentRegisterResponse
 import com.kduniv.aimong.databinding.BottomSheetChildRegisterSuccessBinding
@@ -29,22 +35,31 @@ class ChildRegisterSuccessBottomSheet : BottomSheetDialogFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        
-        // 클릭 외 바깥 영역 터치나 스와이프로 닫히지 않게 강제
+
         isCancelable = false
 
-        val nickname = arguments?.getString(ARG_NICKNAME) ?: ""
         val code = arguments?.getString(ARG_CODE) ?: ""
-        val tickets = arguments?.getInt(ARG_TICKETS) ?: 0
 
-        binding.tvNickname.text = nickname
         binding.tvConnectCode.text = code
-        binding.tvTickets.text = "${tickets}장"
+
+        binding.btnCopyCode.setOnClickListener {
+            val cm = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            cm.setPrimaryClip(ClipData.newPlainText("child_code", code))
+            Snackbar.make(binding.root, R.string.child_register_code_copied, Snackbar.LENGTH_SHORT).show()
+        }
 
         binding.btnConfirm.setOnClickListener {
             dismiss()
             onConfirmClick?.invoke()
         }
+
+        val basePadBottom = binding.root.paddingBottom
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
+            val nav = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
+            v.setPadding(v.paddingLeft, v.paddingTop, v.paddingRight, basePadBottom + nav.bottom)
+            insets
+        }
+        ViewCompat.requestApplyInsets(binding.root)
     }
 
     override fun onDestroyView() {

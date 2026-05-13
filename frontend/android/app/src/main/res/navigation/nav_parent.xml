@@ -19,6 +19,6 @@
         android:id="@+id/privacyLogFragment"
         android:name="com.kduniv.aimong.feature.parent.presentation.PrivacyLogFragment"
         android:label="Privacy Log"
-        tools:layout="@layout/fragment_role_select" />
+        tools:layout="@layout/fragment_parent_privacy_log" />
 
 </navigation>

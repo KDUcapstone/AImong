@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Aimongmockup 부모 플로우 (Tailwind gray/green/blue 계열) -->
+    <color name="parent_mock_bg">#F9FAFB</color>
+    <color name="parent_mock_surface">#FFFFFF</color>
+    <color name="parent_mock_border">#E5E7EB</color>
+    <color name="parent_mock_border_strong">#D1D5DB</color>
+    <color name="parent_mock_text_primary">#1F2937</color>
+    <color name="parent_mock_text_secondary">#4B5563</color>
+    <color name="parent_mock_text_muted">#6B7280</color>
+    <color name="parent_mock_text_hint">#9CA3AF</color>
+    <color name="parent_mock_green">#16A34A</color>
+    <color name="parent_mock_green_dark">#15803D</color>
+    <color name="parent_mock_green_soft">#DCFCE7</color>
+    <color name="parent_mock_green_code">#16A34A</color>
+    <color name="parent_mock_blue">#2563EB</color>
+    <color name="parent_mock_indigo">#4F46E5</color>
+    <color name="parent_mock_code_gradient_start">#EFF6FF</color>
+    <color name="parent_mock_code_gradient_end">#F0FDF4</color>
+    <color name="parent_mock_yellow_box_bg">#FFFBEB</color>
+    <color name="parent_mock_yellow_box_border">#FDE047</color>
+    <color name="parent_mock_yellow_box_text">#854D0E</color>
+    <color name="parent_mock_header_shadow">#0D000000</color>
+    <color name="parent_mock_google_shadow">#14000000</color>
+    <color name="parent_mock_card_shadow">#12000000</color>
+    <color name="parent_mock_logout">#DC2626</color>
+    <color name="parent_mock_indigo_accent">#4F46E5</color>
+    <color name="parent_mock_blue_soft">#DBEAFE</color>
+</resources>

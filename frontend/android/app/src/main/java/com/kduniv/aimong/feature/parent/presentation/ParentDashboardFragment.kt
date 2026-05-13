@@ -1,10 +1,12 @@
 package com.kduniv.aimong.feature.parent.presentation
 
 import android.content.Intent
+import android.view.View
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
@@ -39,7 +41,16 @@ class ParentDashboardFragment : BaseFragment<FragmentParentDashboardBinding>(Fra
     private fun updateDashboardTitle() {
         val childNickname = latestSelectedChildId
             ?.let { id -> latestChildren.firstOrNull { it.childId == id }?.nickname }
-        binding.tvTitle.text = titleForParentDashboard(childNickname)
+        binding.tvBrandTitle.text = titleForParentDashboard(childNickname)
+    }
+
+    private fun updateRichChildLabel() {
+        val nick = latestSelectedChildId
+            ?.let { id -> latestChildren.firstOrNull { it.childId == id }?.nickname?.trim() }
+            ?.takeIf { it.isNotEmpty() }
+            ?: latestChildren.firstOrNull()?.nickname?.trim()?.takeIf { it.isNotEmpty() }
+        binding.includeDashboardRich.tvDashboardSelectedChild.text =
+            nick ?: getString(R.string.parent_dashboard_child_select_placeholder)
     }
 
     override fun initView() {
@@ -52,11 +63,14 @@ class ParentDashboardFragment : BaseFragment<FragmentParentDashboardBinding>(Fra
         binding.rvChildren.adapter = adapter
 
         binding.btnSyncChildren.setOnClickListener { viewModel.syncChildren() }
-        // v2.0 기준: 대시보드 진입/연동 판단은 자녀 상세(/parent/children/{childId})로 통일
         binding.btnFetchSummary.setOnClickListener { viewModel.fetchChildDetail() }
         binding.btnFetchWeeklyStats.setOnClickListener { viewModel.fetchChildDetail() }
         binding.btnFetchPrivacyLog.setOnClickListener { viewModel.fetchChildDetail() }
         binding.btnFetchWeakPoints.setOnClickListener { viewModel.fetchChildDetail() }
+
+        binding.includeDashboardRich.btnDashboardPrivacyMore.setOnClickListener {
+            findNavController().navigate(R.id.action_parentDashboardFragment_to_privacyLogFragment)
+        }
 
         binding.btnLogout.setOnClickListener {
             FirebaseAuth.getInstance().signOut()
@@ -78,13 +92,18 @@ class ParentDashboardFragment : BaseFragment<FragmentParentDashboardBinding>(Fra
                     viewModel.children.collect { children ->
                         latestChildren = children
                         adapter.submitList(children)
+                        val empty = children.isEmpty()
+                        binding.cardEmptyChildren.visibility = if (empty) View.VISIBLE else View.GONE
+                        binding.includeDashboardRich.root.visibility = if (empty) View.GONE else View.VISIBLE
                         updateDashboardTitle()
+                        updateRichChildLabel()
                     }
                 }
                 launch {
                     viewModel.selectedChildId.collect { id ->
                         latestSelectedChildId = id
                         updateDashboardTitle()
+                        updateRichChildLabel()
                     }
                 }
                 launch {
@@ -98,7 +117,6 @@ class ParentDashboardFragment : BaseFragment<FragmentParentDashboardBinding>(Fra
                                 "자녀 상태\n아직 자녀가 코드를 입력하지 않았어요!\n- 닉네임: ${d.nickname}\n- 코드: ${d.code}\n- 연동: 대기"
                             }
 
-                        // 기존 카드들은 v2-only에서 레거시 호출을 하지 않도록 우선 비워둠(추후 목업 UI로 교체 예정)
                         binding.tvParentWeeklyStats.text = "주간 통계: (v2 전환 중)"
                         binding.tvParentPrivacyLog.text = "개인정보 감지: (v2 전환 중)"
                         binding.tvParentWeakPoints.text = "약점 분석: (v2 전환 중)"
@@ -113,4 +131,3 @@ class ParentDashboardFragment : BaseFragment<FragmentParentDashboardBinding>(Fra
         }
     }
 }
-

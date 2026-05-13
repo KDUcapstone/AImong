@@ -77,7 +77,7 @@ class ParentLoginFragment : BaseFragment<FragmentParentLoginBinding>(FragmentPar
                 val credential = GoogleAuthProvider.getCredential(idToken, null)
                 firebaseAuth.signInWithCredential(credential).await()
                 registerParentFcmTokenUseCase(requireParentSession = false)
-                findNavController().navigate(R.id.action_parentLoginFragment_to_parentOnboardingFragment)
+                findNavController().navigate(R.id.action_parentLoginFragment_to_parentRegisterChildFragment)
             } catch (e: Exception) {
                 Snackbar.make(
                     binding.root,
