@@ -6,7 +6,6 @@ import com.aimong.backend.domain.gacha.dto.DevGachaGrantResponse;
 import com.aimong.backend.domain.gacha.dto.FragmentListResponse;
 import com.aimong.backend.domain.gacha.dto.GachaPullResponse;
 import com.aimong.backend.domain.gacha.entity.Fragment;
-import com.aimong.backend.domain.gacha.entity.FragmentId;
 import com.aimong.backend.domain.gacha.entity.Ticket;
 import com.aimong.backend.domain.gacha.entity.TicketType;
 import com.aimong.backend.domain.gacha.repository.FragmentRepository;
@@ -79,7 +78,7 @@ public class DevGachaGrantService {
         return new FragmentListResponse(Arrays.stream(PetGrade.values())
                 .map(grade -> new FragmentListResponse.FragmentSummary(
                         grade.name(),
-                        fragmentRepository.findById(new FragmentId(childId, grade))
+                        fragmentRepository.findByChildIdAndGrade(childId, grade)
                                 .map(Fragment::getCount)
                                 .orElse(0),
                         exchangeThreshold(grade)

@@ -28,7 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class MissionSetReportService {
 
-    private static final int MISSION_CLEAR_COIN = 30;
+    private static final int MISSION_CLEAR_GEAR = 30;
 
     private final MissionSetRepository missionSetRepository;
     private final MissionAnswerResultRepository missionAnswerResultRepository;
@@ -75,7 +75,7 @@ public class MissionSetReportService {
                 attempt.isReview(),
                 attempt.getSubmittedAt(),
                 new MissionSetReportResponse.RewardsResponse(
-                        coinEarned(attempt),
+                        gearEarned(attempt),
                         attempt.getXpEarned(),
                         List.of()
                 ),
@@ -85,8 +85,8 @@ public class MissionSetReportService {
         );
     }
 
-    private int coinEarned(MissionAttempt attempt) {
-        return attempt.isPassed() && !attempt.isReview() ? MISSION_CLEAR_COIN : 0;
+    private int gearEarned(MissionAttempt attempt) {
+        return attempt.isPassed() && !attempt.isReview() ? MISSION_CLEAR_GEAR : 0;
     }
 
     private int responseScore(int correctCount, int total) {

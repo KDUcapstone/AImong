@@ -1,3 +1,5 @@
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 CREATE SCHEMA IF NOT EXISTS private;
 
 DO $$ BEGIN
@@ -73,6 +75,18 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 DO $$ BEGIN
+    CREATE TYPE currency_transaction_reason_enum AS ENUM (
+        'HEART_REVIVE',
+        'STREAK_SHIELD_PURCHASE',
+        'MISSION_CLEAR',
+        'QUEST_REWARD',
+        'ACHIEVEMENT_REWARD',
+        'RETURN_REWARD',
+        'ADMIN_ADJUST'
+    );
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+DO $$ BEGIN
     CREATE DOMAIN child_code AS TEXT CHECK (VALUE ~ '^[0-9]{6}$');
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
@@ -95,7 +109,7 @@ CREATE TABLE IF NOT EXISTS public.parent_notification_settings (
 );
 
 CREATE TABLE IF NOT EXISTS public.child_profiles (
-    child_id UUID PRIMARY KEY,
+    child_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     parent_id TEXT NOT NULL REFERENCES public.parent_accounts(parent_id) ON DELETE CASCADE,
     nickname TEXT NOT NULL,
     code child_code UNIQUE,
@@ -108,6 +122,7 @@ CREATE TABLE IF NOT EXISTS public.child_profiles (
     gacha_pull_count INT NOT NULL DEFAULT 0 CHECK (gacha_pull_count >= 0),
     sr_miss_count INT NOT NULL DEFAULT 0 CHECK (sr_miss_count >= 0),
     shield_count INT NOT NULL DEFAULT 0 CHECK (shield_count >= 0),
+    gear INT NOT NULL DEFAULT 0 CHECK (gear >= 0),
     equipped_pet_id UUID,
     profile_image_type profile_image_type_enum NOT NULL DEFAULT 'DEFAULT',
     session_version BIGINT NOT NULL DEFAULT 0,
@@ -124,7 +139,7 @@ CREATE TABLE IF NOT EXISTS public.child_profiles (
 CREATE INDEX IF NOT EXISTS idx_child_profiles_parent ON public.child_profiles(parent_id);
 
 CREATE TABLE IF NOT EXISTS public.missions (
-    id UUID PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     stage SMALLINT NOT NULL CHECK (stage BETWEEN 1 AND 3),
     title TEXT NOT NULL,
     mission_code VARCHAR(16) UNIQUE,
@@ -152,7 +167,7 @@ CREATE INDEX IF NOT EXISTS idx_mission_sets_active_star
     ON public.mission_sets(mission_id, star_level, is_active, variant_no);
 
 CREATE TABLE IF NOT EXISTS public.question_bank (
-    id UUID PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     mission_id UUID NOT NULL REFERENCES public.missions(id) ON DELETE CASCADE,
     set_id VARCHAR(32) REFERENCES public.mission_sets(set_id) ON DELETE SET NULL,
     question_type question_type_enum NOT NULL,
@@ -186,7 +201,7 @@ CREATE TABLE IF NOT EXISTS private.question_answer_keys (
 );
 
 CREATE TABLE IF NOT EXISTS private.question_quality_issues (
-    id UUID PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     question_id UUID NOT NULL REFERENCES public.question_bank(id) ON DELETE CASCADE,
     mission_id UUID NOT NULL REFERENCES public.missions(id) ON DELETE CASCADE,
     reported_by_child_id UUID,
@@ -205,7 +220,7 @@ CREATE INDEX IF NOT EXISTS idx_question_quality_issues_question_status
     ON private.question_quality_issues(question_id, issue_status, issue_source);
 
 CREATE TABLE IF NOT EXISTS public.quiz_attempts (
-    id UUID PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     child_id UUID NOT NULL REFERENCES public.child_profiles(child_id) ON DELETE CASCADE,
     mission_id UUID NOT NULL REFERENCES public.missions(id) ON DELETE CASCADE,
     set_id VARCHAR(32) NOT NULL REFERENCES public.mission_sets(set_id),
@@ -219,6 +234,10 @@ CREATE TABLE IF NOT EXISTS public.quiz_attempts (
     status attempt_status_enum NOT NULL DEFAULT 'IN_PROGRESS',
     abandoned_at TIMESTAMPTZ,
     abandon_reason VARCHAR(64),
+    remaining_lives SMALLINT NOT NULL DEFAULT 3 CHECK (remaining_lives BETWEEN 0 AND 3),
+    wrong_count_in_session SMALLINT NOT NULL DEFAULT 0 CHECK (wrong_count_in_session >= 0),
+    revive_count SMALLINT NOT NULL DEFAULT 0 CHECK (revive_count BETWEEN 0 AND 1),
+    revived_at TIMESTAMPTZ,
     CONSTRAINT chk_quiz_attempts_submitted_consistency CHECK ((status = 'SUBMITTED') = (submitted_at IS NOT NULL)),
     CONSTRAINT chk_quiz_attempts_abandoned_consistency CHECK ((status = 'ABANDONED') = (abandoned_at IS NOT NULL)),
     CONSTRAINT chk_quiz_attempts_submitted_after_created CHECK (submitted_at IS NULL OR submitted_at >= created_at),
@@ -231,7 +250,7 @@ CREATE INDEX IF NOT EXISTS idx_quiz_attempts_child_set
     ON public.quiz_attempts(child_id, set_id, created_at DESC);
 
 CREATE TABLE IF NOT EXISTS public.mission_attempts (
-    attempt_id UUID PRIMARY KEY,
+    attempt_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     child_id UUID NOT NULL REFERENCES public.child_profiles(child_id) ON DELETE CASCADE,
     mission_id UUID NOT NULL REFERENCES public.missions(id) ON DELETE CASCADE,
     set_id VARCHAR(32) NOT NULL REFERENCES public.mission_sets(set_id),
@@ -258,7 +277,7 @@ CREATE INDEX IF NOT EXISTS idx_mission_attempts_child_star_date
     ON public.mission_attempts(child_id, star_level, attempt_date);
 
 CREATE TABLE IF NOT EXISTS public.mission_answer_results (
-    result_id UUID PRIMARY KEY,
+    result_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     attempt_id UUID NOT NULL REFERENCES public.mission_attempts(attempt_id) ON DELETE CASCADE,
     child_id UUID NOT NULL REFERENCES public.child_profiles(child_id) ON DELETE CASCADE,
     mission_id UUID NOT NULL REFERENCES public.missions(id) ON DELETE CASCADE,
@@ -288,7 +307,7 @@ CREATE TABLE IF NOT EXISTS public.mission_daily_progress (
 );
 
 CREATE TABLE IF NOT EXISTS public.pets (
-    id UUID PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     child_id UUID NOT NULL REFERENCES public.child_profiles(child_id) ON DELETE CASCADE,
     pet_type TEXT NOT NULL,
     grade pet_grade_enum NOT NULL,
@@ -324,7 +343,7 @@ CREATE TABLE IF NOT EXISTS public.mission_set_progress (
 );
 
 CREATE TABLE IF NOT EXISTS public.tickets (
-    ticket_id UUID PRIMARY KEY,
+    ticket_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     child_id UUID NOT NULL REFERENCES public.child_profiles(child_id) ON DELETE CASCADE,
     ticket_type ticket_type_enum NOT NULL,
     used_at TIMESTAMPTZ,
@@ -335,7 +354,7 @@ CREATE INDEX IF NOT EXISTS idx_tickets_child_unused
     ON public.tickets(child_id, ticket_type) WHERE used_at IS NULL;
 
 CREATE TABLE IF NOT EXISTS public.gacha_pulls (
-    id UUID PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     child_id UUID NOT NULL REFERENCES public.child_profiles(child_id) ON DELETE CASCADE,
     ticket_type ticket_type_enum NOT NULL,
     result_pet_code TEXT NOT NULL,
@@ -351,11 +370,12 @@ CREATE INDEX IF NOT EXISTS idx_gacha_pulls_child
     ON public.gacha_pulls(child_id, pulled_at DESC);
 
 CREATE TABLE IF NOT EXISTS public.pet_fragments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     child_id UUID NOT NULL REFERENCES public.child_profiles(child_id) ON DELETE CASCADE,
     grade pet_grade_enum NOT NULL,
     count INT NOT NULL DEFAULT 0 CHECK (count >= 0),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    PRIMARY KEY (child_id, grade)
+    UNIQUE (child_id, grade)
 );
 
 CREATE TABLE IF NOT EXISTS public.streak_records (
@@ -367,6 +387,20 @@ CREATE TABLE IF NOT EXISTS public.streak_records (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS public.currency_transactions (
+    transaction_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    child_id UUID NOT NULL REFERENCES public.child_profiles(child_id) ON DELETE CASCADE,
+    amount INT NOT NULL CHECK (amount <> 0),
+    balance_after INT NOT NULL CHECK (balance_after >= 0),
+    reason currency_transaction_reason_enum NOT NULL,
+    ref_type TEXT,
+    ref_id TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_currency_transactions_child
+    ON public.currency_transactions(child_id, created_at DESC);
+
 CREATE TABLE IF NOT EXISTS public.friend_streaks (
     child_id UUID PRIMARY KEY REFERENCES public.child_profiles(child_id) ON DELETE CASCADE,
     partner_child_id UUID NOT NULL UNIQUE REFERENCES public.child_profiles(child_id) ON DELETE CASCADE,
@@ -375,19 +409,21 @@ CREATE TABLE IF NOT EXISTS public.friend_streaks (
 );
 
 CREATE TABLE IF NOT EXISTS public.streak_milestones (
-    id UUID PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     child_id UUID NOT NULL REFERENCES public.child_profiles(child_id) ON DELETE CASCADE,
-    target_days SMALLINT NOT NULL CHECK (target_days > 0),
-    tier SMALLINT NOT NULL CHECK (tier > 0),
+    target_days SMALLINT NOT NULL CHECK (target_days > 30),
+    tier SMALLINT NOT NULL CHECK (tier IN (1, 2, 3)),
     achieved BOOLEAN NOT NULL DEFAULT FALSE,
     reward_claimed BOOLEAN NOT NULL DEFAULT FALSE,
     achieved_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE (child_id, target_days)
+    UNIQUE (child_id, target_days),
+    CHECK (reward_claimed = FALSE OR achieved = TRUE),
+    CHECK ((achieved = FALSE AND achieved_at IS NULL) OR (achieved = TRUE AND achieved_at IS NOT NULL))
 );
 
 CREATE TABLE IF NOT EXISTS public.milestone_rewards (
-    id UUID PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     child_id UUID NOT NULL REFERENCES public.child_profiles(child_id) ON DELETE CASCADE,
     milestone_days SMALLINT NOT NULL CHECK (milestone_days > 0),
     rewarded_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -395,7 +431,7 @@ CREATE TABLE IF NOT EXISTS public.milestone_rewards (
 );
 
 CREATE TABLE IF NOT EXISTS public.daily_quest_progress (
-    id UUID PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     child_id UUID NOT NULL REFERENCES public.child_profiles(child_id) ON DELETE CASCADE,
     date DATE NOT NULL,
     quest_type daily_quest_type_enum NOT NULL,
@@ -407,7 +443,7 @@ CREATE TABLE IF NOT EXISTS public.daily_quest_progress (
 );
 
 CREATE TABLE IF NOT EXISTS public.weekly_quest_progress (
-    id UUID PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     child_id UUID NOT NULL REFERENCES public.child_profiles(child_id) ON DELETE CASCADE,
     week_start DATE NOT NULL,
     quest_type weekly_quest_type_enum NOT NULL,
@@ -419,7 +455,7 @@ CREATE TABLE IF NOT EXISTS public.weekly_quest_progress (
 );
 
 CREATE TABLE IF NOT EXISTS public.achievement_progress (
-    id UUID PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     child_id UUID NOT NULL REFERENCES public.child_profiles(child_id) ON DELETE CASCADE,
     achievement_type achievement_type_enum NOT NULL,
     current_value INT NOT NULL DEFAULT 0 CHECK (current_value >= 0),
@@ -429,7 +465,7 @@ CREATE TABLE IF NOT EXISTS public.achievement_progress (
 );
 
 CREATE TABLE IF NOT EXISTS public.privacy_events (
-    id UUID PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     child_id UUID NOT NULL REFERENCES public.child_profiles(child_id) ON DELETE CASCADE,
     detected_type privacy_detected_type_enum NOT NULL,
     masked BOOLEAN NOT NULL DEFAULT FALSE,
@@ -448,7 +484,7 @@ CREATE TABLE IF NOT EXISTS public.chat_usage (
 );
 
 CREATE TABLE IF NOT EXISTS public.return_reward_claims (
-    id UUID PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     child_id UUID NOT NULL REFERENCES public.child_profiles(child_id) ON DELETE CASCADE,
     base_last_completed_date DATE NOT NULL,
     ticket_count INT NOT NULL CHECK (ticket_count BETWEEN 1 AND 3),
@@ -467,7 +503,7 @@ CREATE INDEX IF NOT EXISTS idx_login_attempts_expiry
     ON public.login_attempts(expires_at, locked_until);
 
 CREATE TABLE IF NOT EXISTS public.fcm_notification_events (
-    id UUID PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     parent_id VARCHAR(255) NOT NULL REFERENCES public.parent_accounts(parent_id) ON DELETE CASCADE,
     child_id UUID REFERENCES public.child_profiles(child_id) ON DELETE CASCADE,
     notification_type VARCHAR(32) NOT NULL,
@@ -521,6 +557,7 @@ ALTER TABLE public.tickets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.gacha_pulls ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.pet_fragments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.streak_records ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.currency_transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.friend_streaks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.streak_milestones ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.milestone_rewards ENABLE ROW LEVEL SECURITY;
@@ -569,6 +606,8 @@ DROP POLICY IF EXISTS backend_pet_fragments_all ON public.pet_fragments;
 CREATE POLICY backend_pet_fragments_all ON public.pet_fragments FOR ALL USING (TRUE) WITH CHECK (TRUE);
 DROP POLICY IF EXISTS backend_streak_records_all ON public.streak_records;
 CREATE POLICY backend_streak_records_all ON public.streak_records FOR ALL USING (TRUE) WITH CHECK (TRUE);
+DROP POLICY IF EXISTS backend_currency_transactions_all ON public.currency_transactions;
+CREATE POLICY backend_currency_transactions_all ON public.currency_transactions FOR ALL USING (TRUE) WITH CHECK (TRUE);
 DROP POLICY IF EXISTS backend_friend_streaks_all ON public.friend_streaks;
 CREATE POLICY backend_friend_streaks_all ON public.friend_streaks FOR ALL USING (TRUE) WITH CHECK (TRUE);
 DROP POLICY IF EXISTS backend_streak_milestones_all ON public.streak_milestones;

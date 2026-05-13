@@ -74,6 +74,9 @@ public class ChildProfile {
     @Column(name = "shield_count", nullable = false)
     private int shieldCount;
 
+    @Column(name = "gear", nullable = false)
+    private int gear;
+
     @Column(name = "equipped_pet_id")
     private UUID equippedPetId;
 
@@ -115,6 +118,7 @@ public class ChildProfile {
                 0,
                 null,
                 null,
+                0,
                 0,
                 0,
                 0,
@@ -211,6 +215,24 @@ public class ChildProfile {
 
     public void addShield(int count) {
         shieldCount += count;
+    }
+
+    public void addGear(int amount) {
+        if (amount < 0) {
+            throw new IllegalArgumentException("amount must be non-negative");
+        }
+        gear += amount;
+    }
+
+    public boolean consumeGear(int amount) {
+        if (amount < 0) {
+            throw new IllegalArgumentException("amount must be non-negative");
+        }
+        if (gear < amount) {
+            return false;
+        }
+        gear -= amount;
+        return true;
     }
 
     public void recoverEnergy(Instant now) {

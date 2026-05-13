@@ -23,7 +23,7 @@ public record MissionSetReportResponse(
         List<ResultResponse> results
 ) {
     public record RewardsResponse(
-            int coin,
+            int gear,
             int exp,
             List<FragmentResponse> fragments
     ) {

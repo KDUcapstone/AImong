@@ -47,6 +47,7 @@ public class QuizService {
     private final MissionQuestionSetFactory missionQuestionSetFactory;
     private final QuestionServingQualityGuard questionServingQualityGuard;
     private final MissionQuestionProperties missionQuestionProperties;
+    private final QuestionTermHintService questionTermHintService;
     private final ObjectMapper objectMapper;
 
     @Autowired
@@ -62,6 +63,7 @@ public class QuizService {
             MissionQuestionSetFactory missionQuestionSetFactory,
             QuestionServingQualityGuard questionServingQualityGuard,
             MissionQuestionProperties missionQuestionProperties,
+            QuestionTermHintService questionTermHintService,
             ObjectMapper objectMapper
     ) {
         this.missionRepository = missionRepository;
@@ -75,6 +77,7 @@ public class QuizService {
         this.missionQuestionSetFactory = missionQuestionSetFactory;
         this.questionServingQualityGuard = questionServingQualityGuard;
         this.missionQuestionProperties = missionQuestionProperties;
+        this.questionTermHintService = questionTermHintService;
         this.objectMapper = objectMapper;
     }
 
@@ -100,6 +103,7 @@ public class QuizService {
         this.missionQuestionSetFactory = missionQuestionSetFactory;
         this.questionServingQualityGuard = questionServingQualityGuard;
         this.missionQuestionProperties = missionQuestionProperties;
+        this.questionTermHintService = new QuestionTermHintService();
         this.objectMapper = objectMapper;
     }
 
@@ -291,7 +295,8 @@ public class QuizService {
                 question.getDifficulty() == null ? null : question.getDifficulty().name(),
                 question.getPrompt(),
                 choices,
-                QuestionResponse.answerFormatFor(choices)
+                QuestionResponse.answerFormatFor(choices),
+                questionTermHintService.findHints(question.getPrompt(), choices)
         );
     }
 

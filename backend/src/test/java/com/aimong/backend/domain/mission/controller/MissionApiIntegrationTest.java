@@ -206,7 +206,7 @@ class MissionApiIntegrationTest {
                 .andExpect(jsonPath("$.data.score").value(100))
                 .andExpect(jsonPath("$.data.todayMissionCount").value(1))
                 .andExpect(jsonPath("$.data.streakBonusApplied").value(false))
-                .andExpect(jsonPath("$.data.rewards.coin").value(30))
+                .andExpect(jsonPath("$.data.rewards.gear").value(30))
                 .andExpect(jsonPath("$.data.rewards.exp").value(10))
                 .andExpect(jsonPath("$.data.rewards.fragments").isArray())
                 .andExpect(jsonPath("$.data.remainingTickets.normal").value(2))

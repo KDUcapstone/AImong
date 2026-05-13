@@ -5,6 +5,7 @@ import com.aimong.backend.domain.auth.repository.ChildProfileRepository;
 import com.aimong.backend.domain.auth.service.ChildActivityService;
 import com.aimong.backend.domain.streak.dto.PartnerConnectResponse;
 import com.aimong.backend.domain.streak.dto.PartnerDisconnectResponse;
+import com.aimong.backend.domain.streak.dto.ShieldPurchaseResponse;
 import com.aimong.backend.domain.streak.dto.StreakResponse;
 import com.aimong.backend.domain.streak.entity.FriendStreak;
 import com.aimong.backend.domain.streak.entity.StreakRecord;
@@ -13,22 +14,52 @@ import com.aimong.backend.domain.streak.repository.StreakRecordRepository;
 import com.aimong.backend.global.exception.AimongException;
 import com.aimong.backend.global.exception.ErrorCode;
 import com.aimong.backend.global.util.KstDateUtils;
+import com.aimong.backend.domain.reward.entity.CurrencyTransactionReason;
+import com.aimong.backend.domain.reward.service.CurrencyService;
 import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@RequiredArgsConstructor
 public class StreakService {
 
     private final StreakRecordRepository streakRecordRepository;
     private final FriendStreakRepository friendStreakRepository;
     private final ChildProfileRepository childProfileRepository;
     private final ChildActivityService childActivityService;
+    private final CurrencyService currencyService;
+
+    @Autowired
+    public StreakService(
+            StreakRecordRepository streakRecordRepository,
+            FriendStreakRepository friendStreakRepository,
+            ChildProfileRepository childProfileRepository,
+            ChildActivityService childActivityService,
+            CurrencyService currencyService
+    ) {
+        this.streakRecordRepository = streakRecordRepository;
+        this.friendStreakRepository = friendStreakRepository;
+        this.childProfileRepository = childProfileRepository;
+        this.childActivityService = childActivityService;
+        this.currencyService = currencyService;
+    }
+
+    public StreakService(
+            StreakRecordRepository streakRecordRepository,
+            FriendStreakRepository friendStreakRepository,
+            ChildProfileRepository childProfileRepository,
+            ChildActivityService childActivityService
+    ) {
+        this.streakRecordRepository = streakRecordRepository;
+        this.friendStreakRepository = friendStreakRepository;
+        this.childProfileRepository = childProfileRepository;
+        this.childActivityService = childActivityService;
+        this.currencyService = null;
+    }
 
     @Transactional
     public StreakResponse getStreak(UUID childId) {
@@ -85,6 +116,36 @@ public class StreakService {
 
         friendStreakRepository.deleteByChildIdOrPartnerChildId(childId, childId);
         return new PartnerDisconnectResponse(true);
+    }
+
+    @Transactional
+    public ShieldPurchaseResponse purchaseShields(UUID childId, int count) {
+        childActivityService.touchLastActiveAt(childId);
+        if (count < 1) {
+            throw new AimongException(ErrorCode.BAD_REQUEST);
+        }
+        ChildProfile childProfile = childProfileRepository.findWithLockById(childId)
+                .orElseThrow(() -> new AimongException(ErrorCode.CHILD_NOT_FOUND));
+        int cost = CurrencyService.STREAK_SHIELD_COST * count;
+        boolean consumed = currencyService == null
+                ? childProfile.consumeGear(cost)
+                : currencyService.consumeGear(
+                        childProfile,
+                        cost,
+                        CurrencyTransactionReason.STREAK_SHIELD_PURCHASE,
+                        "STREAK_SHIELD",
+                        childId.toString()
+                );
+        if (!consumed) {
+            throw new AimongException(ErrorCode.GEAR_NOT_ENOUGH);
+        }
+        childProfile.addShield(count);
+        return new ShieldPurchaseResponse(
+                childProfile.getShieldCount(),
+                count,
+                CurrencyService.STREAK_SHIELD_COST,
+                childProfile.getGear()
+        );
     }
 
     private int todayMissionCountForToday(StreakRecord streak, LocalDate today) {
