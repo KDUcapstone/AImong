@@ -31,6 +31,16 @@
     <string name="home_pet_name_default">펫</string>
     <string name="home_gacha_ticket_title">가챠 티켓 %1$d장 보유!</string>
     <string name="home_gacha_until_loaded">가챠 안내는 데이터 연동 후 표시됩니다.</string>
+    <string name="home_difficulty_sheet_title">난이도를 선택하세요</string>
+    <string name="home_difficulty_easy">쉬움</string>
+    <string name="home_difficulty_normal">보통</string>
+    <string name="home_difficulty_hard">어려움</string>
+    <string name="home_pet_sheet_title">내 펫</string>
+    <string name="home_pet_level_fmt">Lv.%1$d</string>
+    <string name="home_pet_xp_fmt">%1$d / %2$d XP</string>
+    <string name="home_island_progress_fmt">%1$d / %2$d 완료</string>
+    <string name="home_chip_streak_fmt">%d일</string>
+    <string name="home_today_mission_locked_hint">지금은 이 미션을 시작할 수 없어요.</string>
 
     <!-- Quiz Result -->
     <string name="quiz_result_success">미션 성공!</string>

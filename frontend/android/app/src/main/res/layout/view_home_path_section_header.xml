@@ -9,50 +9,69 @@
     <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginHorizontal="20dp"
-        android:layout_marginVertical="16dp"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginVertical="12dp"
         app:cardBackgroundColor="@android:color/transparent"
         app:cardCornerRadius="16dp"
-        app:cardElevation="0dp">
+        app:cardElevation="4dp">
 
         <LinearLayout
+            android:id="@+id/layout_banner_inner"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@drawable/bg_home_section_banner_gradient"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:paddingHorizontal="20dp"
-            android:paddingVertical="16dp">
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="14dp">
+
+            <TextView
+                android:id="@+id/tv_island_emoji"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="28sp"
+                tools:text="🏝️" />
 
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
                 android:layout_weight="1"
                 android:orientation="vertical">
-
-                <TextView
-                    android:id="@+id/tv_section_subtitle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textColor="#E5F9D6"
-                    android:textSize="14sp"
-                    android:textStyle="bold"
-                    tools:text="섹션 3, 유닛 3" />
 
                 <TextView
                     android:id="@+id/tv_section_title"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
                     android:textColor="@color/white"
-                    android:textSize="20sp"
+                    android:textSize="18sp"
                     android:textStyle="bold"
-                    tools:text="여행 계획 세우기" />
+                    tools:text="시작의 섬" />
+
+                <TextView
+                    android:id="@+id/tv_section_subtitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:textColor="#E8F8FF"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    tools:text="3 / 5 완료" />
+
+                <TextView
+                    android:id="@+id/tv_section_theme"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textColor="#E5F9D6"
+                    android:textSize="12sp"
+                    tools:text="AI가 뭐예요?" />
             </LinearLayout>
 
             <ImageView
-                android:layout_width="32dp"
-                android:layout_height="32dp"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:contentDescription="@null"
                 android:src="@drawable/ic_nav_study_color"
                 app:tint="@color/white" />
         </LinearLayout>

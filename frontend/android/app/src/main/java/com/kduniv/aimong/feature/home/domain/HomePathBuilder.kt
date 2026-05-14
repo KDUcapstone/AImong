@@ -1,5 +1,7 @@
 package com.kduniv.aimong.feature.home.domain
 
+import androidx.annotation.DrawableRes
+import com.kduniv.aimong.R
 import com.kduniv.aimong.feature.home.data.model.HomeScreenData
 import com.kduniv.aimong.feature.home.presentation.HomePathItem
 import com.kduniv.aimong.feature.home.presentation.HomeQuizNavigation
@@ -15,6 +17,17 @@ object HomePathBuilder {
         2 to "AI 잘 쓰기",
         3 to "비판적으로 생각하기"
     )
+
+    private data class IslandMeta(val emoji: String, val name: String, @DrawableRes val banner: Int)
+
+    private val ISLAND_META = listOf(
+        IslandMeta("🏝️", "시작의 섬", R.drawable.bg_home_section_banner_stage1),
+        IslandMeta("🌋", "탐험의 화산섬", R.drawable.bg_home_section_banner_stage2),
+        IslandMeta("⭐", "마스터의 별섬", R.drawable.bg_home_section_banner_stage3),
+    )
+
+    private fun Mission.filledStars(): Int =
+        starLevels.count { it.isCompleted }.coerceIn(0, 3)
 
     fun build(data: HomeScreenData, missions: List<Mission>): List<HomePathItem> {
         val rec = data.missionSummary.recommendedMission
@@ -38,11 +51,27 @@ object HomePathBuilder {
                 .take(10)
 
             val stageTitle = STAGE_TITLES[stage] ?: "단계 $stage"
-            items.add(HomePathItem.SectionHeader(stage = stage, title = stageTitle))
+            val meta = ISLAND_META.getOrNull(stage - 1) ?: ISLAND_META.first()
+            val completedInStage = sortedMissions.count { m ->
+                m.starLevels.any { it.isCompleted }
+            }
+            val totalInStage = sortedMissions.size.coerceAtLeast(1)
+            items.add(
+                HomePathItem.SectionHeader(
+                    stage = stage,
+                    islandEmoji = meta.emoji,
+                    islandName = meta.name,
+                    progressCompleted = completedInStage,
+                    progressTotal = totalInStage,
+                    themeHint = stageTitle,
+                    bannerDrawableRes = meta.banner,
+                )
+            )
 
             var nodeCount = 0
 
             sortedMissions.forEachIndexed { index, m ->
+                val stars = m.filledStars()
                 if (rec != null && m.missionId == rec.id) {
                     val todayNav = HomeQuizNavigation(
                         entrySetId = recSetIdStr.orEmpty(),
@@ -53,7 +82,8 @@ object HomePathBuilder {
                         HomePathItem.TodayStart(
                             quizNav = todayNav,
                             missionTitle = rec.title,
-                            enabled = todayStartEnabled
+                            enabled = todayStartEnabled,
+                            starsFilled = stars
                         )
                     )
                 } else if (m.starLevels.any { it.isCompleted }) {
@@ -67,7 +97,8 @@ object HomePathBuilder {
                             title = m.title,
                             missionId = m.missionId,
                             quizNav = HomeQuizNavigation("", m.missionId, star),
-                            icon = "⭐"
+                            icon = "⭐",
+                            starsFilled = stars
                         )
                     )
                 } else if (m.starLevels.any { it.isReviewable }) {
@@ -76,7 +107,8 @@ object HomePathBuilder {
                     items.add(
                         HomePathItem.Review(
                             quizNav = HomeQuizNavigation("", m.missionId, star),
-                            subtitle = m.title
+                            subtitle = m.title,
+                            starsFilled = stars
                         )
                     )
                 } else if (!m.isUnlocked) {

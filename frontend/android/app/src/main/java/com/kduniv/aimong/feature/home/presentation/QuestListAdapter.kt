@@ -1,8 +1,10 @@
 package com.kduniv.aimong.feature.home.presentation
 
+import android.content.res.ColorStateList
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
+import androidx.core.widget.ImageViewCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -44,7 +46,17 @@ class QuestListAdapter(
             val loading = sheetLoading
             binding.tvQuestTitle.text = row.title
             binding.tvQuestReward.text = row.detailText
-            binding.tvQuestEmoji.text = "🏆"
+
+            val (iconRes, iconTint) = when (row.primaryAction) {
+                QuestSheetPrimaryAction.COMPLETED ->
+                    R.drawable.ic_check_circle to ContextCompat.getColor(ctx, R.color.child_nav_item_selected)
+                QuestSheetPrimaryAction.IN_PROGRESS ->
+                    R.drawable.ic_play_arrow to ContextCompat.getColor(ctx, R.color.child_quest_sheet_text_secondary)
+                else ->
+                    R.drawable.ic_star_filled to ContextCompat.getColor(ctx, R.color.child_nav_item_selected)
+            }
+            binding.ivQuestRowIcon.setImageResource(iconRes)
+            ImageViewCompat.setImageTintList(binding.ivQuestRowIcon, ColorStateList.valueOf(iconTint))
 
             val label: String
             val bgRes: Int
@@ -53,36 +65,36 @@ class QuestListAdapter(
             when (row.primaryAction) {
                 QuestSheetPrimaryAction.COMPLETED -> {
                     label = ctx.getString(R.string.quest_action_completed)
-                    bgRes = R.drawable.bg_btn_completed
-                    textColorRes = R.color.text_grey
+                    bgRes = R.drawable.bg_child_quest_action_outline
+                    textColorRes = R.color.child_quest_sheet_text_secondary
                     containerAlpha = 1f
                 }
                 QuestSheetPrimaryAction.CLAIM -> {
                     label = ctx.getString(R.string.quest_action_claim)
-                    bgRes = R.drawable.bg_btn_primary
+                    bgRes = R.drawable.bg_child_quest_action_filled
                     textColorRes = R.color.text_white
                     val enabled = row.actionEnabled && !loading
                     containerAlpha = if (enabled) 1f else 0.45f
                 }
                 QuestSheetPrimaryAction.GO_LEARN -> {
                     label = ctx.getString(R.string.quest_action_go_learn)
-                    bgRes = R.drawable.bg_btn_primary
+                    bgRes = R.drawable.bg_child_quest_action_filled
                     textColorRes = R.color.text_white
                     val enabled = row.actionEnabled && !loading
                     containerAlpha = if (enabled) 1f else 0.45f
                 }
                 QuestSheetPrimaryAction.GO_CHAT -> {
                     label = ctx.getString(R.string.quest_action_go_chat)
-                    bgRes = R.drawable.bg_btn_primary
+                    bgRes = R.drawable.bg_child_quest_action_filled
                     textColorRes = R.color.text_white
                     val enabled = row.actionEnabled && !loading
                     containerAlpha = if (enabled) 1f else 0.45f
                 }
                 QuestSheetPrimaryAction.IN_PROGRESS -> {
                     label = ctx.getString(R.string.quest_action_in_progress)
-                    bgRes = R.drawable.bg_btn_completed
-                    textColorRes = R.color.text_grey
-                    containerAlpha = 0.75f
+                    bgRes = R.drawable.bg_child_quest_action_outline
+                    textColorRes = R.color.child_quest_sheet_text_secondary
+                    containerAlpha = 0.85f
                 }
             }
 

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- 칩 행 + 플로팅 섹션/퀘스트 헤더 아래까지 스크롤 콘텐츠 시작 (겹침 방지) -->
-    <dimen name="home_path_scroll_padding_top">168dp</dimen>
+    <!-- 칩·섹션 아래 전체를 스크롤이 차지하고, 미션은 FAB 겹침만큼 margin으로 내림 → 빈 '화면' 제거 -->
+    <dimen name="home_path_scroll_padding_top">0dp</dimen>
+    <dimen name="home_mission_path_top_clearance">120dp</dimen>
     <dimen name="content_max_width">432dp</dimen>
 </resources>

@@ -3,23 +3,32 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@drawable/bg_bottom_sheet"
+    android:background="@drawable/bg_child_quest_sheet"
     android:orientation="vertical"
-    android:padding="24dp">
+    android:padding="20dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="12dp"
+        android:layout_marginBottom="10dp"
         android:gravity="center_vertical"
         android:orientation="horizontal">
+
+        <ImageView
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_marginEnd="10dp"
+            android:contentDescription="@null"
+            android:padding="4dp"
+            android:src="@drawable/ic_star_filled"
+            app:tint="@color/child_nav_item_selected" />
 
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="@string/quest_sheet_title"
-            android:textColor="@color/text_white"
+            android:textColor="@color/child_quest_sheet_text_primary"
             android:textSize="20sp"
             android:textStyle="bold" />
 
@@ -30,24 +39,30 @@
             android:layout_height="wrap_content"
             android:minHeight="40dp"
             android:text="업적 조회"
-            android:textColor="@color/text_white"
+            android:textColor="@color/child_nav_item_selected"
             android:textSize="12sp"
-            app:cornerRadius="10dp"
-            app:strokeColor="#243B70" />
+            app:cornerRadius="12dp"
+            app:icon="@drawable/ic_star_filled"
+            app:iconGravity="textStart"
+            app:iconPadding="6dp"
+            app:iconSize="18dp"
+            app:iconTint="@color/child_nav_item_selected"
+            app:strokeColor="@color/child_nav_item_selected"
+            app:strokeWidth="1dp" />
     </LinearLayout>
 
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/tab_quest_period"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="12dp"
+        android:layout_marginBottom="10dp"
         android:background="@android:color/transparent"
         app:tabBackground="@android:color/transparent"
         app:tabGravity="fill"
-        app:tabIndicatorColor="@color/quiz_mint"
+        app:tabIndicatorColor="@color/child_nav_item_selected"
         app:tabMode="fixed"
-        app:tabSelectedTextColor="@color/text_white"
-        app:tabTextColor="@color/text_sub_grey" />
+        app:tabSelectedTextColor="@color/child_nav_item_selected"
+        app:tabTextColor="@color/child_quest_sheet_text_secondary" />
 
     <LinearLayout
         android:id="@+id/layout_quest_error"
@@ -55,7 +70,7 @@
         android:layout_height="wrap_content"
         android:gravity="center"
         android:orientation="vertical"
-        android:paddingVertical="16dp"
+        android:paddingVertical="14dp"
         android:visibility="gone">
 
         <TextView
@@ -63,17 +78,25 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center"
-            android:textColor="@color/text_sub_grey"
+            android:textColor="@color/child_quest_sheet_text_secondary"
             android:textSize="14sp" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_quest_retry"
-            style="@style/Widget.MaterialComponents.Button.TextButton"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:text="@string/quest_retry"
-            android:textColor="@color/quiz_mint" />
+            android:textColor="@color/child_nav_item_selected"
+            app:cornerRadius="12dp"
+            app:icon="@drawable/ic_play_arrow"
+            app:iconGravity="textStart"
+            app:iconPadding="6dp"
+            app:iconSize="18dp"
+            app:iconTint="@color/child_nav_item_selected"
+            app:strokeColor="@color/child_nav_item_selected"
+            app:strokeWidth="1dp" />
     </LinearLayout>
 
     <FrameLayout
@@ -87,6 +110,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
+            android:indeterminateTint="@color/child_nav_item_selected"
             android:visibility="gone" />
 
         <androidx.recyclerview.widget.RecyclerView

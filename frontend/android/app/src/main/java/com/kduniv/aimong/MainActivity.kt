@@ -181,10 +181,11 @@ class MainActivity : AppCompatActivity() {
                 binding.bottomNav.isSaveEnabled = true
                 binding.bottomNav.menu.clear()
                 menuInflater.inflate(R.menu.bottom_nav_menu, binding.bottomNav.menu)
-                binding.bottomNav.setBackgroundColor(ContextCompat.getColor(this@MainActivity, R.color.aimong_bottom_nav_bg))
-                binding.bottomNav.itemIconTintList = null
-                binding.bottomNav.itemTextColor = ColorStateList.valueOf(ContextCompat.getColor(this@MainActivity, R.color.text_white))
                 binding.bottomNav.setupWithNavController(navController)
+                binding.bottomNav.setBackgroundColor(ContextCompat.getColor(this@MainActivity, R.color.child_bottom_nav_bg))
+                val childNavTint = ContextCompat.getColorStateList(this@MainActivity, R.color.bottom_nav_child_item)
+                binding.bottomNav.itemIconTintList = childNavTint
+                binding.bottomNav.itemTextColor = childNavTint
 
                 binding.bottomNav.setOnItemSelectedListener { item ->
                     val currentId = navController.currentDestination?.id
