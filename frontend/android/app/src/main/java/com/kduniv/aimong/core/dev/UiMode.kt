@@ -11,5 +11,6 @@ package com.kduniv.aimong.core.dev
  * @see com.kduniv.aimong.MainActivity
  */
 object UiMode {
+    /** `true`: 목업 홈 등 스텁 네비(퀴즈 화면은 [com.kduniv.aimong.feature.quiz.presentation.QuizFragment]로 동일). `false`: 전부 실제 네비. */
     const val useStubNav: Boolean = true
 }

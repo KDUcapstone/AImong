@@ -221,18 +221,23 @@ class QuizViewModel @Inject constructor(
     fun checkAnswer(questionId: String, answer: String) {
         viewModelScope.launch {
             val qs = cachedQuestions ?: return@launch
-            userAnswers[questionId] = answer
+            val q = qs.questions.find { it.id == questionId } ?: run {
+                _uiState.value = QuizUiState.Error("문항을 찾을 수 없습니다.")
+                return@launch
+            }
+            val payload = QuizSessionRules.normalizeAnswerForCheckPayload(q, answer)
+            userAnswers[questionId] = payload
             savedStateHandle["userAnswers"] = userAnswers
 
             if (UiMode.useStubNav) {
                 // 목업 모드: 서버 요청 없이 로컬에서 즉시 피드백 생성
                 delay(300) // 실제 느낌을 위해 약간의 지연
-                val isAnswerCorrect = answer.isNotEmpty() // 빈 문자열(시간 초과)은 오답 처리
+                val isAnswerCorrect = payload.isNotEmpty() // 빈 문자열(시간 초과)은 오답 처리
                 _uiState.value = QuizUiState.AnswerChecked(
                     isCorrect = isAnswerCorrect,
                     explanation = if (isAnswerCorrect) "목업 모드 해설: 정답입니다!" else "목업 모드 해설: 시간 초과 또는 오답입니다.",
-                    userAnswer = answer,
-                    correctAnswer = if (isAnswerCorrect) answer else null
+                    userAnswer = payload,
+                    correctAnswer = if (isAnswerCorrect) payload else null
                 )
                 // 결과 객체가 필요하므로 가상의 결과 생성
                 if (quizResult == null) {
@@ -263,7 +268,7 @@ class QuizViewModel @Inject constructor(
             }
 
             // v2.4: 단건 check API로 즉시 정오·해설 반영
-            if (answer.isBlank()) {
+            if (payload.isBlank()) {
                 _uiState.value = QuizUiState.AnswerChecked(
                     isCorrect = false,
                     explanation = appContext.getString(R.string.quiz_timeout_explanation),
@@ -278,13 +283,13 @@ class QuizViewModel @Inject constructor(
                 ?: return@launch kotlin.run {
                     _uiState.value = QuizUiState.Error("문항 식별자가 올바르지 않습니다.")
                 }
-            quizRepository.checkAnswer(setId, qidLong, answer)
+            quizRepository.checkAnswer(setId, qidLong, payload)
                 .onSuccess { checked ->
                     val exp = checked.explanation ?: appContext.getString(R.string.quiz_answer_saved_hint)
                     _uiState.value = QuizUiState.AnswerChecked(
                         isCorrect = checked.isCorrect,
                         explanation = exp,
-                        userAnswer = answer,
+                        userAnswer = payload,
                         correctAnswer = checked.correctAnswer,
                         deferImmediateCorrectness = false
                     )

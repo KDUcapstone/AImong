@@ -44,6 +44,7 @@
     <string name="quiz_btn_solution">풀이 보기</string>
     <string name="quiz_btn_retry">복습하기</string>
     <string name="quiz_btn_home">홈으로</string>
+    <string name="quiz_btn_return_home">홈으로 돌아가기</string>
 
     <!-- Quiz Feedback -->
     <string name="quiz_feedback_correct">🎉 정답이에요!</string>
@@ -57,6 +58,7 @@
     <string name="quiz_timer_recovered_label">진행 복구됨</string>
     <string name="quiz_btn_next">다음 문제 →</string>
     <string name="quiz_btn_view_result">결과 보기</string>
+    <string name="quiz_hearts_exhausted_toast">하트를 모두 사용했어요.</string>
     <string name="quiz_btn_result_confirm">결과 확인하기</string>
     <string name="quiz_btn_finish_solution">결과로 돌아가기</string>
 
