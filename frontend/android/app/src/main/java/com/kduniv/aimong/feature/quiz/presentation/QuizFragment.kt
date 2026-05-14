@@ -15,12 +15,12 @@ import android.view.ViewGroup
 import android.view.animation.CycleInterpolator
 import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.RelativeLayout
 import android.widget.TextView
 import android.widget.EditText
 import android.widget.Toast
 import android.util.Log
 import androidx.core.content.ContextCompat
+import com.google.android.material.chip.Chip
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -375,9 +375,10 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         if (question.type == QuestionType.FILL) {
             val typeLabel = "단어 채우기"
             val originalText = question.question
+            val displayWord = choiceIndexToDisplayText(question, userAnswer) ?: userAnswer
             val replacedText = when {
-                originalText.contains("_____") -> originalText.replace("_____", " $userAnswer ")
-                originalText.contains("[      ]") -> originalText.replace("[      ]", " $userAnswer ")
+                originalText.contains("_____") -> originalText.replace("_____", " $displayWord ")
+                originalText.contains("[      ]") -> originalText.replace("[      ]", " $displayWord ")
                 else -> originalText
             }
             val fullText = "[$typeLabel] $replacedText"
@@ -409,42 +410,75 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                 }
             }
         } 
-        // 객관식(MULTIPLE): 내가 고른 보기만 민트로 표시
+        // 객관식·칩: 저장 답은 1-based 인덱스 또는 보기 문구일 수 있음(check 페이로드와 동일)
         else if (question.type == QuestionType.MULTIPLE) {
-            val selectedKey = userAnswer.trim()
-            // XML 고정 카드 기반 표시
-            applyMultipleFixedSelection(selectedKey)
-        }
-        // FILL/SITUATION: 멀티라인 Row 선택지
-        else {
+            val idx = choiceIndexFromUserAnswer(question, userAnswer) ?: return
+            applyMultipleFixedSelectionByIndex(idx.coerceIn(0, 3))
+        } else if (question.type == QuestionType.FILL || question.type == QuestionType.SITUATION) {
+            val chosen = choiceIndexFromUserAnswer(question, userAnswer) ?: return
             for (i in 0 until binding.layoutOptionsChips.childCount) {
-                val row = binding.layoutOptionsChips.getChildAt(i) as? RelativeLayout ?: continue
-                val raw = row.tag?.toString().orEmpty()
-                if (raw == userAnswer) {
-                    val bg = if (isSolutionMode || isCorrect) {
-                        ContextCompat.getColor(requireContext(), R.color.quiz_mint)
+                val chip = binding.layoutOptionsChips.getChildAt(i) as? Chip ?: continue
+                if (i == chosen) {
+                    if (isSolutionMode || isCorrect) {
+                        chip.setChipBackgroundColorResource(R.color.quiz_mint)
+                        chip.setTextColor(Color.parseColor("#0A1633"))
                     } else {
-                        ContextCompat.getColor(requireContext(), R.color.quiz_red)
+                        chip.setChipBackgroundColorResource(R.color.quiz_red)
+                        chip.setTextColor(Color.WHITE)
                     }
-                    val stroke = bg
-                    applyOptionRowStyle(row, bg, stroke)
+                    chip.chipStrokeWidth = 0f
                 }
             }
         }
     }
 
-    private fun applyOptionRowStyle(row: RelativeLayout, bgColor: Int, strokeColor: Int) {
+    /** 객관식 고정 카드: 선택 인덱스 0..3 */
+    private fun applyMultipleFixedSelectionByIndex(selectedIndex: Int) {
+        val cards = listOf(
+            binding.btnQuizMultOpt1,
+            binding.btnQuizMultOpt2,
+            binding.btnQuizMultOpt3,
+            binding.btnQuizMultOpt4
+        )
+        val texts = listOf(binding.tvOpt1, binding.tvOpt2, binding.tvOpt3, binding.tvOpt4)
         val density = resources.displayMetrics.density
-        val radius = 16f * density
-        val strokeW = (1f * density).toInt()
-        val drawable = GradientDrawable().apply {
-            shape = GradientDrawable.RECTANGLE
-            cornerRadius = radius
-            setColor(bgColor)
-            setStroke(strokeW, strokeColor)
+        if (selectedIndex !in cards.indices) return
+        cards.forEachIndexed { idx, card ->
+            if (idx == selectedIndex) {
+                card.setCardBackgroundColor(ContextCompat.getColor(requireContext(), R.color.quiz_mint))
+                card.strokeWidth = (3 * density).toInt()
+                card.strokeColor = ContextCompat.getColor(requireContext(), R.color.quiz_mint)
+                texts[idx].setTextColor(Color.WHITE)
+            }
         }
-        row.background = drawable
-        row.findViewWithTag<TextView>("option_text")?.setTextColor(Color.WHITE)
+    }
+
+    /** 사용자 답(번호 문자열 또는 보기 문구) → options 내 0-based 인덱스 */
+    private fun choiceIndexFromUserAnswer(question: Question, userAnswer: String): Int? {
+        val t = userAnswer.trim()
+        val opts = question.options ?: return null
+        val n = t.toIntOrNull()
+        if (n != null && n in 1..opts.size) return n - 1
+        val i = opts.indexOfFirst { it == t }
+        return i.takeIf { it >= 0 }
+    }
+
+    private fun choiceIndexToDisplayText(question: Question, answerKey: String): String? {
+        val t = answerKey.trim()
+        if (t.isEmpty()) return null
+        t.toIntOrNull()?.minus(1)?.let { i -> question.options?.getOrNull(i)?.let { return it } }
+        if (question.options?.any { it == t } == true) return t
+        return t
+    }
+
+    private fun formatCorrectAnswerLine(question: Question, correctAnswer: String?): String? {
+        val ca = correctAnswer?.trim()?.takeIf { it.isNotBlank() } ?: return null
+        val opts = question.options
+        val num = ca.toIntOrNull()
+        if (opts != null && num != null && num in 1..opts.size) {
+            return "정답: ${opts[num - 1]}"
+        }
+        return "정답: $ca"
     }
 
     private fun popQuizToHomeAfterAbandon(reason: String) {
@@ -532,7 +566,6 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         val isLast = (viewModel.currentQuestionIndex.value >= (binding.pbQuizProgress.max - 1))
 
         if (isFailedByLives && !viewModel.isSolutionMode.value) {
-            // 미션 성공/결과 화면 없이 이탈 처리 — attempt abandon 후 홈
             bindLivesExhaustedFeedbackActions()
         } else {
             binding.btnNextQuestion.text = if (isLast) getString(R.string.quiz_btn_view_result) else getString(R.string.quiz_btn_next)
@@ -555,9 +588,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             binding.tvFeedbackTitle.setTextColor(Color.parseColor("#FF4B4B"))
             binding.layoutFeedbackPanel.setCardBackgroundColor(android.content.res.ColorStateList.valueOf(Color.parseColor("#1A1025")))
         }
-        val correctLine = correctAnswer?.takeIf { it.isNotBlank() }?.let { ca ->
-            "정답: $ca"
-        }
+        val correctLine = formatCorrectAnswerLine(question, correctAnswer)
         val exp = explanation.trim()
         binding.tvFeedbackContent.text = listOfNotNull(correctLine, exp.takeIf { it.isNotBlank() })
             .joinToString(separator = "\n\n")
@@ -954,10 +985,9 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                 card.alpha = 1f
                 // 선택 스타일은 클릭에서 적용, 기본은 초기화 상태 유지
                 card.setOnClickListener {
-                    // 단일 선택 리셋
                     resetMultipleFixedOptions()
-                    applyMultipleFixedSelection(option.trim())
-                    handleOptionClick(option)
+                    applyMultipleFixedSelectionByIndex(idx)
+                    handleOptionClick((idx + 1).toString())
                 }
             }
         }
@@ -984,27 +1014,6 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             texts[idx].alpha = 1f
             texts[idx].setTextColor(Color.WHITE)
             checks[idx].visibility = View.GONE
-        }
-    }
-
-    private fun applyMultipleFixedSelection(selectedKey: String) {
-        val cards = listOf(
-            binding.btnQuizMultOpt1,
-            binding.btnQuizMultOpt2,
-            binding.btnQuizMultOpt3,
-            binding.btnQuizMultOpt4
-        )
-        val texts = listOf(binding.tvOpt1, binding.tvOpt2, binding.tvOpt3, binding.tvOpt4)
-        // 체크표시는 사용하지 않음
-        val density = resources.displayMetrics.density
-        cards.forEachIndexed { idx, card ->
-            val key = texts[idx].text?.toString()?.trim().orEmpty()
-            if (key.isNotEmpty() && key == selectedKey) {
-                card.setCardBackgroundColor(ContextCompat.getColor(requireContext(), R.color.quiz_mint))
-                card.strokeWidth = (3 * density).toInt()
-                card.strokeColor = ContextCompat.getColor(requireContext(), R.color.quiz_mint)
-                texts[idx].setTextColor(Color.WHITE)
-            }
         }
     }
 
@@ -1063,9 +1072,65 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         binding.layoutOptionsChips.chipSpacingVertical = (8 * density).toInt()
         binding.layoutOptionsChips.chipSpacingHorizontal = (8 * density).toInt()
 
-        // Chip은 멀티라인을 지원하지 않으므로, FILL/SITUATION 선택지는 멀티라인 가능한 Row(카드)로 렌더링한다.
-        question.options.orEmpty().forEachIndexed { index, option ->
-            addOptionButton(binding.layoutOptionsChips, option, index)
+        question.options?.forEachIndexed { idx, option ->
+            val choiceKey = (idx + 1).toString()
+            val chip = Chip(requireContext()).apply {
+                text = option
+                textSize = if (isSituation) 14f else 15f
+                typeface = Typeface.create("sans-serif-black", Typeface.BOLD)
+                isSingleLine = false
+                maxLines = 20
+                ellipsize = null
+                isClickable = true
+                isCheckable = false
+                checkedIcon = null
+                textAlignment = View.TEXT_ALIGNMENT_CENTER
+                setTextColor(Color.WHITE)
+                setEnsureMinTouchTargetSize(false)
+
+                if (isSituation) {
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).apply {
+                        setMargins(0, 0, 0, (8 * density).toInt())
+                    }
+                    minHeight = (60 * density).toInt()
+                    chipStartPadding = 20 * density
+                    chipEndPadding = 20 * density
+                    // SITUATION도 '선택 시 전체 민트'가 명확히 보이도록 Chip 기반 스타일로 통일
+                    setChipBackgroundColorResource(R.color.home_card_bg)
+                    setChipStrokeColorResource(R.color.home_card_stroke)
+                    chipStrokeWidth = 3f * density
+                } else {
+                    minHeight = (48 * density).toInt()
+                    chipStartPadding = 16 * density
+                    chipEndPadding = 16 * density
+                    setChipBackgroundColorResource(R.color.home_card_bg)
+                    setChipStrokeColorResource(R.color.home_card_stroke)
+                    chipStrokeWidth = 3f * density
+                }
+
+                shapeAppearanceModel = shapeAppearanceModel.toBuilder()
+                    .setAllCornerSizes(if (isSituation) 16 * density else 28 * density)
+                    .build()
+
+                setOnClickListener {
+                    // 시각적 피드백 강화 (애니메이션 및 색상 변경)
+                    animateSelection(it)
+                    
+                    // 체크표시 대신 '선택지 전체 민트'로 통일
+                    setChipBackgroundColorResource(R.color.quiz_mint)
+                    setChipStrokeColorResource(R.color.quiz_mint)
+                    setTextColor(Color.WHITE)
+                    
+                    handleOptionClick(
+                        choiceKey,
+                        fillDisplayWord = if (question.type == QuestionType.FILL) option else null
+                    )
+                }
+            }
+            binding.layoutOptionsChips.addView(chip)
         }
     }
 
@@ -1080,89 +1145,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             .start()
     }
 
-    private fun addOptionButton(parent: ViewGroup, text: String, index: Int) {
-        val density = resources.displayMetrics.density
-        val relativeLayout = RelativeLayout(requireContext()).apply {
-            tag = text
-            layoutParams = ViewGroup.MarginLayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            ).apply { bottomMargin = (8 * density).toInt() }
-            setPadding((14 * density).toInt(), (12 * density).toInt(), (14 * density).toInt(), (12 * density).toInt())
-            isClickable = true
-            isFocusable = true
-        }
-
-        val textView = TextView(requireContext()).apply {
-            layoutParams = RelativeLayout.LayoutParams(
-                RelativeLayout.LayoutParams.WRAP_CONTENT,
-                RelativeLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                addRule(RelativeLayout.CENTER_VERTICAL)
-            }
-            this.text = "${index + 1}  $text"
-            setTextColor(Color.WHITE)
-            textSize = 13f
-            tag = "option_text"
-            // 긴 보기(상황 판단 등)는 멀티라인로 전부 노출
-            isSingleLine = false
-            maxLines = 10
-        }
-
-        applyMultipleRowStyle(relativeLayout, isSelected = false)
-        relativeLayout.addView(textView)
-        
-        relativeLayout.setOnClickListener {
-            // 단일 선택: 기존 선택 스타일 리셋
-            for (i in 0 until parent.childCount) {
-                val row = parent.getChildAt(i) as? RelativeLayout ?: continue
-                applyMultipleRowStyle(row, isSelected = false)
-            }
-
-            // 내가 선택한 보기: 민트로 채우기
-            applyMultipleRowStyle(relativeLayout, isSelected = true)
-            handleOptionClick(text)
-        }
-
-        parent.addView(relativeLayout)
-    }
-
-    private fun applyMultipleRowStyle(row: RelativeLayout, isSelected: Boolean) {
-        val density = resources.displayMetrics.density
-        val radius = 16f * density
-        val strokeW = (1f * density).toInt()
-
-        val bgColor = if (isSelected) {
-            ContextCompat.getColor(requireContext(), R.color.quiz_mint)
-        } else {
-            ContextCompat.getColor(requireContext(), R.color.home_card_bg)
-        }
-        val strokeColor = if (isSelected) {
-            ContextCompat.getColor(requireContext(), R.color.quiz_mint)
-        } else {
-            Color.parseColor("#243B70")
-        }
-
-        val drawable = GradientDrawable().apply {
-            shape = GradientDrawable.RECTANGLE
-            cornerRadius = radius
-            setColor(bgColor)
-            setStroke(strokeW, strokeColor)
-        }
-
-        // selector/ripple을 제거하고 고정 배경을 적용
-        row.background = drawable
-
-        val tv = row.findViewWithTag<TextView>("option_text")
-        if (isSelected) {
-            // 민트 배경 위 가독성 우선(회색처럼 보이는 현상 방지)
-            tv?.setTextColor(Color.WHITE)
-        } else {
-            tv?.setTextColor(Color.WHITE)
-        }
-    }
-
-    private fun handleOptionClick(answer: String) {
+    private fun handleOptionClick(answerForServer: String, fillDisplayWord: String? = null) {
         timer?.cancel()
         val question = viewModel.getCurrentCachedQuestion() ?: getCurrentQuestion() ?: return
         
@@ -1175,9 +1158,10 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         if (question.type == QuestionType.FILL) {
             val typeLabel = "단어 채우기"
             val originalText = question.question
+            val display = fillDisplayWord ?: answerForServer
             val replacedText = when {
-                originalText.contains("_____") -> originalText.replace("_____", " $answer ")
-                originalText.contains("[      ]") -> originalText.replace("[      ]", " $answer ")
+                originalText.contains("_____") -> originalText.replace("_____", " $display ")
+                originalText.contains("[      ]") -> originalText.replace("[      ]", " $display ")
                 else -> originalText
             }
             val fullText = "[$typeLabel] $replacedText"
@@ -1188,9 +1172,9 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         lockOptions()
         
         if (!viewModel.isSolutionMode.value) {
-            viewModel.checkAnswer(question.id, answer)
+            viewModel.checkAnswer(question.id, answerForServer)
         } else {
-            viewModel.selectAnswer(question.id, answer)
+            viewModel.selectAnswer(question.id, answerForServer)
         }
     }
 

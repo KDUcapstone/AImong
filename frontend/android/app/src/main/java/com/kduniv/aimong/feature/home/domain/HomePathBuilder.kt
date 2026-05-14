@@ -1,5 +1,7 @@
 package com.kduniv.aimong.feature.home.domain
 
+import androidx.annotation.DrawableRes
+import com.kduniv.aimong.R
 import com.kduniv.aimong.feature.home.data.model.HomeScreenData
 import com.kduniv.aimong.feature.home.presentation.HomePathItem
 import com.kduniv.aimong.feature.home.presentation.HomeQuizNavigation
@@ -16,9 +18,24 @@ object HomePathBuilder {
         3 to "비판적으로 생각하기"
     )
 
+    private data class IslandMeta(val emoji: String, val name: String, @DrawableRes val banner: Int)
+
+    private val ISLAND_META = listOf(
+        IslandMeta("🏝️", "시작의 섬", R.drawable.bg_home_section_banner_stage1),
+        IslandMeta("🌋", "탐험의 화산섬", R.drawable.bg_home_section_banner_stage2),
+        IslandMeta("⭐", "마스터의 별섬", R.drawable.bg_home_section_banner_stage3),
+    )
+
+    private fun Mission.filledStars(): Int =
+        starLevels.count { it.isCompleted }.coerceIn(0, 3)
+
     fun build(data: HomeScreenData, missions: List<Mission>): List<HomePathItem> {
         val rec = data.missionSummary.recommendedMission
-        val canStart = data.missionSummary.canStartMission
+        val summary = data.missionSummary
+        val canStart = summary.canStartMission
+        val dailyQuotaActive = summary.todayTargetCount > 0
+        val underDailyQuota = !dailyQuotaActive || summary.todayCompletedCount < summary.todayTargetCount
+        val todayStartEnabled = canStart || (rec != null && underDailyQuota)
         val items = mutableListOf<HomePathItem>()
 
         val recSetIdStr = rec?.setId?.toString()?.takeIf { it != "0" && it.isNotBlank() }
@@ -43,11 +60,27 @@ object HomePathBuilder {
                 .take(10)
 
             val stageTitle = STAGE_TITLES[stage] ?: "단계 $stage"
-            items.add(HomePathItem.SectionHeader(stage = stage, title = stageTitle))
+            val meta = ISLAND_META.getOrNull(stage - 1) ?: ISLAND_META.first()
+            val completedInStage = sortedMissions.count { m ->
+                m.starLevels.any { it.isCompleted }
+            }
+            val totalInStage = sortedMissions.size.coerceAtLeast(1)
+            items.add(
+                HomePathItem.SectionHeader(
+                    stage = stage,
+                    islandEmoji = meta.emoji,
+                    islandName = meta.name,
+                    progressCompleted = completedInStage,
+                    progressTotal = totalInStage,
+                    themeHint = stageTitle,
+                    bannerDrawableRes = meta.banner,
+                )
+            )
 
             var nodeCount = 0
 
             sortedMissions.forEachIndexed { index, m ->
+                val stars = m.filledStars()
                 if (rec != null && resolvedRecommendedMissionId != null && m.missionId == resolvedRecommendedMissionId) {
                     val todayNav = HomeQuizNavigation(
                         entrySetId = recSetIdStr.orEmpty(),
@@ -58,8 +91,8 @@ object HomePathBuilder {
                         HomePathItem.TodayStart(
                             quizNav = todayNav,
                             missionTitle = rec.title,
-                            // 서버가 아직 canStartMission=false를 주더라도, 추천 세트(setId)가 있으면 진입 시도 가능하게 한다.
-                            enabled = canStart || !recSetIdStr.isNullOrBlank()
+                            enabled = canStart || !recSetIdStr.isNullOrBlank(),
+                            starsFilled = stars
                         )
                     )
                 } else if (m.starLevels.any { it.isCompleted }) {
@@ -73,7 +106,8 @@ object HomePathBuilder {
                             title = m.title,
                             missionId = m.missionId,
                             quizNav = HomeQuizNavigation("", m.missionId, star),
-                            icon = "⭐"
+                            icon = "⭐",
+                            starsFilled = stars
                         )
                     )
                 } else if (m.starLevels.any { it.isReviewable }) {
@@ -82,7 +116,8 @@ object HomePathBuilder {
                     items.add(
                         HomePathItem.Review(
                             quizNav = HomeQuizNavigation("", m.missionId, star),
-                            subtitle = m.title
+                            subtitle = m.title,
+                            starsFilled = stars
                         )
                     )
                 } else if (m.isUnlocked && m.starLevels.any { it.isPlayable }) {

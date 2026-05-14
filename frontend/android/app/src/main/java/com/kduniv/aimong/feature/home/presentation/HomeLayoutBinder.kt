@@ -1,101 +1,127 @@
 package com.kduniv.aimong.feature.home.presentation
 
 import android.view.LayoutInflater
-import android.view.MotionEvent
 import android.view.View
 import android.widget.LinearLayout
 import androidx.core.view.isVisible
 import com.kduniv.aimong.R
+import com.kduniv.aimong.core.util.setOnScaleTouchListener
 import com.kduniv.aimong.databinding.FragmentHomeBinding
 import com.kduniv.aimong.databinding.ViewHomePathNodeCompletedBinding
 import com.kduniv.aimong.databinding.ViewHomePathNodeLockedBinding
 import com.kduniv.aimong.databinding.ViewHomePathNodeReviewBinding
 import com.kduniv.aimong.databinding.ViewHomePathNodeStartBinding
-import com.kduniv.aimong.core.util.setOnScaleTouchListener
 import androidx.core.content.ContextCompat
-import kotlin.math.abs
 import kotlin.math.sin
 
 /**
  * [FragmentHomeBinding] 갱신 로직 — [HomeFragment]와 목업 화면 공유.
- * 로드맵 구조: 중앙 세로선을 [bg_path_pill]이 걸치고, 원 노드는 안쪽에 붙음.
+ * 섬 배너(상단 고정) + 지그재그 미션 노드; 난이도는 스테이지 아래 인라인 팝업에서 선택 후 퀴즈로 이동.
  */
 class HomeLayoutBinder(
     private val binding: FragmentHomeBinding,
     private val layoutInflater: LayoutInflater,
-    private val getProfileLabel: (String) -> String,
-    private val petNameDefault: String,
-    private val onNavigateQuiz: (HomeQuizNavigation) -> Unit,
-    private val onOpenQuest: () -> Unit
+    private val onOpenDifficultyPicker: (String, HomeQuizNavigation, View) -> Unit,
+    private val onShowMissionHint: (String) -> Unit,
 ) {
-    private var lastPathItems: List<HomePathItem> = emptyList()
+
+    private var scrollHooked = false
+    private var pathItemsForScroll: List<HomePathItem> = emptyList()
 
     fun bind(state: HomeUiState) {
+        pathItemsForScroll = state.pathItems
         with(binding) {
-            tvChipEnergy.text = "🔋 ${state.energyCurrent}/${state.energyMax}"
-            tvChipXp.text = "⚡ ${state.topStatusXp}"
-            tvChipTicket.text = "🎟 ${state.topTicketCount}"
-            tvChipStreak.text = "🔥 ${state.streakDays}일"
+            tvChipEnergy.text = "${state.energyCurrent}/${state.energyMax}"
+            tvChipXp.text = state.topStatusXp.toString()
+            tvChipTicket.text = state.topTicketCount.toString()
+            tvChipStreak.text = root.context.getString(R.string.home_chip_streak_fmt, state.streakDays)
 
-            // 우측 미니 퀘스트 버튼 (알림 표시용)
-            btnMiniQuest.setOnClickListener {
-                onOpenQuest()
+            tvFloatPetEmoji.text = when (state.petStage) {
+                "EGG" -> "🥚"
+                "GROWTH" -> "🐣"
+                else -> "✨"
             }
-
-            // 배경 스크롤/터치 시 툴팁 숨기기
-            scrollPath.setOnTouchListener { _, ev ->
-                // 노드 탭 직후(UP)까지 툴팁이 바로 사라져 '안 눌린 것처럼' 보이는 현상을 방지:
-                // 실제 스크롤(드래그)일 때만 숨긴다.
-                if (ev.actionMasked == MotionEvent.ACTION_MOVE) {
-                    layoutFloatingTooltip.isVisible = false
-                }
-                false
+            lottiePetHome.cancelAnimation()
+            lottiePetHome.isVisible = false
+            tvFloatPetEmoji.isVisible = true
+            val pendingQuests = state.quests.count { !it.isCompleted }
+            tvQuestBadge.isVisible = pendingQuests > 0
+            if (pendingQuests > 0) {
+                tvQuestBadge.text = pendingQuests.coerceAtMost(9).toString()
             }
-            containerMissionPath.setOnClickListener {
-                layoutFloatingTooltip.isVisible = false
-            }
-
             renderMissionPath(state)
+            firstSectionFromPath(state.pathItems)?.let { applyFloatingSection(it) }
+            binding.root.post { updateFloatingSectionForScroll(binding.scrollPath.scrollY) }
+            if (!scrollHooked) {
+                scrollHooked = true
+                binding.scrollPath.setOnScrollChangeListener { _, _, scrollY, _, _ ->
+                    updateFloatingSectionForScroll(scrollY)
+                }
+            }
         }
+    }
+
+    private fun firstSectionFromPath(items: List<HomePathItem>): HomePathItem.SectionHeader? =
+        items.firstOrNull { it is HomePathItem.SectionHeader } as? HomePathItem.SectionHeader
+
+    private fun updateFloatingSectionForScroll(scrollY: Int) {
+        val parent = binding.layoutMissionPath
+        var cumulative = 0
+        var chosen: HomePathItem.SectionHeader? = firstSectionFromPath(pathItemsForScroll)
+        for (i in 0 until parent.childCount) {
+            val child = parent.getChildAt(i)
+            if (child.visibility != View.VISIBLE) continue
+            val lp = child.layoutParams as LinearLayout.LayoutParams
+            val top = cumulative + lp.topMargin
+            val bottom = top + child.height
+            val tag = child.getTag(R.id.home_path_section_tag) as? HomePathItem.SectionHeader
+            if (tag != null && top <= scrollY) {
+                chosen = tag
+            }
+            cumulative = bottom + lp.bottomMargin
+        }
+        chosen?.let { applyFloatingSection(it) }
+    }
+
+    private fun applyFloatingSection(section: HomePathItem.SectionHeader) {
+        binding.tvFloatingIslandEmoji.text = section.islandEmoji
+        binding.tvFloatingSectionTitle.text = section.islandName
+        binding.tvFloatingSectionSubtitle.text = binding.root.context.getString(
+            R.string.home_island_progress_fmt,
+            section.progressCompleted,
+            section.progressTotal
+        )
+        binding.tvFloatingSectionTheme.text = section.themeHint
+        binding.layoutFloatingBannerInner.setBackgroundResource(section.bannerDrawableRes)
     }
 
     private fun renderMissionPath(state: HomeUiState) {
         binding.layoutMissionPath.removeAllViews()
-        binding.layoutFloatingTooltip.isVisible = false
         val inflater = layoutInflater
         val items = state.pathItems
-        lastPathItems = items
-        
-        binding.containerMissionPath.setOnClickListener {
-            binding.layoutFloatingTooltip.isVisible = false
-        }
-        binding.scrollPath.setOnTouchListener { _, ev ->
-            if (ev.actionMasked == MotionEvent.ACTION_MOVE) {
-                binding.layoutFloatingTooltip.isVisible = false
-            }
-            false
-        }
 
         val density = binding.root.context.resources.displayMetrics.density
-        val amplitude = 60f * density // 지그재그 진폭 설정
-        val reviewLabel = binding.root.context.getString(R.string.home_mission_tooltip_review)
+        val amplitude = 56f * density
 
         var nodeIndex = 0
         var sectionForRow: HomePathItem.SectionHeader? = null
 
         for (item in items) {
             val isHeader = item is HomePathItem.SectionHeader
-            
+
             val rowLp = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
             ).apply {
                 if (isHeader) {
-                    topMargin = 0
-                    bottomMargin = 0
+                    topMargin = (8 * density).toInt()
+                    bottomMargin = (4 * density).toInt()
+                } else if (item === HomePathItem.InterStageDivider) {
+                    topMargin = (8 * density).toInt()
+                    bottomMargin = (8 * density).toInt()
                 } else {
-                    topMargin = if (nodeIndex == 0) (8 * density).toInt() else (24 * density).toInt()
-                    bottomMargin = (24 * density).toInt()
+                    topMargin = if (nodeIndex == 0) (8 * density).toInt() else (20 * density).toInt()
+                    bottomMargin = (20 * density).toInt()
                 }
             }
 
@@ -113,22 +139,19 @@ class HomeLayoutBinder(
             val translation = (sin(nodeIndex.toDouble() * Math.PI / 2) * amplitude).toFloat()
 
             when (item) {
-                is HomePathItem.SectionHeader -> {
-                    // 리스트 렌더링에서 제외
-                }
-                HomePathItem.InterStageDivider -> {
-                    // 루프 상단에서 처리됨
-                }
                 is HomePathItem.Completed -> {
                     val row = ViewHomePathNodeCompletedBinding.inflate(inflater, binding.layoutMissionPath, false)
-                    row.btnNode.translationX = translation
+                    row.root.translationX = translation
                     row.btnNode.text = item.icon
-                    val open = {
-                        showTooltip(row.btnNode, item.title, reviewLabel, item.quizNav)
+                    row.tvStars.text = starLine(item.starsFilled)
+                    row.tvMissionCaption.text = item.title
+                    val go = {
+                        if (item.quizNav.entrySetId.isNotBlank() || item.quizNav.missionId.isNotBlank()) {
+                            onOpenDifficultyPicker(item.title, item.quizNav, row.root)
+                        }
                     }
-                    row.btnNode.setOnClickListener { open() }
-                    row.root.isClickable = true
-                    row.root.setOnClickListener { open() }
+                    row.btnNode.setOnClickListener { go() }
+                    row.tvMissionCaption.setOnClickListener { go() }
                     row.btnNode.setOnScaleTouchListener()
                     row.root.setTag(R.id.home_path_section_tag, sectionForRow)
                     binding.layoutMissionPath.addView(row.root, rowLp)
@@ -136,24 +159,21 @@ class HomeLayoutBinder(
                 }
                 is HomePathItem.TodayStart -> {
                     val row = ViewHomePathNodeStartBinding.inflate(inflater, binding.layoutMissionPath, false)
-                    row.btnNode.translationX = translation
-                    row.lottiePet.translationX = translation
-                    
+                    row.root.translationX = translation
                     row.btnNode.text = item.icon
-                    row.btnNode.alpha = if (item.enabled) 1f else 0.5f
-                    val open = {
-                        showTooltip(
-                            row.btnNode,
-                            item.missionTitle,
-                            null,
-                            if (item.enabled) item.quizNav else null
-                        )
+                    row.btnNode.alpha = if (item.enabled) 1f else 0.55f
+                    row.tvStars.text = starLine(item.starsFilled)
+                    row.tvMissionCaption.text = item.missionTitle
+                    val go = {
+                        if (!item.enabled) {
+                            onShowMissionHint(binding.root.context.getString(R.string.home_today_mission_locked_hint))
+                        } else {
+                            onOpenDifficultyPicker(item.missionTitle, item.quizNav, row.root)
+                        }
                     }
-                    row.btnNode.setOnClickListener { open() }
-                    row.root.isClickable = true
-                    row.root.setOnClickListener { open() }
+                    row.btnNode.setOnClickListener { go() }
+                    row.tvMissionCaption.setOnClickListener { go() }
                     row.btnNode.setOnScaleTouchListener()
-                    if (!row.lottiePet.isAnimating) row.lottiePet.playAnimation()
                     row.root.setTag(R.id.home_path_section_tag, sectionForRow)
                     binding.layoutMissionPath.addView(row.root, rowLp)
                     nodeIndex++
@@ -161,25 +181,19 @@ class HomeLayoutBinder(
                 is HomePathItem.Start -> {
                     val row = ViewHomePathNodeStartBinding.inflate(inflater, binding.layoutMissionPath, false)
                     row.btnNode.translationX = translation
-                    row.lottiePet.translationX = translation
-
-                    // 일반 Start는 펫/애니메이션 없이 버튼만 사용
-                    row.lottiePet.cancelAnimation()
-                    row.lottiePet.visibility = View.GONE
-
                     row.btnNode.text = item.icon
                     row.btnNode.alpha = if (item.enabled) 1f else 0.5f
-                    val open = {
-                        showTooltip(
-                            row.btnNode,
-                            item.missionTitle,
-                            null,
-                            if (item.enabled) item.quizNav else null
-                        )
+                    row.tvMissionCaption.text = item.missionTitle
+                    row.tvStars.text = starLine(0)
+                    val go = {
+                        if (!item.enabled) {
+                            onShowMissionHint(binding.root.context.getString(R.string.home_today_mission_locked_hint))
+                        } else {
+                            onOpenDifficultyPicker(item.missionTitle, item.quizNav, row.root)
+                        }
                     }
-                    row.btnNode.setOnClickListener { open() }
-                    row.root.isClickable = true
-                    row.root.setOnClickListener { open() }
+                    row.btnNode.setOnClickListener { go() }
+                    row.tvMissionCaption.setOnClickListener { go() }
                     row.btnNode.setOnScaleTouchListener()
                     row.root.setTag(R.id.home_path_section_tag, sectionForRow)
                     binding.layoutMissionPath.addView(row.root, rowLp)
@@ -187,13 +201,16 @@ class HomeLayoutBinder(
                 }
                 is HomePathItem.Review -> {
                     val row = ViewHomePathNodeReviewBinding.inflate(inflater, binding.layoutMissionPath, false)
-                    row.btnNode.translationX = translation
-                    val open = {
-                        showTooltip(row.btnNode, item.subtitle, reviewLabel, item.quizNav)
+                    row.root.translationX = translation
+                    row.tvStars.text = starLine(item.starsFilled)
+                    row.tvMissionCaption.text = item.subtitle
+                    val go = {
+                        if (item.quizNav.entrySetId.isNotBlank() || item.quizNav.missionId.isNotBlank()) {
+                            onOpenDifficultyPicker(item.subtitle, item.quizNav, row.root)
+                        }
                     }
-                    row.btnNode.setOnClickListener { open() }
-                    row.root.isClickable = true
-                    row.root.setOnClickListener { open() }
+                    row.btnNode.setOnClickListener { go() }
+                    row.tvMissionCaption.setOnClickListener { go() }
                     row.btnNode.setOnScaleTouchListener()
                     row.root.setTag(R.id.home_path_section_tag, sectionForRow)
                     binding.layoutMissionPath.addView(row.root, rowLp)
@@ -201,71 +218,24 @@ class HomeLayoutBinder(
                 }
                 is HomePathItem.Locked -> {
                     val row = ViewHomePathNodeLockedBinding.inflate(inflater, binding.layoutMissionPath, false)
-                    row.btnNode.translationX = translation
-                    val open = {
-                        showTooltip(row.btnNode, "잠김", item.hint, null)
-                    }
-                    row.btnNode.setOnClickListener { open() }
-                    row.root.isClickable = true
-                    row.root.setOnClickListener { open() }
+                    row.root.translationX = translation
+                    row.tvMissionCaption.text = item.hint
+                    row.btnNode.setOnClickListener { onShowMissionHint(item.hint) }
+                    row.tvMissionCaption.setOnClickListener { onShowMissionHint(item.hint) }
                     row.btnNode.setOnScaleTouchListener()
                     row.root.setTag(R.id.home_path_section_tag, sectionForRow)
                     binding.layoutMissionPath.addView(row.root, rowLp)
                     nodeIndex++
                 }
+                else -> Unit
             }
-        }
-
-        binding.scrollPath.setOnScrollChangeListener { _, _, scrollY, _, _ ->
-            syncSectionBannerForScroll(scrollY)
-        }
-        binding.scrollPath.post {
-            syncSectionBannerForScroll(binding.scrollPath.scrollY)
         }
     }
 
-    private fun syncSectionBannerForScroll(scrollY: Int) {
-        val scroll = binding.scrollPath
-        val path = binding.layoutMissionPath
-        if (path.childCount == 0) {
-            applyTopSectionBanner(lastPathItems.filterIsInstance<HomePathItem.SectionHeader>().firstOrNull())
-            return
+    private fun starLine(filled: Int): String = buildString {
+        repeat(3) { i ->
+            append(if (i < filled) '★' else '☆')
         }
-
-        val viewportCenter = scrollY + scroll.height / 2
-        var bestSection: HomePathItem.SectionHeader? = null
-        var bestDist = Int.MAX_VALUE
-
-        for (i in 0 until path.childCount) {
-            val row = path.getChildAt(i)
-            val section = row.getTag(R.id.home_path_section_tag) as? HomePathItem.SectionHeader ?: continue
-            val rowCenterY = offsetTopInScrollContent(row) + row.height / 2
-            val dist = abs(rowCenterY - viewportCenter)
-            if (dist < bestDist) {
-                bestDist = dist
-                bestSection = section
-            }
-        }
-
-        if (bestSection == null) {
-            bestSection = lastPathItems.filterIsInstance<HomePathItem.SectionHeader>().firstOrNull()
-        }
-        applyTopSectionBanner(bestSection)
-    }
-
-    private fun applyTopSectionBanner(section: HomePathItem.SectionHeader?) {
-        if (section == null) return
-        binding.tvHomeBrand.text = "섹션 ${section.stage}"
-        binding.tvHomeTitle.text = section.title
-
-        // 섹션별 배너 색상 분기
-        val bannerRes = when (section.stage) {
-            1 -> R.drawable.bg_home_section_banner_stage1
-            2 -> R.drawable.bg_home_section_banner_stage2
-            3 -> R.drawable.bg_home_section_banner_stage3
-            else -> R.drawable.bg_home_section_banner_gradient
-        }
-        binding.layoutSectionBanner.setBackgroundResource(bannerRes)
     }
 
     private fun addInterStageDivider(density: Float) {
@@ -276,73 +246,11 @@ class HomeLayoutBinder(
             LinearLayout.LayoutParams.MATCH_PARENT,
             (2 * density).toInt().coerceAtLeast(1)
         ).apply {
-            // 스테이지 경계는 "여기서 끊긴다"가 보이도록 여백을 더 줌
             leftMargin = (24 * density).toInt()
             rightMargin = (24 * density).toInt()
             topMargin = (12 * density).toInt()
             bottomMargin = (12 * density).toInt()
         }
         binding.layoutMissionPath.addView(v, lp)
-    }
-
-    private fun offsetTopInScrollContent(view: View): Int {
-        var y = 0
-        var v: View? = view
-        val anchor = binding.frameClickArea
-        while (v != null && v != anchor) {
-            y += v.top
-            v = v.parent as? View
-        }
-        return y
-    }
-
-    private fun showTooltip(
-        nodeView: View,
-        title: String,
-        subtitle: String?,
-        quizNav: HomeQuizNavigation?
-    ) {
-        val tooltip = binding.layoutFloatingTooltip
-        tooltip.isVisible = true
-        // 툴팁이 노드를 덮고 있을 때 터치가 '먹통'처럼 느껴지지 않도록, 툴팁 탭은 닫기로 처리한다.
-        tooltip.setOnClickListener { tooltip.isVisible = false }
-        binding.tvTooltipTitle.text = title
-        
-        if (subtitle != null) {
-            binding.tvTooltipSubtitle.isVisible = true
-            binding.tvTooltipSubtitle.text = subtitle
-        } else {
-            binding.tvTooltipSubtitle.isVisible = false
-        }
-        
-        if (quizNav != null && quizNav.canNavigate()) {
-            binding.btnTooltipStart.isEnabled = true
-            binding.btnTooltipStart.alpha = 1.0f
-            binding.btnTooltipStart.setOnClickListener {
-                onNavigateQuiz(quizNav)
-                tooltip.isVisible = false
-            }
-        } else {
-            binding.btnTooltipStart.isEnabled = false
-            binding.btnTooltipStart.alpha = 0.5f
-            binding.btnTooltipStart.setOnClickListener(null)
-        }
-
-        // 화면 밖 스크롤 방지를 위해 post 사용
-        nodeView.post {
-            val loc = IntArray(2)
-            nodeView.getLocationInWindow(loc)
-            val containerLoc = IntArray(2)
-            binding.containerMissionPath.getLocationInWindow(containerLoc)
-            
-            val nodeX = loc[0] - containerLoc[0]
-            val nodeY = loc[1] - containerLoc[1]
-            
-            tooltip.post {
-                tooltip.x = nodeX + nodeView.width / 2f - tooltip.width / 2f
-                // 팝업 방향을 아래로 변경: 노드 Y + 노드 높이 + 8dp 여백
-                tooltip.y = nodeY + nodeView.height + (8 * nodeView.context.resources.displayMetrics.density)
-            }
-        }
     }
 }

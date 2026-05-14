@@ -43,7 +43,8 @@ internal object QuizSessionRules {
                     type = type,
                     question = text,
                     options = opts,
-                    difficulty = difficulty
+                    difficulty = difficulty,
+                    answerFormat = r.answerFormat
                 )
             )
         }
@@ -89,6 +90,29 @@ internal object QuizSessionRules {
                 questions = questions
             )
         )
+    }
+
+    /**
+     * UI에서 넘긴 값(객관식·칩은 보통 1-based 인덱스 `"1"`… 또는 이미 보기 문구)을
+     * check/submit body의 `answer` 문자열로 바꾼다.
+     *
+     * 서버가 `correctAnswer`를 **보기 텍스트**로 주므로, 선택지가 있는 유형은 항상 그 문구로 맞춘다.
+     */
+    fun normalizeAnswerForCheckPayload(question: Question, rawFromUi: String): String {
+        val t = rawFromUi.trim()
+        if (t.isEmpty()) return t
+        if (question.type == QuestionType.OX) return t
+        if (question.type != QuestionType.MULTIPLE &&
+            question.type != QuestionType.FILL &&
+            question.type != QuestionType.SITUATION
+        ) {
+            return t
+        }
+        val opts = question.options ?: return t
+        val size = opts.size
+        if (opts.any { it == t }) return t
+        val index1 = t.toIntOrNull()?.takeIf { n -> size == 0 || n in 1..size } ?: return t
+        return opts.getOrNull(index1 - 1)?.trim()?.takeIf { it.isNotEmpty() } ?: t
     }
 
     fun isSessionExpired(expiresAtIso: String): Boolean {

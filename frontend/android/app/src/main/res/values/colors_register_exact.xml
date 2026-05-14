@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 자녀 등록 / 완료 시트 — 제공 시안 픽셀 기준 -->
+    <color name="register_screen_bg">#F5F6F8</color>
+    <color name="register_surface">#FFFFFF</color>
+    <color name="register_text_title">#1A202C</color>
+    <color name="register_text_body">#4A5568</color>
+    <color name="register_text_muted">#718096</color>
+    <color name="register_border">#E2E8F0</color>
+    <color name="register_accent">#82CD9B</color>
+    <!-- 다음 / 확인 버튼, 자녀 로그인 코드 — 진한 초록 -->
+    <color name="register_cta_green">#15803d</color>
+    <color name="register_success_circle_bg">#E8F5EF</color>
+    <color name="register_code_box_bg">#EDF2F7</color>
+    <color name="register_step_inactive_fill">#E2E8F0</color>
+</resources>

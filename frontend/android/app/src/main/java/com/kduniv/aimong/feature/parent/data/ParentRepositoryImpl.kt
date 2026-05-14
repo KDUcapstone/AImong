@@ -7,9 +7,9 @@ import com.kduniv.aimong.core.local.SessionManager
 import com.kduniv.aimong.core.network.AimongApiService
 import com.kduniv.aimong.core.network.ApiErrorMapper
 import com.kduniv.aimong.core.network.toResult
-import com.kduniv.aimong.core.network.model.ParentChildItem
 import com.kduniv.aimong.core.network.model.ParentAccountDeleteRequest
 import com.kduniv.aimong.core.network.model.ParentChildDetailData
+import com.kduniv.aimong.core.network.model.ParentChildItem
 import com.kduniv.aimong.core.network.model.ParentChildPatchResponseData
 import com.kduniv.aimong.core.network.model.ParentMeData
 import com.kduniv.aimong.core.network.model.ParentRegisterRequest
@@ -58,100 +58,15 @@ class ParentRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun regenerateChildCode(childId: String): Result<String> {
-        val user = FirebaseAuth.getInstance().currentUser
-            ?: return Result.failure(IllegalStateException("Firebase 로그인이 필요합니다."))
-        return try {
-            val idToken = user.getIdToken(false).await().token
-                ?: return Result.failure(IllegalStateException("Firebase 토큰을 가져오지 못했습니다."))
-            apiService.regenerateChildCode("Bearer $idToken", childId).toResult().map { data ->
-                val newCode = data.newCode
-                // 재발급된 새 코드로 로컬 캐시(JSON) 업데이트
-                val currentList = observeCachedParentChildren().first()
-                val updatedList = currentList.map {
-                    if (it.childId == childId) it.copy(code = newCode) else it
-                }
-                sessionManager.saveParentChildrenJson(gson.toJson(updatedList))
-
-                newCode
-            }
-        } catch (e: HttpException) {
-            Result.failure(Exception(ApiErrorMapper.userMessageForHttpException(e)))
-        } catch (e: IOException) {
-            Result.failure(Exception("연결을 확인한 뒤 다시 시도해주세요."))
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    override fun observeCachedParentChildren(): Flow<List<ParentChildItem>> =
-        sessionManager.parentChildrenJson.map { json ->
-            if (json.isNullOrBlank()) emptyList()
-            else runCatching { gson.fromJson<List<ParentChildItem>>(json, childListType) }.getOrElse { emptyList() }
-        }
-
-    private suspend fun requireParentIdToken(): String {
-        val user = FirebaseAuth.getInstance().currentUser
-            ?: throw IllegalStateException("Firebase 로그인이 필요합니다.")
-        return user.getIdToken(false).await().token
-            ?: throw IllegalStateException("Firebase 토큰을 가져오지 못했습니다.")
-    }
-
-    override suspend fun getChildSummary(childId: String): Result<ParentChildSummaryResponseData> = try {
+    override suspend fun getParentChildDetail(childId: String): Result<ParentChildDetailData> = try {
         val idToken = requireParentIdToken()
-        apiService.getParentChildSummary("Bearer $idToken", childId).toResult()
+        apiService.getParentChildDetail("Bearer $idToken", childId).toResult()
     } catch (e: HttpException) {
         Result.failure(Exception(ApiErrorMapper.userMessageForHttpException(e)))
     } catch (e: IOException) {
         Result.failure(Exception("연결을 확인한 뒤 다시 시도해주세요."))
     } catch (e: Exception) {
         Result.failure(e)
-    }
-
-    override suspend fun getWeeklyStats(childId: String): Result<ParentWeeklyStatsResponseData> = try {
-        val idToken = requireParentIdToken()
-        apiService.getParentChildWeeklyStats("Bearer $idToken", childId).toResult()
-    } catch (e: HttpException) {
-        Result.failure(Exception(ApiErrorMapper.userMessageForHttpException(e)))
-    } catch (e: IOException) {
-        Result.failure(Exception("연결을 확인한 뒤 다시 시도해주세요."))
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
-
-    override suspend fun getPrivacyLog(childId: String, page: Int, size: Int): Result<ParentPrivacyLogResponseData> = try {
-        val idToken = requireParentIdToken()
-        apiService.getParentChildPrivacyLog("Bearer $idToken", childId, page = page, size = size).toResult()
-    } catch (e: HttpException) {
-        Result.failure(Exception(ApiErrorMapper.userMessageForHttpException(e)))
-    } catch (e: IOException) {
-        Result.failure(Exception("연결을 확인한 뒤 다시 시도해주세요."))
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
-
-    override suspend fun getWeakPoints(childId: String, page: Int, size: Int): Result<ParentWeakPointsResponseData> = try {
-        val idToken = requireParentIdToken()
-        apiService.getParentChildWeakPoints("Bearer $idToken", childId, page = page, size = size).toResult()
-    } catch (e: HttpException) {
-        Result.failure(Exception(ApiErrorMapper.userMessageForHttpException(e)))
-    } catch (e: IOException) {
-        Result.failure(Exception("연결을 확인한 뒤 다시 시도해주세요."))
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
-
-    override suspend fun deleteParentFcmToken(firebaseIdToken: String): Result<Unit> {
-        return try {
-            apiService.deleteParentFcmToken("Bearer ${firebaseIdToken.trim()}").toResult()
-            Result.success(Unit)
-        } catch (_: HttpException) {
-            Result.success(Unit)
-        } catch (_: IOException) {
-            Result.success(Unit)
-        } catch (_: Exception) {
-            Result.success(Unit)
-        }
     }
 
     override suspend fun getParentMe(): Result<ParentMeData> = try {
@@ -185,15 +100,93 @@ class ParentRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getParentChildDetail(childId: String): Result<ParentChildDetailData> = try {
+    override suspend fun regenerateChildCode(childId: String): Result<String> {
+        val user = FirebaseAuth.getInstance().currentUser
+            ?: return Result.failure(IllegalStateException("Firebase 로그인이 필요합니다."))
+        return try {
+            val idToken = user.getIdToken(false).await().token
+                ?: return Result.failure(IllegalStateException("Firebase 토큰을 가져오지 못했습니다."))
+            apiService.regenerateChildCode("Bearer $idToken", childId).toResult().map { data ->
+                val newCode = data.newCode
+                val currentList = observeCachedParentChildren().first()
+                val updatedList = currentList.map {
+                    if (it.childId == childId) it.copy(code = newCode) else it
+                }
+                sessionManager.saveParentChildrenJson(gson.toJson(updatedList))
+                newCode
+            }
+        } catch (e: HttpException) {
+            Result.failure(Exception(ApiErrorMapper.userMessageForHttpException(e)))
+        } catch (e: IOException) {
+            Result.failure(Exception("연결을 확인한 뒤 다시 시도해주세요."))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override fun observeCachedParentChildren(): Flow<List<ParentChildItem>> =
+        sessionManager.parentChildrenJson.map { json ->
+            if (json.isNullOrBlank()) emptyList()
+            else runCatching { gson.fromJson<List<ParentChildItem>>(json, childListType) }.getOrElse { emptyList() }
+        }
+
+    override suspend fun getChildSummary(childId: String): Result<ParentChildSummaryResponseData> = try {
         val idToken = requireParentIdToken()
-        apiService.getParentChildDetail("Bearer $idToken", childId).toResult()
+        apiService.getParentChildSummary("Bearer $idToken", childId).toResult()
     } catch (e: HttpException) {
         Result.failure(Exception(ApiErrorMapper.userMessageForHttpException(e)))
     } catch (e: IOException) {
         Result.failure(Exception("연결을 확인한 뒤 다시 시도해주세요."))
     } catch (e: Exception) {
         Result.failure(e)
+    }
+
+    override suspend fun getWeeklyStats(childId: String): Result<ParentWeeklyStatsResponseData> = try {
+        val idToken = requireParentIdToken()
+        apiService.getParentChildWeeklyStats("Bearer $idToken", childId).toResult()
+    } catch (e: HttpException) {
+        Result.failure(Exception(ApiErrorMapper.userMessageForHttpException(e)))
+    } catch (e: IOException) {
+        Result.failure(Exception("연결을 확인한 뒤 다시 시도해주세요."))
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    override suspend fun getPrivacyLog(childId: String, page: Int, size: Int): Result<ParentPrivacyLogResponseData> =
+        try {
+            val idToken = requireParentIdToken()
+            apiService.getParentChildPrivacyLog("Bearer $idToken", childId, page = page, size = size).toResult()
+        } catch (e: HttpException) {
+            Result.failure(Exception(ApiErrorMapper.userMessageForHttpException(e)))
+        } catch (e: IOException) {
+            Result.failure(Exception("연결을 확인한 뒤 다시 시도해주세요."))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+
+    override suspend fun getWeakPoints(childId: String, page: Int, size: Int): Result<ParentWeakPointsResponseData> =
+        try {
+            val idToken = requireParentIdToken()
+            apiService.getParentChildWeakPoints("Bearer $idToken", childId, page = page, size = size).toResult()
+        } catch (e: HttpException) {
+            Result.failure(Exception(ApiErrorMapper.userMessageForHttpException(e)))
+        } catch (e: IOException) {
+            Result.failure(Exception("연결을 확인한 뒤 다시 시도해주세요."))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+
+    override suspend fun deleteParentFcmToken(firebaseIdToken: String): Result<Unit> {
+        return try {
+            apiService.deleteParentFcmToken("Bearer ${firebaseIdToken.trim()}").toResult()
+            Result.success(Unit)
+        } catch (_: HttpException) {
+            Result.success(Unit)
+        } catch (_: IOException) {
+            Result.success(Unit)
+        } catch (_: Exception) {
+            Result.success(Unit)
+        }
     }
 
     override suspend fun patchParentChild(
@@ -243,5 +236,12 @@ class ParentRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    private suspend fun requireParentIdToken(): String {
+        val user = FirebaseAuth.getInstance().currentUser
+            ?: throw IllegalStateException("Firebase 로그인이 필요합니다.")
+        return user.getIdToken(false).await().token
+            ?: throw IllegalStateException("Firebase 토큰을 가져오지 못했습니다.")
     }
 }

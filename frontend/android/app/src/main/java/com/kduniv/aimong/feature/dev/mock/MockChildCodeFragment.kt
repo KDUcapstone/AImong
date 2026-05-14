@@ -1,7 +1,9 @@
 package com.kduniv.aimong.feature.dev.mock
 
 import android.content.Intent
-import android.graphics.Color
+import android.text.Editable
+import android.text.TextWatcher
+import android.view.inputmethod.InputMethodManager
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.snackbar.Snackbar
@@ -9,7 +11,6 @@ import com.kduniv.aimong.MainActivity
 import com.kduniv.aimong.R
 import com.kduniv.aimong.core.local.SessionManager
 import com.kduniv.aimong.core.ui.BaseFragment
-import com.kduniv.aimong.core.util.setGradientText
 import com.kduniv.aimong.core.util.setOnScaleTouchListener
 import com.kduniv.aimong.databinding.FragmentChildCodeBinding
 import dagger.hilt.android.AndroidEntryPoint
@@ -24,12 +25,6 @@ class MockChildCodeFragment : BaseFragment<FragmentChildCodeBinding>(FragmentChi
     lateinit var sessionManager: SessionManager
 
     override fun initView() {
-        binding.tvCodeTitle.setGradientText(
-            Color.parseColor("#448AFF"),
-            Color.parseColor("#7C4DFF"),
-            Color.parseColor("#A040FF")
-        )
-
         binding.btnBack.apply {
             setOnScaleTouchListener()
             setOnClickListener {
@@ -41,6 +36,45 @@ class MockChildCodeFragment : BaseFragment<FragmentChildCodeBinding>(FragmentChi
             setOnScaleTouchListener()
             setOnClickListener { login() }
         }
+
+        // 옵션 A: 실제 입력(et_code)은 유지하고, 6칸 박스는 표시용으로 동기화한다.
+        installCodeBoxes()
+    }
+
+    private fun installCodeBoxes() {
+        val boxes = listOf(
+            binding.tvCodeBox1,
+            binding.tvCodeBox2,
+            binding.tvCodeBox3,
+            binding.tvCodeBox4,
+            binding.tvCodeBox5,
+            binding.tvCodeBox6
+        )
+
+        fun syncBoxes(text: String) {
+            val digits = text.filter { it.isDigit() }.take(6)
+            for (i in 0 until 6) {
+                boxes[i].text = digits.getOrNull(i)?.toString().orEmpty()
+            }
+            binding.btnLogin.alpha = if (digits.length == 6) 1f else 0.6f
+        }
+
+        syncBoxes(binding.etCode.text?.toString().orEmpty())
+        binding.btnLogin.alpha = 0.6f
+
+        binding.layoutCodeBoxes.setOnClickListener {
+            binding.etCode.requestFocus()
+            val imm = requireContext().getSystemService(InputMethodManager::class.java)
+            imm?.showSoftInput(binding.etCode, 0)
+        }
+
+        binding.etCode.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                syncBoxes(s?.toString().orEmpty())
+            }
+        })
     }
 
     private fun login() {

@@ -29,7 +29,7 @@
 
     <fragment
         android:id="@+id/quizFragment"
-        android:name="com.kduniv.aimong.feature.dev.mock.DummyQuizFragment"
+        android:name="com.kduniv.aimong.feature.quiz.presentation.QuizFragment"
         android:label="Quiz"
         tools:layout="@layout/fragment_quiz">
         <argument

@@ -4,152 +4,190 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_auth_gradient">
-
-    <!-- AI 펫 로고 (Lottie 애니메이션) -->
-    <com.airbnb.lottie.LottieAnimationView
-        android:id="@+id/lottie_logo"
-        android:layout_width="200dp"
-        android:layout_height="200dp"
-        android:layout_marginTop="60dp"
-        app:lottie_rawRes="@raw/pet_idle"
-        app:lottie_autoPlay="true"
-        app:lottie_loop="true"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+    android:clipChildren="false"
+    android:clipToPadding="false"
+    android:background="@drawable/bg_role_select_gradient">
 
     <TextView
         android:id="@+id/tv_app_name_logo"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="-20dp"
-        android:text="AImong"
-        android:textColor="@color/text_white"
-        android:textSize="28sp"
+        android:layout_marginTop="0dp"
+        android:text="환영해요!"
+        android:textColor="#1F2937"
+        android:textSize="30sp"
         android:textStyle="bold"
-        android:letterSpacing="0.1"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/lottie_logo" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/tv_role_guide"
+        app:layout_constraintVertical_chainStyle="packed"
+        android:layout_marginBottom="8dp" />
 
     <TextView
         android:id="@+id/tv_role_guide"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="60dp"
-        android:text="AImong과 함께 시작해요!"
-        android:textColor="@color/text_white"
-        android:textSize="22sp"
-        android:textStyle="bold"
+        android:text="누구로 시작할까요?"
+        android:textColor="#4B5563"
+        android:textSize="16sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_app_name_logo" />
+        app:layout_constraintTop_toBottomOf="@id/tv_app_name_logo"
+        app:layout_constraintBottom_toTopOf="@id/layout_role_buttons" />
 
     <LinearLayout
+        android:id="@+id/layout_role_buttons"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="24dp"
-        android:layout_marginTop="40dp"
+        android:layout_marginTop="28dp"
+        android:layout_marginBottom="26dp"
+        android:clipChildren="false"
+        android:clipToPadding="false"
         android:orientation="vertical"
-        app:layout_constraintTop_toBottomOf="@id/tv_role_guide">
+        app:layout_constraintTop_toBottomOf="@id/tv_role_guide"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintVertical_chainStyle="packed">
 
         <!-- 자녀 선택 카드 -->
-        <androidx.constraintlayout.widget.ConstraintLayout
+        <com.google.android.material.card.MaterialCardView
             android:id="@+id/btn_select_child"
             android:layout_width="match_parent"
-            android:layout_height="110dp"
-            android:layout_marginBottom="16dp"
-            android:background="@drawable/bg_glass_card"
+            android:layout_height="112dp"
+            android:layout_marginBottom="14dp"
             android:clickable="true"
-            android:focusable="true">
+            android:focusable="true"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="6dp"
+            app:strokeColor="#00000000"
+            app:strokeWidth="0dp">
 
-            <TextView
-                android:id="@+id/tv_child_emoji"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="24dp"
-                android:text="🧒"
-                android:textSize="36sp"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/bg_role_child_button"
+                android:padding="18dp">
 
-            <TextView
-                android:id="@+id/tv_child_label"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="76dp"
-                android:text="아이(자녀)"
-                android:textColor="@color/text_white"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintVertical_bias="0.35" />
+                <FrameLayout
+                    android:id="@+id/layout_child_icon_bg"
+                    android:layout_width="64dp"
+                    android:layout_height="64dp"
+                    android:background="@drawable/bg_role_child_icon"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent">
 
-            <TextView
-                android:id="@+id/tv_child_desc"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="76dp"
-                android:layout_marginTop="4dp"
-                android:text="AImong과 함께 놀아요"
-                android:textColor="#A0B0D0"
-                android:textSize="13sp"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/tv_child_label" />
+                    <ImageView
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_role_child"
+                        android:contentDescription="@null"
+                        app:tint="@color/white" />
+                </FrameLayout>
 
-        </androidx.constraintlayout.widget.ConstraintLayout>
+                <TextView
+                    android:id="@+id/tv_child_label"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="14dp"
+                    android:text="자녀"
+                    android:textColor="@color/white"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    app:layout_constraintStart_toEndOf="@id/layout_child_icon_bg"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toTopOf="@id/tv_child_desc"
+                    app:layout_constraintVertical_chainStyle="packed"
+                    app:layout_constraintEnd_toEndOf="parent" />
+
+                <TextView
+                    android:id="@+id/tv_child_desc"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="14dp"
+                    android:layout_marginTop="6dp"
+                    android:text="재미있게 AI 배우기"
+                    android:textColor="#E6FFFFFF"
+                    android:textSize="14sp"
+                    app:layout_constraintStart_toEndOf="@id/layout_child_icon_bg"
+                    app:layout_constraintTop_toBottomOf="@id/tv_child_label"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+        </com.google.android.material.card.MaterialCardView>
 
         <!-- 부모 선택 카드 -->
-        <androidx.constraintlayout.widget.ConstraintLayout
+        <com.google.android.material.card.MaterialCardView
             android:id="@+id/btn_select_parent"
             android:layout_width="match_parent"
-            android:layout_height="110dp"
-            android:background="@drawable/bg_glass_card"
+            android:layout_height="112dp"
             android:clickable="true"
-            android:focusable="true">
+            android:focusable="true"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="4dp"
+            app:strokeColor="#E5E7EB"
+            app:strokeWidth="2dp">
 
-            <TextView
-                android:id="@+id/tv_parent_emoji"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="24dp"
-                android:text="🛡️"
-                android:textSize="36sp"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/bg_role_parent_button"
+                android:padding="18dp">
 
-            <TextView
-                android:id="@+id/tv_parent_label"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="76dp"
-                android:text="보호자(부모)"
-                android:textColor="@color/text_white"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintVertical_bias="0.35" />
+                <FrameLayout
+                    android:id="@+id/layout_parent_icon_bg"
+                    android:layout_width="64dp"
+                    android:layout_height="64dp"
+                    android:background="@drawable/bg_role_parent_icon"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent">
 
-            <TextView
-                android:id="@+id/tv_parent_desc"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="76dp"
-                android:layout_marginTop="4dp"
-                android:text="자녀의 성장을 관리해요"
-                android:textColor="#A0B0D0"
-                android:textSize="13sp"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/tv_parent_label" />
+                    <ImageView
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_role_parent"
+                        android:contentDescription="@null"
+                        app:tint="@color/white" />
+                </FrameLayout>
 
-        </androidx.constraintlayout.widget.ConstraintLayout>
+                <TextView
+                    android:id="@+id/tv_parent_label"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="14dp"
+                    android:text="부모"
+                    android:textColor="#1F2937"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    app:layout_constraintStart_toEndOf="@id/layout_parent_icon_bg"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toTopOf="@id/tv_parent_desc"
+                    app:layout_constraintVertical_chainStyle="packed"
+                    app:layout_constraintEnd_toEndOf="parent" />
+
+                <TextView
+                    android:id="@+id/tv_parent_desc"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="14dp"
+                    android:layout_marginTop="6dp"
+                    android:text="자녀 학습 모니터링"
+                    android:textColor="#4B5563"
+                    android:textSize="14sp"
+                    app:layout_constraintStart_toEndOf="@id/layout_parent_icon_bg"
+                    app:layout_constraintTop_toBottomOf="@id/tv_parent_label"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+        </com.google.android.material.card.MaterialCardView>
 
     </LinearLayout>
 

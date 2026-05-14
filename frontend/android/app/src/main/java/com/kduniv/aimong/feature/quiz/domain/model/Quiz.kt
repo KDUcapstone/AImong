@@ -18,7 +18,9 @@ data class Question(
     val question: String,
     val options: List<String>?,
     /** API v1.5 문항 난이도. 없거나 파싱 실패 시 null. */
-    val difficulty: QuestionDifficulty? = null
+    val difficulty: QuestionDifficulty? = null,
+    /** GET questions의 `answerFormat` — check/submit 시 답 문자열 규칙(미지정 시 보기 문구 전송) */
+    val answerFormat: String? = null
 )
 
 enum class QuestionType {

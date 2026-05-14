@@ -11,7 +11,6 @@ import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.kduniv.aimong.R
 import com.kduniv.aimong.core.ui.BaseFragment
-import com.kduniv.aimong.core.util.setGradientText
 import com.kduniv.aimong.core.util.setOnScaleTouchListener
 import com.kduniv.aimong.databinding.FragmentParentLoginBinding
 import com.google.android.material.snackbar.Snackbar
@@ -19,7 +18,6 @@ import com.kduniv.aimong.feature.auth.domain.RegisterParentFcmTokenUseCase
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import android.graphics.Color
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -48,12 +46,6 @@ class ParentLoginFragment : BaseFragment<FragmentParentLoginBinding>(FragmentPar
         }
 
     override fun initView() {
-        binding.tvLoginTitle.setGradientText(
-            Color.parseColor("#448AFF"),
-            Color.parseColor("#7C4DFF"),
-            Color.parseColor("#A040FF")
-        )
-
         binding.btnBack.apply {
             setOnScaleTouchListener()
             setOnClickListener {
@@ -85,7 +77,7 @@ class ParentLoginFragment : BaseFragment<FragmentParentLoginBinding>(FragmentPar
                 val credential = GoogleAuthProvider.getCredential(idToken, null)
                 firebaseAuth.signInWithCredential(credential).await()
                 registerParentFcmTokenUseCase(requireParentSession = false)
-                findNavController().navigate(R.id.action_parentLoginFragment_to_parentOnboardingFragment)
+                findNavController().navigate(R.id.action_parentLoginFragment_to_parentRegisterChildFragment)
             } catch (e: Exception) {
                 Snackbar.make(
                     binding.root,

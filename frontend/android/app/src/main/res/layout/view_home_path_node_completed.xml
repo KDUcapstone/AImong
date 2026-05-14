@@ -1,20 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingVertical="12dp"
     android:clipChildren="false"
-    android:clipToPadding="false">
+    android:clipToPadding="false"
+    android:gravity="center_horizontal"
+    android:orientation="vertical"
+    android:paddingVertical="12dp">
 
     <TextView
         android:id="@+id/btn_node"
         android:layout_width="68dp"
         android:layout_height="68dp"
-        android:layout_gravity="center"
         android:background="@drawable/bg_mission_node_circle"
         android:gravity="center"
         android:text="⭐"
         android:textColor="@color/white"
         android:textSize="26sp"
         android:textStyle="bold" />
-</FrameLayout>
+
+    <TextView
+        android:id="@+id/tv_stars"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textColor="#C4A000"
+        android:textSize="13sp"
+        tools:text="★★★" />
+
+    <TextView
+        android:id="@+id/tv_mission_caption"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:background="@drawable/bg_child_mission_label"
+        android:paddingHorizontal="12dp"
+        android:paddingVertical="6dp"
+        android:textColor="#0F172A"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        tools:text="미션 이름" />
+</LinearLayout>

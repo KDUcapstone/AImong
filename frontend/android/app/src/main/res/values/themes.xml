@@ -9,8 +9,9 @@
         <item name="colorSecondary">@color/aimong_secondary</item>
         <item name="colorSecondaryVariant">@color/aimong_secondary</item>
         <item name="colorOnSecondary">@color/black</item>
-        <!-- Status bar color. -->
-        <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
+        <!-- Edge-to-edge: 실제 색은 Window/인셋으로 처리 -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
     </style>
 
     <style name="TransparentDialog" parent="Theme.MaterialComponents.Dialog">
@@ -23,6 +24,7 @@
         <item name="bottomSheetStyle">@style/AimongBottomSheetStyle</item>
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:windowIsFloating">true</item>
+        <item name="android:backgroundDimAmount">0.5</item>
     </style>
     <style name="AimongBottomSheetStyle" parent="Widget.Design.BottomSheet.Modal">
         <item name="android:background">@android:color/transparent</item>

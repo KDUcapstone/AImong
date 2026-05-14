@@ -92,39 +92,14 @@ interface AimongApiService {
         @Header("Authorization") authorization: String
     ): ApiResponse<ParentChildrenResponseData>
 
-    /** 자녀 등록 완료된 부모용 - 연결 코드 재발급 */
-    @retrofit2.http.PUT("parent/child/{childId}/regenerate-code")
-    suspend fun regenerateChildCode(
+    /** 부모 단일 자녀 상세 — Firebase ID 토큰 (PARENT) */
+    @GET("parent/children/{childId}")
+    suspend fun getParentChildDetail(
         @Header("Authorization") authorization: String,
         @Path("childId") childId: String
-    ): ApiResponse<RegenerateCodeResponse>
+    ): ApiResponse<ParentChildDetailData>
 
-    /** 자녀 세션 발급 — 로그인 전에는 Authorization 없음 */
-    @POST("child/login")
-    suspend fun childLogin(
-        @Body body: ChildLoginRequest
-    ): ApiResponse<ChildLoginResponse>
-
-    /** 자녀 FCM 토큰 등록·갱신 — `AuthInterceptor`가 세션 JWT(CHILD) 부착 */
-    @POST("child/fcm-token")
-    suspend fun registerChildFcmToken(
-        @Body body: ParentFcmTokenRequest
-    ): ApiResponse<ParentFcmTokenResponse>
-
-    @GET("child/me")
-    suspend fun getChildMe(): ApiResponse<ChildMeData>
-
-    @POST("child/logout")
-    suspend fun childLogout(): ApiResponse<ChildLogoutData>
-
-    @DELETE("child/fcm-token")
-    suspend fun deleteChildFcmToken(): ApiResponse<DeletedFlagData>
-
-    @DELETE("parent/fcm-token")
-    suspend fun deleteParentFcmToken(
-        @Header("Authorization") authorization: String
-    ): ApiResponse<DeletedFlagData>
-
+    /** 부모 계정 정보 — Firebase ID 토큰 (PARENT) */
     @GET("parent/me")
     suspend fun getParentMe(
         @Header("Authorization") authorization: String
@@ -137,11 +112,40 @@ interface AimongApiService {
         @Body body: ParentRegisterRequest
     ): ApiResponse<ParentRegisterResponse>
 
-    @GET("parent/children/{childId}")
-    suspend fun getParentChildDetail(
+    /** 자녀 등록 완료된 부모용 - 연결 코드 재발급 */
+    @PUT("parent/child/{childId}/regenerate-code")
+    suspend fun regenerateChildCode(
         @Header("Authorization") authorization: String,
         @Path("childId") childId: String
-    ): ApiResponse<ParentChildDetailData>
+    ): ApiResponse<RegenerateCodeResponse>
+
+    /** 자녀 세션 발급 — 로그인 전에는 Authorization 없음 */
+    @POST("child/login")
+    suspend fun childLogin(
+        @Body body: ChildLoginRequest
+    ): ApiResponse<ChildLoginResponse>
+
+    /** 자녀 세션 확인 — `AuthInterceptor`가 세션 JWT(CHILD) 부착 */
+    @GET("child/me")
+    suspend fun getChildMe(): ApiResponse<ChildMeData>
+
+    /** 자녀 로그아웃 — `AuthInterceptor`가 세션 JWT(CHILD) 부착 */
+    @POST("child/logout")
+    suspend fun childLogout(): ApiResponse<ChildLogoutData>
+
+    /** 자녀 FCM 토큰 등록·갱신 — `AuthInterceptor`가 세션 JWT(CHILD) 부착 */
+    @POST("child/fcm-token")
+    suspend fun registerChildFcmToken(
+        @Body body: ParentFcmTokenRequest
+    ): ApiResponse<ParentFcmTokenResponse>
+
+    @DELETE("child/fcm-token")
+    suspend fun deleteChildFcmToken(): ApiResponse<DeletedFlagData>
+
+    @DELETE("parent/fcm-token")
+    suspend fun deleteParentFcmToken(
+        @Header("Authorization") authorization: String
+    ): ApiResponse<DeletedFlagData>
 
     @PATCH("parent/children/{childId}")
     suspend fun patchParentChild(

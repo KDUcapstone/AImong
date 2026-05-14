@@ -1,22 +1,24 @@
 package com.kduniv.aimong.feature.parent.presentation
 
 import android.content.Intent
+import android.view.View
 import android.widget.EditText
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
 import com.kduniv.aimong.MainActivity
-import com.kduniv.aimong.core.local.SessionManager
 import com.kduniv.aimong.R
-import com.kduniv.aimong.feature.parent.data.ParentRepository
+import com.kduniv.aimong.core.local.SessionManager
 import com.kduniv.aimong.core.network.model.ParentChildItem
 import com.kduniv.aimong.core.ui.BaseFragment
 import com.kduniv.aimong.databinding.FragmentParentDashboardBinding
+import com.kduniv.aimong.feature.parent.data.ParentRepository
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
@@ -46,7 +48,16 @@ class ParentDashboardFragment : BaseFragment<FragmentParentDashboardBinding>(Fra
     private fun updateDashboardTitle() {
         val childNickname = latestSelectedChildId
             ?.let { id -> latestChildren.firstOrNull { it.childId == id }?.nickname }
-        binding.tvTitle.text = titleForParentDashboard(childNickname)
+        binding.tvBrandTitle.text = titleForParentDashboard(childNickname)
+    }
+
+    private fun updateRichChildLabel() {
+        val nick = latestSelectedChildId
+            ?.let { id -> latestChildren.firstOrNull { it.childId == id }?.nickname?.trim() }
+            ?.takeIf { it.isNotEmpty() }
+            ?: latestChildren.firstOrNull()?.nickname?.trim()?.takeIf { it.isNotEmpty() }
+        binding.includeDashboardRich.tvDashboardSelectedChild.text =
+            nick ?: getString(R.string.parent_dashboard_child_select_placeholder)
     }
 
     override fun initView() {
@@ -63,6 +74,10 @@ class ParentDashboardFragment : BaseFragment<FragmentParentDashboardBinding>(Fra
         binding.btnFetchWeeklyStats.setOnClickListener { viewModel.fetchWeeklyStats() }
         binding.btnFetchPrivacyLog.setOnClickListener { viewModel.fetchPrivacyLog() }
         binding.btnFetchWeakPoints.setOnClickListener { viewModel.fetchWeakPoints() }
+
+        binding.includeDashboardRich.btnDashboardPrivacyMore.setOnClickListener {
+            findNavController().navigate(R.id.action_parentDashboardFragment_to_privacyLogFragment)
+        }
 
         binding.btnParentMe.setOnClickListener { viewModel.fetchParentMe() }
         binding.btnAddChild.setOnClickListener { showAddChildDialog() }
@@ -109,17 +124,34 @@ class ParentDashboardFragment : BaseFragment<FragmentParentDashboardBinding>(Fra
                     viewModel.children.collect { children ->
                         latestChildren = children
                         adapter.submitList(children)
+                        val empty = children.isEmpty()
+                        binding.cardEmptyChildren.visibility = if (empty) View.VISIBLE else View.GONE
+                        binding.includeDashboardRich.root.visibility = if (empty) View.GONE else View.VISIBLE
                         updateDashboardTitle()
+                        updateRichChildLabel()
                     }
                 }
                 launch {
                     viewModel.selectedChildId.collect { id ->
                         latestSelectedChildId = id
                         updateDashboardTitle()
+                        updateRichChildLabel()
                     }
                 }
                 launch {
-                    viewModel.summary.collect { s ->
+                    viewModel.childDetail.collect { d ->
+                        if (d == null) return@collect
+                        val linked = d.lastActiveAt != null
+                        binding.tvParentSummary.text =
+                            if (linked) {
+                                "자녀 상태\n- 닉네임: ${d.nickname}\n- XP: ${d.totalXp}\n- 연동: 완료\n- 마지막 활동: ${d.lastActiveAt}"
+                            } else {
+                                "자녀 상태\n아직 자녀가 코드를 입력하지 않았어요!\n- 닉네임: ${d.nickname}\n- 코드: ${d.code}\n- 연동: 대기"
+                            }
+                    }
+                }
+                launch {
+                    viewModel.childSummary.collect { s ->
                         if (s == null) return@collect
                         binding.tvParentSummary.text =
                             "요약\n- 닉네임: ${s.nickname}\n- XP: ${s.totalXp}\n- 스트릭: ${s.continuousDays}일\n- 실드: ${s.shieldCount}\n- 주간 완료 세트: ${s.weeklyCompletedSetCount}\n- 총 완료 세트: ${s.totalCompletedSetCount}\n- 현재 레벨: ${s.currentLevelNo}\n- 마지막 활동: ${s.lastActiveAt ?: "-"}"
@@ -150,9 +182,9 @@ class ParentDashboardFragment : BaseFragment<FragmentParentDashboardBinding>(Fra
                 launch {
                     viewModel.weakPoints.collect { wp ->
                         if (wp == null) return@collect
-                        val lines = wp.weakPoints.joinToString(separator = "\n") { it ->
+                        val lines = wp.weakPoints.joinToString(separator = "\n") {
                             val title = it.setTitle ?: it.missionTitle ?: "-"
-                            val stage = it.stage?.let { s -> "S$s" } ?: "-"
+                            val stage = it.stage?.let { st -> "S$st" } ?: "-"
                             val diff = it.starLevel?.let { sl -> "★$sl" }
                                 ?: it.levelNo?.let { l -> "L$l" }
                                 ?: "-"
@@ -173,4 +205,3 @@ class ParentDashboardFragment : BaseFragment<FragmentParentDashboardBinding>(Fra
         }
     }
 }
-

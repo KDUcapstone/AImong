@@ -4,21 +4,21 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginBottom="12dp"
-    android:background="@drawable/bg_home_card"
+    android:background="@drawable/bg_child_quest_row"
     android:padding="16dp">
 
-    <TextView
-        android:id="@+id/tv_quest_emoji"
+    <ImageView
+        android:id="@+id/iv_quest_row_icon"
         android:layout_width="48dp"
         android:layout_height="48dp"
-        android:background="@drawable/bg_path_pill"
-        android:gravity="center"
-        android:text="🎒"
-        android:textColor="@color/text_white"
-        android:textSize="24sp"
+        android:background="@drawable/bg_child_quest_icon_circle"
+        android:contentDescription="@null"
+        android:padding="10dp"
+        android:src="@drawable/ic_star_filled"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:tint="@color/child_nav_item_selected" />
 
     <LinearLayout
         android:layout_width="0dp"
@@ -28,7 +28,7 @@
         android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/btn_action_container"
-        app:layout_constraintStart_toEndOf="@+id/tv_quest_emoji"
+        app:layout_constraintStart_toEndOf="@+id/iv_quest_row_icon"
         app:layout_constraintTop_toTopOf="parent">
 
         <TextView
@@ -36,7 +36,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="퀘스트"
-            android:textColor="@color/text_white"
+            android:textColor="@color/child_quest_sheet_text_primary"
             android:textSize="15sp"
             android:textStyle="bold" />
 
@@ -47,7 +47,7 @@
             android:layout_marginTop="4dp"
             android:maxLines="6"
             android:text="+50 EXP"
-            android:textColor="@color/text_sub_grey"
+            android:textColor="@color/child_quest_sheet_text_secondary"
             android:textSize="12sp" />
     </LinearLayout>
 
@@ -63,8 +63,8 @@
             android:id="@+id/tv_start_btn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:background="@drawable/bg_btn_primary"
-            android:paddingHorizontal="24dp"
+            android:background="@drawable/bg_child_quest_action_filled"
+            android:paddingHorizontal="20dp"
             android:paddingVertical="10dp"
             android:text="시작"
             android:textColor="@color/text_white"

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Tailwind: blue-50 (#EFF6FF) -> green-50 (#F0FDF4) -->
+    <gradient
+        android:angle="270"
+        android:startColor="#EFF6FF"
+        android:endColor="#F0FDF4"
+        android:type="linear" />
+</shape>
