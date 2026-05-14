@@ -15,7 +15,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
-        android:textColor="@color/text_white"
+        android:textColor="@color/child_quest_sheet_text_primary"
         tools:text="에너지" />
 
     <TextView
@@ -24,7 +24,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
         android:textAppearance="@style/TextAppearance.Material3.HeadlineSmall"
-        android:textColor="@color/text_white"
+        android:textColor="@color/child_quest_sheet_text_primary"
         tools:text="15 / 20" />
 
     <TextView
@@ -33,7 +33,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-        android:textColor="@color/text_sub_grey"
+        android:textColor="@color/child_quest_sheet_text_secondary"
         tools:text="다음 회복: …" />
 
     <TextView
@@ -42,7 +42,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
         android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-        android:textColor="@color/text_sub_grey"
+        android:textColor="@color/child_quest_sheet_text_secondary"
         tools:text="미션 시작 비용: 5" />
 
     <androidx.appcompat.widget.AppCompatButton
@@ -50,7 +50,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
-        android:background="@drawable/bg_energy_add_button"
+        android:background="@drawable/bg_child_quest_action_filled"
         android:minHeight="56dp"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"

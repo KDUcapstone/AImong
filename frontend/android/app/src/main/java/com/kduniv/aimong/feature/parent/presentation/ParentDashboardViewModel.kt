@@ -55,10 +55,35 @@ class ParentDashboardViewModel @Inject constructor(
 
     fun selectChild(childId: String) {
         _selectedChildId.value = childId
-        viewModelScope.launch {
-            _messageEvent.emit("선택된 자녀: $childId")
-            fetchChildDetail()
-        }
+        viewModelScope.launch { refreshAllDashboardForChild(childId) }
+    }
+
+    /** 요약·주간·개인정보·약점 API를 한 번에 갱신한다. */
+    private suspend fun refreshAllDashboardForChild(childId: String) {
+        val detailResult = parentRepository.getParentChildDetail(childId)
+        detailResult.fold(
+            onSuccess = { _childDetail.value = it },
+            onFailure = { e ->
+                _messageEvent.emit(e.message ?: "자녀 상세 조회 실패")
+                return
+            }
+        )
+        parentRepository.getChildSummary(childId).fold(
+            onSuccess = { _childSummary.value = it },
+            onFailure = { _childSummary.value = null }
+        )
+        parentRepository.getWeeklyStats(childId).fold(
+            onSuccess = { _weeklyStats.value = it },
+            onFailure = { _weeklyStats.value = null }
+        )
+        parentRepository.getPrivacyLog(childId, page = 0, size = 20).fold(
+            onSuccess = { _privacyLog.value = it },
+            onFailure = { _privacyLog.value = null }
+        )
+        parentRepository.getWeakPoints(childId, page = 0, size = 20).fold(
+            onSuccess = { _weakPoints.value = it },
+            onFailure = { _weakPoints.value = null }
+        )
     }
 
     fun regenerateChildCode(childId: String) {

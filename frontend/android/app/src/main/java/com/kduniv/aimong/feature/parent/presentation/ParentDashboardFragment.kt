@@ -1,9 +1,8 @@
 package com.kduniv.aimong.feature.parent.presentation
 
 import android.content.Intent
+import android.util.TypedValue
 import android.view.View
-import android.widget.EditText
-import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -19,6 +18,10 @@ import com.kduniv.aimong.core.network.model.ParentChildItem
 import com.kduniv.aimong.core.ui.BaseFragment
 import com.kduniv.aimong.databinding.FragmentParentDashboardBinding
 import com.kduniv.aimong.feature.parent.data.ParentRepository
+import com.kduniv.aimong.feature.parent.data.model.ParentChildSummaryResponseData
+import com.kduniv.aimong.feature.parent.data.model.ParentPrivacyLogResponseData
+import com.kduniv.aimong.feature.parent.data.model.ParentWeakPointsResponseData
+import com.kduniv.aimong.feature.parent.data.model.ParentWeeklyStatsResponseData
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
@@ -69,18 +72,9 @@ class ParentDashboardFragment : BaseFragment<FragmentParentDashboardBinding>(Fra
         binding.rvChildren.layoutManager = LinearLayoutManager(requireContext())
         binding.rvChildren.adapter = adapter
 
-        binding.btnSyncChildren.setOnClickListener { viewModel.syncChildren() }
-        binding.btnFetchSummary.setOnClickListener { viewModel.fetchSummary() }
-        binding.btnFetchWeeklyStats.setOnClickListener { viewModel.fetchWeeklyStats() }
-        binding.btnFetchPrivacyLog.setOnClickListener { viewModel.fetchPrivacyLog() }
-        binding.btnFetchWeakPoints.setOnClickListener { viewModel.fetchWeakPoints() }
-
         binding.includeDashboardRich.btnDashboardPrivacyMore.setOnClickListener {
             findNavController().navigate(R.id.action_parentDashboardFragment_to_privacyLogFragment)
         }
-
-        binding.btnParentMe.setOnClickListener { viewModel.fetchParentMe() }
-        binding.btnAddChild.setOnClickListener { showAddChildDialog() }
 
         binding.btnLogout.setOnClickListener {
             viewLifecycleOwner.lifecycleScope.launch {
@@ -102,24 +96,92 @@ class ParentDashboardFragment : BaseFragment<FragmentParentDashboardBinding>(Fra
         }
     }
 
-    private fun showAddChildDialog() {
-        val input = EditText(requireContext()).apply {
-            hint = getString(R.string.parent_add_child_hint)
+    private fun applyRichSummary(s: ParentChildSummaryResponseData?) {
+        val rich = binding.includeDashboardRich
+        if (s == null) {
+            rich.tvParentDashWeeklySets.text = "—"
+            rich.tvParentDashTotalXp.text = "—"
+            return
         }
-        AlertDialog.Builder(requireContext())
-            .setTitle(R.string.parent_add_child)
-            .setView(input)
-            .setPositiveButton(android.R.string.ok) { _, _ ->
-                val name = input.text?.toString()?.trim().orEmpty()
-                if (name.isNotEmpty()) viewModel.addChild(name)
+        rich.tvParentDashWeeklySets.text = "${s.weeklyCompletedSetCount}"
+        rich.tvParentDashTotalXp.text = "${s.totalXp}"
+    }
+
+    private fun applyRichWeekly(w: ParentWeeklyStatsResponseData?) {
+        val rich = binding.includeDashboardRich
+        val dm = resources.displayMetrics
+        val minPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 8f, dm).toInt()
+        val maxPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 72f, dm).toInt()
+        val bars = listOf(
+            rich.barWeek0, rich.barWeek1, rich.barWeek2, rich.barWeek3,
+            rich.barWeek4, rich.barWeek5, rich.barWeek6
+        )
+        if (w == null) {
+            bars.forEach { v ->
+                v.layoutParams = v.layoutParams.also { lp -> lp.height = minPx }
+                v.requestLayout()
             }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
+            return
+        }
+        rich.tvParentDashWeeklyXpLine.text = getString(
+            R.string.parent_dash_weekly_xp_fmt,
+            w.totalWeeklyXp,
+            w.totalWeeklyMissions
+        )
+        val stats = w.dailyStats.take(7)
+        val maxCount = stats.maxOfOrNull { it.completedSetCount }?.coerceAtLeast(1) ?: 1
+        stats.forEachIndexed { i, d ->
+            val bar = bars.getOrNull(i) ?: return@forEachIndexed
+            val h = minPx + (maxPx - minPx) * d.completedSetCount / maxCount
+            bar.layoutParams = bar.layoutParams.also { lp -> lp.height = h }
+            bar.requestLayout()
+        }
+        for (j in stats.size until bars.size) {
+            val bar = bars[j]
+            bar.layoutParams = bar.layoutParams.also { lp -> lp.height = minPx }
+            bar.requestLayout()
+        }
+    }
+
+    private fun applyRichPrivacy(p: ParentPrivacyLogResponseData?) {
+        val rich = binding.includeDashboardRich
+        if (p == null) return
+        val first = p.events.firstOrNull()
+        val base = getString(R.string.parent_dash_privacy_fmt, p.weeklyCount, p.totalCount)
+        rich.tvParentDashPrivacySummary.text =
+            if (first != null) "$base\n${getString(R.string.parent_dash_privacy_recent, first.detectedType)}"
+            else base
+    }
+
+    private fun applyRichWeak(wp: ParentWeakPointsResponseData?) {
+        val rich = binding.includeDashboardRich
+        val top = wp?.weakPoints?.firstOrNull()
+        if (top == null) {
+            rich.tvParentDashWeak1Title.setText(R.string.parent_dashboard_weak_ai_ethics)
+            rich.tvParentDashWeak1Rate.text = "—"
+            return
+        }
+        val title = when {
+            !top.missionTitle.isNullOrBlank() && !top.setTitle.isNullOrBlank() ->
+                "${top.missionTitle} — ${top.setTitle}"
+            !top.setTitle.isNullOrBlank() -> top.setTitle!!
+            !top.missionTitle.isNullOrBlank() -> top.missionTitle!!
+            else -> "—"
+        }
+        val diffPart = when {
+            !top.difficulty.isNullOrBlank() -> top.difficulty!!
+            top.levelNo != null -> "Lv${top.levelNo}"
+            else -> ""
+        }
+        rich.tvParentDashWeak1Title.text = if (diffPart.isNotEmpty()) "$title · $diffPart" else title
+        val pct = ((top.incorrectRate * 100.0).toInt()).coerceIn(0, 100)
+        rich.tvParentDashWeak1Rate.text = "$pct%"
     }
 
     override fun initObserver() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.syncChildren()
                 launch {
                     viewModel.children.collect { children ->
                         latestChildren = children
@@ -152,6 +214,7 @@ class ParentDashboardFragment : BaseFragment<FragmentParentDashboardBinding>(Fra
                 }
                 launch {
                     viewModel.childSummary.collect { s ->
+                        applyRichSummary(s)
                         if (s == null) return@collect
                         binding.tvParentSummary.text =
                             "요약\n- 닉네임: ${s.nickname}\n- XP: ${s.totalXp}\n- 스트릭: ${s.continuousDays}일\n- 실드: ${s.shieldCount}\n- 주간 완료 세트: ${s.weeklyCompletedSetCount}\n- 총 완료 세트: ${s.totalCompletedSetCount}\n- 현재 레벨: ${s.currentLevelNo}\n- 마지막 활동: ${s.lastActiveAt ?: "-"}"
@@ -159,6 +222,7 @@ class ParentDashboardFragment : BaseFragment<FragmentParentDashboardBinding>(Fra
                 }
                 launch {
                     viewModel.weeklyStats.collect { w ->
+                        applyRichWeekly(w)
                         if (w == null) return@collect
                         val lines = w.dailyStats.joinToString(separator = "\n") { d ->
                             "- ${d.dayOfWeek}(${d.date}): 완료 ${d.completedSetCount}, XP ${d.xpEarned}"
@@ -169,6 +233,7 @@ class ParentDashboardFragment : BaseFragment<FragmentParentDashboardBinding>(Fra
                 }
                 launch {
                     viewModel.privacyLog.collect { p ->
+                        applyRichPrivacy(p)
                         if (p == null) return@collect
                         val lines = p.events.joinToString(separator = "\n") { e ->
                             "- ${e.detectedType} (masked=${e.masked}) @ ${e.detectedAt}"
@@ -181,11 +246,13 @@ class ParentDashboardFragment : BaseFragment<FragmentParentDashboardBinding>(Fra
                 }
                 launch {
                     viewModel.weakPoints.collect { wp ->
+                        applyRichWeak(wp)
                         if (wp == null) return@collect
                         val lines = wp.weakPoints.joinToString(separator = "\n") {
                             val title = it.setTitle ?: it.missionTitle ?: "-"
                             val stage = it.stage?.let { st -> "S$st" } ?: "-"
-                            val diff = it.starLevel?.let { sl -> "★$sl" }
+                            val diff = it.difficulty?.takeIf { d -> d.isNotBlank() }
+                                ?: it.starLevel?.let { sl -> "★$sl" }
                                 ?: it.levelNo?.let { l -> "L$l" }
                                 ?: "-"
                             "- $title ($diff/$stage) 오답률 ${it.incorrectRate}, 시도 ${it.attemptCount}"

@@ -121,6 +121,11 @@ class QuizViewModel @Inject constructor(
     /** v2.4: missions/{missionId}/status로 진행중 attempt가 있으면 복구, 없으면 새 출제 */
     private suspend fun loadByMissionWithStatus(missionId: String, starLevel: Int): kotlin.Result<QuizQuestions> {
         return try {
+            if (UiMode.useStubNav) {
+                attemptId = null
+                answeredQuestionIds = emptySet()
+                return quizRepository.getQuestionsByMission(missionId, starLevel)
+            }
             val statusData = apiService.getMissionStatus(missionId).toResult().getOrThrow()
             val inProgress = statusData.inProgressAttempt
             if (inProgress != null) {

@@ -4,28 +4,16 @@ import com.kduniv.aimong.feature.auth.data.AuthRepositoryImpl
 import com.kduniv.aimong.feature.auth.data.AuthRepository
 import com.kduniv.aimong.feature.auth.data.NotificationRepositoryImpl
 import com.kduniv.aimong.feature.auth.data.NotificationRepository
-import com.kduniv.aimong.feature.gacha.data.GachaRepository
-import com.kduniv.aimong.feature.gacha.data.GachaRepositoryImpl
 import com.kduniv.aimong.feature.home.data.AppBootstrapRepositoryImpl
 import com.kduniv.aimong.feature.home.data.HomeRepositoryImpl
-import com.kduniv.aimong.feature.home.data.PetRepository
-import com.kduniv.aimong.feature.home.data.PetRepositoryImpl
 import com.kduniv.aimong.feature.home.domain.repository.AppBootstrapRepository
 import com.kduniv.aimong.feature.home.domain.repository.HomeRepository
 import com.kduniv.aimong.feature.mission.data.MissionRepositoryImpl
 import com.kduniv.aimong.feature.mission.domain.repository.MissionRepository
 import com.kduniv.aimong.feature.parent.data.ParentRepository
 import com.kduniv.aimong.feature.parent.data.ParentRepositoryImpl
-import com.kduniv.aimong.feature.quest.data.QuestRepositoryImpl
-import com.kduniv.aimong.feature.quest.domain.repository.QuestRepository
-import com.kduniv.aimong.feature.chat.data.ChatRepositoryImpl
-import com.kduniv.aimong.feature.chat.domain.repository.ChatRepository
-import com.kduniv.aimong.feature.quiz.data.QuizRepositoryImpl
-import com.kduniv.aimong.feature.quiz.domain.repository.QuizRepository
 import com.kduniv.aimong.feature.streak.data.StreakRepository
 import com.kduniv.aimong.feature.streak.data.StreakRepositoryImpl
-import com.kduniv.aimong.core.privacy.PrivacyRepository
-import com.kduniv.aimong.core.privacy.PrivacyRepositoryImpl
 import com.kduniv.aimong.feature.settings.data.NotificationSettingsRepository
 import com.kduniv.aimong.feature.settings.data.NotificationSettingsRepositoryImpl
 import dagger.Binds
@@ -70,51 +58,15 @@ abstract class RepositoryModule {
 
     @Binds
     @Singleton
-    abstract fun bindQuizRepository(
-        quizRepositoryImpl: QuizRepositoryImpl
-    ): QuizRepository
-
-    @Binds
-    @Singleton
-    abstract fun bindChatRepository(
-        chatRepositoryImpl: ChatRepositoryImpl
-    ): ChatRepository
-
-    @Binds
-    @Singleton
     abstract fun bindParentRepository(
         parentRepositoryImpl: ParentRepositoryImpl
     ): ParentRepository
 
     @Binds
     @Singleton
-    abstract fun bindQuestRepository(
-        questRepositoryImpl: QuestRepositoryImpl
-    ): QuestRepository
-
-    @Binds
-    @Singleton
-    abstract fun bindPetRepository(
-        petRepositoryImpl: PetRepositoryImpl
-    ): PetRepository
-
-    @Binds
-    @Singleton
-    abstract fun bindGachaRepository(
-        gachaRepositoryImpl: GachaRepositoryImpl
-    ): GachaRepository
-
-    @Binds
-    @Singleton
     abstract fun bindStreakRepository(
         streakRepositoryImpl: StreakRepositoryImpl
     ): StreakRepository
-
-    @Binds
-    @Singleton
-    abstract fun bindPrivacyRepository(
-        impl: PrivacyRepositoryImpl
-    ): PrivacyRepository
 
     @Binds
     @Singleton

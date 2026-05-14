@@ -244,6 +244,7 @@ class MainActivity : AppCompatActivity() {
                 val childNavTint = ContextCompat.getColorStateList(this@MainActivity, R.color.bottom_nav_child_item)
                 binding.bottomNav.itemIconTintList = childNavTint
                 binding.bottomNav.itemTextColor = childNavTint
+                binding.bottomNav.isItemActiveIndicatorEnabled = false
 
                 binding.bottomNav.setOnItemSelectedListener { item ->
                     val currentId = navController.currentDestination?.id
@@ -261,19 +262,6 @@ class MainActivity : AppCompatActivity() {
                             true
                         } catch (_: IllegalArgumentException) {
                             false
-                        }
-                    }
-                    if (navigated) {
-                        for (i in 0 until binding.bottomNav.menu.size()) {
-                            val menuItem = binding.bottomNav.menu.getItem(i)
-                            val view = binding.bottomNav.findViewById<View>(menuItem.itemId)
-                            if (view != null) {
-                                if (menuItem.itemId == item.itemId) {
-                                    view.animate().scaleX(1.15f).scaleY(1.15f).setDuration(150).start()
-                                } else {
-                                    view.animate().scaleX(1.0f).scaleY(1.0f).setDuration(150).start()
-                                }
-                            }
                         }
                     }
                     navigated

@@ -63,101 +63,6 @@
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <LinearLayout
-            android:id="@+id/layout_parent_api_buttons"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingHorizontal="16dp"
-            android:visibility="visible"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/layout_parent_header">
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_sync_children"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="자녀목록 갱신 (/parent/children)"
-                android:textColor="@color/parent_mock_text_primary"
-                app:backgroundTint="@color/parent_mock_surface"
-                app:cornerRadius="12dp"
-                app:strokeColor="@color/parent_mock_border_strong" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_fetch_summary"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="자녀 요약 (/summary)"
-                android:textColor="@color/parent_mock_text_primary"
-                app:backgroundTint="@color/parent_mock_surface"
-                app:cornerRadius="12dp"
-                app:strokeColor="@color/parent_mock_border_strong" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_fetch_weekly_stats"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="주간 통계 (/weekly-stats)"
-                android:textColor="@color/parent_mock_text_primary"
-                app:backgroundTint="@color/parent_mock_surface"
-                app:cornerRadius="12dp"
-                app:strokeColor="@color/parent_mock_border_strong" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_fetch_privacy_log"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="개인정보 감지 (/privacy-log)"
-                android:textColor="@color/parent_mock_text_primary"
-                app:backgroundTint="@color/parent_mock_surface"
-                app:cornerRadius="12dp"
-                app:strokeColor="@color/parent_mock_border_strong" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_fetch_weak_points"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="약점 분석 (/weak-points)"
-                android:textColor="@color/parent_mock_text_primary"
-                app:backgroundTint="@color/parent_mock_surface"
-                app:cornerRadius="12dp"
-                app:strokeColor="@color/parent_mock_border_strong" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_parent_me"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="@string/parent_me_fetch"
-                android:textColor="@color/parent_mock_text_primary"
-                app:backgroundTint="@color/parent_mock_surface"
-                app:cornerRadius="12dp"
-                app:strokeColor="@color/parent_mock_border_strong" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_add_child"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="@string/parent_add_child"
-                android:textColor="@color/parent_mock_text_primary"
-                app:backgroundTint="@color/parent_mock_surface"
-                app:cornerRadius="12dp"
-                app:strokeColor="@color/parent_mock_border_strong" />
-        </LinearLayout>
-
         <ScrollView
             android:id="@+id/scroll_parent_dashboard"
             android:layout_width="0dp"
@@ -167,7 +72,7 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/layout_parent_api_buttons">
+            app:layout_constraintTop_toBottomOf="@id/layout_parent_header">
 
             <LinearLayout
                 android:layout_width="match_parent"
