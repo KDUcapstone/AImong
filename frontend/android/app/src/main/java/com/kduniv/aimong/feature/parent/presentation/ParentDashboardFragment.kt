@@ -3,12 +3,13 @@ package com.kduniv.aimong.feature.parent.presentation
 import android.content.Intent
 import android.util.TypedValue
 import android.view.View
+import android.widget.EditText
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
-import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
 import com.kduniv.aimong.MainActivity
@@ -28,10 +29,11 @@ import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class ParentDashboardFragment : BaseFragment<FragmentParentDashboardBinding>(FragmentParentDashboardBinding::inflate) {
+class ParentDashboardFragment :
+    BaseFragment<FragmentParentDashboardBinding>(FragmentParentDashboardBinding::inflate),
+    ParentChildSelectBottomSheet.Listener {
 
     private val viewModel: ParentDashboardViewModel by viewModels()
-    private lateinit var adapter: ParentChildAdapter
 
     @Inject
     lateinit var sessionManager: SessionManager
@@ -64,13 +66,9 @@ class ParentDashboardFragment : BaseFragment<FragmentParentDashboardBinding>(Fra
     }
 
     override fun initView() {
-        adapter = ParentChildAdapter(
-            onSelectChild = { childId -> viewModel.selectChild(childId) },
-            onRegenerateCode = { childId -> viewModel.regenerateChildCode(childId) }
-        )
-
-        binding.rvChildren.layoutManager = LinearLayoutManager(requireContext())
-        binding.rvChildren.adapter = adapter
+        val rich = binding.includeDashboardRich
+        rich.rowDashboardChildSelector.setOnClickListener { showChildSelectSheet() }
+        binding.cardEmptyChildren.setOnClickListener { showChildSelectSheet() }
 
         binding.includeDashboardRich.btnDashboardPrivacyMore.setOnClickListener {
             findNavController().navigate(R.id.action_parentDashboardFragment_to_privacyLogFragment)
@@ -94,6 +92,30 @@ class ParentDashboardFragment : BaseFragment<FragmentParentDashboardBinding>(Fra
                 startActivity(intent)
             }
         }
+    }
+
+    private fun showChildSelectSheet() {
+        ParentChildSelectBottomSheet.newInstance()
+            .show(childFragmentManager, ParentChildSelectBottomSheet.TAG)
+    }
+
+    override fun onAddChildRequested() {
+        showAddChildDialog()
+    }
+
+    private fun showAddChildDialog() {
+        val input = EditText(requireContext()).apply {
+            hint = getString(R.string.parent_add_child_hint)
+        }
+        AlertDialog.Builder(requireContext())
+            .setTitle(R.string.parent_add_child_dialog_title)
+            .setView(input)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                val name = input.text?.toString()?.trim().orEmpty()
+                if (name.isNotEmpty()) viewModel.addChild(name)
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
     }
 
     private fun applyRichSummary(s: ParentChildSummaryResponseData?) {
@@ -185,10 +207,12 @@ class ParentDashboardFragment : BaseFragment<FragmentParentDashboardBinding>(Fra
                 launch {
                     viewModel.children.collect { children ->
                         latestChildren = children
-                        adapter.submitList(children)
                         val empty = children.isEmpty()
                         binding.cardEmptyChildren.visibility = if (empty) View.VISIBLE else View.GONE
                         binding.includeDashboardRich.root.visibility = if (empty) View.GONE else View.VISIBLE
+                        if (!empty && viewModel.selectedChildId.value.isNullOrBlank()) {
+                            viewModel.selectChild(children.first().childId)
+                        }
                         updateDashboardTitle()
                         updateRichChildLabel()
                     }

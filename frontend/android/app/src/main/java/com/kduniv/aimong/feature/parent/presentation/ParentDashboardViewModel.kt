@@ -116,6 +116,8 @@ class ParentDashboardViewModel @Inject constructor(
         viewModelScope.launch {
             parentRepository.addParentChild(nickname).fold(
                 onSuccess = { r ->
+                    _selectedChildId.value = r.childId
+                    refreshAllDashboardForChild(r.childId)
                     _messageEvent.emit("자녀 추가 완료: ${r.nickname} · 코드 ${r.code}")
                 },
                 onFailure = { e ->

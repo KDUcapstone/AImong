@@ -3,6 +3,7 @@ package com.kduniv.aimong.feature.quiz.presentation
 import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
 import android.graphics.Color
+import androidx.annotation.ColorRes
 import android.graphics.Typeface
 import android.os.CountDownTimer
 import android.text.Spannable
@@ -45,6 +46,9 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
 
     private val viewModel: QuizViewModel by viewModels()
 
+    private fun quizColor(@ColorRes resId: Int): Int =
+        ContextCompat.getColor(requireContext(), resId)
+
     private var lives = 3
     private var maxPlayedIndex = 0
     private var timer: CountDownTimer? = null
@@ -76,7 +80,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                 if (millisUntilFinished <= 10000) {
                     binding.tvTimer.setTextColor(Color.RED)
                 } else {
-                    binding.tvTimer.setTextColor(Color.parseColor("#8A96AD"))
+                    binding.tvTimer.setTextColor(quizColor(R.color.quiz_text_grey))
                 }
             }
             override fun onFinish() {
@@ -200,7 +204,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                             else View.GONE
                         if (isReview) {
                             binding.tvExpInfo.text = "복습 시 EXP 50% 획득"
-                            binding.tvExpInfo.setTextColor(Color.parseColor("#FFD600"))
+                            binding.tvExpInfo.setTextColor(quizColor(R.color.quiz_hint_gold))
                         }
                         updateQuizModeBanner()
                     }
@@ -211,7 +215,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                             // 풀이 모드에서는 문항 30초 타이머 정지 + 잔상 제거
                             timer?.cancel()
                             binding.tvTimer.text = "풀이 보기"
-                            binding.tvTimer.setTextColor(Color.parseColor("#8A96AD"))
+                            binding.tvTimer.setTextColor(quizColor(R.color.quiz_text_grey))
                         }
                     }
                 }
@@ -384,7 +388,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             val fullText = "[$typeLabel] $replacedText"
             setHighlightedText(binding.tvQuizQuestion, fullText)
             // 문제 본문 색은 정오와 무관하게 고정(옵션 영역에서만 정오 표시)
-            binding.tvQuizQuestion.setTextColor(Color.WHITE)
+            binding.tvQuizQuestion.setTextColor(quizColor(R.color.quiz_text_primary))
         }
 
         // OX 유형
@@ -393,19 +397,19 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             resetOxButtons()
             val correctLabel = if (isCorrect) userAnswer else (if (userAnswer == "O") "X" else "O")
             if (correctLabel == "O") {
-                binding.btnOxO.setStrokeColor(android.content.res.ColorStateList.valueOf(Color.parseColor("#00FFB2")))
+                binding.btnOxO.setStrokeColor(android.content.res.ColorStateList.valueOf(quizColor(R.color.quiz_mint)))
                 binding.btnOxO.setStrokeWidth((8 * density).toInt())
             } else {
-                binding.btnOxX.setStrokeColor(android.content.res.ColorStateList.valueOf(Color.parseColor("#00FFB2")))
+                binding.btnOxX.setStrokeColor(android.content.res.ColorStateList.valueOf(quizColor(R.color.quiz_mint)))
                 binding.btnOxX.setStrokeWidth((8 * density).toInt())
             }
             
             if (!isCorrect) {
                 if (userAnswer == "O") {
-                    binding.btnOxO.setStrokeColor(android.content.res.ColorStateList.valueOf(Color.parseColor("#FF4B4B")))
+                    binding.btnOxO.setStrokeColor(android.content.res.ColorStateList.valueOf(quizColor(R.color.quiz_red)))
                     binding.btnOxO.setStrokeWidth((8 * density).toInt())
                 } else {
-                    binding.btnOxX.setStrokeColor(android.content.res.ColorStateList.valueOf(Color.parseColor("#FF4B4B")))
+                    binding.btnOxX.setStrokeColor(android.content.res.ColorStateList.valueOf(quizColor(R.color.quiz_red)))
                     binding.btnOxX.setStrokeWidth((8 * density).toInt())
                 }
             }
@@ -421,7 +425,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                 if (i == chosen) {
                     if (isSolutionMode || isCorrect) {
                         chip.setChipBackgroundColorResource(R.color.quiz_mint)
-                        chip.setTextColor(Color.parseColor("#0A1633"))
+                        chip.setTextColor(quizColor(R.color.quiz_on_accent))
                     } else {
                         chip.setChipBackgroundColorResource(R.color.quiz_red)
                         chip.setTextColor(Color.WHITE)
@@ -525,9 +529,9 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         if (deferImmediateCorrectness) {
             binding.layoutFeedbackPanel.visibility = View.VISIBLE
             binding.tvFeedbackTitle.text = getString(R.string.quiz_feedback_answer_saved_title)
-            binding.tvFeedbackTitle.setTextColor(Color.parseColor("#8A96AD"))
+            binding.tvFeedbackTitle.setTextColor(quizColor(R.color.quiz_text_grey))
             binding.layoutFeedbackPanel.setCardBackgroundColor(
-                android.content.res.ColorStateList.valueOf(Color.parseColor("#0D1D41"))
+                android.content.res.ColorStateList.valueOf(quizColor(R.color.quiz_feedback_panel_correct))
             )
             binding.tvFeedbackContent.text = explanation
 
@@ -577,16 +581,16 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
 
         if (isCorrect) {
             binding.tvFeedbackTitle.text = getString(R.string.quiz_feedback_correct_xp)
-            binding.tvFeedbackTitle.setTextColor(Color.parseColor("#00FFB2"))
-            binding.layoutFeedbackPanel.setCardBackgroundColor(android.content.res.ColorStateList.valueOf(Color.parseColor("#0D1D41")))
+            binding.tvFeedbackTitle.setTextColor(quizColor(R.color.quiz_mint))
+            binding.layoutFeedbackPanel.setCardBackgroundColor(android.content.res.ColorStateList.valueOf(quizColor(R.color.quiz_feedback_panel_correct)))
         } else {
             if (userAnswer.isEmpty()) {
                 binding.tvFeedbackTitle.text = "시간 초과! ⏱"
             } else {
                 binding.tvFeedbackTitle.text = "${getString(R.string.quiz_feedback_wrong)} ${getString(R.string.quiz_feedback_wrong_hint)}"
             }
-            binding.tvFeedbackTitle.setTextColor(Color.parseColor("#FF4B4B"))
-            binding.layoutFeedbackPanel.setCardBackgroundColor(android.content.res.ColorStateList.valueOf(Color.parseColor("#1A1025")))
+            binding.tvFeedbackTitle.setTextColor(quizColor(R.color.quiz_red))
+            binding.layoutFeedbackPanel.setCardBackgroundColor(android.content.res.ColorStateList.valueOf(quizColor(R.color.quiz_feedback_panel_wrong)))
         }
         val correctLine = formatCorrectAnswerLine(question, correctAnswer)
         val exp = explanation.trim()
@@ -633,8 +637,8 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             else -> getString(R.string.quiz_result_success)
         }
         binding.tvResultStatus.setTextColor(
-            if (uiPassed) Color.parseColor("#00FFB2")
-            else Color.parseColor("#FF4B4B")
+            if (uiPassed) quizColor(R.color.quiz_mint)
+            else quizColor(R.color.quiz_red)
         )
 
         binding.tvResultSub.text = when {
@@ -646,8 +650,8 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         binding.tvResCorrectCount.text = "$correctCount / $totalCount"
         binding.tvResPassStatus.text = if (uiPassed) "PASS" else "FAIL"
         binding.tvResPassStatus.setTextColor(
-            if (uiPassed) Color.parseColor("#00FFB2")
-            else Color.parseColor("#FF4B4B")
+            if (uiPassed) quizColor(R.color.quiz_mint)
+            else quizColor(R.color.quiz_red)
         )
 
         // 오답 통계 표시
@@ -657,11 +661,11 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         if (!uiPassed) {
             binding.btnResRetry.visibility = View.VISIBLE
             binding.btnResFinish.text = "다음에 하기"
-            binding.tvResPetBonus.setTextColor(Color.parseColor("#8A96AD"))
+            binding.tvResPetBonus.setTextColor(quizColor(R.color.quiz_text_grey))
         } else {
             binding.btnResRetry.visibility = View.GONE
             binding.btnResFinish.text = "학습 완료"
-            binding.tvResPetBonus.setTextColor(Color.parseColor("#FFD600"))
+            binding.tvResPetBonus.setTextColor(quizColor(R.color.quiz_hint_gold))
         }
 
         // 보너스 정보 (v1.4: 복습은 bonusXp/xpEarned 0, equippedPetGrade 등)
@@ -776,7 +780,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             }
             val fullText = "[$typeLabel] ${question.question}"
             setHighlightedText(binding.tvQuizQuestion, fullText)
-            binding.tvQuizQuestion.setTextColor(Color.WHITE)
+            binding.tvQuizQuestion.setTextColor(quizColor(R.color.quiz_text_primary))
 
             binding.layoutHearts.visibility = View.VISIBLE
             // 복습 모드도 하트 1개로 시작
@@ -790,7 +794,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                 binding.tvAttemptRecoverBanner.visibility = View.VISIBLE
                 binding.tvAttemptRecoverBanner.text = getString(R.string.quiz_attempt_recovered_banner)
                 binding.tvTimer.text = getString(R.string.quiz_timer_recovered_label)
-                binding.tvTimer.setTextColor(Color.parseColor("#8A96AD"))
+                binding.tvTimer.setTextColor(quizColor(R.color.quiz_text_grey))
                 timer?.cancel()
                 timer = null
                 // 복구된 문항에서는 선택 대신 "다음"으로 진행할 수 있게 보장
@@ -829,8 +833,8 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
 
     private fun setHighlightedText(view: TextView, text: String) {
         val spannable = SpannableString(text)
-        val highlightColor = Color.parseColor("#00FFB2")
-        val quoteColor = Color.parseColor("#FFD600")
+        val highlightColor = quizColor(R.color.quiz_mint)
+        val quoteColor = quizColor(R.color.quiz_hint_gold)
 
         // 1. 대괄호 [ ... ] 하이라이트 (Mint)
         var bStart = text.indexOf("[")
@@ -1007,12 +1011,12 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             card.isEnabled = true
             card.isClickable = true
             card.alpha = 1f
-            card.setCardBackgroundColor(ContextCompat.getColor(requireContext(), R.color.home_card_bg))
+            card.setCardBackgroundColor(ContextCompat.getColor(requireContext(), R.color.quiz_card_bg))
             card.strokeWidth = (1 * resources.displayMetrics.density).toInt()
-            card.strokeColor = Color.parseColor("#243B70")
+            card.strokeColor = quizColor(R.color.quiz_option_default_stroke)
             texts[idx].isEnabled = true
             texts[idx].alpha = 1f
-            texts[idx].setTextColor(Color.WHITE)
+            texts[idx].setTextColor(quizColor(R.color.quiz_text_primary))
             checks[idx].visibility = View.GONE
         }
     }
@@ -1023,12 +1027,19 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         binding.btnOxX.isEnabled = true
         binding.btnOxO.isClickable = true
         binding.btnOxX.isClickable = true
-        binding.btnOxO.setCardBackgroundColor(ContextCompat.getColor(requireContext(), R.color.home_card_bg))
-        binding.btnOxX.setCardBackgroundColor(ContextCompat.getColor(requireContext(), R.color.home_card_bg))
-        binding.btnOxO.setStrokeColor(android.content.res.ColorStateList.valueOf(Color.parseColor("#243B70")))
+        binding.btnOxO.alpha = 1f
+        binding.btnOxX.alpha = 1f
+        binding.btnOxO.setCardBackgroundColor(ContextCompat.getColor(requireContext(), R.color.quiz_card_bg))
+        binding.btnOxX.setCardBackgroundColor(ContextCompat.getColor(requireContext(), R.color.quiz_card_bg))
+        binding.btnOxO.setStrokeColor(android.content.res.ColorStateList.valueOf(quizColor(R.color.quiz_option_default_stroke)))
         binding.btnOxO.setStrokeWidth((1 * density).toInt())
-        binding.btnOxX.setStrokeColor(android.content.res.ColorStateList.valueOf(Color.parseColor("#243B70")))
+        binding.btnOxX.setStrokeColor(android.content.res.ColorStateList.valueOf(quizColor(R.color.quiz_option_default_stroke)))
         binding.btnOxX.setStrokeWidth((1 * density).toInt())
+        // applyOxPendingSelection()에서 바꾼 O/X 라벨 색 — 다음 OX 문항으로 넘어갈 때 잔상 제거
+        binding.tvOxOIcon.setTextColor(quizColor(R.color.quiz_mint))
+        binding.tvOxOText.setTextColor(quizColor(R.color.quiz_mint))
+        binding.tvOxXIcon.setTextColor(quizColor(R.color.quiz_red))
+        binding.tvOxXText.setTextColor(quizColor(R.color.quiz_red))
     }
 
     /** OX 탭 직후(채점 전) '내 선택'을 바로 표시 */
@@ -1099,15 +1110,15 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                     chipStartPadding = 20 * density
                     chipEndPadding = 20 * density
                     // SITUATION도 '선택 시 전체 민트'가 명확히 보이도록 Chip 기반 스타일로 통일
-                    setChipBackgroundColorResource(R.color.home_card_bg)
-                    setChipStrokeColorResource(R.color.home_card_stroke)
+                    setChipBackgroundColorResource(R.color.quiz_card_bg)
+                    setChipStrokeColorResource(R.color.quiz_option_default_stroke)
                     chipStrokeWidth = 3f * density
                 } else {
                     minHeight = (48 * density).toInt()
                     chipStartPadding = 16 * density
                     chipEndPadding = 16 * density
-                    setChipBackgroundColorResource(R.color.home_card_bg)
-                    setChipStrokeColorResource(R.color.home_card_stroke)
+                    setChipBackgroundColorResource(R.color.quiz_card_bg)
+                    setChipStrokeColorResource(R.color.quiz_option_default_stroke)
                     chipStrokeWidth = 3f * density
                 }
 
@@ -1166,7 +1177,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             }
             val fullText = "[$typeLabel] $replacedText"
             setHighlightedText(binding.tvQuizQuestion, fullText)
-            binding.tvQuizQuestion.setTextColor(Color.WHITE)
+            binding.tvQuizQuestion.setTextColor(quizColor(R.color.quiz_text_primary))
         }
 
         lockOptions()
@@ -1214,7 +1225,12 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         binding.btnFeedbackRefillHearts.visibility = View.GONE
         binding.layoutFeedbackPanel.visibility = View.VISIBLE
         binding.tvFeedbackTitle.text = title
+        binding.tvFeedbackTitle.setTextColor(quizColor(R.color.quiz_text_primary))
         binding.tvFeedbackContent.text = content
+        binding.tvFeedbackContent.setTextColor(quizColor(R.color.quiz_feedback_text))
+        binding.layoutFeedbackPanel.setCardBackgroundColor(
+            android.content.res.ColorStateList.valueOf(quizColor(R.color.quiz_card_bg))
+        )
     }
 
     private fun showEvolutionCelebration() {

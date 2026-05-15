@@ -9,6 +9,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.os.bundleOf
 import androidx.fragment.app.setFragmentResult
+import androidx.core.content.ContextCompat
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.card.MaterialCardView
 import com.kduniv.aimong.R
@@ -118,8 +119,8 @@ class QuizReportBottomSheet : BottomSheetDialogFragment() {
             }
             radius = 20 * density
             cardElevation = 0f
-            setCardBackgroundColor(android.graphics.Color.parseColor("#1A2B52"))
-            strokeColor = android.graphics.Color.parseColor("#243B70")
+            setCardBackgroundColor(ContextCompat.getColor(context, R.color.quiz_card_bg))
+            strokeColor = ContextCompat.getColor(context, R.color.quiz_option_default_stroke)
             strokeWidth = (2 * density).toInt()
             isClickable = true
             isFocusable = true
@@ -137,7 +138,7 @@ class QuizReportBottomSheet : BottomSheetDialogFragment() {
                     (14 * density).toInt()
                 )
                 text = getString(reason.labelRes)
-                setTextColor(android.graphics.Color.WHITE)
+                setTextColor(ContextCompat.getColor(context, R.color.quiz_text_primary))
                 textSize = 13f
             })
         }

@@ -13,15 +13,28 @@
     <color name="home_card_bg">#1A2B52</color>
     <color name="home_card_bg_active">#243B70</color>
 
-    <!-- 퀴즈 전용 색상 (사진 기준 보완) -->
-    <color name="quiz_bg">#0A1633</color>
-    <color name="quiz_card_bg">#1A2B52</color>
-    <color name="quiz_mint">#00FFB2</color>
-    <color name="quiz_purple">#9C27B0</color>
-    <color name="quiz_red">#FF4B4B</color>
-    <color name="quiz_grey_heart">#24335A</color>
-    <color name="quiz_text_grey">#8A96AD</color>
-    <color name="quiz_option_default_stroke">#243B70</color>
+    <!-- 퀴즈 — 자녀 밝은 테마 (홈·퀘스트 시트와 통일, 레이아웃 구조는 유지) -->
+    <color name="quiz_bg">#F0F9FF</color>
+    <color name="quiz_card_bg">#FFFFFF</color>
+    <color name="quiz_mint">#16A34A</color>
+    <color name="quiz_mint_dark">#15803D</color>
+    <color name="quiz_on_accent">#FFFFFF</color>
+    <color name="quiz_text_primary">#0F172A</color>
+    <color name="quiz_text_secondary">#475569</color>
+    <color name="quiz_purple">#7C3AED</color>
+    <color name="quiz_red">#EF4444</color>
+    <color name="quiz_grey_heart">#E2E8F0</color>
+    <color name="quiz_text_grey">#64748B</color>
+    <color name="quiz_option_default_stroke">#E2E8F0</color>
+    <color name="quiz_feedback_panel_correct">#ECFDF5</color>
+    <color name="quiz_feedback_panel_wrong">#FEF2F2</color>
+    <color name="quiz_feedback_text">#334155</color>
+    <color name="quiz_recover_banner_bg">#DCFCE7</color>
+    <color name="quiz_button_secondary_bg">#F1F5F9</color>
+    <color name="quiz_hint_gold">#CA8A04</color>
+    <color name="quiz_divider_dot">#94A3B8</color>
+    <color name="quiz_review_badge_bg">#FEF9C3</color>
+    <color name="quiz_review_badge_text">#854D0E</color>
     <color name="point_purple">#7C4DFF</color>
     <color name="point_pink">#E040FB</color>
     <color name="point_orange">#FF6D00</color>

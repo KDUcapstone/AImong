@@ -212,23 +212,6 @@
                     </com.google.android.material.card.MaterialCardView>
                 </LinearLayout>
 
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:layout_marginBottom="8dp"
-                    android:text="자녀 목록 (카드를 탭해서 선택)"
-                    android:textColor="@color/parent_mock_text_muted"
-                    android:textSize="13sp"
-                    android:textStyle="bold" />
-
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/rv_children"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:clipToPadding="false"
-                    android:paddingBottom="24dp"
-                    tools:listitem="@layout/item_parent_child" />
             </LinearLayout>
         </ScrollView>
 

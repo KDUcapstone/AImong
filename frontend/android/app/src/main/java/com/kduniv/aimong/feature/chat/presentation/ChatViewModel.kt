@@ -1,13 +1,18 @@
 package com.kduniv.aimong.feature.chat.presentation
 
+import android.content.Context
 import androidx.lifecycle.viewModelScope
+import com.kduniv.aimong.R
 import com.kduniv.aimong.core.privacy.PrivacyRadar
 import com.kduniv.aimong.core.ui.BaseViewModel
 import com.kduniv.aimong.feature.chat.ChatForegroundTracker
 import com.kduniv.aimong.feature.chat.ChatHintNotifier
+import com.kduniv.aimong.feature.chat.ChatPetUiHelper
 import com.kduniv.aimong.feature.chat.domain.ReportPrivacyEventUseCase
 import com.kduniv.aimong.feature.chat.domain.SendChatMessageUseCase
+import com.kduniv.aimong.feature.home.domain.GetHomeStatusUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -21,12 +26,57 @@ class ChatViewModel @Inject constructor(
     private val reportPrivacyEventUseCase: ReportPrivacyEventUseCase,
     private val privacyRadar: PrivacyRadar,
     private val chatForegroundTracker: ChatForegroundTracker,
-    private val chatHintNotifier: ChatHintNotifier
+    private val chatHintNotifier: ChatHintNotifier,
+    private val getHomeStatusUseCase: GetHomeStatusUseCase,
+    @ApplicationContext private val appContext: Context
 ) : BaseViewModel() {
     private val messageSeq = AtomicLong(0L)
 
     private val _uiState = MutableStateFlow(ChatUiState())
     val uiState = _uiState.asStateFlow()
+
+    init {
+        loadEquippedPet()
+    }
+
+    private fun loadEquippedPet() {
+        viewModelScope.launch {
+            getHomeStatusUseCase().fold(
+                onSuccess = { home ->
+                    applyPetContext(
+                        pet = home.equippedPet?.let {
+                            ChatPetUiHelper.displayName(it.petType, it.grade)
+                        } ?: "에이몽",
+                        stage = home.equippedPet?.stage ?: "GROWTH"
+                    )
+                },
+                onFailure = {
+                    applyPetContext(pet = "에이몽", stage = "GROWTH")
+                }
+            )
+        }
+    }
+
+    private fun applyPetContext(pet: String, stage: String) {
+        _uiState.update { state ->
+            val messages = if (state.messages.isEmpty()) {
+                listOf(
+                    ChatMessage(
+                        id = messageSeq.incrementAndGet(),
+                        text = appContext.getString(R.string.chat_welcome_pet_fmt, pet),
+                        isMine = false
+                    )
+                )
+            } else {
+                state.messages
+            }
+            state.copy(
+                petDisplayName = pet,
+                petStage = stage,
+                messages = messages
+            )
+        }
+    }
 
     fun onInputChanged(length: Int) {
         _uiState.update {

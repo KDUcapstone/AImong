@@ -1,44 +1,76 @@
 package com.kduniv.aimong.feature.chat
 
-import android.graphics.Color
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
-import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.kduniv.aimong.R
-import com.kduniv.aimong.databinding.ItemChatMessageBinding
+import com.kduniv.aimong.databinding.ItemChatMessagePetBinding
+import com.kduniv.aimong.databinding.ItemChatMessageUserBinding
 import com.kduniv.aimong.feature.chat.presentation.ChatMessage
 
-class ChatMessageAdapter : ListAdapter<ChatMessage, ChatMessageAdapter.Vh>(Diff) {
+class ChatMessageAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(Diff) {
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): Vh {
-        val binding = ItemChatMessageBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-        return Vh(binding)
+    var petDisplayName: String = "에이몽"
+    var petStage: String = "GROWTH"
+
+    override fun getItemViewType(position: Int): Int =
+        if (getItem(position).isMine) VIEW_TYPE_USER else VIEW_TYPE_PET
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        val inflater = LayoutInflater.from(parent.context)
+        return when (viewType) {
+            VIEW_TYPE_USER -> UserVh(
+                ItemChatMessageUserBinding.inflate(inflater, parent, false)
+            )
+            else -> PetVh(
+                ItemChatMessagePetBinding.inflate(inflater, parent, false)
+            )
+        }
     }
 
-    override fun onBindViewHolder(holder: Vh, position: Int) {
-        holder.bind(getItem(position))
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        val item = getItem(position)
+        when (holder) {
+            is PetVh -> holder.bind(item, petStage)
+            is UserVh -> holder.bind(item)
+        }
     }
 
-    class Vh(private val binding: ItemChatMessageBinding) : RecyclerView.ViewHolder(binding.root) {
-        fun bind(item: ChatMessage) {
+    private class PetVh(
+        private val binding: ItemChatMessagePetBinding
+    ) : RecyclerView.ViewHolder(binding.root) {
+
+        fun bind(item: ChatMessage, stage: String) {
             binding.tvMessage.text = item.text
-            val ctx = binding.root.context
-            if (item.isMine) {
-                binding.tvMessage.setBackgroundResource(R.drawable.bg_chat_bubble_mine)
-                binding.tvMessage.setTextColor(Color.WHITE)
-            } else {
-                binding.tvMessage.setBackgroundResource(R.drawable.bg_chat_bubble_other)
-                binding.tvMessage.setTextColor(ContextCompat.getColor(ctx, R.color.text_white))
+            val emoji = ChatPetUiHelper.stageEmoji(stage)
+            val useEmoji = stage.equals("EGG", ignoreCase = true)
+            binding.lavPetAvatar.visibility = if (useEmoji) View.GONE else View.VISIBLE
+            binding.tvPetAvatarEmoji.visibility = if (useEmoji) View.VISIBLE else View.GONE
+            if (useEmoji) {
+                binding.tvPetAvatarEmoji.text = emoji
             }
         }
     }
 
-    private object Diff : DiffUtil.ItemCallback<ChatMessage>() {
-        override fun areItemsTheSame(a: ChatMessage, b: ChatMessage): Boolean = a.id == b.id
+    private class UserVh(
+        private val binding: ItemChatMessageUserBinding
+    ) : RecyclerView.ViewHolder(binding.root) {
 
-        override fun areContentsTheSame(a: ChatMessage, b: ChatMessage): Boolean = a == b
+        fun bind(item: ChatMessage) {
+            binding.tvMessage.text = item.text
+        }
+    }
+
+    companion object {
+        private const val VIEW_TYPE_PET = 0
+        private const val VIEW_TYPE_USER = 1
+
+        private val Diff = object : DiffUtil.ItemCallback<ChatMessage>() {
+            override fun areItemsTheSame(a: ChatMessage, b: ChatMessage): Boolean = a.id == b.id
+
+            override fun areContentsTheSame(a: ChatMessage, b: ChatMessage): Boolean = a == b
+        }
     }
 }

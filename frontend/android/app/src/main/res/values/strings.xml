@@ -173,7 +173,11 @@
 
     <!-- Chat (GPT) -->
     <string name="chat_input_hint">메시지를 입력하세요</string>
+    <string name="chat_input_hint_pet">궁금한 걸 물어보세요…</string>
     <string name="chat_send">전송</string>
+    <string name="chat_online">온라인</string>
+    <string name="chat_privacy_banner">개인정보는 절대 말하지 마세요. 펫과 안전하게 대화해요!</string>
+    <string name="chat_welcome_pet_fmt">안녕! 나는 %1$s이야. 궁금한 걸 편하게 물어봐!</string>
     <string name="chat_remaining_calls_fmt">오늘 AI 친구와 %1$d번 더 이야기할 수 있어요</string>
     <string name="chat_remaining_calls_zero">오늘은 AI 친구와 이야기할 횟수를 다 썼어요. 내일 또 만나요!</string>
     <string name="chat_remaining_calls_unknown">AI 친구와 대화해 보세요.</string>
@@ -229,6 +233,12 @@
     <string name="bottom_nav_parent_privacy_log">개인정보 로그</string>
     <string name="parent_dashboard_child_select_label">자녀 선택</string>
     <string name="parent_dashboard_child_select_placeholder">자녀 선택</string>
+    <string name="parent_child_sheet_title">자녀 선택</string>
+    <string name="parent_child_sheet_close">닫기</string>
+    <string name="parent_child_sheet_add">+ 자녀 추가하기</string>
+    <string name="parent_child_sheet_empty">등록된 자녀가 없습니다.</string>
+    <string name="parent_child_sheet_registered_fmt">등록일: %1$s</string>
+    <string name="parent_child_sheet_pending">등록 대기 중</string>
     <string name="parent_dashboard_stat_missions">이번 주 완료 세트</string>
     <string name="parent_dashboard_stat_missions_value">—</string>
     <string name="parent_dashboard_stat_score">누적 XP</string>
@@ -297,6 +307,7 @@
 
     <string name="parent_me_fetch">내 계정 (/parent/me)</string>
     <string name="parent_add_child">자녀 추가 (POST /parent/children)</string>
+    <string name="parent_add_child_dialog_title">자녀 추가하기</string>
     <string name="parent_add_child_hint">새 자녀 닉네임 (1~20자)</string>
     <string name="child_logout">로그아웃</string>
     <string name="child_logout_confirm">로그아웃할까요? 이 기기의 자녀 세션이 서버에서 만료돼요.</string>

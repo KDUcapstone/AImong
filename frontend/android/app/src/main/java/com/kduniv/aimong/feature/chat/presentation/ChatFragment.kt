@@ -78,6 +78,9 @@ class ChatFragment : BaseFragment<FragmentChatBinding>(FragmentChatBinding::infl
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
+                    chatAdapter.petDisplayName = state.petDisplayName
+                    chatAdapter.petStage = state.petStage
+                    binding.tvChatTitle.text = state.petDisplayName
                     chatAdapter.submitList(state.messages) {
                         if (state.messages.isNotEmpty()) {
                             binding.rvChat.scrollToPosition(state.messages.size - 1)
