@@ -33,7 +33,7 @@ class BatchQualityValidatorsTest {
                 "S0201-P1-03",
                 1,
                 QuestionType.MULTIPLE,
-                0,
+                1,
                 List.of(
                         "발표용으로 목적과 형식을 분명히 알려 주세요",
                         "해 줘",
@@ -53,15 +53,15 @@ class BatchQualityValidatorsTest {
     @Test
     void measuresAnswerIndexDistribution() {
         List<AuditQuestion> questions = List.of(
-                question("S0201-P1-01", 1, QuestionType.MULTIPLE, 0, List.of("A", "B", "C", "D"), "Q1?"),
-                question("S0201-P1-02", 1, QuestionType.MULTIPLE, 0, List.of("A", "B", "C", "D"), "Q2?"),
-                question("S0201-P1-03", 1, QuestionType.MULTIPLE, 3, List.of("A", "B", "C", "D"), "Q3?")
+                question("S0201-P1-01", 1, QuestionType.MULTIPLE, 1, List.of("A", "B", "C", "D"), "Q1?"),
+                question("S0201-P1-02", 1, QuestionType.MULTIPLE, 1, List.of("A", "B", "C", "D"), "Q2?"),
+                question("S0201-P1-03", 1, QuestionType.MULTIPLE, 4, List.of("A", "B", "C", "D"), "Q3?")
         );
 
         AnswerIndexBalanceValidator.AnswerIndexBalanceReport report =
                 new AnswerIndexBalanceValidator().validate(questions);
 
-        assertThat(report.multipleDistribution()).isEqualTo(Map.of(0, 2, 1, 0, 2, 0, 3, 1));
+        assertThat(report.multipleDistribution()).isEqualTo(Map.of(1, 2, 2, 0, 3, 0, 4, 1));
         assertThat(report.multipleMaxMinRatio()).isEqualTo(Double.POSITIVE_INFINITY);
     }
 

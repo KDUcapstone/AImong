@@ -13,15 +13,25 @@ import org.springframework.data.repository.query.Param;
 
 public interface MissionAnswerResultRepository extends JpaRepository<MissionAnswerResult, UUID> {
 
+    List<MissionAnswerResult> findAllByChildIdAndAttemptIdOrderByCreatedAtAsc(UUID childId, UUID attemptId);
+
     @Query(
             value = """
                     select new com.aimong.backend.domain.parent.dto.ParentWeakPointResponse(
                         m.id,
-                        coalesce(ms.title, m.title),
+                        m.title,
                         coalesce(ms.stage, m.stage),
                         (sum(case when r.correct = false then 1 else 0 end) * 1.0) / count(r.id),
                         count(distinct r.attemptId),
                         r.setId,
+                        ms.title,
+                        ms.starLevel,
+                        case
+                            when ms.starLevel = 1 then 'LOW'
+                            when ms.starLevel = 2 then 'MEDIUM'
+                            when ms.starLevel = 3 then 'HIGH'
+                            else null
+                        end,
                         ms.starLevel
                     )
                     from MissionAnswerResult r

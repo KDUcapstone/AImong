@@ -4,7 +4,11 @@ import com.aimong.backend.domain.auth.entity.ChildProfile;
 import com.aimong.backend.domain.auth.repository.ChildProfileRepository;
 import com.aimong.backend.domain.auth.service.ChildActivityService;
 import com.aimong.backend.domain.chat.dto.ChatResponse;
+import com.aimong.backend.domain.chat.entity.ChatMessage;
+import com.aimong.backend.domain.chat.entity.ChatSession;
 import com.aimong.backend.domain.chat.entity.ChatUsage;
+import com.aimong.backend.domain.chat.repository.ChatMessageRepository;
+import com.aimong.backend.domain.chat.repository.ChatSessionRepository;
 import com.aimong.backend.domain.chat.repository.ChatUsageRepository;
 import com.aimong.backend.domain.pet.service.PetGrowthService;
 import com.aimong.backend.domain.privacy.entity.PrivacyEvent;
@@ -17,6 +21,10 @@ import com.aimong.backend.global.exception.ErrorCode;
 import com.aimong.backend.global.config.OpenAiProperties;
 import com.aimong.backend.global.util.KstDateUtils;
 import com.aimong.backend.infra.openai.OpenAiClient;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -34,6 +42,7 @@ public class ChatService {
     private static final int DAILY_LIMIT = 20;
     private static final int FIRST_CHAT_XP = 5;
     private static final int GPT_TIMEOUT_SECONDS = 15;
+    private static final Duration SESSION_TTL = Duration.ofHours(1);
     private static final String CHAT_MODEL = "gpt-5-mini";
     private static final String HINT_SUGGESTION = "스스로 생각해보는 건 어때요? 힌트만 받아보세요!";
     private static final List<String> HINT_TRIGGER_WORDS = List.of("숙제", "해줘", "대신", "써줘");
@@ -45,6 +54,8 @@ public class ChatService {
             """;
 
     private final ChatUsageRepository chatUsageRepository;
+    private final ChatSessionRepository chatSessionRepository;
+    private final ChatMessageRepository chatMessageRepository;
     private final ChildProfileRepository childProfileRepository;
     private final ChildActivityService childActivityService;
     private final PrivacyMaskingService privacyMaskingService;
@@ -58,6 +69,11 @@ public class ChatService {
 
     @Transactional
     public ChatResponse send(UUID childId, String message, boolean masked) {
+        return send(childId, message, masked, null);
+    }
+
+    @Transactional
+    public ChatResponse send(UUID childId, String message, boolean masked, UUID sessionId) {
         childActivityService.touchLastActiveAt(childId);
         ChildProfile childProfile = childProfileRepository.findWithLockById(childId)
                 .orElseThrow(() -> new AimongException(ErrorCode.CHILD_NOT_FOUND));
@@ -72,7 +88,20 @@ public class ChatService {
         PrivacyMaskingService.MaskingResult maskingResult = privacyMaskingService.mask(message);
         savePrivacyEvents(childId, maskingResult, masked);
         boolean hintTriggered = isHintTriggered(maskingResult.sanitizedMessage());
-        String reply = requestGptReply(maskingResult.sanitizedMessage());
+        Instant now = Instant.now();
+        chatSessionRepository.deleteByExpiresAtBefore(now);
+        ChatSession chatSession = resolveSession(childId, sessionId, now);
+        List<ChatMessage> previousMessages = recentMessages(chatSession);
+        String reply = requestGptReply(
+                maskingResult.sanitizedMessage(),
+                contextualPrompt(previousMessages, maskingResult.sanitizedMessage())
+        );
+        String safeReply = privacyMaskingService.mask(reply).sanitizedMessage();
+
+        chatSession.refresh(now, SESSION_TTL);
+        chatSessionRepository.save(chatSession);
+        chatMessageRepository.save(ChatMessage.user(chatSession, maskingResult.sanitizedMessage(), now));
+        chatMessageRepository.save(ChatMessage.assistant(chatSession, safeReply, Instant.now()));
 
         boolean firstSuccessToday = usage.getCount() == 0;
         usage.increment();
@@ -88,20 +117,54 @@ public class ChatService {
         achievementService.unlockByTotalXp(childId, childProfile);
 
         return new ChatResponse(
-                reply,
+                safeReply,
                 DAILY_LIMIT - usage.getCount(),
-                hintTriggered ? HINT_SUGGESTION : null
+                hintTriggered ? HINT_SUGGESTION : null,
+                chatSession.getId(),
+                chatSession.getExpiresAt()
         );
     }
 
-    private String requestGptReply(String sanitizedMessage) {
+    private ChatSession resolveSession(UUID childId, UUID sessionId, Instant now) {
+        if (sessionId != null) {
+            return chatSessionRepository.findByIdAndChildIdAndExpiresAtAfter(sessionId, childId, now)
+                    .orElseGet(() -> chatSessionRepository.save(ChatSession.create(childId, now, SESSION_TTL)));
+        }
+        return chatSessionRepository.findFirstByChildIdAndExpiresAtAfterOrderByUpdatedAtDesc(childId, now)
+                .orElseGet(() -> chatSessionRepository.save(ChatSession.create(childId, now, SESSION_TTL)));
+    }
+
+    private List<ChatMessage> recentMessages(ChatSession chatSession) {
+        List<ChatMessage> messages = new ArrayList<>(
+                chatMessageRepository.findTop10BySession_IdOrderByCreatedAtDesc(chatSession.getId())
+        );
+        messages.sort(Comparator.comparing(ChatMessage::getCreatedAt));
+        return messages;
+    }
+
+    private String contextualPrompt(List<ChatMessage> previousMessages, String currentMessage) {
+        if (previousMessages.isEmpty()) {
+            return currentMessage;
+        }
+
+        StringBuilder prompt = new StringBuilder();
+        prompt.append("[같은 채팅 세션의 최근 대화입니다. 개인정보는 마스킹된 내용만 포함합니다.]\n");
+        for (ChatMessage message : previousMessages) {
+            prompt.append(message.getRole()).append(": ").append(message.getContentMasked()).append('\n');
+        }
+        prompt.append("\n[현재 사용자 메시지]\n");
+        prompt.append(currentMessage);
+        return prompt.toString();
+    }
+
+    private String requestGptReply(String sanitizedMessage, String contextualPrompt) {
         if (openAiProperties.mockEnabled()) {
             return createMockReply(sanitizedMessage);
         }
 
         try {
             return CompletableFuture
-                    .supplyAsync(() -> openAiClient.createChatReply(CHAT_MODEL, DEVELOPER_PROMPT, sanitizedMessage))
+                    .supplyAsync(() -> openAiClient.createChatReply(CHAT_MODEL, DEVELOPER_PROMPT, contextualPrompt))
                     .get(GPT_TIMEOUT_SECONDS, TimeUnit.SECONDS);
         } catch (TimeoutException exception) {
             throw new AimongException(ErrorCode.GATEWAY_TIMEOUT, "AI 친구가 생각 중이에요. 다시 시도해볼까요?");

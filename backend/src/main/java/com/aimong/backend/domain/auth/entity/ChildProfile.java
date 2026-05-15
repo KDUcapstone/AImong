@@ -44,7 +44,7 @@ public class ChildProfile {
     @Column(name = "nickname", nullable = false)
     private String nickname;
 
-    @Column(name = "code", nullable = false, unique = true, length = 6)
+    @Column(name = "code", unique = true, length = 6)
     private String code;
 
     @Column(name = "starter_issued", nullable = false)
@@ -100,6 +100,9 @@ public class ChildProfile {
     @Column(name = "last_active_at")
     private Instant lastActiveAt;
 
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
+
     public static ChildProfile create(ParentAccount parentAccount, String nickname, String code) {
         return new ChildProfile(
                 UUID.randomUUID(),
@@ -120,6 +123,7 @@ public class ChildProfile {
                 0,
                 null,
                 MAX_ENERGY,
+                null,
                 null,
                 null,
                 null
@@ -180,6 +184,31 @@ public class ChildProfile {
         this.fcmToken = fcmToken;
     }
 
+    public void clearFcmToken() {
+        this.fcmToken = null;
+    }
+
+    public void updateProfile(String nickname, ProfileImageType profileImageType) {
+        if (nickname != null) {
+            this.nickname = nickname;
+        }
+        if (profileImageType != null) {
+            this.profileImageType = profileImageType;
+        }
+    }
+
+    public void logout() {
+        this.sessionVersion += 1;
+        this.fcmToken = null;
+    }
+
+    public void softDelete(Instant deletedAt) {
+        this.deletedAt = deletedAt;
+        this.code = null;
+        this.fcmToken = null;
+        this.sessionVersion += 1;
+    }
+
     public void addShield(int count) {
         shieldCount += count;
     }
@@ -212,6 +241,14 @@ public class ChildProfile {
         }
         energy -= MISSION_ENERGY_COST;
         return true;
+    }
+
+    public void addEnergy(int amount, Instant now) {
+        recoverEnergy(now);
+        energy = Math.min(MAX_ENERGY, energy + amount);
+        if (energy >= MAX_ENERGY) {
+            energyRecoveredAt = now;
+        }
     }
 
     public Instant nextEnergyRecoverAt() {

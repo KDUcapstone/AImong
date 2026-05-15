@@ -89,7 +89,7 @@ class QuizServiceTest {
         assertThat(response.isReview()).isTrue();
         assertThat(response.questions()).hasSize(10);
         assertThat(response.questions().getFirst().type()).isEqualTo("OX");
-        assertThat(response.questions().getFirst().question()).startsWith("Should you share a password?");
+        assertThat(response.questions().getFirst().prompt()).startsWith("Should you share a password?");
         verify(childActivityService).touchLastActiveAt(childId);
     }
 

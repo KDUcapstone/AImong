@@ -3,6 +3,7 @@ package com.aimong.backend.domain.chat.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import java.util.UUID;
 
 public record ChatRequest(
         @NotBlank(message = "메시지를 입력해주세요")
@@ -10,6 +11,8 @@ public record ChatRequest(
         String message,
 
         @NotNull(message = "마스킹 여부를 입력해주세요")
-        Boolean masked
+        Boolean masked,
+
+        UUID sessionId
 ) {
 }

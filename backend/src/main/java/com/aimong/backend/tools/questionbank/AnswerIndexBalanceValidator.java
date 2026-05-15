@@ -11,7 +11,7 @@ public final class AnswerIndexBalanceValidator {
         Map<Integer, Integer> multiple = new LinkedHashMap<>();
         Map<Integer, Integer> situation = new LinkedHashMap<>();
         Map<Integer, Integer> combined = new LinkedHashMap<>();
-        for (int index = 0; index < 4; index++) {
+        for (int index = 1; index <= 4; index++) {
             multiple.put(index, 0);
             situation.put(index, 0);
             combined.put(index, 0);

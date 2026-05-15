@@ -56,3 +56,4 @@ private-docs/test.html
 ### Local Development Overrides ###
 docker-compose.override.yml
 docker-compose.*.override.yml
+/src/main/resources/static/test.html

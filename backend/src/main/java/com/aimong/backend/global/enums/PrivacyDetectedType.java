@@ -8,6 +8,5 @@ public enum PrivacyDetectedType {
     EMAIL,
     ADDRESS,
     DATE,
-    URL,
-    ETC
+    URL
 }

@@ -9,9 +9,11 @@ import static org.mockito.Mockito.when;
 
 import com.aimong.backend.domain.auth.entity.ChildProfile;
 import com.aimong.backend.domain.auth.entity.ParentAccount;
+import com.aimong.backend.domain.auth.repository.ParentNotificationSettingsRepository;
 import com.aimong.backend.domain.privacy.entity.PrivacyDetectedType;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -23,6 +25,7 @@ class FcmNotificationServiceTest {
 
     @Mock private FcmService fcmService;
     @Mock private FcmNotificationEventRepository fcmNotificationEventRepository;
+    @Mock private ParentNotificationSettingsRepository notificationSettingsRepository;
 
     @Test
     void sendPrivacyAlertQueuesWhenParentDailyLimitIsReached() {
@@ -84,6 +87,7 @@ class FcmNotificationServiceTest {
     }
 
     private FcmNotificationService service() {
-        return new FcmNotificationService(fcmService, fcmNotificationEventRepository);
+        when(notificationSettingsRepository.findById(any())).thenReturn(Optional.empty());
+        return new FcmNotificationService(fcmService, fcmNotificationEventRepository, notificationSettingsRepository);
     }
 }

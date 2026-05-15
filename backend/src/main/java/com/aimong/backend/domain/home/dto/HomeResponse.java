@@ -61,10 +61,15 @@ public record HomeResponse(
     }
 
     public record RecommendedMissionResponse(
-            UUID id,
+            String setId,
+            UUID missionId,
+            String missionCode,
+            int levelNo,
             short stage,
+            String difficulty,
             String title,
             String description,
+            boolean isUnlocked,
             boolean isReviewable
     ) {
     }

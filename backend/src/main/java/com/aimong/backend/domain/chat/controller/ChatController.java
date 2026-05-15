@@ -28,7 +28,8 @@ public class ChatController {
         return ApiResponse.success(chatService.send(
                 UUID.fromString(authentication.getName()),
                 request.message(),
-                request.masked()
+                request.masked(),
+                request.sessionId()
         ));
     }
 }

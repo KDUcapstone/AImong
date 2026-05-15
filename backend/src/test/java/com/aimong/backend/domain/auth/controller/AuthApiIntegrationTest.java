@@ -63,10 +63,10 @@ class AuthApiIntegrationTest {
         UUID childId = UUID.randomUUID();
         ParentRegisterResponse response = new ParentRegisterResponse(childId, "민준", "482917", 3);
 
-        given(parentAuthService.register(eq("firebase-parent"), any(ParentRegisterRequest.class)))
+        given(parentAuthService.register(eq("firebase-parent"), eq("parent@example.com"), any(ParentRegisterRequest.class)))
                 .willReturn(response);
 
-        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken("firebase-parent", null));
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken("firebase-parent", "parent@example.com"));
         try {
             mockMvc.perform(post("/parent/register")
                             .contentType(APPLICATION_JSON)

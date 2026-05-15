@@ -115,9 +115,6 @@ public class QuestionServingQualityGuard {
     }
 
     private int resolveNumericDifficulty(Mission mission, QuestionBank question) {
-        if (question.getLegacyNumericDifficulty() != null && question.getLegacyNumericDifficulty() > 0) {
-            return question.getLegacyNumericDifficulty();
-        }
         return switch (mission.getStage()) {
             case 1 -> question.getDifficulty() == DifficultyBand.LOW ? 1 : 2;
             case 2 -> question.getDifficulty() == DifficultyBand.LOW ? 2 : 3;
@@ -164,8 +161,8 @@ public class QuestionServingQualityGuard {
     }
 
     private Object normalizeSingleChoiceAnswer(List<String> options, Object answer) {
-        if (answer instanceof Integer) {
-            return answer;
+        if (answer instanceof Integer index) {
+            return normalizePersistedChoiceIndex(options, index);
         }
         if (answer instanceof String text) {
             Integer index = optionIndex(options, text);
@@ -177,7 +174,9 @@ public class QuestionServingQualityGuard {
     private Object normalizeFillAnswer(List<String> options, Object answer) {
         if (answer instanceof List<?> answers) {
             List<Integer> indexes = answers.stream()
-                    .map(value -> value instanceof Integer index ? index : optionIndex(options, String.valueOf(value)))
+                    .map(value -> value instanceof Integer index
+                            ? normalizePersistedChoiceIndex(options, index)
+                            : optionIndex(options, String.valueOf(value)))
                     .filter(java.util.Objects::nonNull)
                     .toList();
             return indexes.isEmpty() ? answer : indexes;
@@ -187,6 +186,13 @@ public class QuestionServingQualityGuard {
             return index == null ? answer : List.of(index);
         }
         return answer;
+    }
+
+    private Integer normalizePersistedChoiceIndex(List<String> options, int persistedIndex) {
+        if (options != null && persistedIndex >= 1 && persistedIndex <= options.size()) {
+            return persistedIndex - 1;
+        }
+        return persistedIndex;
     }
 
     private Integer optionIndex(List<String> options, String answerText) {

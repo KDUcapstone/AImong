@@ -4,6 +4,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.io.Serializable;
 import java.time.Instant;
@@ -28,17 +29,23 @@ public class MissionSetProgress {
     @Column(name = "set_id", nullable = false, length = 32)
     private String setId;
 
-    @Column(name = "completed_at", nullable = false)
+    @Column(name = "mission_id", nullable = false)
+    private UUID missionId;
+
+    @Column(name = "stage", nullable = false)
+    private Integer stage;
+
+    @Column(name = "completed_at")
     private Instant completedAt;
 
-    @Column(name = "best_score", nullable = false)
-    private int bestScore;
+    @Column(name = "best_score")
+    private Integer bestScore;
 
     @Column(name = "total", nullable = false)
     private int total;
 
-    @Column(name = "first_attempt_id")
-    private UUID firstAttemptId;
+    @Column(name = "first_passed_attempt_id")
+    private UUID firstPassedAttemptId;
 
     @Column(name = "star_level", nullable = false)
     private Integer starLevel;
@@ -46,33 +53,49 @@ public class MissionSetProgress {
     @Column(name = "variant_no", nullable = false)
     private Integer variantNo;
 
-    public static MissionSetProgress create(UUID childId, String setId, UUID firstAttemptId, int score, int total) {
-        return create(childId, setId, 1, 1, firstAttemptId, score, total);
-    }
+    @Column(name = "completed", nullable = false)
+    private boolean completed;
+
+    @Column(name = "updated_at", nullable = false)
+    private Instant updatedAt;
 
     public static MissionSetProgress create(
             UUID childId,
             String setId,
+            UUID missionId,
+            Integer stage,
             Integer starLevel,
             Integer variantNo,
-            UUID firstAttemptId,
+            UUID firstPassedAttemptId,
             int score,
             int total
     ) {
         MissionSetProgress progress = new MissionSetProgress();
         progress.childId = childId;
         progress.setId = setId;
+        progress.missionId = missionId;
+        progress.stage = stage;
         progress.starLevel = starLevel;
         progress.variantNo = variantNo;
-        progress.firstAttemptId = firstAttemptId;
+        progress.firstPassedAttemptId = firstPassedAttemptId;
         progress.completedAt = Instant.now();
         progress.bestScore = score;
         progress.total = total;
+        progress.completed = true;
+        progress.updatedAt = Instant.now();
         return progress;
     }
 
     public void improveBestScore(int score) {
-        bestScore = Math.max(bestScore, score);
+        bestScore = bestScore == null ? score : Math.max(bestScore, score);
+        updatedAt = Instant.now();
+    }
+
+    @PrePersist
+    void prePersist() {
+        if (updatedAt == null) {
+            updatedAt = Instant.now();
+        }
     }
 
     @NoArgsConstructor

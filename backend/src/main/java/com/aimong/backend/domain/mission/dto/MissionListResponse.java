@@ -46,8 +46,7 @@ public record MissionListResponse(
 
     public record ProgressResponse(
             long completedSetCount,
-            long totalSetCount,
-            int currentStarLevel
+            long totalSetCount
     ) {
     }
 }

@@ -83,15 +83,9 @@ public class MissionService {
 
         long completedSetCount = progressBySetId.size();
         long totalSetCount = missionSets.size();
-        int currentStarLevel = missionSets.stream()
-                .filter(set -> !progressBySetId.containsKey(set.getSetId()))
-                .map(MissionSet::getStarLevel)
-                .findFirst()
-                .orElse(1);
-
         return new MissionListResponse(
                 stages,
-                new MissionListResponse.ProgressResponse(completedSetCount, totalSetCount, currentStarLevel)
+                new MissionListResponse.ProgressResponse(completedSetCount, totalSetCount)
         );
     }
 
@@ -322,7 +316,7 @@ public class MissionService {
                 .count();
         return new MissionListResponse(
                 stages,
-                new MissionListResponse.ProgressResponse(completedSetCount, totalSetCount, 1)
+                new MissionListResponse.ProgressResponse(completedSetCount, totalSetCount)
         );
     }
 }

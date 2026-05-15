@@ -33,11 +33,13 @@ public class QuestionQualityIssue {
     private UUID reportedByChildId;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "issue_source", nullable = false, length = 32)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "issue_source", nullable = false, columnDefinition = "question_quality_issue_source_enum")
     private QuestionQualityIssueSource issueSource;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "issue_status", nullable = false, length = 32)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "issue_status", nullable = false, columnDefinition = "question_quality_issue_status_enum")
     private QuestionQualityIssueStatus issueStatus;
 
     @Column(name = "reason_code", nullable = false, length = 64)

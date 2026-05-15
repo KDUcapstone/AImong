@@ -1,9 +1,12 @@
 package com.aimong.backend.domain.auth.controller;
 
+import com.aimong.backend.domain.auth.dto.ChildMeResponse;
 import com.aimong.backend.domain.auth.dto.ChildLoginRequest;
 import com.aimong.backend.domain.auth.dto.ChildLoginResponse;
+import com.aimong.backend.domain.auth.dto.DeleteFcmTokenResponse;
 import com.aimong.backend.domain.auth.dto.FcmTokenRequest;
 import com.aimong.backend.domain.auth.dto.FcmTokenResponse;
+import com.aimong.backend.domain.auth.dto.LogoutResponse;
 import com.aimong.backend.domain.auth.service.ChildAuthService;
 import com.aimong.backend.global.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -16,6 +19,8 @@ import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -126,5 +131,24 @@ public class ChildAuthController {
                 UUID.fromString(SecurityContextHolder.getContext().getAuthentication().getName()),
                 request
         ));
+    }
+
+    @GetMapping("/me")
+    public ApiResponse<ChildMeResponse> getMe() {
+        return ApiResponse.success(childAuthService.getMe(currentChildId()));
+    }
+
+    @PostMapping("/logout")
+    public ApiResponse<LogoutResponse> logout() {
+        return ApiResponse.success(childAuthService.logout(currentChildId()));
+    }
+
+    @DeleteMapping("/fcm-token")
+    public ApiResponse<DeleteFcmTokenResponse> deleteFcmToken() {
+        return ApiResponse.success(childAuthService.deleteFcmToken(currentChildId()));
+    }
+
+    private UUID currentChildId() {
+        return UUID.fromString(SecurityContextHolder.getContext().getAuthentication().getName());
     }
 }

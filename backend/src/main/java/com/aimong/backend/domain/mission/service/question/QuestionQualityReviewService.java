@@ -4,12 +4,10 @@ import com.aimong.backend.domain.mission.dto.QuestionReportRequest;
 import com.aimong.backend.domain.mission.dto.QuestionReportResponse;
 import com.aimong.backend.domain.mission.config.MissionQuestionProperties;
 import com.aimong.backend.domain.mission.entity.Mission;
-import com.aimong.backend.domain.mission.entity.MissionSet;
 import com.aimong.backend.domain.mission.entity.QuestionBank;
 import com.aimong.backend.domain.mission.entity.QuestionQualityIssue;
 import com.aimong.backend.domain.mission.entity.QuestionQualityIssueSource;
 import com.aimong.backend.domain.mission.repository.QuestionBankRepository;
-import com.aimong.backend.domain.mission.repository.MissionSetRepository;
 import com.aimong.backend.domain.mission.repository.QuestionQualityIssueRepository;
 import com.aimong.backend.domain.mission.service.generation.QuestionValidationReport;
 import com.aimong.backend.global.exception.AimongException;
@@ -28,7 +26,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class QuestionQualityReviewService {
 
     private final QuestionBankRepository questionBankRepository;
-    private final MissionSetRepository missionSetRepository;
     private final QuestionQualityIssueRepository questionQualityIssueRepository;
     private final MissionQuestionProperties missionQuestionProperties;
     private final ObjectMapper objectMapper;
@@ -66,20 +63,6 @@ public class QuestionQualityReviewService {
                 issue.getIssueStatus().name(),
                 !question.isActive()
         );
-    }
-
-    @Transactional
-    public QuestionReportResponse reportQuestion(
-            UUID childId,
-            String setId,
-            UUID questionId,
-            QuestionReportRequest request
-    ) {
-        MissionSet missionSet = missionSetRepository.findBySetIdAndActiveTrue(setId)
-                .orElseThrow(() -> new AimongException(ErrorCode.MISSION_SET_NOT_FOUND));
-        QuestionBank question = questionBankRepository.findByIdAndMissionIdAndIsActiveTrue(questionId, missionSet.getMissionId())
-                .orElseThrow(() -> new AimongException(ErrorCode.QUESTION_NOT_FOUND));
-        return reportQuestion(childId, question.getMissionId(), questionId, request);
     }
 
     @Transactional

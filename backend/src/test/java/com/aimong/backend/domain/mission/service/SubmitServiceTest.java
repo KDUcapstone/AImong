@@ -23,6 +23,10 @@ import com.aimong.backend.domain.mission.entity.MissionAttempt;
 import com.aimong.backend.domain.mission.entity.MissionDailyProgress;
 import com.aimong.backend.domain.mission.entity.QuestionAnswerKey;
 import com.aimong.backend.domain.mission.entity.QuestionBank;
+import com.aimong.backend.domain.mission.entity.DifficultyBand;
+import com.aimong.backend.domain.mission.entity.GenerationPhase;
+import com.aimong.backend.domain.mission.entity.QuestionPoolStatus;
+import com.aimong.backend.domain.mission.entity.QuestionType;
 import com.aimong.backend.domain.mission.entity.QuizAttempt;
 import com.aimong.backend.domain.mission.repository.MissionAnswerResultRepository;
 import com.aimong.backend.domain.mission.repository.MissionAttemptRepository;
@@ -85,6 +89,8 @@ class SubmitServiceTest {
 
         assertThat(response.isPassed()).isFalse();
         assertThat(response.progressApplied()).isFalse();
+        assertThat(response.isFirstClear()).isFalse();
+        assertThat(response.rewards().coin()).isZero();
 
         ArgumentCaptor<MissionAttempt> attemptCaptor = ArgumentCaptor.forClass(MissionAttempt.class);
         verify(missionAttemptRepository).save(attemptCaptor.capture());
@@ -110,8 +116,10 @@ class SubmitServiceTest {
 
         assertThat(response.mode()).isEqualTo("review");
         assertThat(response.progressApplied()).isFalse();
+        assertThat(response.isFirstClear()).isFalse();
         assertThat(response.isReview()).isTrue();
         assertThat(response.xpEarned()).isZero();
+        assertThat(response.rewards().coin()).isZero();
 
         ArgumentCaptor<MissionAttempt> attemptCaptor = ArgumentCaptor.forClass(MissionAttempt.class);
         verify(missionAttemptRepository).save(attemptCaptor.capture());
@@ -138,8 +146,10 @@ class SubmitServiceTest {
 
         assertThat(response.mode()).isEqualTo("normal");
         assertThat(response.progressApplied()).isTrue();
+        assertThat(response.isFirstClear()).isTrue();
         assertThat(response.xpEarned()).isEqualTo(20);
         assertThat(response.isReview()).isFalse();
+        assertThat(response.rewards().coin()).isEqualTo(30);
 
         ArgumentCaptor<MissionAttempt> attemptCaptor = ArgumentCaptor.forClass(MissionAttempt.class);
         verify(missionAttemptRepository).save(attemptCaptor.capture());
@@ -161,7 +171,18 @@ class SubmitServiceTest {
         SubmitResponse response = service.submit(fixture.childId(), fixture.missionId(), fixture.request());
 
         assertThat(response.isPassed()).isTrue();
-        assertThat(response.score()).isEqualTo(10);
+        assertThat(response.score()).isEqualTo(100);
+    }
+
+    @Test
+    void submissionAcceptsOptionTextWhenQuestionBankAnswerPayloadIsOneBasedIndex() {
+        SubmitService service = service();
+        Fixture fixture = fixture(false, "2", "꽃을 구별해 주는 카메라 앱");
+
+        SubmitResponse response = service.submit(fixture.childId(), fixture.missionId(), fixture.request());
+
+        assertThat(response.isPassed()).isTrue();
+        assertThat(response.score()).isEqualTo(100);
     }
 
     @Test
@@ -172,7 +193,7 @@ class SubmitServiceTest {
         SubmitResponse response = service.submit(fixture.childId(), fixture.missionId(), fixture.request());
 
         assertThat(response.isPassed()).isTrue();
-        assertThat(response.score()).isEqualTo(10);
+        assertThat(response.score()).isEqualTo(100);
     }
 
     @Test
@@ -183,7 +204,7 @@ class SubmitServiceTest {
         SubmitResponse response = service.submit(fixture.childId(), fixture.missionId(), fixture.request());
 
         assertThat(response.isPassed()).isTrue();
-        assertThat(response.score()).isEqualTo(10);
+        assertThat(response.score()).isEqualTo(100);
     }
 
     @Test
@@ -194,7 +215,7 @@ class SubmitServiceTest {
         SubmitResponse response = service.submit(fixture.childId(), fixture.missionId(), fixture.request());
 
         assertThat(response.isPassed()).isTrue();
-        assertThat(response.score()).isEqualTo(10);
+        assertThat(response.score()).isEqualTo(100);
     }
 
     @Test
@@ -205,7 +226,7 @@ class SubmitServiceTest {
         SubmitResponse response = service.submit(fixture.childId(), fixture.missionId(), fixture.request());
 
         assertThat(response.isPassed()).isTrue();
-        assertThat(response.score()).isEqualTo(10);
+        assertThat(response.score()).isEqualTo(100);
     }
 
     @Test
@@ -303,7 +324,7 @@ class SubmitServiceTest {
         when(quizService.parseQuestionIds("[]")).thenReturn(questionIds);
 
         List<QuestionBank> questionBanks = questionIds.stream()
-                .map(id -> org.mockito.Mockito.mock(QuestionBank.class))
+                .map(id -> questionBank(missionId, id))
                 .toList();
         when(questionBankRepository.findAllByIdIn(questionIds)).thenReturn(questionBanks);
 
@@ -348,6 +369,30 @@ class SubmitServiceTest {
             Field idField = QuizAttempt.class.getDeclaredField("id");
             idField.setAccessible(true);
             idField.set(attempt, quizAttemptId);
+        } catch (ReflectiveOperationException exception) {
+            throw new IllegalStateException(exception);
+        }
+    }
+
+    private QuestionBank questionBank(UUID missionId, UUID questionId) {
+        QuestionBank question = QuestionBank.create(
+                missionId,
+                QuestionType.MULTIPLE,
+                "Which one is AI?",
+                "[\"빈 공책\",\"꽃을 구별해 주는 카메라 앱\",\"색종이를 접는 종이 설명서\",\"바람개비 장난감\"]",
+                "[\"FACT\"]",
+                "KERIS",
+                DifficultyBand.LOW,
+                "STATIC",
+                GenerationPhase.PREGENERATED,
+                null,
+                QuestionPoolStatus.ACTIVE
+        );
+        try {
+            Field idField = QuestionBank.class.getDeclaredField("id");
+            idField.setAccessible(true);
+            idField.set(question, questionId);
+            return question;
         } catch (ReflectiveOperationException exception) {
             throw new IllegalStateException(exception);
         }

@@ -1,13 +1,18 @@
 package com.aimong.backend.domain.mission.dto;
 
 import java.util.List;
+import java.util.UUID;
 
 public record SubmitResponse(
         String mode,
         boolean progressApplied,
         String attemptState,
+        UUID attemptId,
         int score,
         int total,
+        int correctCount,
+        int questionCount,
+        boolean isFirstClear,
         int wrongCount,
         boolean isPassed,
         boolean isPerfect,
@@ -23,7 +28,7 @@ public record SubmitResponse(
         int streakDays,
         int todayMissionCount,
         boolean streakBonusApplied,
-        List<RewardResponse> rewards,
+        RewardsResponse rewards,
         RemainingTicketsResponse remainingTickets,
         String profileImageType,
         boolean profileImageUnlocked,
@@ -38,6 +43,19 @@ public record SubmitResponse(
         List<String> nextUnlockedSetIds,
         int todaySetCount
 ) {
+    public record RewardsResponse(
+            int coin,
+            int exp,
+            List<FragmentResponse> fragments
+    ) {
+    }
+
+    public record FragmentResponse(
+            String grade,
+            int count
+    ) {
+    }
+
     public record RewardResponse(
             String type,
             String ticketType,

@@ -53,9 +53,6 @@ public class QuestionBank {
     @Column(name = "difficulty", nullable = false)
     private DifficultyBand difficulty;
 
-    @Column(name = "legacy_numeric_difficulty")
-    private Short legacyNumericDifficulty;
-
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(name = "source_type", nullable = false)
@@ -68,11 +65,6 @@ public class QuestionBank {
 
     @Column(name = "pack_no")
     private Short packNo;
-
-    @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Column(name = "difficulty_band", length = 16)
-    private DifficultyBand difficultyBand;
 
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
@@ -96,7 +88,6 @@ public class QuestionBank {
             String sourceType,
             GenerationPhase generationPhase,
             Short packNo,
-            DifficultyBand difficultyBand,
             QuestionPoolStatus questionPoolStatus
     ) {
         QuestionBank questionBank = new QuestionBank();
@@ -109,11 +100,9 @@ public class QuestionBank {
         questionBank.contentTagsJson = contentTagsJson;
         questionBank.curriculumRef = curriculumRef;
         questionBank.difficulty = difficulty;
-        questionBank.legacyNumericDifficulty = null;
         questionBank.sourceType = QuestionSourceType.from(sourceType);
         questionBank.generationPhase = generationPhase;
         questionBank.packNo = packNo;
-        questionBank.difficultyBand = difficultyBand;
         questionBank.questionPoolStatus = questionPoolStatus;
         questionBank.createdAt = Instant.now();
         questionBank.isActive = true;

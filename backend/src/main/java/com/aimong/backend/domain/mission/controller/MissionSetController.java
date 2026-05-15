@@ -2,15 +2,14 @@ package com.aimong.backend.domain.mission.controller;
 
 import com.aimong.backend.domain.mission.dto.MissionQuestionsResponse;
 import com.aimong.backend.domain.mission.dto.MissionSetCheckRequest;
+import com.aimong.backend.domain.mission.dto.MissionSetReportResponse;
 import com.aimong.backend.domain.mission.dto.QuestionCheckResponse;
-import com.aimong.backend.domain.mission.dto.QuestionReportRequest;
-import com.aimong.backend.domain.mission.dto.QuestionReportResponse;
 import com.aimong.backend.domain.mission.dto.SubmitRequest;
 import com.aimong.backend.domain.mission.dto.SubmitResponse;
 import com.aimong.backend.domain.mission.service.QuestionCheckService;
+import com.aimong.backend.domain.mission.service.MissionSetReportService;
 import com.aimong.backend.domain.mission.service.QuizService;
 import com.aimong.backend.domain.mission.service.SubmitService;
-import com.aimong.backend.domain.mission.service.question.QuestionQualityReviewService;
 import com.aimong.backend.global.response.ApiResponse;
 import jakarta.validation.Valid;
 import java.util.UUID;
@@ -31,7 +30,7 @@ public class MissionSetController {
     private final QuizService quizService;
     private final SubmitService submitService;
     private final QuestionCheckService questionCheckService;
-    private final QuestionQualityReviewService questionQualityReviewService;
+    private final MissionSetReportService missionSetReportService;
 
     @GetMapping("/{setId}/questions")
     public ApiResponse<MissionQuestionsResponse> getQuestions(
@@ -59,19 +58,12 @@ public class MissionSetController {
         return ApiResponse.success(questionCheckService.check(extractChildId(authentication), setId, request));
     }
 
-    @PostMapping("/{setId}/questions/{questionId}/report")
-    public ApiResponse<QuestionReportResponse> reportQuestion(
+    @GetMapping("/{setId}/report")
+    public ApiResponse<MissionSetReportResponse> getReport(
             @PathVariable String setId,
-            @PathVariable UUID questionId,
-            @Valid @RequestBody QuestionReportRequest request,
             Authentication authentication
     ) {
-        return ApiResponse.success(questionQualityReviewService.reportQuestion(
-                extractChildId(authentication),
-                setId,
-                questionId,
-                request
-        ));
+        return ApiResponse.success(missionSetReportService.getReport(extractChildId(authentication), setId));
     }
 
     private UUID extractChildId(Authentication authentication) {

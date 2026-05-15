@@ -12,6 +12,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Collections;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -25,6 +26,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     private static final String API_HEALTH_URI = "/api/health";
     private static final String API_CHILD_LOGIN_URI = "/api/child/login";
+    private static final String API_APP_BOOTSTRAP_URI = "/api/app/bootstrap";
     private static final String API_PARENT_PREFIX = "/api/parent/";
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
@@ -39,6 +41,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
         if (shouldSkip(request)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+        if (SecurityContextHolder.getContext().getAuthentication() != null
+                && SecurityContextHolder.getContext().getAuthentication().isAuthenticated()) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -70,8 +77,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     private boolean shouldSkip(HttpServletRequest request) {
         String uri = request.getRequestURI();
-        return API_HEALTH_URI.equals(uri)
+        return HttpMethod.OPTIONS.matches(request.getMethod())
+                || API_HEALTH_URI.equals(uri)
                 || API_CHILD_LOGIN_URI.equals(uri)
+                || API_APP_BOOTSTRAP_URI.equals(uri)
                 || uri.startsWith(API_PARENT_PREFIX);
     }
 

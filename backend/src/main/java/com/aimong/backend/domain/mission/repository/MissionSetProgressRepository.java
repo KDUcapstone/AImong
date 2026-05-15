@@ -13,16 +13,40 @@ import jakarta.persistence.LockModeType;
 
 public interface MissionSetProgressRepository extends JpaRepository<MissionSetProgress, MissionSetProgressId> {
 
-    boolean existsByChildIdAndSetId(UUID childId, String setId);
+    boolean existsByChildIdAndSetIdAndCompletedTrue(UUID childId, String setId);
 
-    Optional<MissionSetProgress> findByChildIdAndSetId(UUID childId, String setId);
+    default boolean existsByChildIdAndSetId(UUID childId, String setId) {
+        return existsByChildIdAndSetIdAndCompletedTrue(childId, setId);
+    }
 
-    List<MissionSetProgress> findAllByChildIdAndSetIdIn(UUID childId, Collection<String> setIds);
+    Optional<MissionSetProgress> findByChildIdAndSetIdAndCompletedTrue(UUID childId, String setId);
 
-    long countByChildId(UUID childId);
+    default Optional<MissionSetProgress> findByChildIdAndSetId(UUID childId, String setId) {
+        return findByChildIdAndSetIdAndCompletedTrue(childId, setId);
+    }
 
-    long countByChildIdAndSetIdIn(UUID childId, Collection<String> setIds);
+    List<MissionSetProgress> findAllByChildIdAndSetIdInAndCompletedTrue(UUID childId, Collection<String> setIds);
+
+    default List<MissionSetProgress> findAllByChildIdAndSetIdIn(UUID childId, Collection<String> setIds) {
+        return findAllByChildIdAndSetIdInAndCompletedTrue(childId, setIds);
+    }
+
+    long countByChildIdAndCompletedTrue(UUID childId);
+
+    default long countByChildId(UUID childId) {
+        return countByChildIdAndCompletedTrue(childId);
+    }
+
+    long countByChildIdAndSetIdInAndCompletedTrue(UUID childId, Collection<String> setIds);
+
+    default long countByChildIdAndSetIdIn(UUID childId, Collection<String> setIds) {
+        return countByChildIdAndSetIdInAndCompletedTrue(childId, setIds);
+    }
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    Optional<MissionSetProgress> findWithLockByChildIdAndSetId(UUID childId, String setId);
+    Optional<MissionSetProgress> findWithLockByChildIdAndSetIdAndCompletedTrue(UUID childId, String setId);
+
+    default Optional<MissionSetProgress> findWithLockByChildIdAndSetId(UUID childId, String setId) {
+        return findWithLockByChildIdAndSetIdAndCompletedTrue(childId, setId);
+    }
 }

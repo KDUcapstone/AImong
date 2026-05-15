@@ -13,10 +13,13 @@ import com.aimong.backend.domain.mission.dto.MissionListResponse;
 import com.aimong.backend.domain.mission.dto.MissionQuestionsResponse;
 import com.aimong.backend.domain.mission.dto.MissionSetCheckRequest;
 import com.aimong.backend.domain.mission.dto.QuestionCheckResponse;
+import com.aimong.backend.domain.mission.dto.QuestionReportRequest;
+import com.aimong.backend.domain.mission.dto.QuestionReportResponse;
 import com.aimong.backend.domain.mission.dto.QuestionResponse;
 import com.aimong.backend.domain.mission.dto.SubmitRequest;
 import com.aimong.backend.domain.mission.dto.SubmitResponse;
 import com.aimong.backend.domain.mission.service.MissionService;
+import com.aimong.backend.domain.mission.service.MissionSetReportService;
 import com.aimong.backend.domain.mission.service.QuestionCheckService;
 import com.aimong.backend.domain.mission.service.QuizService;
 import com.aimong.backend.domain.mission.service.SubmitService;
@@ -24,7 +27,6 @@ import com.aimong.backend.domain.mission.service.question.QuestionQualityReviewS
 import com.aimong.backend.global.filter.FirebaseParentAuthFilter;
 import com.aimong.backend.global.filter.JwtAuthFilter;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -60,6 +62,9 @@ class MissionApiIntegrationTest {
     private QuestionCheckService questionCheckService;
 
     @MockitoBean
+    private MissionSetReportService missionSetReportService;
+
+    @MockitoBean
     private QuestionQualityReviewService questionQualityReviewService;
 
     @MockitoBean
@@ -79,17 +84,13 @@ class MissionApiIntegrationTest {
                 "S0101",
                 1,
                 1,
-                1,
                 MissionQuestionsResponse.labelForStar(1),
-                "Privacy Safety",
-                null,
                 true,
                 0,
                 null,
                 null,
                 quizAttemptId,
                 10,
-                Instant.parse("2026-04-14T12:00:00Z"),
                 List.of(new QuestionResponse(UUID.randomUUID(), "OX", "Should you share a password?", List.of("Yes", "No")))
         );
 
@@ -108,11 +109,23 @@ class MissionApiIntegrationTest {
                 .andExpect(jsonPath("$.data.missionId").value(missionId.toString()))
                 .andExpect(jsonPath("$.data.starLevel").value(1))
                 .andExpect(jsonPath("$.data.variantNo").value(1))
-                .andExpect(jsonPath("$.data.title").value("Privacy Safety"))
+                .andExpect(jsonPath("$.data.stage").doesNotExist())
+                .andExpect(jsonPath("$.data.title").doesNotExist())
+                .andExpect(jsonPath("$.data.description").doesNotExist())
+                .andExpect(jsonPath("$.data.expiresAt").doesNotExist())
                 .andExpect(jsonPath("$.data.isReview").value(true))
-                .andExpect(jsonPath("$.data.quizAttemptId").value(quizAttemptId.toString()))
+                .andExpect(jsonPath("$.data.attemptId").value(quizAttemptId.toString()))
+                .andExpect(jsonPath("$.data.quizAttemptId").doesNotExist())
                 .andExpect(jsonPath("$.data.questionCount").value(10))
+                .andExpect(jsonPath("$.data.questions[0].questionId").exists())
+                .andExpect(jsonPath("$.data.questions[0].questionNo").value(1))
                 .andExpect(jsonPath("$.data.questions[0].type").value("OX"))
+                .andExpect(jsonPath("$.data.questions[0].prompt").value("Should you share a password?"))
+                .andExpect(jsonPath("$.data.questions[0].choices[0]").value("Yes"))
+                .andExpect(jsonPath("$.data.questions[0].answerFormat").value("SINGLE_CHOICE"))
+                .andExpect(jsonPath("$.data.questions[0].id").doesNotExist())
+                .andExpect(jsonPath("$.data.questions[0].question").doesNotExist())
+                .andExpect(jsonPath("$.data.questions[0].options").doesNotExist())
                 .andExpect(jsonPath("$.data.questions[0].answer").doesNotExist())
                 .andExpect(jsonPath("$.data.questions[0].answerPayload").doesNotExist())
                 .andExpect(jsonPath("$.data.questions[0].answer_payload").doesNotExist())
@@ -135,8 +148,12 @@ class MissionApiIntegrationTest {
                 "normal",
                 true,
                 "submitted",
+                quizAttemptId,
+                100,
                 10,
                 10,
+                10,
+                true,
                 0,
                 true,
                 true,
@@ -152,7 +169,7 @@ class MissionApiIntegrationTest {
                 3,
                 1,
                 false,
-                List.of(new SubmitResponse.RewardResponse("XP", null, null, 10, "MISSION_CLEAR")),
+                new SubmitResponse.RewardsResponse(30, 10, List.of()),
                 new SubmitResponse.RemainingTicketsResponse(2, 0, 1),
                 "SPROUT",
                 false,
@@ -168,9 +185,9 @@ class MissionApiIntegrationTest {
                 1
         );
 
-        given(submitService.submit(eq(childId), eq(missionId), any(SubmitRequest.class))).willReturn(response);
+        given(submitService.submit(eq(childId), eq("S0101-L1"), any(SubmitRequest.class))).willReturn(response);
 
-        mockMvc.perform(post("/missions/{missionId}/submit", missionId)
+        mockMvc.perform(post("/mission-sets/{setId}/submit", "S0101-L1")
                         .principal(new UsernamePasswordAuthenticationToken(
                                 childId.toString(),
                                 null,
@@ -184,11 +201,14 @@ class MissionApiIntegrationTest {
                 .andExpect(jsonPath("$.requestId").exists())
                 .andExpect(jsonPath("$.data.mode").value("normal"))
                 .andExpect(jsonPath("$.data.progressApplied").value(true))
+                .andExpect(jsonPath("$.data.isFirstClear").value(true))
                 .andExpect(jsonPath("$.data.attemptState").value("submitted"))
-                .andExpect(jsonPath("$.data.score").value(10))
+                .andExpect(jsonPath("$.data.score").value(100))
                 .andExpect(jsonPath("$.data.todayMissionCount").value(1))
                 .andExpect(jsonPath("$.data.streakBonusApplied").value(false))
-                .andExpect(jsonPath("$.data.rewards[0].amount").value(10))
+                .andExpect(jsonPath("$.data.rewards.coin").value(30))
+                .andExpect(jsonPath("$.data.rewards.exp").value(10))
+                .andExpect(jsonPath("$.data.rewards.fragments").isArray())
                 .andExpect(jsonPath("$.data.remainingTickets.normal").value(2))
                 .andExpect(jsonPath("$.data.profileImageType").value("SPROUT"))
                 .andExpect(jsonPath("$.data.results[0].questionId").value(answers.get(0).questionId()))
@@ -224,6 +244,38 @@ class MissionApiIntegrationTest {
     }
 
     @Test
+    void reportQuestionUsesMissionBasedApiPath() throws Exception {
+        UUID childId = UUID.randomUUID();
+        UUID missionId = UUID.randomUUID();
+        UUID questionId = UUID.randomUUID();
+        UUID issueId = UUID.randomUUID();
+        QuestionReportRequest request = new QuestionReportRequest("SAFETY", "Not suitable");
+        QuestionReportResponse response = new QuestionReportResponse(questionId, issueId, "OPEN", false);
+
+        given(questionQualityReviewService.reportQuestion(
+                eq(childId),
+                eq(missionId),
+                eq(questionId),
+                any(QuestionReportRequest.class)
+        )).willReturn(response);
+
+        mockMvc.perform(post("/missions/{missionId}/questions/{questionId}/report", missionId, questionId)
+                        .principal(new UsernamePasswordAuthenticationToken(
+                                childId.toString(),
+                                null,
+                                Collections.emptyList()
+                        ))
+                        .contentType(APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsBytes(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.questionId").value(questionId.toString()))
+                .andExpect(jsonPath("$.data.issueId").value(issueId.toString()))
+                .andExpect(jsonPath("$.data.issueStatus").value("OPEN"))
+                .andExpect(jsonPath("$.data.quarantined").value(false));
+    }
+
+    @Test
     void getMissionsReturnsMissionListEnvelope() throws Exception {
         UUID childId = UUID.randomUUID();
         UUID missionId = UUID.randomUUID();
@@ -248,7 +300,7 @@ class MissionApiIntegrationTest {
                                 1
                         ))
                 )),
-                new MissionListResponse.ProgressResponse(1, 1, 1)
+                new MissionListResponse.ProgressResponse(1, 1)
         );
 
         given(missionService.getMissions(childId)).willReturn(response);

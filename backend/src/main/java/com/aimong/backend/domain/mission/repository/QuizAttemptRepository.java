@@ -1,6 +1,8 @@
 package com.aimong.backend.domain.mission.repository;
 
 import com.aimong.backend.domain.mission.entity.QuizAttempt;
+import com.aimong.backend.domain.mission.entity.QuizAttemptStatus;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -17,4 +19,20 @@ public interface QuizAttemptRepository extends JpaRepository<QuizAttempt, UUID> 
     List<QuizAttempt> findAllByChildIdAndMissionIdAndSubmittedAtIsNotNull(UUID childId, UUID missionId);
 
     Optional<QuizAttempt> findFirstByChildIdAndSetIdAndSubmittedAtIsNullOrderByCreatedAtDesc(UUID childId, String setId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    Optional<QuizAttempt> findFirstByChildIdAndMissionIdAndStatusAndExpiresAtAfterOrderByCreatedAtDesc(
+            UUID childId,
+            UUID missionId,
+            QuizAttemptStatus status,
+            Instant now
+    );
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    Optional<QuizAttempt> findFirstByChildIdAndSetIdAndStatusAndExpiresAtAfterOrderByCreatedAtDesc(
+            UUID childId,
+            String setId,
+            QuizAttemptStatus status,
+            Instant now
+    );
 }

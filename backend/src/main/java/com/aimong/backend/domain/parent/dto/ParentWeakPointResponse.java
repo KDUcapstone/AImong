@@ -9,6 +9,9 @@ public record ParentWeakPointResponse(
         double incorrectRate,
         long attemptCount,
         String setId,
+        String setTitle,
+        Integer levelNo,
+        String difficulty,
         Integer starLevel
 ) {
     public ParentWeakPointResponse(
@@ -18,6 +21,6 @@ public record ParentWeakPointResponse(
             double incorrectRate,
             long attemptCount
     ) {
-        this(missionId, missionTitle, stage, incorrectRate, attemptCount, null, null);
+        this(missionId, missionTitle, stage, incorrectRate, attemptCount, null, null, null, null, null);
     }
 }

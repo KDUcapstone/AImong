@@ -61,6 +61,9 @@ public class JwtProvider {
 
         ChildProfile childProfile = childProfileRepository.findById(childId)
                 .orElseThrow(() -> new AimongException(ErrorCode.UNAUTHORIZED));
+        if (childProfile.getDeletedAt() != null) {
+            throw new AimongException(ErrorCode.UNAUTHORIZED);
+        }
 
         if (tokenSessionVersion == null || tokenSessionVersion != childProfile.getSessionVersion()) {
             throw new AimongException(ErrorCode.INVALID_TOKEN);

@@ -2,6 +2,7 @@ package com.aimong.backend.infra.fcm;
 
 import com.aimong.backend.domain.auth.entity.ChildProfile;
 import com.aimong.backend.domain.auth.entity.ParentAccount;
+import com.aimong.backend.domain.auth.repository.ParentNotificationSettingsRepository;
 import com.aimong.backend.domain.privacy.entity.PrivacyDetectedType;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -25,11 +26,15 @@ public class FcmNotificationService {
 
     private final FcmService fcmService;
     private final FcmNotificationEventRepository fcmNotificationEventRepository;
+    private final ParentNotificationSettingsRepository notificationSettingsRepository;
 
     @Transactional
     public void sendPrivacyAlert(ChildProfile childProfile, PrivacyDetectedType detectedType) {
         ParentAccount parentAccount = childProfile.getParentAccount();
         if (!StringUtils.hasText(parentAccount.getFcmToken())) {
+            return;
+        }
+        if (!privacyAlertEnabled(parentAccount)) {
             return;
         }
 
@@ -60,6 +65,9 @@ public class FcmNotificationService {
     public void sendLearningReminder(ChildProfile childProfile, int daysMissed) {
         ParentAccount parentAccount = childProfile.getParentAccount();
         if (!StringUtils.hasText(parentAccount.getFcmToken())) {
+            return;
+        }
+        if (!studyReminderEnabled(parentAccount)) {
             return;
         }
 
@@ -99,11 +107,17 @@ public class FcmNotificationService {
         if (!StringUtils.hasText(parentAccount.getFcmToken())) {
             return;
         }
+        if (!privacyAlertEnabled(parentAccount)) {
+            return;
+        }
         flushQueuedPrivacyAlerts(parentAccount, todayStart());
     }
 
     private void flushQueuedPrivacyAlerts(ParentAccount parentAccount, Instant todayStart) {
         if (isDailyParentLimitReached(parentAccount.getParentId(), todayStart)) {
+            return;
+        }
+        if (!privacyAlertEnabled(parentAccount)) {
             return;
         }
 
@@ -153,6 +167,18 @@ public class FcmNotificationService {
                 FcmNotificationStatus.SENT,
                 todayStart
         ) >= DAILY_PRIVACY_CHILD_LIMIT;
+    }
+
+    private boolean privacyAlertEnabled(ParentAccount parentAccount) {
+        return notificationSettingsRepository.findById(parentAccount.getParentId())
+                .map(settings -> settings.isPrivacyAlertEnabled())
+                .orElse(true);
+    }
+
+    private boolean studyReminderEnabled(ParentAccount parentAccount) {
+        return notificationSettingsRepository.findById(parentAccount.getParentId())
+                .map(settings -> settings.isStudyReminderEnabled())
+                .orElse(true);
     }
 
     private FcmPayload privacyPayload(ChildProfile childProfile, PrivacyDetectedType detectedType) {
