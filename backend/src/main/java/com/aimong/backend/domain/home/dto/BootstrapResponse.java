@@ -1,10 +1,12 @@
 package com.aimong.backend.domain.home.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public record BootstrapResponse(
         boolean authenticated,
         String authType,
@@ -28,6 +30,7 @@ public record BootstrapResponse(
     ) {
     }
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public record ChildSummary(
             UUID childId,
             String nickname,

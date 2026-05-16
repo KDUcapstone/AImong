@@ -133,7 +133,7 @@ public class QuizService {
         childActivityService.touchLastActiveAt(childId);
         MissionSet missionSet = missionSetRepository.findBySetIdAndActiveTrue(setId)
                 .orElseThrow(() -> new AimongException(ErrorCode.MISSION_SET_NOT_FOUND));
-        if (!missionService.isUnlocked(childId, missionSet)) {
+        if (!missionService.isStarLevelPlayable(childId, missionSet.getMissionId(), missionSet.getStarLevel())) {
             throw new AimongException(ErrorCode.MISSION_SET_LOCKED);
         }
         return getQuestionsForSet(childId, missionSet);

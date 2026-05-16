@@ -69,7 +69,7 @@ public class QuizAttemptService {
                 .collect(Collectors.groupingBy(MissionSet::getStarLevel));
         List<MissionStatusResponse.StarLevelStatus> starLevels = setsByStar.entrySet().stream()
                 .sorted(Map.Entry.comparingByKey())
-                .map(entry -> toStarStatus(childId, unlocked, entry.getKey(), entry.getValue()))
+                .map(entry -> toStarStatus(childId, entry.getKey(), entry.getValue()))
                 .toList();
         MissionStatusResponse.InProgressAttempt inProgressAttempt = quizAttemptRepository
                 .findFirstByChildIdAndMissionIdAndStatusAndExpiresAtAfterOrderByCreatedAtDesc(
@@ -187,7 +187,6 @@ public class QuizAttemptService {
 
     private MissionStatusResponse.StarLevelStatus toStarStatus(
             UUID childId,
-            boolean unlocked,
             int starLevel,
             List<MissionSet> sets
     ) {
@@ -204,7 +203,7 @@ public class QuizAttemptService {
                 MissionListResponse.labelForStar(starLevel),
                 sets.size(),
                 completed,
-                unlocked,
+                !sets.isEmpty() && missionService.isStarLevelPlayable(childId, sets.getFirst().getMissionId(), starLevel),
                 completed > 0
         );
     }

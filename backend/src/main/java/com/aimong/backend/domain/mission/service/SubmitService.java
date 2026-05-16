@@ -221,7 +221,7 @@ public class SubmitService {
         childActivityService.touchLastActiveAt(childId);
         MissionSet missionSet = missionSetRepository.findBySetIdAndActiveTrue(setId)
                 .orElseThrow(() -> new AimongException(ErrorCode.MISSION_SET_NOT_FOUND));
-        if (!missionService.isUnlocked(childId, missionSet)) {
+        if (!missionService.isStarLevelPlayable(childId, missionSet.getMissionId(), missionSet.getStarLevel())) {
             throw new AimongException(ErrorCode.MISSION_SET_LOCKED);
         }
         Mission mission = missionRepository.findById(missionSet.getMissionId())
@@ -832,7 +832,7 @@ public class SubmitService {
         }
         return missionSetRepository.findAllByActiveTrueOrderByStageAscDisplayOrderAscStarLevelAscVariantNoAscSetIdAsc()
                 .stream()
-                .filter(set -> missionService.isUnlocked(childId, set))
+                .filter(set -> missionService.isStarLevelPlayable(childId, set.getMissionId(), set.getStarLevel()))
                 .filter(set -> !missionSetProgressRepository.existsByChildIdAndSetId(childId, set.getSetId()))
                 .map(MissionSet::getSetId)
                 .collect(Collectors.toCollection(LinkedHashSet::new));

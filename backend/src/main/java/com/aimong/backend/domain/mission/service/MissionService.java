@@ -27,6 +27,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class MissionService {
 
+    private static final long STAGE_2_REQUIRED_STAGE_1_STAR1_CLEARS = 5L;
+    private static final long STAGE_3_REQUIRED_STAGE_2_STAR1_CLEARS = 6L;
+
     private final MissionSetRepository missionSetRepository;
     private final MissionSetProgressRepository missionSetProgressRepository;
     private final MissionRepository legacyMissionRepository;
@@ -124,6 +127,22 @@ public class MissionService {
         return isStageUnlocked(missionSet.getStage(), stageProgress);
     }
 
+    public boolean isStarLevelPlayable(UUID childId, UUID missionId, int starLevel) {
+        if (!isValidStarLevel(starLevel)) {
+            throw new AimongException(ErrorCode.INVALID_STAR_LEVEL);
+        }
+        List<MissionSet> missionSets = missionSetRepository
+                .findAllByMissionIdAndActiveTrueOrderByStarLevelAscVariantNoAscSetIdAsc(missionId);
+        if (missionSets.isEmpty()) {
+            return false;
+        }
+        if (!isUnlocked(childId, missionSets.getFirst())) {
+            return false;
+        }
+        Map<Integer, List<MissionSet>> setsByStarLevel = groupByStarLevel(missionSets);
+        return isStarLevelUnlocked(starLevel, setsByStarLevel, progressBySetId(childId, missionSets));
+    }
+
     public MissionSet resolvePlayableSet(UUID childId, UUID missionId) {
         return resolvePlayableSet(childId, missionId, 1);
     }
@@ -136,6 +155,9 @@ public class MissionService {
                 .findAllByMissionIdAndStarLevelAndActiveTrueOrderByVariantNoAscSetIdAsc(missionId, starLevel);
         if (candidates.isEmpty()) {
             throw new AimongException(ErrorCode.MISSION_SET_NOT_READY);
+        }
+        if (!isStarLevelPlayable(childId, missionId, starLevel)) {
+            throw new AimongException(ErrorCode.MISSION_SET_LOCKED);
         }
         List<MissionSet> unlocked = candidates.stream()
                 .filter(set -> isUnlocked(childId, set))
@@ -181,16 +203,18 @@ public class MissionService {
                 .min(Comparator.comparing(MissionSet::getDisplayOrder).thenComparing(MissionSet::getSetId))
                 .orElseThrow();
         boolean missionUnlocked = isStageUnlocked(stage, stageProgress);
-        List<MissionListResponse.StarLevelResponse> starLevels = missionSets.stream()
-                .collect(Collectors.groupingBy(
-                        MissionSet::getStarLevel,
-                        LinkedHashMap::new,
-                        Collectors.toList()
-                ))
+        Map<Integer, List<MissionSet>> setsByStarLevel = groupByStarLevel(missionSets);
+        List<MissionListResponse.StarLevelResponse> starLevels = setsByStarLevel
                 .entrySet()
                 .stream()
                 .sorted(Map.Entry.comparingByKey())
-                .map(entry -> toStarLevelResponse(entry.getKey(), entry.getValue(), progressBySetId, missionUnlocked))
+                .map(entry -> toStarLevelResponse(
+                        entry.getKey(),
+                        entry.getValue(),
+                        setsByStarLevel,
+                        progressBySetId,
+                        missionUnlocked
+                ))
                 .toList();
         return new MissionListResponse.MissionResponse(
                 first.getMissionId(),
@@ -206,18 +230,20 @@ public class MissionService {
     private MissionListResponse.StarLevelResponse toStarLevelResponse(
             int starLevel,
             List<MissionSet> missionSets,
+            Map<Integer, List<MissionSet>> setsByStarLevel,
             Map<String, MissionSetProgress> progressBySetId,
             boolean missionUnlocked
     ) {
         long completed = missionSets.stream()
                 .filter(set -> progressBySetId.containsKey(set.getSetId()))
                 .count();
+        boolean playable = missionUnlocked && isStarLevelUnlocked(starLevel, setsByStarLevel, progressBySetId);
         return new MissionListResponse.StarLevelResponse(
                 starLevel,
                 MissionListResponse.labelForStar(starLevel),
                 missionSets.size(),
                 completed,
-                missionUnlocked,
+                playable,
                 completed > 0
         );
     }
@@ -227,6 +253,7 @@ public class MissionService {
             Map<String, MissionSetProgress> progressBySetId
     ) {
         Map<Short, Long> completedMissionsByStage = missionSets.stream()
+                .filter(set -> set.getStarLevel() == 1)
                 .filter(set -> progressBySetId.containsKey(set.getSetId()))
                 .collect(Collectors.groupingBy(
                         MissionSet::getStage,
@@ -245,10 +272,40 @@ public class MissionService {
     private boolean isStageUnlocked(short stage, StageProgressResponse stageProgress) {
         return switch (stage) {
             case 1 -> true;
-            case 2 -> stageProgress.stage1Completed() >= 3;
-            case 3 -> stageProgress.stage2Completed() >= 4;
+            case 2 -> stageProgress.stage1Completed() >= STAGE_2_REQUIRED_STAGE_1_STAR1_CLEARS;
+            case 3 -> stageProgress.stage2Completed() >= STAGE_3_REQUIRED_STAGE_2_STAR1_CLEARS;
             default -> false;
         };
+    }
+
+    private Map<Integer, List<MissionSet>> groupByStarLevel(List<MissionSet> missionSets) {
+        return missionSets.stream()
+                .collect(Collectors.groupingBy(
+                        MissionSet::getStarLevel,
+                        LinkedHashMap::new,
+                        Collectors.toList()
+                ));
+    }
+
+    private boolean isStarLevelUnlocked(
+            int starLevel,
+            Map<Integer, List<MissionSet>> setsByStarLevel,
+            Map<String, MissionSetProgress> progressBySetId
+    ) {
+        if (starLevel == 1) {
+            return true;
+        }
+        return isStarLevelCleared(starLevel - 1, setsByStarLevel, progressBySetId);
+    }
+
+    private boolean isStarLevelCleared(
+            int starLevel,
+            Map<Integer, List<MissionSet>> setsByStarLevel,
+            Map<String, MissionSetProgress> progressBySetId
+    ) {
+        return setsByStarLevel.getOrDefault(starLevel, List.of())
+                .stream()
+                .anyMatch(set -> progressBySetId.containsKey(set.getSetId()));
     }
 
     private Map<String, MissionSetProgress> progressBySetId(UUID childId, Collection<MissionSet> missionSets) {
