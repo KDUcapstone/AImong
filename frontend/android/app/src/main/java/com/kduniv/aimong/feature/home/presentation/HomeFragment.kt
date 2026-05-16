@@ -51,7 +51,7 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
         homeLayoutBinder = HomeLayoutBinder(
             binding = binding,
             layoutInflater = layoutInflater,
-            onOpenDifficultyPicker = { title, nav, anchor ->
+            onOpenDifficultyPicker = { title, nav, anchor, unlockMode ->
                 val st = viewModel.uiState.value
                 if (!st.canAttemptMissionStart()) {
                     Snackbar.make(
@@ -67,16 +67,13 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
                     missionDifficultyPicker?.dismissImmediate()
                     val picker = MissionDifficultyPicker(binding, layoutInflater)
                     missionDifficultyPicker = picker
-                    val starLevels = viewModel.missionStarLevels(nav.missionId)
-                    picker.show(title, nav, starLevels, anchor) { picked ->
-                        findNavController().navigate(
-                            HomeFragmentDirections.actionHomeFragmentToQuizFragment(
-                                picked.entrySetId,
-                                picked.missionId,
-                                picked.starLevel,
-                            ),
-                        )
-                        missionDifficultyPicker = null
+                    viewLifecycleOwner.lifecycleScope.launch {
+                        val starLevels = viewModel.ensureMissionStarLevels(nav.missionId)
+                        if (!isAdded) return@launch
+                        picker.show(title, nav, starLevels, unlockMode, anchor) { picked ->
+                            navigateToQuizAfterValidation(picked, unlockMode)
+                            missionDifficultyPicker = null
+                        }
                     }
                 }
             },
@@ -133,13 +130,25 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
             showMissionHint(getString(R.string.mission_no_playable_star_level))
             return
         }
-        findNavController().navigate(
-            HomeFragmentDirections.actionHomeFragmentToQuizFragment(
-                nav.entrySetId,
-                nav.missionId,
-                nav.starLevel,
-            ),
-        )
+        navigateToQuizAfterValidation(nav, DifficultyUnlockMode.NEW_PLAY)
+    }
+
+    private fun navigateToQuizAfterValidation(nav: HomeQuizNavigation, unlockMode: DifficultyUnlockMode) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.validateMissionQuizNav(nav, unlockMode)
+                .onSuccess { validated ->
+                    findNavController().navigate(
+                        HomeFragmentDirections.actionHomeFragmentToQuizFragment(
+                            validated.entrySetId,
+                            validated.missionId,
+                            validated.starLevel,
+                        ),
+                    )
+                }
+                .onFailure { e ->
+                    Snackbar.make(binding.root, e.message ?: getString(R.string.quiz_star_not_playable), Snackbar.LENGTH_LONG).show()
+                }
+        }
     }
 
     override fun onDestroyView() {

@@ -49,7 +49,8 @@ sealed class HomePathItem {
         val quizNav: HomeQuizNavigation,
         val missionTitle: String,
         val enabled: Boolean,
-        val icon: String = "▶"
+        val icon: String = "▶",
+        val starsFilled: Int = 0,
     ) : HomePathItem()
 
     data class Review(

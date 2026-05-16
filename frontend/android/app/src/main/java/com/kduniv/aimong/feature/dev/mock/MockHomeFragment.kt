@@ -13,6 +13,7 @@ import com.kduniv.aimong.databinding.FragmentHomeBinding
 import com.kduniv.aimong.feature.home.presentation.EnergyBottomSheet
 import com.kduniv.aimong.feature.home.presentation.GearBottomSheet
 import com.kduniv.aimong.feature.home.presentation.HomeLayoutBinder
+import com.kduniv.aimong.feature.home.presentation.DifficultyUnlockMode
 import com.kduniv.aimong.feature.home.presentation.MissionDifficultyPicker
 import com.kduniv.aimong.feature.home.presentation.QuestListBottomSheet
 import com.kduniv.aimong.feature.home.presentation.StreakCalendarBottomSheet
@@ -56,7 +57,7 @@ class MockHomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::
         homeLayoutBinder = HomeLayoutBinder(
             binding = binding,
             layoutInflater = layoutInflater,
-            onOpenDifficultyPicker = { title, nav, anchor ->
+            onOpenDifficultyPicker = { title, nav, anchor, unlockMode ->
                 val st = sampleState
                 if (!st.canAttemptMissionStart()) {
                     Snackbar.make(
@@ -72,7 +73,7 @@ class MockHomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::
                     missionDifficultyPicker?.dismissImmediate()
                     val picker = MissionDifficultyPicker(binding, layoutInflater)
                     missionDifficultyPicker = picker
-                    picker.show(title, nav, emptyList(), anchor) { picked ->
+                    picker.show(title, nav, emptyList(), unlockMode, anchor) { picked ->
                         findNavController().navigate(
                             MockHomeFragmentDirections.actionHomeFragmentToQuizFragment(
                                 picked.entrySetId,

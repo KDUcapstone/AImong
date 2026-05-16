@@ -21,7 +21,19 @@ data class MissionStarLevel(
 ) {
     val isCompleted: Boolean
         get() = totalSetCount > 0 && completedSetCount >= totalSetCount
+
+    /** 플레이·복습·클리어 중 하나라도 가능한 난이도면 열린 것으로 본다 */
+    val isOpen: Boolean
+        get() = isPlayable || isReviewable || isCompleted
 }
+
+/** 홈 경로 노드 아래 ★ 표시(0~3): 열린 최고 난이도 단계 */
+fun List<MissionStarLevel>.openDifficultyCount(): Int =
+    filter { it.isOpen }
+        .maxOfOrNull { it.starLevel }
+        ?.coerceIn(0, 3) ?: 0
+
+fun Mission.openDifficultyCount(): Int = starLevels.openDifficultyCount()
 
 data class MissionProgress(
     val completedSetCount: Int,

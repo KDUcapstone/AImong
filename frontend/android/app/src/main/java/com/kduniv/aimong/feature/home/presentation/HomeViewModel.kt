@@ -4,11 +4,17 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kduniv.aimong.R
+import com.kduniv.aimong.core.dev.UiMode
+import com.kduniv.aimong.core.network.AimongApiService
+import com.kduniv.aimong.core.network.ApiErrorMapper
+import com.kduniv.aimong.core.network.toResult
 import com.kduniv.aimong.feature.home.domain.GetHomeStatusUseCase
 import com.kduniv.aimong.feature.home.domain.repository.AppBootstrapRepository
 import com.kduniv.aimong.feature.home.domain.repository.HomeRepository
 import com.kduniv.aimong.feature.home.domain.HomePathBuilder
+import com.kduniv.aimong.feature.mission.data.model.MissionStarLevelDto
 import com.kduniv.aimong.feature.mission.domain.model.MissionStarLevel
+import com.kduniv.aimong.feature.mission.domain.model.openDifficultyCount
 import com.kduniv.aimong.feature.mission.domain.repository.MissionRepository
 import com.kduniv.aimong.feature.wallet.domain.repository.WalletRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -19,6 +25,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
 import javax.inject.Inject
 
 @HiltViewModel
@@ -28,6 +35,7 @@ class HomeViewModel @Inject constructor(
     private val homeRepository: HomeRepository,
     private val walletRepository: WalletRepository,
     private val appBootstrapRepository: AppBootstrapRepository,
+    private val apiService: AimongApiService,
     @ApplicationContext private val appContext: Context
 ) : ViewModel() {
 
@@ -133,6 +141,7 @@ class HomeViewModel @Inject constructor(
                         errorMessage = null,
                         subtleNotice = notice
                     )
+                    supplementEmptyMissionStarLevels(path)
                     homeRepository.getEnergy().getOrNull()?.let { energy ->
                         ui = ui.copy(
                             missionStartCost = energy.missionStartCost
@@ -188,11 +197,97 @@ class HomeViewModel @Inject constructor(
     fun missionStarLevels(missionId: String): List<MissionStarLevel> =
         _uiState.value.missionStarLevelsById[missionId].orEmpty()
 
+    /**
+     * /missions 목록에 starLevels가 비어 있을 때(2·3스테이지 등) status로 보강.
+     * 피커 표시 전 호출하면 잠금 UI가 서버와 맞는다.
+     */
+    suspend fun ensureMissionStarLevels(missionId: String): List<MissionStarLevel> {
+        if (missionId.isBlank()) return emptyList()
+        val cached = missionStarLevels(missionId)
+        if (cached.isNotEmpty()) return cached
+        if (UiMode.useStubNav) return cached
+        val fresh = fetchMissionStarLevelsFromStatus(missionId) ?: return cached
+        cacheMissionStarLevels(missionId, fresh)
+        return fresh
+    }
+
+    private fun cacheMissionStarLevels(missionId: String, stars: List<MissionStarLevel>) {
+        val count = stars.openDifficultyCount()
+        _uiState.update { state ->
+            state.copy(
+                missionStarLevelsById = state.missionStarLevelsById + (missionId to stars),
+                pathItems = state.pathItems.map { item ->
+                    patchPathItemStars(item, missionId, count)
+                },
+            )
+        }
+    }
+
+    private fun patchPathItemStars(item: HomePathItem, missionId: String, count: Int): HomePathItem =
+        when (item) {
+            is HomePathItem.TodayStart if item.quizNav.missionId == missionId ->
+                item.copy(starsFilled = count)
+            is HomePathItem.Start if item.quizNav.missionId == missionId ->
+                item.copy(starsFilled = count)
+            is HomePathItem.Completed if item.missionId == missionId ->
+                item.copy(starsFilled = count)
+            is HomePathItem.Review if item.quizNav.missionId == missionId ->
+                item.copy(starsFilled = count)
+            else -> item
+        }
+
+    private suspend fun fetchMissionStarLevelsFromStatus(missionId: String): List<MissionStarLevel>? {
+        return try {
+            val status = apiService.getMissionStatus(missionId).toResult().getOrThrow()
+            mapStarLevelDtos(status.starLevels)
+        } catch (_: HttpException) {
+            null
+        } catch (_: Throwable) {
+            null
+        }
+    }
+
+    /** GET /missions 에 starLevels가 비어 있는 미션(2·3스테이지 등)을 status로 보강 */
+    private fun supplementEmptyMissionStarLevels(path: List<HomePathItem>) {
+        if (UiMode.useStubNav) return
+        val ids = path.missionIdsNeedingStarSupplement()
+        if (ids.isEmpty()) return
+        viewModelScope.launch {
+            ids.forEach { missionId ->
+                if (missionStarLevels(missionId).isNotEmpty()) return@forEach
+                fetchMissionStarLevelsFromStatus(missionId)?.let { cacheMissionStarLevels(missionId, it) }
+            }
+        }
+    }
+
+    private fun List<HomePathItem>.missionIdsNeedingStarSupplement(): List<String> =
+        mapNotNull { item ->
+            when (item) {
+                is HomePathItem.TodayStart -> item.quizNav.missionId.takeIf { it.isNotBlank() }
+                is HomePathItem.Start -> item.quizNav.missionId.takeIf { it.isNotBlank() }
+                is HomePathItem.Completed -> item.missionId.takeIf { it.isNotBlank() }
+                is HomePathItem.Review -> item.quizNav.missionId.takeIf { it.isNotBlank() }
+                else -> null
+            }
+        }.distinct()
+
+    private fun mapStarLevelDtos(dtos: List<MissionStarLevelDto>): List<MissionStarLevel> =
+        dtos.map {
+            MissionStarLevel(
+                starLevel = it.starLevel,
+                label = it.label,
+                totalSetCount = it.totalSetCount,
+                completedSetCount = it.completedSetCount,
+                isPlayable = it.isPlayable,
+                isReviewable = it.isReviewable,
+            )
+        }
+
     /** 퀘스트 「미션 학습하기」 — 오늘/다음 시작 가능 미션 + 플레이 가능한 최저 별 단계 */
     fun resolveQuestLearnQuizNav(): HomeQuizNavigation? {
         val items = _uiState.value.pathItems
-        val startItem = items.filterIsInstance<HomePathItem.TodayStart>().firstOrNull { it.enabled }
-            ?: items.filterIsInstance<HomePathItem.Start>().firstOrNull { it.enabled }
+        val startItem = items.filterIsInstance<HomePathItem.TodayStart>().firstOrNull()
+            ?: items.filterIsInstance<HomePathItem.Start>().firstOrNull()
             ?: return null
         val base = when (startItem) {
             is HomePathItem.TodayStart -> startItem.quizNav
@@ -208,11 +303,74 @@ class HomeViewModel @Inject constructor(
         val stars = missionStarLevels(base.missionId)
         if (base.starLevel in 1..3) {
             val current = stars.firstOrNull { it.starLevel == base.starLevel }
-            if (current != null && (current.isPlayable || current.isReviewable)) return base
+            if (current?.isPlayable == true) return base
         }
         val next = stars.filter { it.isPlayable }.minByOrNull { it.starLevel }
-            ?: stars.filter { it.isReviewable }.minByOrNull { it.starLevel }
         return next?.let { base.copy(starLevel = it.starLevel) }
+    }
+
+    /**
+     * 퀴즈 진입 직전 서버 status로 별 잠금·에너지를 재검증하고, 홈 캐시의 starLevels를 갱신한다.
+     */
+    suspend fun validateMissionQuizNav(
+        nav: HomeQuizNavigation,
+        unlockMode: DifficultyUnlockMode,
+    ): Result<HomeQuizNavigation> {
+        if (nav.missionId.isBlank()) {
+            return if (nav.entrySetId.isNotBlank()) {
+                Result.success(nav)
+            } else {
+                Result.failure(Exception(appContext.getString(R.string.mission_no_playable_star_level)))
+            }
+        }
+        if (nav.starLevel !in 1..3) {
+            return Result.failure(Exception(appContext.getString(R.string.mission_no_playable_star_level)))
+        }
+        if (UiMode.useStubNav) {
+            return validateMissionQuizNavLocal(nav, unlockMode)
+        }
+        return try {
+            val status = apiService.getMissionStatus(nav.missionId).toResult().getOrThrow()
+            val stars = mapStarLevelDtos(status.starLevels)
+            cacheMissionStarLevels(nav.missionId, stars)
+            if (!status.isUnlocked) {
+                return Result.failure(Exception(appContext.getString(R.string.quiz_mission_locked)))
+            }
+            val energy = status.energy
+            if (energy != null && energy.current < energy.required) {
+                return Result.failure(Exception(appContext.getString(R.string.quiz_insufficient_energy)))
+            }
+            val sl = stars.firstOrNull { it.starLevel == nav.starLevel }
+            val allowed = when (unlockMode) {
+                DifficultyUnlockMode.NEW_PLAY -> sl?.isPlayable == true
+                DifficultyUnlockMode.REVIEW -> sl?.isReviewable == true
+            }
+            if (!allowed) {
+                return Result.failure(Exception(appContext.getString(R.string.quiz_star_not_playable)))
+            }
+            Result.success(nav)
+        } catch (e: HttpException) {
+            Result.failure(Exception(ApiErrorMapper.userMessageForHttpException(e)))
+        } catch (e: Throwable) {
+            Result.failure(e)
+        }
+    }
+
+    private fun validateMissionQuizNavLocal(
+        nav: HomeQuizNavigation,
+        unlockMode: DifficultyUnlockMode,
+    ): Result<HomeQuizNavigation> {
+        val stars = missionStarLevels(nav.missionId)
+        val sl = stars.firstOrNull { it.starLevel == nav.starLevel }
+        val allowed = when {
+            stars.isEmpty() -> false
+            sl == null -> false
+            unlockMode == DifficultyUnlockMode.NEW_PLAY -> sl.isPlayable
+            else -> sl.isReviewable
+        }
+        return if (allowed) Result.success(nav) else {
+            Result.failure(Exception(appContext.getString(R.string.quiz_star_not_playable)))
+        }
     }
 
     fun getProfileLabel(type: String): String {

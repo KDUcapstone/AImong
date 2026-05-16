@@ -23,7 +23,9 @@ import retrofit2.HttpException
 import com.kduniv.aimong.feature.quiz.domain.model.AttemptStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -76,6 +78,7 @@ class QuizViewModel @Inject constructor(
         savedStateHandle.getStateFlow("strictSingleLifeRetry", false)
 
     private var quizResult: QuizResult? = null
+    private var finalSubmitJob: Job? = null
     /** 풀이 보기에서 사용할 답안 스냅샷(제출/종료 시점) */
     private var solutionAnswerSnapshot: Map<String, String> = emptyMap()
 
@@ -315,7 +318,8 @@ class QuizViewModel @Inject constructor(
 
             if (UiMode.useStubNav) {
                 // 목업 모드: 서버 요청 없이 로컬에서 즉시 피드백 생성
-                delay(300) // 실제 느낌을 위해 약간의 지연
+                val isLastQuestion = qs.questions.indexOf(q) >= qs.questions.lastIndex
+                if (!isLastQuestion) delay(80)
                 val isAnswerCorrect = payload.isNotEmpty() // 빈 문자열(시간 초과)은 오답 처리
                 _uiState.value = QuizUiState.AnswerChecked(
                     isCorrect = isAnswerCorrect,
@@ -348,6 +352,7 @@ class QuizViewModel @Inject constructor(
                         remainingTickets = null
                     )
                 }
+                maybePrefetchFinalSubmit()
                 return@launch
             }
 
@@ -379,10 +384,24 @@ class QuizViewModel @Inject constructor(
                         reviveCost = checked.reviveCost ?: walletReviveCost,
                         gearBalance = checked.gearBalance ?: walletGearBalance
                     )
+                    maybePrefetchFinalSubmit()
                 }
                 .onFailure { e ->
                     _uiState.value = QuizUiState.Error(e.message ?: "채점에 실패했습니다.")
                 }
+        }
+    }
+
+    /** 마지막 문항 채점 직후 결과 제출을 백그라운드에서 선행해 「결과 보기」 탭 시 대기를 줄인다. */
+    private fun maybePrefetchFinalSubmit() {
+        val qs = cachedQuestions ?: return
+        if (quizResult != null) return
+        if (_isSolutionMode.value) return
+        if (currentQuestionIndex.value < qs.questions.lastIndex) return
+        if (!isAnswerSetCompleteForFullSubmit(qs)) return
+        if (finalSubmitJob?.isActive == true) return
+        finalSubmitJob = viewModelScope.launch {
+            performFinalSubmit(qs.quizAttemptId, showLoading = false)
         }
     }
 
@@ -424,7 +443,7 @@ class QuizViewModel @Inject constructor(
                 quizResult?.let {
                     _uiState.value = QuizUiState.Finished(it)
                 } ?: run {
-                    submitQuiz(cachedQuestions!!.quizAttemptId)
+                    submitQuiz(cachedQuestions!!.quizAttemptId, showLoading = true)
                 }
             }
         }
@@ -435,7 +454,7 @@ class QuizViewModel @Inject constructor(
             _uiState.value = QuizUiState.Finished(it)
         } ?: run {
             val qs = cachedQuestions ?: return
-            submitQuiz(qs.quizAttemptId)
+            submitQuiz(qs.quizAttemptId, showLoading = true)
         }
     }
 
@@ -474,40 +493,67 @@ class QuizViewModel @Inject constructor(
         _uiState.value = QuizUiState.Finished(quizResult!!)
     }
 
-    private fun submitQuiz(quizAttemptId: String) {
+    private fun submitQuiz(quizAttemptId: String, showLoading: Boolean) {
         viewModelScope.launch {
-            val qs = cachedQuestions
-            if (qs == null) {
-                _uiState.value = QuizUiState.Error("문제 정보가 없습니다.")
-                return@launch
-            }
-            // v2.4 attempt 복구 시에는 서버가 기존 답안을 알고 있을 수 있어, 10문항 완전 제출을 강제하지 않는다.
-            if (!isRecoveredAttempt && !isAnswerSetCompleteForFullSubmit(qs)) {
-                _uiState.value = QuizUiState.Error("10개 문항에 모두 답한 뒤 제출할 수 있습니다.")
-                return@launch
-            }
-            _uiState.value = QuizUiState.Loading
-            val qsNonNull = qs
-            quizRepository.submitQuiz(
-                setId = qsNonNull.setId,
-                missionId = qsNonNull.missionId.ifBlank { missionIdArg },
-                quizAttemptId = quizAttemptId,
-                answers = userAnswers.toMap()
-            )
-                .onSuccess { result ->
-                    solutionAnswerSnapshot = userAnswers.toMap()
-                    val merged = if (result.results.isEmpty()) {
-                        quizRepository.getMissionSetReport(qsNonNull.setId).getOrElse { result }
-                    } else {
-                        result
-                    }
-                    quizResult = merged
-                    _uiState.value = QuizUiState.Finished(merged)
-                }
-                .onFailure {
-                    _uiState.value = QuizUiState.Error(it.message ?: "Failed to submit quiz")
-                }
+            awaitFinalSubmitOrPerform(quizAttemptId, showLoading)
         }
+    }
+
+    private suspend fun awaitFinalSubmitOrPerform(quizAttemptId: String, showLoading: Boolean) {
+        finalSubmitJob?.join()
+        if (quizResult != null) {
+            _uiState.value = QuizUiState.Finished(quizResult!!)
+            return
+        }
+        performFinalSubmit(quizAttemptId, showLoading)
+    }
+
+    private suspend fun performFinalSubmit(quizAttemptId: String, showLoading: Boolean) {
+        if (quizResult != null) {
+            _uiState.value = QuizUiState.Finished(quizResult!!)
+            return
+        }
+        val qs = cachedQuestions
+        if (qs == null) {
+            _uiState.value = QuizUiState.Error("문제 정보가 없습니다.")
+            return
+        }
+        if (!isRecoveredAttempt && !isAnswerSetCompleteForFullSubmit(qs)) {
+            _uiState.value = QuizUiState.Error("10개 문항에 모두 답한 뒤 제출할 수 있습니다.")
+            return
+        }
+        if (showLoading) {
+            _uiState.value = QuizUiState.Loading
+        }
+        val reportDeferred: Deferred<kotlin.Result<QuizResult>>? =
+            if (!UiMode.useStubNav) {
+                viewModelScope.async {
+                    quizRepository.getMissionSetReport(qs.setId)
+                }
+            } else {
+                null
+            }
+        quizRepository.submitQuiz(
+            setId = qs.setId,
+            missionId = qs.missionId.ifBlank { missionIdArg },
+            quizAttemptId = quizAttemptId,
+            answers = userAnswers.toMap(),
+        )
+            .onSuccess { result ->
+                solutionAnswerSnapshot = userAnswers.toMap()
+                val merged = if (result.results.isEmpty()) {
+                    reportDeferred?.await()?.getOrElse { result } ?: result
+                } else {
+                    reportDeferred?.cancel()
+                    result
+                }
+                quizResult = merged
+                _uiState.value = QuizUiState.Finished(merged)
+            }
+            .onFailure {
+                reportDeferred?.cancel()
+                _uiState.value = QuizUiState.Error(it.message ?: "Failed to submit quiz")
+            }
     }
 
     /** 최종 제출: 문항 수·questionId 집합이 세션과 일치해야 함 */

@@ -74,6 +74,7 @@ class MissionDifficultyPicker(
         missionTitle: String,
         base: HomeQuizNavigation,
         starLevels: List<MissionStarLevel>,
+        unlockMode: DifficultyUnlockMode,
         anchorRow: View,
         onPicked: (HomeQuizNavigation) -> Unit,
     ) {
@@ -87,20 +88,18 @@ class MissionDifficultyPicker(
         popup.findViewById<TextView>(R.id.tv_mission_title).text = missionTitle
 
         val pick: (Int) -> Unit = { starLevel ->
-            val nav = if (base.entrySetId.isNotBlank()) {
-                base
-            } else {
-                base.copy(starLevel = starLevel, missionId = base.missionId)
-            }
+            val nav = base.copy(starLevel = starLevel)
             dismissImmediate()
             onPicked(nav)
         }
-        val useMissionStars = base.entrySetId.isBlank() && base.missionId.isNotBlank()
+        // entrySetId가 있어도 미션별 잠금 상태는 starLevels 기준으로 표시 (오늘 추천만 전부 열리던 문제 방지)
+        val useMissionStars = base.missionId.isNotBlank()
         bindDifficultyCard(
             popup.findViewById(R.id.card_diff_1),
             starLevel = 1,
             starLevels = starLevels,
             useMissionStars = useMissionStars,
+            unlockMode = unlockMode,
             onPick = pick,
         )
         bindDifficultyCard(
@@ -108,6 +107,7 @@ class MissionDifficultyPicker(
             starLevel = 2,
             starLevels = starLevels,
             useMissionStars = useMissionStars,
+            unlockMode = unlockMode,
             onPick = pick,
         )
         bindDifficultyCard(
@@ -115,6 +115,7 @@ class MissionDifficultyPicker(
             starLevel = 3,
             starLevels = starLevels,
             useMissionStars = useMissionStars,
+            unlockMode = unlockMode,
             onPick = pick,
         )
 
@@ -218,6 +219,7 @@ class MissionDifficultyPicker(
         starLevel: Int,
         starLevels: List<MissionStarLevel>,
         useMissionStars: Boolean,
+        unlockMode: DifficultyUnlockMode,
         onPick: (Int) -> Unit,
     ) {
         val materialCard = card as? MaterialCardView ?: return
@@ -226,8 +228,11 @@ class MissionDifficultyPicker(
         } else {
             val sl = starLevels.firstOrNull { it.starLevel == starLevel }
             when {
-                starLevels.isEmpty() -> starLevel == 1
-                sl != null -> sl.isPlayable || sl.isReviewable
+                starLevels.isEmpty() -> false
+                sl != null -> when (unlockMode) {
+                    DifficultyUnlockMode.NEW_PLAY -> sl.isPlayable
+                    DifficultyUnlockMode.REVIEW -> sl.isReviewable
+                }
                 else -> false
             }
         }

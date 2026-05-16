@@ -6,6 +6,7 @@ import com.kduniv.aimong.feature.home.data.model.HomeScreenData
 import com.kduniv.aimong.feature.home.presentation.HomePathItem
 import com.kduniv.aimong.feature.home.presentation.HomeQuizNavigation
 import com.kduniv.aimong.feature.mission.domain.model.Mission
+import com.kduniv.aimong.feature.mission.domain.model.openDifficultyCount
 
 /**
  * GET /home 의 missionSummary + GET /missions(v2.3) 목록으로 학습 경로 노드를 구성합니다.
@@ -25,9 +26,6 @@ object HomePathBuilder {
         IslandMeta("🌋", "탐험의 화산섬", R.drawable.bg_home_section_banner_stage2),
         IslandMeta("⭐", "마스터의 별섬", R.drawable.bg_home_section_banner_stage3),
     )
-
-    private fun Mission.filledStars(): Int =
-        starLevels.count { it.isCompleted }.coerceIn(0, 3)
 
     fun build(data: HomeScreenData, missions: List<Mission>): List<HomePathItem> {
         val rec = data.missionSummary.recommendedMission
@@ -77,7 +75,7 @@ object HomePathBuilder {
             var nodeCount = 0
 
             sortedMissions.forEachIndexed { index, m ->
-                val stars = m.filledStars()
+                val stars = m.openDifficultyCount()
                 if (rec != null && resolvedRecommendedMissionId != null && m.missionId == resolvedRecommendedMissionId) {
                     val todayNav = HomeQuizNavigation(
                         entrySetId = recSetIdStr.orEmpty(),
@@ -88,7 +86,8 @@ object HomePathBuilder {
                         HomePathItem.TodayStart(
                             quizNav = todayNav,
                             missionTitle = rec.title,
-                            enabled = canStart,
+                            // 에너지 부족만으로 노드를 흐리게 하지 않음(탭 시 스낵바로 안내)
+                            enabled = true,
                             starsFilled = stars
                         )
                     )
@@ -124,7 +123,8 @@ object HomePathBuilder {
                             quizNav = HomeQuizNavigation("", m.missionId, star),
                             missionTitle = m.title,
                             enabled = true,
-                            icon = "▶"
+                            icon = "▶",
+                            starsFilled = stars,
                         )
                     )
                 } else if (!m.isUnlocked) {

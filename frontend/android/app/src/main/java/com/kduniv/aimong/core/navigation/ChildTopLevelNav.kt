@@ -1,6 +1,7 @@
 package com.kduniv.aimong.core.navigation
 
 import androidx.annotation.IdRes
+import com.kduniv.aimong.R
 import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavOptions
@@ -10,12 +11,24 @@ import androidx.navigation.NavOptions
  */
 object ChildTopLevelNav {
 
+    private val topLevelActionIds = mapOf(
+        R.id.homeFragment to R.id.action_global_child_home,
+        R.id.chatFragment to R.id.action_global_child_chat,
+        R.id.gachaFragment to R.id.action_global_child_gacha,
+        R.id.myProfileFragment to R.id.action_global_child_myProfile,
+    )
+
     fun NavController.navigateToChildTopLevel(@IdRes destinationId: Int) {
         val options = NavOptions.Builder()
             .setLaunchSingleTop(true)
             .setRestoreState(true)
             .setPopUpTo(graph.findStartDestination().id, false, true)
             .build()
-        navigate(destinationId, null, options)
+        val actionId = topLevelActionIds[destinationId]
+        if (actionId != null) {
+            navigate(actionId, null, options)
+        } else {
+            navigate(destinationId, null, options)
+        }
     }
 }

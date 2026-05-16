@@ -244,7 +244,7 @@ class MainActivity : AppCompatActivity() {
                 binding.bottomNav.isSaveEnabled = true
                 binding.bottomNav.menu.clear()
                 menuInflater.inflate(R.menu.bottom_nav_menu, binding.bottomNav.menu)
-                binding.bottomNav.setupWithNavController(navController)
+                // setupWithNavController와 커스텀 탭 리스너가 겹치면 MY 등 일부 탭 전환이 실패할 수 있음
                 binding.bottomNav.setBackgroundColor(ContextCompat.getColor(this@MainActivity, R.color.child_bottom_nav_bg))
                 val childNavTint = ContextCompat.getColorStateList(this@MainActivity, R.color.bottom_nav_child_item)
                 binding.bottomNav.itemIconTintList = childNavTint
@@ -510,7 +510,9 @@ class MainActivity : AppCompatActivity() {
         -> R.id.homeFragment
         R.id.chatFragment -> R.id.chatFragment
         R.id.gachaFragment -> R.id.gachaFragment
-        R.id.myProfileFragment -> R.id.myProfileFragment
+        R.id.myProfileFragment,
+        R.id.notificationSettingsFragment,
+        -> R.id.myProfileFragment
         else -> null
     }
 

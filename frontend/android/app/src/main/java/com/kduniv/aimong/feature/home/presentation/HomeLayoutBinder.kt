@@ -21,7 +21,7 @@ import kotlin.math.sin
 class HomeLayoutBinder(
     private val binding: FragmentHomeBinding,
     private val layoutInflater: LayoutInflater,
-    private val onOpenDifficultyPicker: (String, HomeQuizNavigation, View) -> Unit,
+    private val onOpenDifficultyPicker: (String, HomeQuizNavigation, View, DifficultyUnlockMode) -> Unit,
     private val onShowMissionHint: (String) -> Unit,
 ) {
 
@@ -148,7 +148,12 @@ class HomeLayoutBinder(
                     row.tvMissionCaption.text = item.title
                     val go = {
                         if (item.quizNav.entrySetId.isNotBlank() || item.quizNav.missionId.isNotBlank()) {
-                            onOpenDifficultyPicker(item.title, item.quizNav, row.root)
+                            onOpenDifficultyPicker(
+                                item.title,
+                                item.quizNav,
+                                row.root,
+                                DifficultyUnlockMode.NEW_PLAY,
+                            )
                         }
                     }
                     row.btnNode.setOnClickListener { go() }
@@ -169,7 +174,12 @@ class HomeLayoutBinder(
                         if (!item.enabled) {
                             onShowMissionHint(binding.root.context.getString(R.string.home_today_mission_locked_hint))
                         } else {
-                            onOpenDifficultyPicker(item.missionTitle, item.quizNav, row.root)
+                            onOpenDifficultyPicker(
+                                item.missionTitle,
+                                item.quizNav,
+                                row.root,
+                                DifficultyUnlockMode.NEW_PLAY,
+                            )
                         }
                     }
                     row.btnNode.setOnClickListener { go() }
@@ -185,12 +195,17 @@ class HomeLayoutBinder(
                     row.btnNode.text = item.icon
                     row.btnNode.alpha = if (item.enabled) 1f else 0.5f
                     row.tvMissionCaption.text = item.missionTitle
-                    row.tvStars.text = starLine(0)
+                    row.tvStars.text = starLine(item.starsFilled)
                     val go = {
                         if (!item.enabled) {
                             onShowMissionHint(binding.root.context.getString(R.string.home_today_mission_locked_hint))
                         } else {
-                            onOpenDifficultyPicker(item.missionTitle, item.quizNav, row.root)
+                            onOpenDifficultyPicker(
+                                item.missionTitle,
+                                item.quizNav,
+                                row.root,
+                                DifficultyUnlockMode.NEW_PLAY,
+                            )
                         }
                     }
                     row.btnNode.setOnClickListener { go() }
@@ -207,7 +222,12 @@ class HomeLayoutBinder(
                     row.tvMissionCaption.text = item.subtitle
                     val go = {
                         if (item.quizNav.entrySetId.isNotBlank() || item.quizNav.missionId.isNotBlank()) {
-                            onOpenDifficultyPicker(item.subtitle, item.quizNav, row.root)
+                            onOpenDifficultyPicker(
+                                item.subtitle,
+                                item.quizNav,
+                                row.root,
+                                DifficultyUnlockMode.REVIEW,
+                            )
                         }
                     }
                     row.btnNode.setOnClickListener { go() }

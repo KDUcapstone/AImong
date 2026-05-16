@@ -2,6 +2,7 @@ package com.kduniv.aimong.feature.quiz.presentation
 
 import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
+import android.content.res.ColorStateList
 import android.graphics.Color
 import androidx.annotation.ColorRes
 import android.graphics.Typeface
@@ -140,6 +141,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             if (isRetryingFromResult) return@setOnClickListener
             binding.layoutFeedbackPanel.visibility = View.GONE
             binding.btnFeedbackRefillHearts.visibility = View.GONE
+            restoreDefaultFeedbackButtonStyles()
             viewModel.nextQuestion()
         }
         binding.btnFeedbackRefillHearts.setOnClickListener {
@@ -360,9 +362,10 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         val total = (viewModel.uiState.value as? QuizUiState.QuestionLoaded)?.quizQuestions?.questions?.size ?: 10
         
         binding.tvQuestionCount.text = "${index + 1} / $total 문제"
+        bindQuestionDifficultyStars(state.question.difficulty)
         binding.tvQuizQuestion.text = state.question.question
         binding.pbQuizProgress.progress = index + 1
-        
+
         setupOptions(state.question)
         // 풀이 모드에서는 클릭 방지 및 정답 표시
         lockOptions()
@@ -531,15 +534,50 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             val cost = reviveCost ?: com.kduniv.aimong.feature.home.presentation.WalletBalanceDefaults.HEART_REVIVE_COST
             val balance = gearBalance ?: 0
             binding.btnFeedbackRefillHearts.text = getString(R.string.quiz_revive_cost_fmt, cost, balance)
+            styleFeedbackGearButtonPrimary()
         } else {
             binding.btnFeedbackRefillHearts.visibility = View.GONE
         }
+        styleFeedbackHomeButtonSecondary()
         binding.btnNextQuestion.text = getString(R.string.quiz_btn_return_home)
         binding.btnNextQuestion.setOnClickListener {
             binding.layoutFeedbackPanel.visibility = View.GONE
             binding.btnFeedbackRefillHearts.visibility = View.GONE
+            restoreDefaultFeedbackButtonStyles()
             popQuizToHomeAfterAbandon("LIVES_EXHAUSTED")
         }
+    }
+
+    /** 하트 소진 시: 홈으로 돌아가기 — 회색 보조 버튼 */
+    private fun styleFeedbackHomeButtonSecondary() {
+        binding.btnNextQuestion.backgroundTintList =
+            ColorStateList.valueOf(quizColor(R.color.quiz_button_secondary_bg))
+        binding.btnNextQuestion.setTextColor(quizColor(R.color.quiz_text_grey))
+        binding.btnNextQuestion.strokeWidth = 0
+    }
+
+    /** 하트 소진 시: 톱니바퀴 부활 — 초록 강조 버튼 */
+    private fun styleFeedbackGearButtonPrimary() {
+        binding.btnFeedbackRefillHearts.backgroundTintList =
+            ColorStateList.valueOf(quizColor(R.color.quiz_mint))
+        binding.btnFeedbackRefillHearts.setTextColor(quizColor(R.color.quiz_on_accent))
+        binding.btnFeedbackRefillHearts.strokeWidth = 0
+        binding.btnFeedbackRefillHearts.strokeColor =
+            ColorStateList.valueOf(quizColor(R.color.quiz_mint))
+    }
+
+    private fun restoreDefaultFeedbackButtonStyles() {
+        binding.btnNextQuestion.backgroundTintList =
+            ColorStateList.valueOf(quizColor(R.color.quiz_mint))
+        binding.btnNextQuestion.setTextColor(quizColor(R.color.quiz_on_accent))
+        binding.btnNextQuestion.strokeWidth = 0
+        val strokePx = (1f * resources.displayMetrics.density).toInt().coerceAtLeast(1)
+        binding.btnFeedbackRefillHearts.backgroundTintList =
+            ColorStateList.valueOf(Color.TRANSPARENT)
+        binding.btnFeedbackRefillHearts.setTextColor(quizColor(R.color.quiz_feedback_text))
+        binding.btnFeedbackRefillHearts.strokeWidth = strokePx
+        binding.btnFeedbackRefillHearts.strokeColor =
+            ColorStateList.valueOf(quizColor(R.color.quiz_text_grey))
     }
 
     private fun requestReviveWithGear() {
@@ -548,6 +586,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                 onSuccess = { data ->
                     binding.layoutFeedbackPanel.visibility = View.GONE
                     binding.btnFeedbackRefillHearts.visibility = View.GONE
+                    restoreDefaultFeedbackButtonStyles()
                     updateHearts(data.remainingLives.coerceIn(0, 3), forceReset = true)
                     Toast.makeText(requireContext(), getString(R.string.quiz_btn_refill_hearts), Toast.LENGTH_SHORT).show()
                 },
@@ -581,6 +620,11 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             binding.tvQuizModeBanner.visibility = View.GONE
         }
 
+        val livesExhausted = (serverRemainingLives ?: lives) <= 0 && !viewModel.isSolutionMode.value
+        if (!livesExhausted) {
+            restoreDefaultFeedbackButtonStyles()
+        }
+
         if (deferImmediateCorrectness) {
             binding.layoutFeedbackPanel.visibility = View.VISIBLE
             binding.tvFeedbackTitle.text = getString(R.string.quiz_feedback_answer_saved_title)
@@ -597,10 +641,12 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             if (isFailedByLives && !viewModel.isSolutionMode.value) {
                 bindLivesExhaustedFeedbackActions(canRevive, reviveCost, gearBalance)
             } else {
+                restoreDefaultFeedbackButtonStyles()
                 binding.btnNextQuestion.text =
                     if (isLast) getString(R.string.quiz_btn_view_result) else getString(R.string.quiz_btn_next)
                 binding.btnNextQuestion.setOnClickListener {
                     binding.layoutFeedbackPanel.visibility = View.GONE
+                    restoreDefaultFeedbackButtonStyles()
                     viewModel.nextQuestion()
                 }
             }
@@ -628,9 +674,11 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         if (isFailedByLives && !viewModel.isSolutionMode.value) {
             bindLivesExhaustedFeedbackActions(canRevive, reviveCost, gearBalance)
         } else {
+            restoreDefaultFeedbackButtonStyles()
             binding.btnNextQuestion.text = if (isLast) getString(R.string.quiz_btn_view_result) else getString(R.string.quiz_btn_next)
             binding.btnNextQuestion.setOnClickListener {
                 binding.layoutFeedbackPanel.visibility = View.GONE
+                restoreDefaultFeedbackButtonStyles()
                 viewModel.nextQuestion()
             }
         }
@@ -871,12 +919,8 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                     Log.e("QuizFragment", "updateQuestion out of bounds: index=$index total=$total")
                     return
                 }
-            val diffSuffix = question.difficulty?.let { difficultyLabel(it) }
-            binding.tvQuestionCount.text = if (diffSuffix != null) {
-                "${index + 1} / $total · $diffSuffix"
-            } else {
-                "${index + 1} / $total 문제"
-            }
+            binding.tvQuestionCount.text = "${index + 1} / $total 문제"
+            bindQuestionDifficultyStars(question.difficulty)
 
             // v1.3 + v2.3: 유형 라벨 포함 및 하이라이트 적용
             val typeLabel = when(question.type) {
@@ -1176,10 +1220,27 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         }
     }
 
-    private fun difficultyLabel(difficulty: QuestionDifficulty): String = when (difficulty) {
-        QuestionDifficulty.LOW -> getString(R.string.quiz_difficulty_low)
-        QuestionDifficulty.MEDIUM -> getString(R.string.quiz_difficulty_medium)
-        QuestionDifficulty.HIGH -> getString(R.string.quiz_difficulty_high)
+    /** 문항 난이도 → 문제 카드 상단 별 1~3개 (쉬움·보통·어려움) */
+    private fun bindQuestionDifficultyStars(difficulty: QuestionDifficulty?) {
+        val stars = listOf(
+            binding.ivQuestionDiffStar1,
+            binding.ivQuestionDiffStar2,
+            binding.ivQuestionDiffStar3,
+        )
+        val filledCount = when (difficulty) {
+            QuestionDifficulty.LOW -> 1
+            QuestionDifficulty.MEDIUM -> 2
+            QuestionDifficulty.HIGH -> 3
+            null -> 0
+        }
+        if (filledCount == 0) {
+            binding.layoutQuestionDifficultyStars.visibility = View.GONE
+            return
+        }
+        binding.layoutQuestionDifficultyStars.visibility = View.VISIBLE
+        stars.forEachIndexed { index, star ->
+            star.visibility = if (index < filledCount) View.VISIBLE else View.GONE
+        }
     }
 
     private fun animateSelection(view: View) {
