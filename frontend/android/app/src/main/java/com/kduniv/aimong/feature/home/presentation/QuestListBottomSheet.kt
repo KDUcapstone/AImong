@@ -17,7 +17,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.tabs.TabLayout
-import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.kduniv.aimong.R
 import com.kduniv.aimong.core.navigation.ChildTopLevelNav.navigateToChildTopLevel
 import com.kduniv.aimong.databinding.DialogQuestListBinding
@@ -145,6 +144,10 @@ class QuestListBottomSheet : BottomSheetDialogFragment() {
             QuestSheetPrimaryAction.CLAIM ->
                 viewModel.onClaim(row.questType, row.period)
             QuestSheetPrimaryAction.GO_LEARN -> {
+                parentFragmentManager.setFragmentResult(
+                    REQUEST_OPEN_MISSION_LEARN,
+                    bundleOf(),
+                )
                 dismiss()
                 navigateChildTopLevel(R.id.homeFragment)
             }
@@ -163,8 +166,6 @@ class QuestListBottomSheet : BottomSheetDialogFragment() {
         if (nav.currentDestination?.id != destinationId) {
             nav.navigateToChildTopLevel(destinationId)
         }
-        requireActivity().findViewById<BottomNavigationView>(R.id.bottom_nav)?.selectedItemId =
-            destinationId
     }
 
     override fun onDestroyView() {
@@ -173,6 +174,8 @@ class QuestListBottomSheet : BottomSheetDialogFragment() {
     }
 
     companion object {
+        const val REQUEST_OPEN_MISSION_LEARN = "quest_open_mission_learn"
+
         private const val ARG_CAN_START_MISSION = "quest_can_start_mission"
 
         fun newInstance(canStartMission: Boolean = true): QuestListBottomSheet {

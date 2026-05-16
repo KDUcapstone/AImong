@@ -40,6 +40,7 @@ class NotificationSettingsFragment :
                 }
                 launch {
                     viewModel.messageEvent.collect { msg ->
+                        binding.progress.visibility = View.GONE
                         Snackbar.make(binding.root, msg, Snackbar.LENGTH_SHORT).show()
                     }
                 }

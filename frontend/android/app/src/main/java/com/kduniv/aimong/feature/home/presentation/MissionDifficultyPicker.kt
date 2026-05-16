@@ -10,7 +10,10 @@ import android.view.View.MeasureSpec
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
 import androidx.core.widget.NestedScrollView
+import com.google.android.material.card.MaterialCardView
+import com.kduniv.aimong.feature.mission.domain.model.MissionStarLevel
 import androidx.interpolator.view.animation.FastOutSlowInInterpolator
 import com.kduniv.aimong.R
 import com.kduniv.aimong.databinding.FragmentHomeBinding
@@ -70,6 +73,7 @@ class MissionDifficultyPicker(
     fun show(
         missionTitle: String,
         base: HomeQuizNavigation,
+        starLevels: List<MissionStarLevel>,
         anchorRow: View,
         onPicked: (HomeQuizNavigation) -> Unit,
     ) {
@@ -91,9 +95,28 @@ class MissionDifficultyPicker(
             dismissImmediate()
             onPicked(nav)
         }
-        popup.findViewById<View>(R.id.card_diff_1).setOnClickListener { pick(1) }
-        popup.findViewById<View>(R.id.card_diff_2).setOnClickListener { pick(2) }
-        popup.findViewById<View>(R.id.card_diff_3).setOnClickListener { pick(3) }
+        val useMissionStars = base.entrySetId.isBlank() && base.missionId.isNotBlank()
+        bindDifficultyCard(
+            popup.findViewById(R.id.card_diff_1),
+            starLevel = 1,
+            starLevels = starLevels,
+            useMissionStars = useMissionStars,
+            onPick = pick,
+        )
+        bindDifficultyCard(
+            popup.findViewById(R.id.card_diff_2),
+            starLevel = 2,
+            starLevels = starLevels,
+            useMissionStars = useMissionStars,
+            onPick = pick,
+        )
+        bindDifficultyCard(
+            popup.findViewById(R.id.card_diff_3),
+            starLevel = 3,
+            starLevels = starLevels,
+            useMissionStars = useMissionStars,
+            onPick = pick,
+        )
 
         val lp = LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
@@ -188,6 +211,40 @@ class MissionDifficultyPicker(
             v = v.parent as? View
         }
         return Rect(l, t, l + view.width, t + view.height)
+    }
+
+    private fun bindDifficultyCard(
+        card: View,
+        starLevel: Int,
+        starLevels: List<MissionStarLevel>,
+        useMissionStars: Boolean,
+        onPick: (Int) -> Unit,
+    ) {
+        val materialCard = card as? MaterialCardView ?: return
+        val unlocked = if (!useMissionStars) {
+            true
+        } else {
+            val sl = starLevels.firstOrNull { it.starLevel == starLevel }
+            when {
+                starLevels.isEmpty() -> starLevel == 1
+                sl != null -> sl.isPlayable || sl.isReviewable
+                else -> false
+            }
+        }
+        materialCard.alpha = if (unlocked) 1f else 0.42f
+        materialCard.isClickable = true
+        materialCard.isFocusable = true
+        materialCard.setOnClickListener {
+            if (unlocked) {
+                onPick(starLevel)
+            } else {
+                Toast.makeText(
+                    card.context,
+                    R.string.home_difficulty_locked,
+                    Toast.LENGTH_SHORT,
+                ).show()
+            }
+        }
     }
 
     private fun scrollToShowPopup(scroll: NestedScrollView, anchor: View, popupHeight: Int) {

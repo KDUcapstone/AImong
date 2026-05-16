@@ -175,9 +175,20 @@ interface AimongApiService {
     @GET("notification/settings")
     suspend fun getNotificationSettings(): ApiResponse<NotificationSettingsData>
 
+    @GET("notification/settings")
+    suspend fun getNotificationSettingsWithAuth(
+        @Header("Authorization") authorization: String,
+    ): ApiResponse<NotificationSettingsData>
+
     @PATCH("notification/settings")
     suspend fun patchNotificationSettings(
         @Body body: NotificationSettingsPatchRequest
+    ): ApiResponse<NotificationSettingsData>
+
+    @PATCH("notification/settings")
+    suspend fun patchNotificationSettingsWithAuth(
+        @Header("Authorization") authorization: String,
+        @Body body: NotificationSettingsPatchRequest,
     ): ApiResponse<NotificationSettingsData>
 
     /** 앱 부팅 시 초기 상태 — Authorization 선택(없으면 게스트). */

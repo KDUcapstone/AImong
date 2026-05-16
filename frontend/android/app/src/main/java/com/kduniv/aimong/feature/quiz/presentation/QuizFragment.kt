@@ -31,6 +31,7 @@ import com.kduniv.aimong.R
 import com.kduniv.aimong.core.ui.BaseFragment
 import com.kduniv.aimong.databinding.FragmentQuizBinding
 import com.kduniv.aimong.feature.quiz.domain.model.Question
+import com.kduniv.aimong.feature.quiz.domain.model.QuestionDifficulty
 import com.kduniv.aimong.feature.quiz.domain.model.QuestionType
 import com.kduniv.aimong.feature.quiz.domain.model.QuizResult
 import com.kduniv.aimong.feature.quiz.domain.model.QuizReward
@@ -427,24 +428,34 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                 }
             }
         } 
-        // 객관식·칩: 저장 답은 1-based 인덱스 또는 보기 문구일 수 있음(check 페이로드와 동일)
-        else if (question.type == QuestionType.MULTIPLE) {
+        // 객관식·단어채우기·상황판단: 동일 카드 UI
+        else {
             val idx = choiceIndexFromUserAnswer(question, userAnswer) ?: return
-            applyMultipleFixedSelectionByIndex(idx.coerceIn(0, 3))
-        } else if (question.type == QuestionType.FILL || question.type == QuestionType.SITUATION) {
-            val chosen = choiceIndexFromUserAnswer(question, userAnswer) ?: return
-            for (i in 0 until binding.layoutOptionsChips.childCount) {
-                val chip = binding.layoutOptionsChips.getChildAt(i) as? Chip ?: continue
-                if (i == chosen) {
-                    if (isSolutionMode || isCorrect) {
-                        chip.setChipBackgroundColorResource(R.color.quiz_mint)
-                        chip.setTextColor(quizColor(R.color.quiz_on_accent))
-                    } else {
-                        chip.setChipBackgroundColorResource(R.color.quiz_red)
-                        chip.setTextColor(Color.WHITE)
-                    }
-                    chip.chipStrokeWidth = 0f
-                }
+            applyChoiceCardAnswerHighlight(idx.coerceIn(0, 3), isCorrect, isSolutionMode)
+        }
+    }
+
+    private fun applyChoiceCardAnswerHighlight(selectedIndex: Int, isCorrect: Boolean, isSolutionMode: Boolean) {
+        val cards = listOf(
+            binding.btnQuizMultOpt1,
+            binding.btnQuizMultOpt2,
+            binding.btnQuizMultOpt3,
+            binding.btnQuizMultOpt4,
+        )
+        val texts = listOf(binding.tvOpt1, binding.tvOpt2, binding.tvOpt3, binding.tvOpt4)
+        val density = resources.displayMetrics.density
+        if (selectedIndex !in cards.indices) return
+        val positive = isSolutionMode || isCorrect
+        val bgColor = ContextCompat.getColor(
+            requireContext(),
+            if (positive) R.color.quiz_mint else R.color.quiz_red,
+        )
+        cards.forEachIndexed { idx, card ->
+            if (idx == selectedIndex) {
+                card.setCardBackgroundColor(bgColor)
+                card.strokeWidth = (3 * density).toInt()
+                card.strokeColor = bgColor
+                texts[idx].setTextColor(Color.WHITE)
             }
         }
     }
@@ -855,14 +866,18 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         val state = viewModel.uiState.value
         if (state is QuizUiState.QuestionLoaded) {
             val total = state.quizQuestions.questions.size
-            binding.tvQuestionCount.text = "${index + 1} / $total 문제"
-            
             val question = state.quizQuestions.questions.getOrNull(index)
                 ?: run {
                     Log.e("QuizFragment", "updateQuestion out of bounds: index=$index total=$total")
                     return
                 }
-            
+            val diffSuffix = question.difficulty?.let { difficultyLabel(it) }
+            binding.tvQuestionCount.text = if (diffSuffix != null) {
+                "${index + 1} / $total · $diffSuffix"
+            } else {
+                "${index + 1} / $total 문제"
+            }
+
             // v1.3 + v2.3: 유형 라벨 포함 및 하이라이트 적용
             val typeLabel = when(question.type) {
                 QuestionType.OX -> "OX 퀴즈"
@@ -1019,13 +1034,9 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             QuestionType.OX -> {
                 binding.layoutOptionsOx.visibility = View.VISIBLE
             }
-            QuestionType.FILL, QuestionType.SITUATION -> {
-                binding.layoutOptionsChips.visibility = View.VISIBLE
-                setupChips(question)
-            }
             else -> {
                 binding.layoutOptionsStandard.visibility = View.VISIBLE
-                setupMultipleFixedOptions(question.options.orEmpty())
+                setupMultipleFixedOptions(question)
             }
         }
     }
@@ -1043,14 +1054,6 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             card.alpha = 1f
         }
 
-        // 칩들도 클릭 가능 복구(생성 후에 다시 잠길 수 있음)
-        for (i in 0 until binding.layoutOptionsChips.childCount) {
-            val v = binding.layoutOptionsChips.getChildAt(i)
-            v.isEnabled = true
-            v.isClickable = true
-            v.alpha = 1f
-        }
-
         // OX도 클릭 가능 복구
         binding.btnOxO.isEnabled = true
         binding.btnOxX.isEnabled = true
@@ -1061,7 +1064,8 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         binding.layoutHintButton.visibility = View.VISIBLE
     }
 
-    private fun setupMultipleFixedOptions(options: List<String>) {
+    private fun setupMultipleFixedOptions(question: Question) {
+        val options = question.options.orEmpty()
         val cards = listOf(
             binding.btnQuizMultOpt1,
             binding.btnQuizMultOpt2,
@@ -1077,14 +1081,17 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             } else {
                 card.visibility = View.VISIBLE
                 texts[idx].text = option
+                texts[idx].maxLines = Integer.MAX_VALUE
                 card.isEnabled = true
                 card.isClickable = true
                 card.alpha = 1f
-                // 선택 스타일은 클릭에서 적용, 기본은 초기화 상태 유지
                 card.setOnClickListener {
                     resetMultipleFixedOptions()
                     applyMultipleFixedSelectionByIndex(idx)
-                    handleOptionClick((idx + 1).toString())
+                    handleOptionClick(
+                        (idx + 1).toString(),
+                        fillDisplayWord = if (question.type == QuestionType.FILL) option else null,
+                    )
                 }
             }
         }
@@ -1169,73 +1176,10 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         }
     }
 
-    private fun setupChips(question: Question) {
-        val density = resources.displayMetrics.density
-        val isSituation = question.type == QuestionType.SITUATION
-
-        binding.layoutOptionsChips.chipSpacingVertical = (8 * density).toInt()
-        binding.layoutOptionsChips.chipSpacingHorizontal = (8 * density).toInt()
-
-        question.options?.forEachIndexed { idx, option ->
-            val choiceKey = (idx + 1).toString()
-            val chip = Chip(requireContext()).apply {
-                text = option
-                textSize = if (isSituation) 14f else 15f
-                typeface = Typeface.create("sans-serif-black", Typeface.BOLD)
-                isSingleLine = false
-                maxLines = 20
-                ellipsize = null
-                isClickable = true
-                isCheckable = false
-                checkedIcon = null
-                textAlignment = View.TEXT_ALIGNMENT_CENTER
-                setTextColor(Color.WHITE)
-                setEnsureMinTouchTargetSize(false)
-
-                if (isSituation) {
-                    layoutParams = LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT
-                    ).apply {
-                        setMargins(0, 0, 0, (8 * density).toInt())
-                    }
-                    minHeight = (60 * density).toInt()
-                    chipStartPadding = 20 * density
-                    chipEndPadding = 20 * density
-                    // SITUATION도 '선택 시 전체 민트'가 명확히 보이도록 Chip 기반 스타일로 통일
-                    setChipBackgroundColorResource(R.color.quiz_card_bg)
-                    setChipStrokeColorResource(R.color.quiz_option_default_stroke)
-                    chipStrokeWidth = 3f * density
-                } else {
-                    minHeight = (48 * density).toInt()
-                    chipStartPadding = 16 * density
-                    chipEndPadding = 16 * density
-                    setChipBackgroundColorResource(R.color.quiz_card_bg)
-                    setChipStrokeColorResource(R.color.quiz_option_default_stroke)
-                    chipStrokeWidth = 3f * density
-                }
-
-                shapeAppearanceModel = shapeAppearanceModel.toBuilder()
-                    .setAllCornerSizes(if (isSituation) 16 * density else 28 * density)
-                    .build()
-
-                setOnClickListener {
-                    // 시각적 피드백 강화 (애니메이션 및 색상 변경)
-                    animateSelection(it)
-                    
-                    // 체크표시 대신 '선택지 전체 민트'로 통일
-                    setChipBackgroundColorResource(R.color.quiz_mint)
-                    setChipStrokeColorResource(R.color.quiz_mint)
-                    setTextColor(Color.WHITE)
-                    
-                    handleOptionClick(
-                        choiceKey,
-                        fillDisplayWord = if (question.type == QuestionType.FILL) option else null
-                    )
-                }
-            }
-            binding.layoutOptionsChips.addView(chip)
-        }
+    private fun difficultyLabel(difficulty: QuestionDifficulty): String = when (difficulty) {
+        QuestionDifficulty.LOW -> getString(R.string.quiz_difficulty_low)
+        QuestionDifficulty.MEDIUM -> getString(R.string.quiz_difficulty_medium)
+        QuestionDifficulty.HIGH -> getString(R.string.quiz_difficulty_high)
     }
 
     private fun animateSelection(view: View) {
@@ -1305,11 +1249,6 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             card.alpha = 1f
         }
 
-        for (i in 0 until binding.layoutOptionsChips.childCount) {
-            val v = binding.layoutOptionsChips.getChildAt(i)
-            v.isClickable = false
-            v.alpha = 1f
-        }
     }
 
     private fun showFeedback(title: String, content: String) {

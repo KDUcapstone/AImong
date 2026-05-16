@@ -27,9 +27,13 @@ class ParentSettingsFragment :
             findNavController().navigateUp()
         }
         binding.btnNotificationSettings.setOnClickListener {
-            findNavController().navigate(
-                R.id.action_parentSettingsFragment_to_notificationSettingsFragment
-            )
+            val nav = findNavController()
+            val navigated = runCatching {
+                nav.navigate(R.id.action_parentSettingsFragment_to_notificationSettingsFragment)
+            }.isSuccess
+            if (!navigated) {
+                runCatching { nav.navigate(R.id.notificationSettingsFragment) }
+            }
         }
         binding.btnLogout.setOnClickListener {
             AlertDialog.Builder(requireContext())

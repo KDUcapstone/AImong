@@ -30,14 +30,14 @@ class AuthInterceptor @Inject constructor(
 
         if (original.header("Authorization") == null) {
             when {
-                token?.isNotBlank() == true ->
-                    requestBuilder.addHeader("Authorization", "Bearer $token")
                 role == "PARENT" -> {
                     val firebaseToken = runBlocking { firebaseParentTokenProvider.getIdTokenOrNull() }
                     if (!firebaseToken.isNullOrBlank()) {
                         requestBuilder.addHeader("Authorization", "Bearer $firebaseToken")
                     }
                 }
+                token?.isNotBlank() == true ->
+                    requestBuilder.addHeader("Authorization", "Bearer $token")
             }
         }
 

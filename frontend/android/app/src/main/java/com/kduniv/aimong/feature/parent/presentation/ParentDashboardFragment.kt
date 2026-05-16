@@ -1,9 +1,10 @@
 package com.kduniv.aimong.feature.parent.presentation
 
-import android.content.Intent
 import android.util.TypedValue
+import android.view.LayoutInflater
 import android.view.View
 import android.widget.EditText
+import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -11,8 +12,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.snackbar.Snackbar
-import com.kduniv.aimong.MainActivity
 import com.kduniv.aimong.R
+import com.kduniv.aimong.core.network.model.ParentChildDetailData
 import com.kduniv.aimong.core.network.model.ParentChildItem
 import com.kduniv.aimong.core.network.model.PatchParentChildRequest
 import com.kduniv.aimong.feature.parent.domain.ParentAuthPolicy
@@ -41,6 +42,7 @@ class ParentDashboardFragment :
 
     private var latestChildren: List<ParentChildItem> = emptyList()
     private var latestSelectedChildId: String? = null
+    private var latestChildDetail: ParentChildDetailData? = null
 
     private fun updateDashboardTitle() {
         val childNickname = latestSelectedChildId
@@ -49,12 +51,31 @@ class ParentDashboardFragment :
     }
 
     private fun updateRichChildLabel() {
-        val nick = latestSelectedChildId
-            ?.let { id -> latestChildren.firstOrNull { it.childId == id }?.nickname?.trim() }
-            ?.takeIf { it.isNotEmpty() }
+        val id = latestSelectedChildId
+        val child = id?.let { cid -> latestChildren.firstOrNull { it.childId == cid } }
+        val nick = child?.nickname?.trim()?.takeIf { it.isNotEmpty() }
             ?: latestChildren.firstOrNull()?.nickname?.trim()?.takeIf { it.isNotEmpty() }
         binding.includeDashboardRich.tvDashboardSelectedChild.text =
             nick ?: getString(R.string.parent_dashboard_child_select_placeholder)
+
+        val code = resolveChildLoginCode(id, child)
+        val rich = binding.includeDashboardRich
+        if (code.isNotBlank()) {
+            rich.tvDashboardChildCode.text = code
+            rich.layoutDashboardChildCode.visibility = View.VISIBLE
+        } else {
+            rich.layoutDashboardChildCode.visibility = View.GONE
+        }
+    }
+
+    private fun resolveChildLoginCode(childId: String?, child: ParentChildItem?): String {
+        val fromDetail = latestChildDetail
+            ?.takeIf { it.childId == childId }
+            ?.code
+            ?.trim()
+            .orEmpty()
+        if (fromDetail.isNotBlank()) return fromDetail
+        return child?.code?.trim().orEmpty()
     }
 
     override fun initView() {
@@ -227,12 +248,27 @@ class ParentDashboardFragment :
 
     private fun applyRichWeak(wp: ParentWeakPointsResponseData?) {
         val rich = binding.includeDashboardRich
-        val top = wp?.weakPoints?.firstOrNull()
-        if (top == null) {
-            rich.tvParentDashWeak1Title.setText(R.string.parent_dashboard_weak_ai_ethics)
-            rich.tvParentDashWeak1Rate.text = "—"
-            return
+        val points = wp?.weakPoints.orEmpty().take(3)
+        val rows = listOf(
+            Triple(rich.rowParentDashWeak1, rich.tvParentDashWeak1Title, rich.tvParentDashWeak1Rate),
+            Triple(rich.rowParentDashWeak2, rich.tvParentDashWeak2Title, rich.tvParentDashWeak2Rate),
+            Triple(rich.rowParentDashWeak3, rich.tvParentDashWeak3Title, rich.tvParentDashWeak3Rate),
+        )
+        rows.forEachIndexed { index, (row, titleTv, rateTv) ->
+            val top = points.getOrNull(index)
+            if (top == null) {
+                row.visibility = View.GONE
+            } else {
+                row.visibility = View.VISIBLE
+                titleTv.text = weakPointTitle(top)
+                rateTv.text = weakPointRate(top)
+            }
         }
+        rich.tvParentDashWeakEmpty.visibility =
+            if (points.isEmpty()) View.VISIBLE else View.GONE
+    }
+
+    private fun weakPointTitle(top: com.kduniv.aimong.feature.parent.data.model.ParentWeakPointDto): String {
         val title = when {
             !top.missionTitle.isNullOrBlank() && !top.setTitle.isNullOrBlank() ->
                 "${top.missionTitle} — ${top.setTitle}"
@@ -242,12 +278,55 @@ class ParentDashboardFragment :
         }
         val diffPart = when {
             !top.difficulty.isNullOrBlank() -> top.difficulty!!
+            top.starLevel != null -> "★${top.starLevel}"
             top.levelNo != null -> "Lv${top.levelNo}"
             else -> ""
         }
-        rich.tvParentDashWeak1Title.text = if (diffPart.isNotEmpty()) "$title · $diffPart" else title
+        return if (diffPart.isNotEmpty()) "$title · $diffPart" else title
+    }
+
+    private fun weakPointRate(top: com.kduniv.aimong.feature.parent.data.model.ParentWeakPointDto): String {
         val pct = ((top.incorrectRate * 100.0).toInt()).coerceIn(0, 100)
-        rich.tvParentDashWeak1Rate.text = "$pct%"
+        return "$pct%"
+    }
+
+    private fun applyRichRecent(
+        summary: ParentChildSummaryResponseData?,
+        privacy: ParentPrivacyLogResponseData?,
+    ) {
+        val rich = binding.includeDashboardRich
+        val container = rich.layoutDashboardRecentRows
+        container.removeAllViews()
+        val inflater = LayoutInflater.from(requireContext())
+        var rowCount = 0
+
+        privacy?.events?.take(2)?.forEach { event ->
+            val row = inflater.inflate(R.layout.include_parent_recent_row_privacy, container, false)
+            row.findViewById<TextView>(R.id.tv_recent_privacy_title)?.text =
+                getString(R.string.parent_dashboard_recent_privacy_fmt, event.detectedType)
+            row.findViewById<TextView>(R.id.tv_recent_privacy_time)?.text = event.detectedAt
+            container.addView(row)
+            rowCount++
+        }
+
+        if (summary != null && summary.lastActiveAt != null) {
+            val row = inflater.inflate(R.layout.include_parent_recent_row_mission, container, false)
+            row.findViewById<TextView>(R.id.tv_recent_mission_title)?.text =
+                getString(
+                    R.string.parent_dashboard_recent_summary_fmt,
+                    summary.totalXp,
+                    summary.continuousDays,
+                )
+            row.findViewById<TextView>(R.id.tv_recent_mission_time)?.text =
+                summary.lastActiveAt ?: "—"
+            row.findViewById<TextView>(R.id.tv_recent_mission_score)?.text =
+                getString(R.string.parent_dashboard_recent_weekly_sets_fmt, summary.weeklyCompletedSetCount)
+            container.addView(row)
+            rowCount++
+        }
+
+        rich.tvParentDashRecentEmpty.visibility =
+            if (rowCount == 0) View.VISIBLE else View.GONE
     }
 
     override fun initObserver() {
@@ -276,6 +355,8 @@ class ParentDashboardFragment :
                 }
                 launch {
                     viewModel.childDetail.collect { d ->
+                        latestChildDetail = d
+                        updateRichChildLabel()
                         if (d == null) return@collect
                         val linked = d.lastActiveAt != null
                         binding.tvParentSummary.text =
@@ -289,6 +370,7 @@ class ParentDashboardFragment :
                 launch {
                     viewModel.childSummary.collect { s ->
                         applyRichSummary(s)
+                        applyRichRecent(s, viewModel.privacyLog.value)
                         if (s == null) return@collect
                         binding.tvParentSummary.text =
                             "요약\n- 닉네임: ${s.nickname}\n- XP: ${s.totalXp}\n- 스트릭: ${s.continuousDays}일\n- 실드: ${s.shieldCount}\n- 주간 완료 세트: ${s.weeklyCompletedSetCount}\n- 총 완료 세트: ${s.totalCompletedSetCount}\n- 현재 레벨: ${s.currentLevelNo}\n- 마지막 활동: ${s.lastActiveAt ?: "-"}"
@@ -308,6 +390,7 @@ class ParentDashboardFragment :
                 launch {
                     viewModel.privacyLog.collect { p ->
                         applyRichPrivacy(p)
+                        applyRichRecent(viewModel.childSummary.value, p)
                         if (p == null) return@collect
                         val lines = p.events.joinToString(separator = "\n") { e ->
                             "- ${e.detectedType} (masked=${e.masked}) @ ${e.detectedAt}"

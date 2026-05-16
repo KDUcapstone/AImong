@@ -16,6 +16,7 @@ import com.kduniv.aimong.R
 import com.kduniv.aimong.core.ui.BaseFragment
 import com.kduniv.aimong.databinding.FragmentHomeBinding
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
@@ -66,7 +67,8 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
                     missionDifficultyPicker?.dismissImmediate()
                     val picker = MissionDifficultyPicker(binding, layoutInflater)
                     missionDifficultyPicker = picker
-                    picker.show(title, nav, anchor) { picked ->
+                    val starLevels = viewModel.missionStarLevels(nav.missionId)
+                    picker.show(title, nav, starLevels, anchor) { picked ->
                         findNavController().navigate(
                             HomeFragmentDirections.actionHomeFragmentToQuizFragment(
                                 picked.entrySetId,
@@ -98,6 +100,46 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
             }
         }
         binding.layoutChipStreak.setOnClickListener { openStreakSheet() }
+        parentFragmentManager.setFragmentResultListener(
+            QuestListBottomSheet.REQUEST_OPEN_MISSION_LEARN,
+            viewLifecycleOwner,
+        ) { _, _ ->
+            binding.root.post { openMissionLearnFromQuest() }
+        }
+    }
+
+    private fun openMissionLearnFromQuest() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val state = viewModel.uiState.first { !it.isLoading }
+            openMissionLearnFromQuest(state)
+        }
+    }
+
+    private fun openMissionLearnFromQuest(state: HomeUiState) {
+        if (!state.canAttemptMissionStart()) {
+            Snackbar.make(
+                binding.root,
+                getString(R.string.home_energy_insufficient_toast),
+                Snackbar.LENGTH_LONG,
+            )
+                .setAction(getString(R.string.home_go_energy_charge)) {
+                    EnergyBottomSheet.newInstance().show(childFragmentManager, "energy_sheet")
+                }
+                .show()
+            return
+        }
+        val nav = viewModel.resolveQuestLearnQuizNav()
+        if (nav == null || !nav.canNavigate()) {
+            showMissionHint(getString(R.string.mission_no_playable_star_level))
+            return
+        }
+        findNavController().navigate(
+            HomeFragmentDirections.actionHomeFragmentToQuizFragment(
+                nav.entrySetId,
+                nav.missionId,
+                nav.starLevel,
+            ),
+        )
     }
 
     override fun onDestroyView() {

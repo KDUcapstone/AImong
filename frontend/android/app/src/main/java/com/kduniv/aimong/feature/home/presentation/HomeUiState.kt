@@ -1,5 +1,7 @@
 package com.kduniv.aimong.feature.home.presentation
 
+import com.kduniv.aimong.feature.mission.domain.model.MissionStarLevel
+
 /** 홈 화면 UI 상태 (API 연동 전 기본값은 비어 있음) */
 data class HomeUiState(
     val nickname: String = "",
@@ -60,7 +62,10 @@ data class HomeUiState(
     val dailyQuestClaimableCount: Int = 0,
 
     /** PM 시안 학습 경로 노드 */
-    val pathItems: List<HomePathItem> = emptyList()
+    val pathItems: List<HomePathItem> = emptyList(),
+
+    /** missionId → 별 난이도(1~3) — 난이도 피커 잠금/퀘스트 학습 진입에 사용 */
+    val missionStarLevelsById: Map<String, List<MissionStarLevel>> = emptyMap()
 ) {
     fun hasEnoughEnergyForMissionStart(): Boolean = energyCurrent >= missionStartCost
 

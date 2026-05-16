@@ -87,8 +87,10 @@ class MainActivity : AppCompatActivity() {
     private var mainBackPressedCallback: OnBackPressedCallback? = null
     private var exitConfirmDialog: AlertDialog? = null
     private var parentNavDestinationListener: NavController.OnDestinationChangedListener? = null
+    private var childNavDestinationListener: NavController.OnDestinationChangedListener? = null
     /** [syncParentBottomNavTabSelection]에서 `selectedItemId` 변경 시 `OnItemSelected` 재진입 방지 */
     private var suppressParentBottomNavItemSelected = false
+    private var suppressChildBottomNavItemSelected = false
 
     /** [setupNavigation]에서 설정 — 부모 하단 네비 재동기화용 */
     private var navigationUserRole: String? = null
@@ -158,6 +160,8 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             parentNavDestinationListener?.let { navController.removeOnDestinationChangedListener(it) }
             parentNavDestinationListener = null
+            childNavDestinationListener?.let { navController.removeOnDestinationChangedListener(it) }
+            childNavDestinationListener = null
 
             val userRole: String? = sessionManager.userRole.first()
             navigationUserRole = userRole
@@ -247,27 +251,51 @@ class MainActivity : AppCompatActivity() {
                 binding.bottomNav.itemTextColor = childNavTint
                 binding.bottomNav.isItemActiveIndicatorEnabled = false
 
-                binding.bottomNav.setOnItemSelectedListener { item ->
-                    val currentId = navController.currentDestination?.id
-                    val targetId = item.itemId
-                    val navigated = if (currentId == targetId) {
-                        true
-                    } else {
+                val childDestListener = NavController.OnDestinationChangedListener { _, destination, _ ->
+                    if (suppressChildBottomNavItemSelected) return@OnDestinationChangedListener
+                    val menuId = mapChildDestinationToBottomNav(destination.id) ?: return@OnDestinationChangedListener
+                    if (binding.bottomNav.selectedItemId != menuId) {
+                        suppressChildBottomNavItemSelected = true
                         try {
-                            navController.navigateToChildTopLevel(targetId)
-                            true
-                        } catch (_: IllegalArgumentException) {
-                            false
+                            binding.bottomNav.selectedItemId = menuId
+                        } finally {
+                            suppressChildBottomNavItemSelected = false
                         }
                     }
-                    navigated
+                }
+                childNavDestinationListener = childDestListener
+                navController.addOnDestinationChangedListener(childDestListener)
+                mapChildDestinationToBottomNav(navController.currentDestination?.id)?.let { initial ->
+                    suppressChildBottomNavItemSelected = true
+                    try {
+                        binding.bottomNav.selectedItemId = initial
+                    } finally {
+                        suppressChildBottomNavItemSelected = false
+                    }
+                }
+
+                binding.bottomNav.setOnItemSelectedListener { item ->
+                    if (suppressChildBottomNavItemSelected) return@setOnItemSelectedListener true
+                    val currentId = navController.currentDestination?.id
+                    val targetId = item.itemId
+                    when {
+                        currentId == targetId -> {
+                            navController.popBackStack(targetId, false)
+                            true
+                        }
+                        else -> {
+                            try {
+                                navController.navigateToChildTopLevel(targetId)
+                                true
+                            } catch (_: IllegalArgumentException) {
+                                false
+                            }
+                        }
+                    }
                 }
 
                 binding.bottomNav.setOnItemReselectedListener { item ->
-                    val popped = navController.popBackStack(item.itemId, false)
-                    if (!popped) {
-                        runCatching { navController.navigate(item.itemId) }
-                    }
+                    navController.popBackStack(item.itemId, false)
                 }
             } else if (userRole == "PARENT") {
                 binding.bottomNav.visibility = View.VISIBLE
@@ -435,12 +463,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        parentNavDestinationListener?.let {
-            if (::navController.isInitialized) {
-                navController.removeOnDestinationChangedListener(it)
-            }
+        if (::navController.isInitialized) {
+            parentNavDestinationListener?.let { navController.removeOnDestinationChangedListener(it) }
+            childNavDestinationListener?.let { navController.removeOnDestinationChangedListener(it) }
         }
         parentNavDestinationListener = null
+        childNavDestinationListener = null
         exitConfirmDialog?.dismiss()
         exitConfirmDialog = null
         super.onDestroy()
@@ -473,6 +501,17 @@ class MainActivity : AppCompatActivity() {
             }
         }
         walk(itemRoot)
+    }
+
+    /** 퀴즈 등 홈 탭 하위 화면일 때 하단 네비는 홈 탭을 강조한다. */
+    private fun mapChildDestinationToBottomNav(destinationId: Int?): Int? = when (destinationId) {
+        R.id.homeFragment,
+        R.id.quizFragment,
+        -> R.id.homeFragment
+        R.id.chatFragment -> R.id.chatFragment
+        R.id.gachaFragment -> R.id.gachaFragment
+        R.id.myProfileFragment -> R.id.myProfileFragment
+        else -> null
     }
 
     /** 부모 하단 탭: `selectedItemId`·체크·스케일·색을 목적지와 맞춘다. */

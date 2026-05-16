@@ -8,6 +8,7 @@ import com.kduniv.aimong.feature.home.domain.GetHomeStatusUseCase
 import com.kduniv.aimong.feature.home.domain.repository.AppBootstrapRepository
 import com.kduniv.aimong.feature.home.domain.repository.HomeRepository
 import com.kduniv.aimong.feature.home.domain.HomePathBuilder
+import com.kduniv.aimong.feature.mission.domain.model.MissionStarLevel
 import com.kduniv.aimong.feature.mission.domain.repository.MissionRepository
 import com.kduniv.aimong.feature.wallet.domain.repository.WalletRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -127,6 +128,7 @@ class HomeViewModel @Inject constructor(
                         ?: bootstrapHomeUnavailableNotice()
                     var ui = HomeUiMapper.toUiState(data).copy(
                         pathItems = path,
+                        missionStarLevelsById = missions.associate { it.missionId to it.starLevels },
                         isLoading = false,
                         errorMessage = null,
                         subtleNotice = notice
@@ -181,6 +183,36 @@ class HomeViewModel @Inject constructor(
         } else {
             null
         }
+    }
+
+    fun missionStarLevels(missionId: String): List<MissionStarLevel> =
+        _uiState.value.missionStarLevelsById[missionId].orEmpty()
+
+    /** 퀘스트 「미션 학습하기」 — 오늘/다음 시작 가능 미션 + 플레이 가능한 최저 별 단계 */
+    fun resolveQuestLearnQuizNav(): HomeQuizNavigation? {
+        val items = _uiState.value.pathItems
+        val startItem = items.filterIsInstance<HomePathItem.TodayStart>().firstOrNull { it.enabled }
+            ?: items.filterIsInstance<HomePathItem.Start>().firstOrNull { it.enabled }
+            ?: return null
+        val base = when (startItem) {
+            is HomePathItem.TodayStart -> startItem.quizNav
+            is HomePathItem.Start -> startItem.quizNav
+            else -> return null
+        }
+        return resolveQuizNavWithSelectableStar(base)
+    }
+
+    fun resolveQuizNavWithSelectableStar(base: HomeQuizNavigation): HomeQuizNavigation? {
+        if (base.entrySetId.isNotBlank()) return base
+        if (base.missionId.isBlank()) return null
+        val stars = missionStarLevels(base.missionId)
+        if (base.starLevel in 1..3) {
+            val current = stars.firstOrNull { it.starLevel == base.starLevel }
+            if (current != null && (current.isPlayable || current.isReviewable)) return base
+        }
+        val next = stars.filter { it.isPlayable }.minByOrNull { it.starLevel }
+            ?: stars.filter { it.isReviewable }.minByOrNull { it.starLevel }
+        return next?.let { base.copy(starLevel = it.starLevel) }
     }
 
     fun getProfileLabel(type: String): String {

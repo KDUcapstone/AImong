@@ -36,6 +36,10 @@
     <string name="home_difficulty_easy">쉬움</string>
     <string name="home_difficulty_normal">보통</string>
     <string name="home_difficulty_hard">어려움</string>
+    <string name="home_difficulty_locked">이전 단계를 먼저 완료해 주세요.</string>
+    <string name="quiz_difficulty_low">쉬움</string>
+    <string name="quiz_difficulty_medium">보통</string>
+    <string name="quiz_difficulty_high">어려움</string>
     <string name="home_pet_sheet_title">내 펫</string>
     <string name="home_pet_level_fmt">Lv.%1$d</string>
     <string name="home_pet_xp_fmt">%1$d / %2$d XP</string>
@@ -254,6 +258,8 @@
     <string name="bottom_nav_parent_dashboard">대시보드</string>
     <string name="bottom_nav_parent_privacy_log">개인정보 로그</string>
     <string name="parent_dashboard_child_select_label">자녀 선택</string>
+    <string name="parent_dashboard_login_code_label">자녀 로그인 코드</string>
+    <string name="parent_child_sheet_code_fmt">로그인 코드 %1$s</string>
     <string name="parent_dashboard_child_select_placeholder">자녀 선택</string>
     <string name="parent_child_sheet_title">자녀 선택</string>
     <string name="parent_child_sheet_close">닫기</string>
@@ -282,6 +288,11 @@
     <string name="parent_dashboard_weak_ai_ethics">AI 윤리</string>
     <string name="parent_dashboard_weak_prompt">프롬프트 작성</string>
     <string name="parent_dashboard_weak_verify">정보 검증</string>
+    <string name="parent_dashboard_weak_empty">분석된 약점이 없어요.</string>
+    <string name="parent_dashboard_recent_empty">최근 활동 기록이 없어요.</string>
+    <string name="parent_dashboard_recent_privacy_fmt">개인정보 감지 · %1$s</string>
+    <string name="parent_dashboard_recent_summary_fmt">학습 요약 · XP %1$d · 스트릭 %2$d일</string>
+    <string name="parent_dashboard_recent_weekly_sets_fmt">주간 %1$d세트</string>
     <string name="parent_dashboard_recent_title">최근 활동</string>
     <string name="parent_dashboard_recent_mission_title">AI가 뭐예요? 미션 완료</string>
     <string name="parent_dashboard_recent_mission_time">2시간 전</string>

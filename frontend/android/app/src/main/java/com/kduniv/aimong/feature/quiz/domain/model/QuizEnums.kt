@@ -9,7 +9,14 @@ enum class QuestionDifficulty {
     companion object {
         fun parse(raw: String?): QuestionDifficulty? {
             if (raw.isNullOrBlank()) return null
-            return entries.firstOrNull { it.name == raw.trim().uppercase() }
+            val n = raw.trim().uppercase()
+            entries.firstOrNull { it.name == n }?.let { return it }
+            return when (n) {
+                "EASY", "LOW_LEVEL" -> LOW
+                "NORMAL", "MID", "MIDIUM", "MED" -> MEDIUM
+                "HARD", "DIFFICULT" -> HIGH
+                else -> null
+            }
         }
     }
 }

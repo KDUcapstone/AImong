@@ -110,11 +110,15 @@ class ParentChildSelectBottomSheet : BottomSheetDialogFragment() {
 
 private fun ParentChildItem.toSheetRow(context: android.content.Context): ParentChildSheetRow {
     val linked = !lastActiveAt.isNullOrBlank()
-    val subtitle = if (linked) {
-        val date = createdAt?.take(10).orEmpty().ifBlank { "—" }
-        context.getString(R.string.parent_child_sheet_registered_fmt, date)
-    } else {
-        context.getString(R.string.parent_child_sheet_pending)
+    val codeLine = code.trim().takeIf { it.isNotEmpty() }
+        ?.let { context.getString(R.string.parent_child_sheet_code_fmt, it) }
+    val subtitle = when {
+        codeLine != null -> codeLine
+        linked -> {
+            val date = createdAt?.take(10).orEmpty().ifBlank { "—" }
+            context.getString(R.string.parent_child_sheet_registered_fmt, date)
+        }
+        else -> context.getString(R.string.parent_child_sheet_pending)
     }
     return ParentChildSheetRow(item = this, subtitle = subtitle)
 }

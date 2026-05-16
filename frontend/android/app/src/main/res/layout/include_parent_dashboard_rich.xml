@@ -64,6 +64,39 @@
                     android:src="@drawable/ic_chevron_down"
                     app:tint="@color/parent_mock_text_muted" />
             </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/layout_dashboard_child_code"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_parent_code_box"
+                android:orientation="vertical"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="10dp"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/parent_dashboard_login_code_label"
+                    android:textColor="@color/parent_mock_text_muted"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tv_dashboard_child_code"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:letterSpacing="0.12"
+                    android:textColor="@color/parent_mock_green_code"
+                    android:textIsSelectable="true"
+                    android:textSize="22sp"
+                    android:textStyle="bold"
+                    tools:text="482916" />
+            </LinearLayout>
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
@@ -321,14 +354,17 @@
     </com.google.android.material.card.MaterialCardView>
 
     <com.google.android.material.card.MaterialCardView
+        android:id="@+id/card_mission_theme_progress"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="12dp"
+        android:visibility="gone"
         app:cardBackgroundColor="@color/parent_mock_surface"
         app:cardCornerRadius="12dp"
         app:cardElevation="2dp"
         app:strokeColor="@color/parent_mock_border"
-        app:strokeWidth="1dp">
+        app:strokeWidth="1dp"
+        tools:visibility="visible">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -547,6 +583,7 @@
                 android:textStyle="bold" />
 
             <LinearLayout
+                android:id="@+id/row_parent_dash_weak_1"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
@@ -560,7 +597,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="@string/parent_dashboard_weak_ai_ethics"
+                    android:text="—"
                     android:textColor="@color/parent_mock_text_secondary"
                     android:textSize="13sp"
                     android:textStyle="bold" />
@@ -569,65 +606,84 @@
                     android:id="@+id/tv_parent_dash_weak_1_rate"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="40%"
+                    android:text="—"
                     android:textColor="#DC2626"
                     android:textSize="13sp"
                     android:textStyle="bold" />
             </LinearLayout>
 
             <LinearLayout
+                android:id="@+id/row_parent_dash_weak_2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:background="#F9FAFB"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
-                android:padding="12dp">
+                android:padding="12dp"
+                android:visibility="gone">
 
                 <TextView
+                    android:id="@+id/tv_parent_dash_weak_2_title"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="@string/parent_dashboard_weak_prompt"
                     android:textColor="@color/parent_mock_text_secondary"
                     android:textSize="13sp"
-                    android:textStyle="bold" />
+                    android:textStyle="bold"
+                    tools:text="프롬프트 작성" />
 
                 <TextView
+                    android:id="@+id/tv_parent_dash_weak_2_rate"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="30%"
                     android:textColor="#EA580C"
                     android:textSize="13sp"
-                    android:textStyle="bold" />
+                    android:textStyle="bold"
+                    tools:text="30%" />
             </LinearLayout>
 
             <LinearLayout
+                android:id="@+id/row_parent_dash_weak_3"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:background="#F9FAFB"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
-                android:padding="12dp">
+                android:padding="12dp"
+                android:visibility="gone">
 
                 <TextView
+                    android:id="@+id/tv_parent_dash_weak_3_title"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="@string/parent_dashboard_weak_verify"
                     android:textColor="@color/parent_mock_text_secondary"
                     android:textSize="13sp"
-                    android:textStyle="bold" />
+                    android:textStyle="bold"
+                    tools:text="정보 검증" />
 
                 <TextView
+                    android:id="@+id/tv_parent_dash_weak_3_rate"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="25%"
                     android:textColor="#CA8A04"
                     android:textSize="13sp"
-                    android:textStyle="bold" />
+                    android:textStyle="bold"
+                    tools:text="25%" />
             </LinearLayout>
+
+            <TextView
+                android:id="@+id/tv_parent_dash_weak_empty"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center"
+                android:text="@string/parent_dashboard_weak_empty"
+                android:textColor="@color/parent_mock_text_muted"
+                android:textSize="13sp"
+                android:visibility="gone" />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
@@ -655,9 +711,23 @@
                 android:textSize="15sp"
                 android:textStyle="bold" />
 
-            <include layout="@layout/include_parent_recent_row_mission" />
-            <include layout="@layout/include_parent_recent_row_privacy" />
-            <include layout="@layout/include_parent_recent_row_badge" />
+            <LinearLayout
+                android:id="@+id/layout_dashboard_recent_rows"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="vertical" />
+
+            <TextView
+                android:id="@+id/tv_parent_dash_recent_empty"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center"
+                android:text="@string/parent_dashboard_recent_empty"
+                android:textColor="@color/parent_mock_text_muted"
+                android:textSize="13sp"
+                android:visibility="gone" />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 

@@ -6,6 +6,7 @@ import com.kduniv.aimong.feature.quiz.data.model.MissionSetCheckResponseData
 import com.kduniv.aimong.feature.quiz.data.QuizSessionRules
 import com.kduniv.aimong.feature.quiz.domain.model.AttemptStatus
 import com.kduniv.aimong.feature.quiz.domain.model.Question
+import com.kduniv.aimong.feature.quiz.domain.model.QuestionDifficulty
 import com.kduniv.aimong.feature.quiz.domain.model.QuestionReportResult
 import com.kduniv.aimong.feature.quiz.domain.model.QuestionResult
 import com.kduniv.aimong.feature.quiz.domain.model.QuestionType
@@ -62,6 +63,13 @@ class QuizRepositoryStub @Inject constructor() : QuizRepository {
 
     private fun buildStubQuestions(): List<Question> {
         val out = ArrayList<Question>(10)
+        val oxDifficulties = listOf(
+            QuestionDifficulty.LOW,
+            QuestionDifficulty.LOW,
+            QuestionDifficulty.MEDIUM,
+            QuestionDifficulty.MEDIUM,
+            QuestionDifficulty.HIGH,
+        )
         for (i in 1..5) {
             val id = "stub_q_$i"
             out.add(
@@ -70,7 +78,7 @@ class QuizRepositoryStub @Inject constructor() : QuizRepository {
                     type = QuestionType.OX,
                     question = "목업 OX $i: 개인정보는 AI에게 함부로 알려도 된다.",
                     options = listOf("O", "X"),
-                    difficulty = null,
+                    difficulty = oxDifficulties[i - 1],
                     answerFormat = null,
                     termHints = if (i == 1) {
                         listOf(
@@ -84,16 +92,30 @@ class QuizRepositoryStub @Inject constructor() : QuizRepository {
             )
         }
         val opts = listOf("선지 A", "선지 B", "선지 C", "선지 D")
+        val multDifficulties = listOf(
+            QuestionDifficulty.LOW,
+            QuestionDifficulty.MEDIUM,
+            QuestionDifficulty.HIGH,
+            QuestionDifficulty.LOW,
+            QuestionDifficulty.HIGH,
+        )
         for (i in 6..10) {
             val id = "stub_q_$i"
+            val type = if (i == 8) QuestionType.FILL else QuestionType.MULTIPLE
+            val prompt = if (type == QuestionType.FILL) {
+                "목업 단어 채우기: AI는 _____ 를 학습해 답한다."
+            } else {
+                "목업 객관식 $i: 올바른 설명을 고르세요."
+            }
+            val fillOpts = listOf("데이터", "비밀번호", "운동")
             out.add(
                 Question(
                     id = id,
-                    type = QuestionType.MULTIPLE,
-                    question = "목업 객관식 $i: 올바른 설명을 고르세요.",
-                    options = opts,
-                    difficulty = null,
-                    answerFormat = "MULTIPLE_CHOICE"
+                    type = type,
+                    question = prompt,
+                    options = if (type == QuestionType.FILL) fillOpts else opts,
+                    difficulty = multDifficulties[i - 6],
+                    answerFormat = if (type == QuestionType.FILL) "FILL" else "MULTIPLE_CHOICE"
                 )
             )
         }

@@ -72,7 +72,7 @@ class MockHomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::
                     missionDifficultyPicker?.dismissImmediate()
                     val picker = MissionDifficultyPicker(binding, layoutInflater)
                     missionDifficultyPicker = picker
-                    picker.show(title, nav, anchor) { picked ->
+                    picker.show(title, nav, emptyList(), anchor) { picked ->
                         findNavController().navigate(
                             MockHomeFragmentDirections.actionHomeFragmentToQuizFragment(
                                 picked.entrySetId,
