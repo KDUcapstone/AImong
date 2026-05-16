@@ -20,7 +20,9 @@ data class Question(
     /** API v1.5 문항 난이도. 없거나 파싱 실패 시 null. */
     val difficulty: QuestionDifficulty? = null,
     /** GET questions의 `answerFormat` — check/submit 시 답 문자열 규칙(미지정 시 보기 문구 전송) */
-    val answerFormat: String? = null
+    val answerFormat: String? = null,
+    /** v2.8: 용어 보강설명 (없으면 빈 목록) */
+    val termHints: List<TermHint> = emptyList()
 )
 
 enum class QuestionType {
@@ -38,6 +40,7 @@ data class QuizResult(
     val wrongCount: Int,
     val isPassed: Boolean,
     val isPerfect: Boolean,
+    val isFirstClear: Boolean = false,
     val equippedPetGrade: String? = null,
     val xpEarned: Int,
     val bonusXp: Int = 0,

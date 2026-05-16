@@ -34,6 +34,7 @@ enum class AttemptStatus {
 enum class RewardType {
     COIN,
     EXP,
+    GEAR,
     PET_FRAGMENT,
     ITEM;
 
@@ -42,6 +43,10 @@ enum class RewardType {
             if (raw.isNullOrBlank()) return null
             val n = raw.trim().uppercase()
             if (n == "XP") return EXP
+            if (n == "GEAR" || n == "COIN") return when (n) {
+                "GEAR" -> GEAR
+                else -> COIN
+            }
             return entries.firstOrNull { it.name == n }
         }
     }

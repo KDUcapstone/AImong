@@ -9,7 +9,10 @@ import com.kduniv.aimong.feature.quiz.domain.model.Question
 import com.kduniv.aimong.feature.quiz.domain.model.QuestionReportResult
 import com.kduniv.aimong.feature.quiz.domain.model.QuestionResult
 import com.kduniv.aimong.feature.quiz.domain.model.QuestionType
+import com.kduniv.aimong.feature.quiz.domain.model.TermHint
 import com.kduniv.aimong.feature.quiz.domain.model.QuizQuestions
+import com.kduniv.aimong.feature.dev.mock.MockGearBalance
+import com.kduniv.aimong.feature.quiz.domain.model.QuizReward
 import com.kduniv.aimong.feature.quiz.domain.model.QuizResult
 import com.kduniv.aimong.feature.quiz.domain.repository.QuizRepository
 import java.util.UUID
@@ -25,6 +28,7 @@ class QuizRepositoryStub @Inject constructor() : QuizRepository {
 
     private val sessionsByAttempt = ConcurrentHashMap<String, QuizQuestions>()
     private val sessionsBySetId = ConcurrentHashMap<String, QuizQuestions>()
+    private val stubRemainingLives = ConcurrentHashMap<String, Int>()
 
     override suspend fun getQuestionsBySetId(setId: String): Result<QuizQuestions> =
         Result.success(newSession(setId = setId.ifBlank { "MOCK-SET" }, missionId = ""))
@@ -52,6 +56,7 @@ class QuizRepositoryStub @Inject constructor() : QuizRepository {
         ).getOrThrow()
         sessionsByAttempt[attemptId] = quiz
         sessionsBySetId[setId] = quiz
+        stubRemainingLives[attemptId] = 3
         return quiz
     }
 
@@ -66,7 +71,15 @@ class QuizRepositoryStub @Inject constructor() : QuizRepository {
                     question = "목업 OX $i: 개인정보는 AI에게 함부로 알려도 된다.",
                     options = listOf("O", "X"),
                     difficulty = null,
-                    answerFormat = null
+                    answerFormat = null,
+                    termHints = if (i == 1) {
+                        listOf(
+                            TermHint("개인정보", "이름·주소·연락처처럼 나를 알아볼 수 있는 정보예요."),
+                            TermHint("AI", "사람처럼 학습하고 답하는 컴퓨터 프로그램이에요.")
+                        )
+                    } else {
+                        emptyList()
+                    }
                 )
             )
         }
@@ -116,17 +129,25 @@ class QuizRepositoryStub @Inject constructor() : QuizRepository {
         val correct = results.count { it.isCorrect }
         val total = session.questionCount
         val wrong = total - correct
+        val passed = correct * 10 >= total * 6
+        val gearRewards = if (passed && !session.isReview) {
+            MockGearBalance.credit(30)
+            listOf(QuizReward(type = "GEAR", ticketType = null, count = 30, reason = null))
+        } else {
+            emptyList()
+        }
         return Result.success(
             QuizResult(
-                mode = "normal",
+                mode = if (session.isReview) "review" else "normal",
                 progressApplied = true,
                 attemptState = AttemptStatus.SUBMITTED.name,
                 streakBonusApplied = false,
                 score = if (total > 0) correct * 100 / total else 0,
                 total = total,
                 wrongCount = wrong,
-                isPassed = correct * 10 >= total * 6,
+                isPassed = passed,
                 isPerfect = correct == total,
+                isFirstClear = passed && !session.isReview,
                 equippedPetGrade = null,
                 xpEarned = correct * 5,
                 bonusXp = 0,
@@ -134,7 +155,7 @@ class QuizRepositoryStub @Inject constructor() : QuizRepository {
                 petEvolved = false,
                 streakDays = 1,
                 todayMissionCount = 1,
-                rewards = emptyList(),
+                rewards = gearRewards,
                 remainingTickets = null,
                 results = results,
                 currentLevel = 2,
@@ -157,12 +178,38 @@ class QuizRepositoryStub @Inject constructor() : QuizRepository {
         val norm = QuizSessionRules.normalizeAnswerForCheckPayload(q, answer.trim())
         val expected = correctFor(questionId)
         val ok = norm.equals(expected, ignoreCase = true)
+        val attemptKey = session.quizAttemptId
+        val before = stubRemainingLives.getOrDefault(attemptKey, 3)
+        val after = if (ok) before else (before - 1).coerceAtLeast(0)
+        stubRemainingLives[attemptKey] = after
+        val canRevive = after == 0 && !session.isReview
         return Result.success(
             MissionSetCheckResponseData(
                 questionId = questionId,
                 isCorrect = ok,
                 correctAnswer = expected,
-                explanation = if (ok) "좋아요!" else "다시 생각해봐요."
+                explanation = if (ok) "좋아요!" else "다시 생각해봐요.",
+                remainingLives = after,
+                canRevive = canRevive,
+                reviveCost = MockGearBalance.HEART_REVIVE_COST,
+                gearBalance = MockGearBalance.gear,
+                nextActions = if (canRevive) listOf("REVIVE", "ABANDON") else null
+            )
+        )
+    }
+
+    override suspend fun reviveAttempt(attemptId: String): Result<com.kduniv.aimong.feature.quiz.data.model.MissionAttemptReviveResponseData> {
+        if (!MockGearBalance.trySpend(MockGearBalance.HEART_REVIVE_COST)) {
+            return Result.failure(Exception("톱니바퀴가 부족해요."))
+        }
+        stubRemainingLives[attemptId] = 3
+        return Result.success(
+            com.kduniv.aimong.feature.quiz.data.model.MissionAttemptReviveResponseData(
+                attemptId = attemptId,
+                remainingLives = 3,
+                reviveCount = 1,
+                reviveCost = MockGearBalance.HEART_REVIVE_COST,
+                gearBalance = MockGearBalance.gear
             )
         )
     }

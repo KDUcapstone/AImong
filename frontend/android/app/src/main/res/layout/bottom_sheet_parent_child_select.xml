@@ -68,6 +68,18 @@
         android:visibility="gone"
         tools:visibility="visible" />
 
+    <TextView
+        android:id="@+id/tv_child_limit_hint"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginTop="4dp"
+        android:gravity="center"
+        android:text="@string/parent_child_limit_hint"
+        android:textColor="@color/parent_mock_text_muted"
+        android:textSize="13sp"
+        android:visibility="gone" />
+
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btn_add_child_sheet"
         android:layout_width="match_parent"

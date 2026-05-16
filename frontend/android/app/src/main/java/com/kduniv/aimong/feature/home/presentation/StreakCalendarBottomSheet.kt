@@ -20,11 +20,15 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.snackbar.Snackbar
 import com.kduniv.aimong.R
+import androidx.core.os.bundleOf
 import com.kduniv.aimong.feature.home.data.StreakCalendarMapper
 import com.kduniv.aimong.feature.home.domain.model.StreakCalendarResult
 import com.kduniv.aimong.feature.home.domain.repository.HomeRepository
+import com.kduniv.aimong.feature.streak.data.StreakRepository
+import com.kduniv.aimong.feature.wallet.domain.repository.WalletRepository
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import com.google.android.material.button.MaterialButton
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
@@ -38,7 +42,16 @@ class StreakCalendarBottomSheet : BottomSheetDialogFragment() {
     @Inject
     lateinit var homeRepository: HomeRepository
 
+    @Inject
+    lateinit var streakRepository: StreakRepository
+
+    @Inject
+    lateinit var walletRepository: WalletRepository
+
     private var viewingYearMonth: String? = null
+    private var shieldCount: Int = 0
+    private var streakShieldCost: Int = WalletBalanceDefaults.STREAK_SHIELD_COST
+    private var gearBalance: Int = 0
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val dialog = super.onCreateDialog(savedInstanceState) as BottomSheetDialog
@@ -69,7 +82,57 @@ class StreakCalendarBottomSheet : BottomSheetDialogFragment() {
             loadAndRender(fallbackStreak)
         }
 
+        loadShieldSection()
         loadAndRender(fallbackStreak)
+
+        requireView().findViewById<MaterialButton>(R.id.btn_buy_shield).setOnClickListener { btn ->
+            viewLifecycleOwner.lifecycleScope.launch {
+                btn.isEnabled = false
+                streakRepository.purchaseShield(1).fold(
+                    onSuccess = { data ->
+                        shieldCount = data.shieldCount
+                        data.resolvedGearBalance()?.let { gearBalance = it }
+                        bindShieldSection()
+                        btn.isEnabled = gearBalance >= streakShieldCost
+                        Snackbar.make(requireView(), getString(R.string.streak_shield_purchase_success), Snackbar.LENGTH_SHORT).show()
+                        parentFragmentManager.setFragmentResult(
+                            REQUEST_KEY,
+                            bundleOf(EXTRA_REFRESH_HOME to true)
+                        )
+                    },
+                    onFailure = { e ->
+                        Snackbar.make(
+                            requireView(),
+                            e.message ?: getString(R.string.gear_shield_purchase_failed),
+                            Snackbar.LENGTH_LONG
+                        ).show()
+                        btn.isEnabled = true
+                    }
+                )
+            }
+        }
+    }
+
+    private fun loadShieldSection() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            streakRepository.getStreak().getOrNull()?.let { shieldCount = it.shieldCount }
+            walletRepository.getWallet().getOrNull()?.let {
+                gearBalance = it.gear
+                streakShieldCost = it.streakShieldCost
+            }
+            bindShieldSection()
+        }
+    }
+
+    private fun bindShieldSection() {
+        val root = view ?: return
+        root.findViewById<TextView>(R.id.tv_shield_count).text =
+            getString(R.string.streak_shield_count_fmt, shieldCount)
+        val btn = root.findViewById<MaterialButton>(R.id.btn_buy_shield)
+        btn.text = getString(R.string.streak_buy_shield_btn, streakShieldCost)
+        val canBuy = gearBalance >= streakShieldCost
+        btn.isEnabled = canBuy
+        btn.alpha = if (canBuy) 1f else 0.45f
     }
 
     private fun shiftMonth(delta: Int) {
@@ -270,6 +333,9 @@ class StreakCalendarBottomSheet : BottomSheetDialogFragment() {
     private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
 
     companion object {
+        const val REQUEST_KEY = "aimong_streak_calendar"
+        const val EXTRA_REFRESH_HOME = "refresh_home"
+
         private const val ARG_FALLBACK_STREAK = "fallbackStreak"
 
         fun newInstance(fallbackStreakDaysFromHome: Int): StreakCalendarBottomSheet {

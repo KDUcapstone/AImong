@@ -8,6 +8,7 @@
     <string name="child_my_profile_placeholder_message">MY 화면은 준비 중이에요.</string>
 
     <string name="home_notice_server_day_changed">날짜가 바뀌었어요. 오늘 미션·퀘스트를 확인해 보세요.</string>
+    <string name="home_bootstrap_home_unavailable">아직 홈을 이용할 수 없어요. 프로필 설정을 마친 뒤 다시 시도해 주세요.</string>
 
     <string name="home_brand">AImong</string>
     <string name="home_title_explore">오늘도 AI 탐험!</string>
@@ -55,7 +56,28 @@
     <string name="quiz_btn_retry">복습하기</string>
     <string name="quiz_btn_home">홈으로</string>
     <string name="quiz_btn_return_home">홈으로 돌아가기</string>
-    <string name="quiz_btn_refill_hearts">하트 채우기</string>
+    <string name="quiz_btn_refill_hearts">톱니바퀴로 하트 채우기</string>
+    <string name="quiz_revive_cost_fmt">톱니바퀴 %1$d개 사용 · 보유 %2$d</string>
+    <string name="quiz_revive_not_in_review">복습 모드에서는 하트를 회복할 수 없어요.</string>
+    <string name="quiz_mission_locked">아직 열리지 않은 미션이에요.</string>
+    <string name="quiz_insufficient_energy">에너지가 부족해요. 충전한 뒤 다시 시도해 주세요.</string>
+    <string name="quiz_star_not_playable">이 난이도는 아직 플레이할 수 없어요.</string>
+    <string name="quiz_term_hint_title">용어 설명</string>
+    <string name="quiz_reward_gear_fmt">톱니바퀴 +%1$d</string>
+
+    <string name="gear_sheet_title">톱니바퀴</string>
+    <string name="gear_value_fmt">보유 %1$d개</string>
+    <string name="gear_heart_revive_cost_fmt">퀴즈 하트 회복: %1$d개</string>
+    <string name="gear_streak_shield_cost_fmt">스트릭 보호권 구매: %1$d개</string>
+    <string name="gear_buy_streak_shield">스트릭 보호권 구매</string>
+    <string name="gear_buy_streak_shield_cost_fmt">보호권 구매 (%1$d개) · 보유 %2$d</string>
+    <string name="gear_load_failed">톱니바퀴 정보를 불러오지 못했어요.</string>
+    <string name="gear_shield_purchase_success">스트릭 보호권을 구매했어요!</string>
+    <string name="gear_shield_purchase_failed">보호권 구매에 실패했어요.</string>
+    <string name="streak_shield_count_fmt">보호권 %1$d개</string>
+    <string name="streak_buy_shield_btn">보호권 구매 (%1$d 톱니바퀴)</string>
+    <string name="streak_shield_purchase_success">보호권을 구매했어요!</string>
+    <string name="quiz_first_clear_badge">첫 클리어!</string>
     <string name="quiz_hearts_exhausted_toast">하트를 모두 사용했어요.</string>
     <string name="home_energy_insufficient_toast">에너지가 부족해요!</string>
     <string name="home_go_energy_charge">에너지 충전</string>
@@ -309,6 +331,24 @@
     <string name="parent_add_child">자녀 추가 (POST /parent/children)</string>
     <string name="parent_add_child_dialog_title">자녀 추가하기</string>
     <string name="parent_add_child_hint">새 자녀 닉네임 (1~20자)</string>
+    <string name="parent_settings">설정</string>
+    <string name="parent_settings_title">부모 설정</string>
+    <string name="parent_settings_back">뒤로</string>
+    <string name="parent_settings_account_loading">계정 정보를 불러오는 중…</string>
+    <string name="parent_settings_account_fmt">%1$s\n등록 자녀 %2$d명</string>
+    <string name="parent_logout">로그아웃</string>
+    <string name="parent_logout_confirm">로그아웃할까요?</string>
+    <string name="parent_delete_account">회원탈퇴</string>
+    <string name="parent_delete_account_confirm">탈퇴하면 부모·자녀 계정 데이터가 삭제됩니다. 계속할까요?</string>
+    <string name="parent_child_limit_exceeded">등록 가능한 자녀 수(최대 3명)를 초과했습니다.</string>
+    <string name="parent_child_limit_hint">자녀는 최대 3명까지 등록할 수 있어요.</string>
+    <string name="parent_child_manage_edit_nickname">닉네임 변경</string>
+    <string name="parent_child_manage_regenerate_code">코드 재발급</string>
+    <string name="parent_child_manage_delete">자녀 삭제</string>
+    <string name="parent_child_regenerate_code_confirm">코드를 재발급하면 기존 자녀 기기의 로그인이 만료됩니다. 계속할까요?</string>
+    <string name="parent_child_delete_confirm">「%1$s」 프로필을 삭제할까요? 되돌릴 수 없습니다.</string>
+    <string name="auth_parent_children_sync_failed">자녀 목록을 불러오지 못했습니다. 다시 시도해 주세요.</string>
+    <string name="notification_settings_title">알림 설정</string>
     <string name="child_logout">로그아웃</string>
     <string name="child_logout_confirm">로그아웃할까요? 이 기기의 자녀 세션이 서버에서 만료돼요.</string>
 

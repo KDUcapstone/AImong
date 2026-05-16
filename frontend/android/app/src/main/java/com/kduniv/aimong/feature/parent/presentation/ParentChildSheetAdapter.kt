@@ -11,7 +11,8 @@ import com.kduniv.aimong.core.network.model.ParentChildItem
 import com.kduniv.aimong.databinding.ItemParentChildSheetRowBinding
 
 class ParentChildSheetAdapter(
-    private val onSelectChild: (String) -> Unit
+    private val onSelectChild: (String) -> Unit,
+    private val onChildLongPress: ((ParentChildItem) -> Unit)? = null
 ) : ListAdapter<ParentChildSheetRow, ParentChildSheetAdapter.ViewHolder>(DiffCallback) {
 
     var selectedChildId: String? = null
@@ -50,6 +51,10 @@ class ParentChildSheetAdapter(
             )
 
             binding.root.setOnClickListener { onSelectChild(item.childId) }
+            binding.root.setOnLongClickListener {
+                onChildLongPress?.invoke(item)
+                onChildLongPress != null
+            }
         }
     }
 

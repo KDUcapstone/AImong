@@ -3,6 +3,7 @@ package com.kduniv.aimong.feature.parent.presentation
 import androidx.lifecycle.viewModelScope
 import com.kduniv.aimong.core.network.model.ParentChildDetailData
 import com.kduniv.aimong.core.network.model.ParentChildItem
+import com.kduniv.aimong.core.network.model.PatchParentChildRequest
 import com.kduniv.aimong.core.ui.BaseViewModel
 import com.kduniv.aimong.feature.parent.data.ParentRepository
 import com.kduniv.aimong.feature.parent.data.model.ParentChildSummaryResponseData
@@ -107,6 +108,47 @@ class ParentDashboardViewModel @Inject constructor(
                 },
                 onFailure = { e ->
                     _messageEvent.emit(e.message ?: "자녀 목록 갱신에 실패했습니다.")
+                }
+            )
+        }
+    }
+
+    fun updateChildNickname(childId: String, nickname: String) {
+        viewModelScope.launch {
+            parentRepository.patchParentChild(
+                childId,
+                PatchParentChildRequest(nickname = nickname.trim())
+            ).fold(
+                onSuccess = {
+                    if (_selectedChildId.value == childId) {
+                        refreshAllDashboardForChild(childId)
+                    }
+                    _messageEvent.emit("닉네임이 변경되었어요.")
+                },
+                onFailure = { e ->
+                    _messageEvent.emit(e.message ?: "닉네임 변경에 실패했습니다.")
+                }
+            )
+        }
+    }
+
+    fun deleteChild(childId: String) {
+        viewModelScope.launch {
+            parentRepository.deleteParentChild(childId).fold(
+                onSuccess = {
+                    val remaining = children.value.filter { it.childId != childId }
+                    if (_selectedChildId.value == childId) {
+                        _selectedChildId.value = remaining.firstOrNull()?.childId
+                        remaining.firstOrNull()?.childId?.let { refreshAllDashboardForChild(it) }
+                            ?: run {
+                                _childDetail.value = null
+                                _childSummary.value = null
+                            }
+                    }
+                    _messageEvent.emit("자녀 프로필이 삭제되었어요.")
+                },
+                onFailure = { e ->
+                    _messageEvent.emit(e.message ?: "자녀 삭제에 실패했습니다.")
                 }
             )
         }

@@ -16,3 +16,16 @@ data class StreakStatusData(
     @SerializedName("partner") val partner: StreakPartnerDto?
 )
 
+/** POST /streak/shields/purchase */
+data class StreakShieldPurchaseRequest(
+    @SerializedName("count") val count: Int = 1
+)
+
+data class StreakShieldPurchaseResponseData(
+    @SerializedName("shieldCount") val shieldCount: Int,
+    @SerializedName("gear") val gear: Int? = null,
+    @SerializedName("gearBalance") val gearBalance: Int? = null
+) {
+    fun resolvedGearBalance(): Int? = gearBalance ?: gear
+}
+

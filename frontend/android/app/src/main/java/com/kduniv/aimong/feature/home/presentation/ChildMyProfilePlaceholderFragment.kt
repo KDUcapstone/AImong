@@ -3,6 +3,7 @@ package com.kduniv.aimong.feature.home.presentation
 import android.content.Intent
 import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
 import com.kduniv.aimong.MainActivity
 import com.kduniv.aimong.R
 import com.kduniv.aimong.core.ui.BaseFragment
@@ -21,6 +22,11 @@ class ChildMyProfilePlaceholderFragment :
     lateinit var logoutChildUseCase: LogoutChildUseCase
 
     override fun initView() {
+        binding.btnNotificationSettings.setOnClickListener {
+            findNavController().navigate(
+                R.id.action_myProfileFragment_to_notificationSettingsFragment
+            )
+        }
         binding.btnChildLogout.setOnClickListener {
             AlertDialog.Builder(requireContext())
                 .setMessage(R.string.child_logout_confirm)

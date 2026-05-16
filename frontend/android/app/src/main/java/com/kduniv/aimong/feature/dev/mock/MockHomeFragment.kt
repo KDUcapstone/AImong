@@ -11,6 +11,7 @@ import com.kduniv.aimong.R
 import com.kduniv.aimong.core.ui.BaseFragment
 import com.kduniv.aimong.databinding.FragmentHomeBinding
 import com.kduniv.aimong.feature.home.presentation.EnergyBottomSheet
+import com.kduniv.aimong.feature.home.presentation.GearBottomSheet
 import com.kduniv.aimong.feature.home.presentation.HomeLayoutBinder
 import com.kduniv.aimong.feature.home.presentation.MissionDifficultyPicker
 import com.kduniv.aimong.feature.home.presentation.QuestListBottomSheet
@@ -32,12 +33,22 @@ class MockHomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::
         ) { _, bundle ->
             if (bundle.getBoolean(EnergyBottomSheet.EXTRA_REFRESH_HOME, false)) {
                 binding.root.post {
-                    homeLayoutBinder.bind(sampleState)
+                    homeLayoutBinder.bind(MockUiSamples.homeUiState())
                     Snackbar.make(
                         binding.root,
                         getString(R.string.mock_home_energy_refreshed),
                         Snackbar.LENGTH_SHORT
                     ).show()
+                }
+            }
+        }
+        childFragmentManager.setFragmentResultListener(
+            GearBottomSheet.REQUEST_KEY,
+            viewLifecycleOwner
+        ) { _, bundle ->
+            if (bundle.getBoolean(GearBottomSheet.EXTRA_REFRESH_HOME, false)) {
+                binding.root.post {
+                    homeLayoutBinder.bind(MockUiSamples.homeUiState())
                 }
             }
         }
@@ -47,7 +58,7 @@ class MockHomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::
             layoutInflater = layoutInflater,
             onOpenDifficultyPicker = { title, nav, anchor ->
                 val st = sampleState
-                if (!st.canStartMission || st.energyCurrent < 1) {
+                if (!st.canAttemptMissionStart()) {
                     Snackbar.make(
                         binding.root,
                         getString(R.string.home_energy_insufficient_toast),
@@ -78,6 +89,9 @@ class MockHomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::
         binding.layoutChipEnergy.setOnClickListener {
             EnergyBottomSheet.newInstance().show(childFragmentManager, "energy_sheet")
         }
+        binding.layoutChipGear.setOnClickListener {
+            GearBottomSheet.newInstance().show(childFragmentManager, "gear_sheet")
+        }
         binding.fabChildQuest.setOnClickListener {
             QuestListBottomSheet.newInstance(canStartMission = true)
                 .show(parentFragmentManager, "quest_list")
@@ -86,6 +100,14 @@ class MockHomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::
 
         binding.layoutChipTicket.setOnClickListener {
             requireActivity().findViewById<BottomNavigationView>(R.id.bottom_nav).selectedItemId = R.id.gachaFragment
+        }
+        parentFragmentManager.setFragmentResultListener(
+            StreakCalendarBottomSheet.REQUEST_KEY,
+            viewLifecycleOwner
+        ) { _, bundle ->
+            if (bundle.getBoolean(StreakCalendarBottomSheet.EXTRA_REFRESH_HOME, false)) {
+                binding.root.post { homeLayoutBinder.bind(MockUiSamples.homeUiState()) }
+            }
         }
         binding.layoutChipStreak.setOnClickListener {
             StreakCalendarBottomSheet.newInstance(sampleState.streakDays)

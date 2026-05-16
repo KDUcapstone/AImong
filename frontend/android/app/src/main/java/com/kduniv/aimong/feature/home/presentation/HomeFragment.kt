@@ -39,12 +39,20 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
                 viewModel.onHomeResumed()
             }
         }
+        childFragmentManager.setFragmentResultListener(
+            GearBottomSheet.REQUEST_KEY,
+            viewLifecycleOwner
+        ) { _, bundle ->
+            if (bundle.getBoolean(GearBottomSheet.EXTRA_REFRESH_HOME, false)) {
+                viewModel.onHomeResumed()
+            }
+        }
         homeLayoutBinder = HomeLayoutBinder(
             binding = binding,
             layoutInflater = layoutInflater,
             onOpenDifficultyPicker = { title, nav, anchor ->
                 val st = viewModel.uiState.value
-                if (!st.canStartMission || st.energyCurrent < 1) {
+                if (!st.canAttemptMissionStart()) {
                     Snackbar.make(
                         binding.root,
                         getString(R.string.home_energy_insufficient_toast),
@@ -75,9 +83,20 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
         binding.layoutChipEnergy.setOnClickListener {
             EnergyBottomSheet.newInstance().show(childFragmentManager, "energy_sheet")
         }
+        binding.layoutChipGear.setOnClickListener {
+            GearBottomSheet.newInstance().show(childFragmentManager, "gear_sheet")
+        }
         binding.fabChildQuest.setOnClickListener { openQuestList() }
         binding.cardFloatPet.setOnClickListener { showPetStatsSheet() }
         binding.layoutChipTicket.setOnClickListener { openGacha() }
+        parentFragmentManager.setFragmentResultListener(
+            StreakCalendarBottomSheet.REQUEST_KEY,
+            viewLifecycleOwner
+        ) { _, bundle ->
+            if (bundle.getBoolean(StreakCalendarBottomSheet.EXTRA_REFRESH_HOME, false)) {
+                viewModel.onHomeResumed()
+            }
+        }
         binding.layoutChipStreak.setOnClickListener { openStreakSheet() }
     }
 

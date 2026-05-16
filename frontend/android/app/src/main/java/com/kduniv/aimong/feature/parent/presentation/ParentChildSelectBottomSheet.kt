@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.kduniv.aimong.R
 import com.kduniv.aimong.core.network.model.ParentChildItem
+import com.kduniv.aimong.feature.parent.domain.ParentAuthPolicy
 import com.kduniv.aimong.databinding.BottomSheetParentChildSelectBinding
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -31,6 +32,8 @@ class ParentChildSelectBottomSheet : BottomSheetDialogFragment() {
 
     private lateinit var adapter: ParentChildSheetAdapter
 
+    private var onChildLongPress: ((ParentChildItem) -> Unit)? = null
+
     override fun getTheme(): Int = R.style.AimongBottomSheetDialogTheme
 
     override fun onCreateView(
@@ -45,10 +48,13 @@ class ParentChildSelectBottomSheet : BottomSheetDialogFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        adapter = ParentChildSheetAdapter { childId ->
-            dashboardViewModel.selectChild(childId)
-            dismiss()
-        }
+        adapter = ParentChildSheetAdapter(
+            onSelectChild = { childId ->
+                dashboardViewModel.selectChild(childId)
+                dismiss()
+            },
+            onChildLongPress = onChildLongPress
+        )
         binding.rvSheetChildren.layoutManager = LinearLayoutManager(requireContext())
         binding.rvSheetChildren.adapter = adapter
 
@@ -80,6 +86,10 @@ class ParentChildSelectBottomSheet : BottomSheetDialogFragment() {
         adapter.submitList(rows)
         binding.tvSheetEmpty.isVisible = rows.isEmpty()
         binding.rvSheetChildren.isVisible = rows.isNotEmpty()
+        val atLimit = children.size >= ParentAuthPolicy.MAX_CHILDREN
+        binding.btnAddChildSheet.isEnabled = !atLimit
+        binding.btnAddChildSheet.alpha = if (atLimit) 0.45f else 1f
+        binding.tvChildLimitHint.isVisible = atLimit
     }
 
     override fun onDestroyView() {
@@ -90,7 +100,11 @@ class ParentChildSelectBottomSheet : BottomSheetDialogFragment() {
     companion object {
         const val TAG = "parent_child_select_sheet"
 
-        fun newInstance(): ParentChildSelectBottomSheet = ParentChildSelectBottomSheet()
+        fun newInstance(
+            onChildLongPress: ((ParentChildItem) -> Unit)? = null
+        ): ParentChildSelectBottomSheet = ParentChildSelectBottomSheet().apply {
+            this.onChildLongPress = onChildLongPress
+        }
     }
 }
 

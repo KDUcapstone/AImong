@@ -27,6 +27,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.NavOptions
+import com.kduniv.aimong.core.navigation.ChildTopLevelNav.navigateToChildTopLevel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.NavigationUI
@@ -252,13 +253,8 @@ class MainActivity : AppCompatActivity() {
                     val navigated = if (currentId == targetId) {
                         true
                     } else {
-                        val options = NavOptions.Builder()
-                            .setLaunchSingleTop(true)
-                            .setRestoreState(true)
-                            .setPopUpTo(navController.graph.findStartDestination().id, false, true)
-                            .build()
                         try {
-                            navController.navigate(targetId, null, options)
+                            navController.navigateToChildTopLevel(targetId)
                             true
                         } catch (_: IllegalArgumentException) {
                             false

@@ -20,10 +20,17 @@ data class HomeUiState(
     /** 상단 에너지 칩 — topStatus.energy / maxEnergy */
     val energyCurrent: Int = 0,
     val energyMax: Int = 20,
+    /** GET /energy 의 missionStartCost (없으면 [DEFAULT_MISSION_START_COST]) */
+    val missionStartCost: Int = DEFAULT_MISSION_START_COST,
     /** ISO8601, 에너지 바텀시트 등에서 표시 */
     val nextEnergyRecoverAt: String? = null,
     /** 상단 XP 칩 — topStatus.xp */
     val topStatusXp: Int = 0,
+
+    /** 상단 톱니바퀴 칩 — GET /wallet */
+    val gearBalance: Int = 0,
+    val heartReviveCost: Int = WalletBalanceDefaults.HEART_REVIVE_COST,
+    val streakShieldCost: Int = WalletBalanceDefaults.STREAK_SHIELD_COST,
 
     val normalTickets: Int = 0,
     val shieldCount: Int = 0,
@@ -54,7 +61,20 @@ data class HomeUiState(
 
     /** PM 시안 학습 경로 노드 */
     val pathItems: List<HomePathItem> = emptyList()
-)
+) {
+    fun hasEnoughEnergyForMissionStart(): Boolean = energyCurrent >= missionStartCost
+
+    fun canAttemptMissionStart(): Boolean = canStartMission && hasEnoughEnergyForMissionStart()
+
+    companion object {
+        const val DEFAULT_MISSION_START_COST = 5
+    }
+}
+
+object WalletBalanceDefaults {
+    const val HEART_REVIVE_COST = 10
+    const val STREAK_SHIELD_COST = 30
+}
 
 data class QuestItemUiState(
     val id: String,

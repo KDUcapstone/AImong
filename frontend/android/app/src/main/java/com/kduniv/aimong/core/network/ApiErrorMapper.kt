@@ -71,6 +71,8 @@ object ApiErrorMapper {
             "MISSION_NOT_FOUND" -> "미션을 찾을 수 없어요."
             "MISSION_LOCKED" -> "아직 열리지 않은 미션이에요."
             "INSUFFICIENT_ENERGY" -> "에너지가 부족해요. 잠시 후 다시 도전해 주세요."
+            "GEAR_NOT_ENOUGH" -> "톱니바퀴가 부족해요."
+            "ATTEMPT_NOT_REVIVABLE" -> "지금은 하트를 회복할 수 없어요."
             "UNAUTHORIZED" -> "로그인이 필요합니다."
             "ATTEMPT_EXPIRED" -> "문제 세션이 만료되었어요. 다시 문제를 불러와주세요."
             "ATTEMPT_NOT_FOUND" -> "문제 세션을 찾을 수 없어요."

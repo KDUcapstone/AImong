@@ -1,6 +1,7 @@
 package com.kduniv.aimong.feature.quiz.data
 
 import com.kduniv.aimong.feature.quiz.data.model.QuestionResponse
+import com.kduniv.aimong.feature.quiz.domain.model.TermHint
 import com.kduniv.aimong.feature.quiz.domain.model.Question
 import com.kduniv.aimong.feature.quiz.domain.model.QuestionDifficulty
 import com.kduniv.aimong.feature.quiz.domain.model.QuestionType
@@ -37,6 +38,14 @@ internal object QuizSessionRules {
                 ?: return kotlin.Result.failure(Exception("문항 내용이 비어 있습니다."))
             val opts = r.choices?.takeIf { it.isNotEmpty() } ?: r.options
             val difficulty = QuestionDifficulty.parse(r.difficulty)
+            val hints = r.termHints
+                .take(3)
+                .mapNotNull { h ->
+                    val term = h.term.trim()
+                    val desc = h.description.trim()
+                    if (term.isNotEmpty() && desc.isNotEmpty()) TermHint(term, desc) else null
+                }
+                .distinctBy { it.term }
             out.add(
                 Question(
                     id = qid,
@@ -44,7 +53,8 @@ internal object QuizSessionRules {
                     question = text,
                     options = opts,
                     difficulty = difficulty,
-                    answerFormat = r.answerFormat
+                    answerFormat = r.answerFormat,
+                    termHints = hints
                 )
             )
         }

@@ -63,6 +63,36 @@
             </LinearLayout>
 
             <LinearLayout
+                android:id="@+id/layout_chip_gear"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="4dp"
+                android:background="@drawable/bg_child_chip_gear"
+                android:gravity="center_vertical"
+                android:minHeight="34dp"
+                android:orientation="horizontal"
+                android:paddingHorizontal="10dp"
+                android:paddingVertical="6dp">
+
+                <ImageView
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_chip_gear"
+                    app:tint="@color/white" />
+
+                <TextView
+                    android:id="@+id/tv_chip_gear"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:textColor="@color/text_white"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    tools:text="40" />
+            </LinearLayout>
+
+            <LinearLayout
                 android:id="@+id/layout_chip_xp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"

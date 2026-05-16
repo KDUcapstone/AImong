@@ -19,6 +19,8 @@ import com.kduniv.aimong.feature.mission.data.model.MissionStatusResponseData
 import com.kduniv.aimong.feature.quiz.data.model.MissionAttemptResponseData
 import com.kduniv.aimong.feature.quiz.data.model.MissionAttemptAbandonRequest
 import com.kduniv.aimong.feature.quiz.data.model.MissionAttemptAbandonResponseData
+import com.kduniv.aimong.feature.quiz.data.model.MissionAttemptReviveRequest
+import com.kduniv.aimong.feature.quiz.data.model.MissionAttemptReviveResponseData
 import com.kduniv.aimong.feature.quiz.data.model.MissionSetCheckRequest
 import com.kduniv.aimong.feature.quiz.data.model.MissionSetCheckResponseData
 import com.kduniv.aimong.feature.quiz.data.model.QuizQuestionsResponse
@@ -59,7 +61,10 @@ import com.kduniv.aimong.feature.gacha.data.model.GachaPullRequest
 import com.kduniv.aimong.feature.pet.data.model.PetEquipData
 import com.kduniv.aimong.feature.pet.data.model.PetEquipRequest
 import com.kduniv.aimong.feature.pet.data.model.PetListData
+import com.kduniv.aimong.feature.streak.data.model.StreakShieldPurchaseRequest
+import com.kduniv.aimong.feature.streak.data.model.StreakShieldPurchaseResponseData
 import com.kduniv.aimong.feature.streak.data.model.StreakStatusData
+import com.kduniv.aimong.feature.wallet.data.model.WalletResponseData
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -142,10 +147,11 @@ interface AimongApiService {
     @DELETE("child/fcm-token")
     suspend fun deleteChildFcmToken(): ApiResponse<DeletedFlagData>
 
-    @DELETE("parent/fcm-token")
-    suspend fun deleteParentFcmToken(
+    /** 부모 로그아웃 — BE FCM 해제, FE는 Firebase signOut */
+    @POST("parent/logout")
+    suspend fun parentLogout(
         @Header("Authorization") authorization: String
-    ): ApiResponse<DeletedFlagData>
+    ): ApiResponse<ChildLogoutData>
 
     @PATCH("parent/children/{childId}")
     suspend fun patchParentChild(
@@ -191,6 +197,9 @@ interface AimongApiService {
 
     @POST("energy/add")
     suspend fun addEnergy(@Body body: EnergyAddRequest): ApiResponse<EnergyAddResponseData>
+
+    @GET("wallet")
+    suspend fun getWallet(): ApiResponse<WalletResponseData>
 
     @GET("quests/daily")
     suspend fun getDailyQuests(): ApiResponse<DailyQuestsResponseData>
@@ -259,6 +268,13 @@ interface AimongApiService {
         @Path("attemptId") attemptId: String,
         @Body body: MissionAttemptAbandonRequest
     ): ApiResponse<MissionAttemptAbandonResponseData>
+
+    /** v2.7: 하트 0 — 톱니바퀴로 1회 부활 */
+    @POST("mission-attempts/{attemptId}/revive")
+    suspend fun reviveMissionAttempt(
+        @Path("attemptId") attemptId: String,
+        @Body body: MissionAttemptReviveRequest
+    ): ApiResponse<MissionAttemptReviveResponseData>
 
     @POST("missions/{missionId}/questions/{questionId}/report")
     suspend fun reportQuestion(
@@ -340,6 +356,11 @@ interface AimongApiService {
     // STREAK (CHILD)
     @GET("streak")
     suspend fun getStreak(): ApiResponse<StreakStatusData>
+
+    @POST("streak/shields/purchase")
+    suspend fun purchaseStreakShield(
+        @Body body: StreakShieldPurchaseRequest
+    ): ApiResponse<StreakShieldPurchaseResponseData>
 }
 
 data class ChatMessageRequest(

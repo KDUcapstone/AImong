@@ -12,7 +12,7 @@ data class ChildMeData(
     @SerializedName("lastActiveAt") val lastActiveAt: String? = null
 )
 
-/** POST /child/logout 의 `data` */
+/** POST /child/logout · POST /parent/logout 의 `data` */
 data class ChildLogoutData(
     @SerializedName("loggedOut") val loggedOut: Boolean = true
 )

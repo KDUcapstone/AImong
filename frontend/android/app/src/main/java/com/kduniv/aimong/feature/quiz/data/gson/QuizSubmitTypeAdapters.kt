@@ -81,6 +81,10 @@ class SubmitRewardsListAdapter : TypeAdapter<List<RewardResponse>?>() {
     companion object {
         internal fun parseRewardsObject(obj: com.google.gson.JsonObject): List<RewardResponse> {
             val out = ArrayList<RewardResponse>()
+            if (obj.has("gear") && !obj.get("gear").isJsonNull) {
+                val g = obj.get("gear").asInt
+                if (g > 0) out.add(RewardResponse(type = "GEAR", ticketType = null, count = g, reason = null))
+            }
             if (obj.has("coin") && !obj.get("coin").isJsonNull) {
                 val c = obj.get("coin").asInt
                 if (c > 0) out.add(RewardResponse(type = "COIN", ticketType = null, count = c, reason = null))

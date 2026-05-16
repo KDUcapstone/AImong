@@ -40,7 +40,13 @@ data class QuestionResponse(
     @SerializedName("choices") val choices: List<String>? = null,
     @SerializedName("difficulty") val difficulty: String? = null,
     @SerializedName(value = "answerFormat", alternate = ["answer_format"])
-    val answerFormat: String? = null
+    val answerFormat: String? = null,
+    @SerializedName("termHints") val termHints: List<TermHintResponse> = emptyList()
+)
+
+data class TermHintResponse(
+    @SerializedName("term") val term: String,
+    @SerializedName("description") val description: String
 )
 
 /** 레거시 오프라인 동기화용 */

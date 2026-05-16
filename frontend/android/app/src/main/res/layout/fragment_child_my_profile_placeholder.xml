@@ -18,6 +18,17 @@
         android:textSize="16sp" />
 
     <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_notification_settings"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:text="@string/notification_settings_title"
+        android:textColor="@color/white"
+        app:cornerRadius="12dp"
+        app:strokeColor="#8A96AD" />
+
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/btn_child_logout"
         style="@style/Widget.MaterialComponents.Button.OutlinedButton"
         android:layout_width="match_parent"

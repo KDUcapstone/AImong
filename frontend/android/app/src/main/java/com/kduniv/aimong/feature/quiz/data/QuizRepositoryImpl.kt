@@ -12,6 +12,8 @@ import com.kduniv.aimong.core.network.AimongApiService
 import com.kduniv.aimong.core.network.toResult
 import com.kduniv.aimong.feature.quiz.data.model.MissionAttemptAbandonRequest
 import com.kduniv.aimong.feature.quiz.data.model.MissionAttemptAbandonResponseData
+import com.kduniv.aimong.feature.quiz.data.model.MissionAttemptReviveRequest
+import com.kduniv.aimong.feature.quiz.data.model.MissionAttemptReviveResponseData
 import com.kduniv.aimong.feature.quiz.data.model.MissionAttemptResponseData
 import com.kduniv.aimong.feature.quiz.data.model.MissionSetAnswerItem
 import com.kduniv.aimong.feature.quiz.data.model.MissionSetCheckRequest
@@ -260,6 +262,20 @@ class QuizRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun reviveAttempt(attemptId: String): kotlin.Result<MissionAttemptReviveResponseData> {
+        return try {
+            kotlin.Result.success(
+                apiService.reviveMissionAttempt(attemptId, MissionAttemptReviveRequest(useCurrency = true))
+                    .toResult()
+                    .getOrThrow()
+            )
+        } catch (e: HttpException) {
+            kotlin.Result.failure(Exception(ApiErrorMapper.userMessageForHttpException(e)))
+        } catch (e: Throwable) {
+            kotlin.Result.failure(e)
+        }
+    }
+
     private fun mapSubmitResponse(data: QuizSubmitResponse): QuizResult {
         val total = data.questionCount ?: data.total ?: 10
         val correct = data.correctCount ?: 0
@@ -280,6 +296,7 @@ class QuizRepositoryImpl @Inject constructor(
             wrongCount = wrong,
             isPassed = data.isPassed ?: (correct * 10 >= total * 6),
             isPerfect = data.isPerfect ?: (correct == total && wrong == 0),
+            isFirstClear = data.isFirstClear == true,
             equippedPetGrade = data.equippedPetGrade,
             xpEarned = xpEarnedResolved,
             bonusXp = data.bonusXp ?: 0,
@@ -335,6 +352,7 @@ class QuizRepositoryImpl @Inject constructor(
             wrongCount = wrong,
             isPassed = data.isPassed ?: (correct * 10 >= total * 6),
             isPerfect = data.isPerfect ?: (correct == total && wrong == 0),
+            isFirstClear = data.isFirstClear == true,
             equippedPetGrade = null,
             xpEarned = xpFromRewards,
             bonusXp = 0,

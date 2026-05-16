@@ -2,8 +2,6 @@ package com.kduniv.aimong.core.di
 
 import com.kduniv.aimong.feature.auth.data.AuthRepositoryImpl
 import com.kduniv.aimong.feature.auth.data.AuthRepository
-import com.kduniv.aimong.feature.auth.data.NotificationRepositoryImpl
-import com.kduniv.aimong.feature.auth.data.NotificationRepository
 import com.kduniv.aimong.feature.home.data.AppBootstrapRepositoryImpl
 import com.kduniv.aimong.feature.home.data.HomeRepositoryImpl
 import com.kduniv.aimong.feature.home.domain.repository.AppBootstrapRepository
@@ -31,12 +29,6 @@ abstract class RepositoryModule {
     abstract fun bindAuthRepository(
         authRepositoryImpl: AuthRepositoryImpl
     ): AuthRepository
-
-    @Binds
-    @Singleton
-    abstract fun bindNotificationRepository(
-        impl: NotificationRepositoryImpl
-    ): NotificationRepository
 
     @Binds
     @Singleton

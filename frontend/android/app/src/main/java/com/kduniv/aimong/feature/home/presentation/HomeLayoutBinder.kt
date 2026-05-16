@@ -32,6 +32,7 @@ class HomeLayoutBinder(
         pathItemsForScroll = state.pathItems
         with(binding) {
             tvChipEnergy.text = "${state.energyCurrent}/${state.energyMax}"
+            tvChipGear.text = state.gearBalance.toString()
             tvChipXp.text = state.topStatusXp.toString()
             tvChipTicket.text = state.topTicketCount.toString()
             tvChipStreak.text = root.context.getString(R.string.home_chip_streak_fmt, state.streakDays)

@@ -25,6 +25,7 @@ data class MissionSetReportResponseData(
     @SerializedName("questionCount") val questionCount: Int? = null,
     @SerializedName("isPassed") val isPassed: Boolean? = null,
     @SerializedName("isPerfect") val isPerfect: Boolean? = null,
+    @SerializedName("isFirstClear") val isFirstClear: Boolean? = null,
     @SerializedName("isReview") val isReview: Boolean = false,
     @SerializedName("submittedAt") val submittedAt: String? = null,
     @SerializedName("results") val results: List<MissionSetReportQuestionDto>? = null,

@@ -2,14 +2,24 @@ package com.kduniv.aimong.feature.streak.data
 
 import com.kduniv.aimong.core.dev.UiMode
 import com.kduniv.aimong.core.network.AimongApiService
+import com.kduniv.aimong.core.network.ApiErrorMapper
+import com.kduniv.aimong.core.network.toResult
 import com.kduniv.aimong.core.network.runApi
+import com.kduniv.aimong.feature.dev.mock.MockGearBalance
 import com.kduniv.aimong.feature.streak.data.model.StreakPartnerDto
+import com.kduniv.aimong.feature.streak.data.model.StreakShieldPurchaseRequest
+import com.kduniv.aimong.feature.streak.data.model.StreakShieldPurchaseResponseData
 import com.kduniv.aimong.feature.streak.data.model.StreakStatusData
+import retrofit2.HttpException
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class StreakRepositoryImpl @Inject constructor(
     private val apiService: AimongApiService
 ) : StreakRepository {
+
+    private var stubShieldCount = 2
 
     override suspend fun getStreak(): Result<StreakStatusData> {
         if (UiMode.useStubNav) {
@@ -18,7 +28,7 @@ class StreakRepositoryImpl @Inject constructor(
                     continuousDays = 5,
                     lastCompletedDate = "2026-03-28",
                     todayMissionCount = 1,
-                    shieldCount = 2,
+                    shieldCount = stubShieldCount,
                     partner = StreakPartnerDto(
                         childId = "stub-partner",
                         nickname = "지우",
@@ -29,5 +39,28 @@ class StreakRepositoryImpl @Inject constructor(
         }
         return runApi { apiService.getStreak() }
     }
-}
 
+    override suspend fun purchaseShield(count: Int): Result<StreakShieldPurchaseResponseData> {
+        val safeCount = count.coerceAtLeast(1)
+        if (UiMode.useStubNav) {
+            val totalCost = MockGearBalance.STREAK_SHIELD_COST * safeCount
+            if (!MockGearBalance.trySpend(totalCost)) {
+                return Result.failure(Exception("톱니바퀴가 부족해요."))
+            }
+            stubShieldCount += safeCount
+            return Result.success(
+                StreakShieldPurchaseResponseData(
+                    shieldCount = stubShieldCount,
+                    gearBalance = MockGearBalance.gear
+                )
+            )
+        }
+        return try {
+            apiService.purchaseStreakShield(StreakShieldPurchaseRequest(safeCount)).toResult()
+        } catch (e: HttpException) {
+            Result.failure(Exception(ApiErrorMapper.userMessageForHttpException(e)))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+}

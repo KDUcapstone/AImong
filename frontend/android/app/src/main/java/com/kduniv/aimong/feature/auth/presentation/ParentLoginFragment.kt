@@ -14,7 +14,11 @@ import com.kduniv.aimong.core.ui.BaseFragment
 import com.kduniv.aimong.core.util.setOnScaleTouchListener
 import com.kduniv.aimong.databinding.FragmentParentLoginBinding
 import com.google.android.material.snackbar.Snackbar
+import com.kduniv.aimong.feature.auth.domain.ParentPostLoginDestination
 import com.kduniv.aimong.feature.auth.domain.RegisterParentFcmTokenUseCase
+import com.kduniv.aimong.feature.auth.domain.ResolveParentPostLoginUseCase
+import android.content.Intent
+import com.kduniv.aimong.MainActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
@@ -25,6 +29,9 @@ class ParentLoginFragment : BaseFragment<FragmentParentLoginBinding>(FragmentPar
 
     @Inject
     lateinit var registerParentFcmTokenUseCase: RegisterParentFcmTokenUseCase
+
+    @Inject
+    lateinit var resolveParentPostLoginUseCase: ResolveParentPostLoginUseCase
 
     private val firebaseAuth: FirebaseAuth by lazy { FirebaseAuth.getInstance() }
 
@@ -77,7 +84,31 @@ class ParentLoginFragment : BaseFragment<FragmentParentLoginBinding>(FragmentPar
                 val credential = GoogleAuthProvider.getCredential(idToken, null)
                 firebaseAuth.signInWithCredential(credential).await()
                 registerParentFcmTokenUseCase(requireParentSession = false)
-                findNavController().navigate(R.id.action_parentLoginFragment_to_parentRegisterChildFragment)
+                resolveParentPostLoginUseCase().fold(
+                    onSuccess = { dest ->
+                        when (dest) {
+                            ParentPostLoginDestination.REGISTER_FIRST_CHILD ->
+                                findNavController().navigate(
+                                    R.id.action_parentLoginFragment_to_parentRegisterChildFragment
+                                )
+                            ParentPostLoginDestination.PARENT_HOME -> {
+                                startActivity(
+                                    Intent(requireContext(), MainActivity::class.java).apply {
+                                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                                        putExtra(MainActivity.EXTRA_IS_RESTART, true)
+                                    }
+                                )
+                            }
+                        }
+                    },
+                    onFailure = { e ->
+                        Snackbar.make(
+                            binding.root,
+                            e.message ?: getString(R.string.auth_parent_children_sync_failed),
+                            Snackbar.LENGTH_LONG
+                        ).show()
+                    }
+                )
             } catch (e: Exception) {
                 Snackbar.make(
                     binding.root,

@@ -17,7 +17,9 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.tabs.TabLayout
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.kduniv.aimong.R
+import com.kduniv.aimong.core.navigation.ChildTopLevelNav.navigateToChildTopLevel
 import com.kduniv.aimong.databinding.DialogQuestListBinding
 import com.kduniv.aimong.feature.home.presentation.quest.QuestListViewModel
 import com.kduniv.aimong.feature.home.presentation.quest.QuestSheetEffect
@@ -144,25 +146,25 @@ class QuestListBottomSheet : BottomSheetDialogFragment() {
                 viewModel.onClaim(row.questType, row.period)
             QuestSheetPrimaryAction.GO_LEARN -> {
                 dismiss()
-                val navHost = requireActivity().supportFragmentManager
-                    .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
-                val nav = navHost.navController
-                // 학습 탭(learningFragment)은 제거됨. 홈으로 이동해 스테이지 팝업에서 퀴즈를 시작한다.
-                if (nav.currentDestination?.id != R.id.homeFragment) {
-                    nav.navigate(R.id.homeFragment)
-                }
+                navigateChildTopLevel(R.id.homeFragment)
             }
             QuestSheetPrimaryAction.GO_CHAT -> {
                 dismiss()
-                val navHost = requireActivity().supportFragmentManager
-                    .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
-                val nav = navHost.navController
-                if (nav.currentDestination?.id != R.id.chatFragment) {
-                    nav.navigate(R.id.chatFragment)
-                }
+                navigateChildTopLevel(R.id.chatFragment)
             }
             else -> Unit
         }
+    }
+
+    private fun navigateChildTopLevel(@androidx.annotation.IdRes destinationId: Int) {
+        val navHost = requireActivity().supportFragmentManager
+            .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
+        val nav = navHost.navController
+        if (nav.currentDestination?.id != destinationId) {
+            nav.navigateToChildTopLevel(destinationId)
+        }
+        requireActivity().findViewById<BottomNavigationView>(R.id.bottom_nav)?.selectedItemId =
+            destinationId
     }
 
     override fun onDestroyView() {

@@ -91,10 +91,10 @@ data class DailyQuestSummaryDto(
     @SerializedName("quests") val quests: List<DailyQuestItemDto> = emptyList()
 )
 
+/** GET /home 일일 퀘스트 요약 — 보상 문구는 GET /quests/daily 응답을 사용한다. */
 data class DailyQuestItemDto(
     @SerializedName("questType") val questType: String,
     @SerializedName("label") val label: String,
-    @SerializedName("reward") val reward: String = "",
     @SerializedName("claimType") val claimType: String,
     @SerializedName("completed") val completed: Boolean = false,
     @SerializedName("rewardClaimed") val rewardClaimed: Boolean = false,

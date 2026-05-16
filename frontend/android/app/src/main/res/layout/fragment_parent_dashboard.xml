@@ -52,12 +52,12 @@
                 android:textStyle="bold" />
 
             <TextView
-                android:id="@+id/btn_logout"
+                android:id="@+id/btn_settings"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:padding="8dp"
-                android:text="로그아웃"
+                android:text="@string/parent_settings"
                 android:textColor="@color/parent_mock_logout"
                 android:textSize="14sp"
                 android:textStyle="bold" />

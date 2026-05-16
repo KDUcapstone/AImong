@@ -119,6 +119,37 @@
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
+    <LinearLayout
+        android:id="@+id/layout_shield_purchase"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:background="@drawable/bg_home_streak"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="14dp"
+        android:paddingVertical="12dp">
+
+        <TextView
+            android:id="@+id/tv_shield_count"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textColor="@color/white"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            tools:text="보호권 2개" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_buy_shield"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minHeight="40dp"
+            android:textAllCaps="false"
+            tools:text="보호권 구매 (30)" />
+    </LinearLayout>
+
     <ProgressBar
         android:id="@+id/pb_streak_loading"
         style="?android:attr/progressBarStyleSmall"

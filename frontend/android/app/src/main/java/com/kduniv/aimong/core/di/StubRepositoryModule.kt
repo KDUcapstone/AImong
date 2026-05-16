@@ -11,6 +11,9 @@ import com.kduniv.aimong.feature.dev.mock.repository.GachaRepositoryStub
 import com.kduniv.aimong.feature.dev.mock.repository.PetRepositoryStub
 import com.kduniv.aimong.feature.dev.mock.repository.QuestRepositoryStub
 import com.kduniv.aimong.feature.dev.mock.repository.QuizRepositoryStub
+import com.kduniv.aimong.feature.dev.mock.repository.WalletRepositoryStub
+import com.kduniv.aimong.feature.wallet.domain.repository.WalletRepository
+import com.kduniv.aimong.feature.wallet.data.WalletRepositoryImpl
 import com.kduniv.aimong.feature.gacha.data.GachaRepository
 import com.kduniv.aimong.feature.gacha.data.GachaRepositoryImpl
 import com.kduniv.aimong.feature.home.data.PetRepository
@@ -73,4 +76,11 @@ object StubRepositoryModule {
         impl: PrivacyRepositoryImpl,
         stub: PrivacyRepositoryStub
     ): PrivacyRepository = if (UiMode.useStubNav) stub else impl
+
+    @Provides
+    @Singleton
+    fun provideWalletRepository(
+        impl: WalletRepositoryImpl,
+        stub: WalletRepositoryStub
+    ): WalletRepository = if (UiMode.useStubNav) stub else impl
 }

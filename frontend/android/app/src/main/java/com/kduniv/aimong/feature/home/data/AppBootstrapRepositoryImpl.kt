@@ -13,9 +13,16 @@ class AppBootstrapRepositoryImpl @Inject constructor(
     private val apiService: AimongApiService
 ) : AppBootstrapRepository {
 
+    @Volatile
+    private var cached: BootstrapResponseData? = null
+
+    override fun lastBootstrap(): BootstrapResponseData? = cached
+
     override suspend fun getBootstrap(): Result<BootstrapResponseData> {
         return try {
-            apiService.getBootstrap().toResult()
+            apiService.getBootstrap().toResult().also { result ->
+                result.onSuccess { cached = it }
+            }
         } catch (e: HttpException) {
             Result.failure(Exception(ApiErrorMapper.userMessageForHttpException(e)))
         } catch (e: IOException) {

@@ -4,6 +4,7 @@ import com.kduniv.aimong.R
 import com.kduniv.aimong.feature.home.presentation.HomePathItem
 import com.kduniv.aimong.feature.home.presentation.HomeQuizNavigation
 import com.kduniv.aimong.feature.home.presentation.HomeUiState
+import com.kduniv.aimong.feature.home.presentation.WalletBalanceDefaults
 import com.kduniv.aimong.feature.home.presentation.QuestItemUiState
 
 object MockUiSamples {
@@ -31,6 +32,10 @@ object MockUiSamples {
             petMessage = "오늘도 AI 탐험 화이팅!",
             energyCurrent = mockEnergyCurrent,
             energyMax = MOCK_ENERGY_MAX,
+            gearBalance = MockGearBalance.gear,
+            heartReviveCost = WalletBalanceDefaults.HEART_REVIVE_COST,
+            streakShieldCost = WalletBalanceDefaults.STREAK_SHIELD_COST,
+            missionStartCost = HomeUiState.DEFAULT_MISSION_START_COST,
             nextEnergyRecoverAt = null,
             topStatusXp = 1520,
             normalTickets = 2,

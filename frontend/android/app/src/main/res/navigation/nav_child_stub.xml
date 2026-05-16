@@ -56,6 +56,16 @@
         android:id="@+id/myProfileFragment"
         android:name="com.kduniv.aimong.feature.home.presentation.ChildMyProfilePlaceholderFragment"
         android:label="MY"
-        tools:layout="@layout/fragment_child_my_profile_placeholder" />
+        tools:layout="@layout/fragment_child_my_profile_placeholder">
+        <action
+            android:id="@+id/action_myProfileFragment_to_notificationSettingsFragment"
+            app:destination="@id/notificationSettingsFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/notificationSettingsFragment"
+        android:name="com.kduniv.aimong.feature.settings.presentation.NotificationSettingsFragment"
+        android:label="@string/notification_settings_title"
+        tools:layout="@layout/fragment_notification_settings" />
 
 </navigation>

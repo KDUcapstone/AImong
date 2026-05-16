@@ -176,9 +176,9 @@ class ParentRepositoryImpl @Inject constructor(
             Result.failure(e)
         }
 
-    override suspend fun deleteParentFcmToken(firebaseIdToken: String): Result<Unit> {
+    override suspend fun parentLogout(firebaseIdToken: String): Result<Unit> {
         return try {
-            apiService.deleteParentFcmToken("Bearer ${firebaseIdToken.trim()}").toResult()
+            apiService.parentLogout("Bearer ${firebaseIdToken.trim()}").toResult()
             Result.success(Unit)
         } catch (_: HttpException) {
             Result.success(Unit)

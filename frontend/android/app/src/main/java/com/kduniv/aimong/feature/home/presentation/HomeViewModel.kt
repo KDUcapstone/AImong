@@ -5,9 +5,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kduniv.aimong.R
 import com.kduniv.aimong.feature.home.domain.GetHomeStatusUseCase
+import com.kduniv.aimong.feature.home.domain.repository.AppBootstrapRepository
 import com.kduniv.aimong.feature.home.domain.repository.HomeRepository
 import com.kduniv.aimong.feature.home.domain.HomePathBuilder
 import com.kduniv.aimong.feature.mission.domain.repository.MissionRepository
+import com.kduniv.aimong.feature.wallet.domain.repository.WalletRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,6 +25,8 @@ class HomeViewModel @Inject constructor(
     private val getHomeStatusUseCase: GetHomeStatusUseCase,
     private val missionRepository: MissionRepository,
     private val homeRepository: HomeRepository,
+    private val walletRepository: WalletRepository,
+    private val appBootstrapRepository: AppBootstrapRepository,
     @ApplicationContext private val appContext: Context
 ) : ViewModel() {
 
@@ -120,12 +124,30 @@ class HomeViewModel @Inject constructor(
                     val missions = missionRepository.getMissionsFlow().first()
                     val path = HomePathBuilder.build(data, missions)
                     val notice = computeServerDayNotice(data.serverDate)
-                    val ui = HomeUiMapper.toUiState(data).copy(
+                        ?: bootstrapHomeUnavailableNotice()
+                    var ui = HomeUiMapper.toUiState(data).copy(
                         pathItems = path,
                         isLoading = false,
                         errorMessage = null,
                         subtleNotice = notice
                     )
+                    homeRepository.getEnergy().getOrNull()?.let { energy ->
+                        ui = ui.copy(
+                            missionStartCost = energy.missionStartCost
+                                ?: HomeUiState.DEFAULT_MISSION_START_COST,
+                            energyCurrent = energy.energy,
+                            energyMax = energy.maxEnergy,
+                            nextEnergyRecoverAt = energy.nextEnergyRecoverAt
+                                ?: ui.nextEnergyRecoverAt
+                        )
+                    }
+                    walletRepository.getWallet().getOrNull()?.let { wallet ->
+                        ui = ui.copy(
+                            gearBalance = wallet.gear,
+                            heartReviveCost = wallet.heartReviveCost,
+                            streakShieldCost = wallet.streakShieldCost
+                        )
+                    }
                     _uiState.value = ui
                 },
                 onFailure = { e ->
@@ -139,6 +161,14 @@ class HomeViewModel @Inject constructor(
                 }
             )
         }
+    }
+
+    /** GET /app/bootstrap — CHILD 이고 homeAvailable=false 일 때 1회성 안내 */
+    private fun bootstrapHomeUnavailableNotice(): String? {
+        val bootstrap = appBootstrapRepository.lastBootstrap() ?: return null
+        if (bootstrap.authType != "CHILD") return null
+        if (bootstrap.homeAvailable != false) return null
+        return appContext.getString(R.string.home_bootstrap_home_unavailable)
     }
 
     /** GET /home 의 serverDate(KST)가 바뀌었으면 짧은 안내 (백그라운드 워커 없이 저장 비교) */

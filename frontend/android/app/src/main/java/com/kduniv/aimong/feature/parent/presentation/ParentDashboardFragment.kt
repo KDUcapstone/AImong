@@ -11,11 +11,11 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.snackbar.Snackbar
-import com.google.firebase.auth.FirebaseAuth
 import com.kduniv.aimong.MainActivity
 import com.kduniv.aimong.R
-import com.kduniv.aimong.core.local.SessionManager
 import com.kduniv.aimong.core.network.model.ParentChildItem
+import com.kduniv.aimong.core.network.model.PatchParentChildRequest
+import com.kduniv.aimong.feature.parent.domain.ParentAuthPolicy
 import com.kduniv.aimong.core.ui.BaseFragment
 import com.kduniv.aimong.databinding.FragmentParentDashboardBinding
 import com.kduniv.aimong.feature.parent.data.ParentRepository
@@ -25,8 +25,6 @@ import com.kduniv.aimong.feature.parent.data.model.ParentWeakPointsResponseData
 import com.kduniv.aimong.feature.parent.data.model.ParentWeeklyStatsResponseData
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
-import javax.inject.Inject
 
 @AndroidEntryPoint
 class ParentDashboardFragment :
@@ -34,12 +32,6 @@ class ParentDashboardFragment :
     ParentChildSelectBottomSheet.Listener {
 
     private val viewModel: ParentDashboardViewModel by viewModels()
-
-    @Inject
-    lateinit var sessionManager: SessionManager
-
-    @Inject
-    lateinit var parentRepository: ParentRepository
 
     private fun titleForParentDashboard(nickname: String?): String {
         val n = nickname?.trim().orEmpty()
@@ -74,29 +66,15 @@ class ParentDashboardFragment :
             findNavController().navigate(R.id.action_parentDashboardFragment_to_privacyLogFragment)
         }
 
-        binding.btnLogout.setOnClickListener {
-            viewLifecycleOwner.lifecycleScope.launch {
-                val user = FirebaseAuth.getInstance().currentUser
-                runCatching {
-                    val token = user?.getIdToken(false)?.await()?.token
-                    if (!token.isNullOrBlank()) {
-                        parentRepository.deleteParentFcmToken(token)
-                    }
-                }
-                FirebaseAuth.getInstance().signOut()
-                sessionManager.clearSession()
-                val intent = Intent(requireContext(), MainActivity::class.java).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-                    putExtra(MainActivity.EXTRA_IS_RESTART, true)
-                }
-                startActivity(intent)
-            }
+        binding.btnSettings.setOnClickListener {
+            findNavController().navigate(R.id.action_parentDashboardFragment_to_parentSettingsFragment)
         }
     }
 
     private fun showChildSelectSheet() {
-        ParentChildSelectBottomSheet.newInstance()
-            .show(childFragmentManager, ParentChildSelectBottomSheet.TAG)
+        ParentChildSelectBottomSheet.newInstance(
+            onChildLongPress = { showChildManageDialog(it) }
+        ).show(childFragmentManager, ParentChildSelectBottomSheet.TAG)
     }
 
     override fun onAddChildRequested() {
@@ -104,6 +82,14 @@ class ParentDashboardFragment :
     }
 
     private fun showAddChildDialog() {
+        if (latestChildren.size >= ParentAuthPolicy.MAX_CHILDREN) {
+            Snackbar.make(
+                binding.root,
+                getString(R.string.parent_child_limit_exceeded),
+                Snackbar.LENGTH_LONG
+            ).show()
+            return
+        }
         val input = EditText(requireContext()).apply {
             hint = getString(R.string.parent_add_child_hint)
         }
@@ -112,7 +98,71 @@ class ParentDashboardFragment :
             .setView(input)
             .setPositiveButton(android.R.string.ok) { _, _ ->
                 val name = input.text?.toString()?.trim().orEmpty()
-                if (name.isNotEmpty()) viewModel.addChild(name)
+                when {
+                    name.isBlank() ->
+                        Snackbar.make(binding.root, R.string.auth_error_nickname_empty, Snackbar.LENGTH_SHORT).show()
+                    name.length > 20 ->
+                        Snackbar.make(binding.root, R.string.auth_error_nickname_length, Snackbar.LENGTH_SHORT).show()
+                    else -> viewModel.addChild(name)
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun showChildManageDialog(child: ParentChildItem) {
+        val options = arrayOf(
+            getString(R.string.parent_child_manage_edit_nickname),
+            getString(R.string.parent_child_manage_regenerate_code),
+            getString(R.string.parent_child_manage_delete)
+        )
+        AlertDialog.Builder(requireContext())
+            .setTitle(child.nickname)
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> showEditNicknameDialog(child)
+                    1 -> confirmRegenerateCode(child.childId)
+                    2 -> confirmDeleteChild(child)
+                }
+            }
+            .show()
+    }
+
+    private fun showEditNicknameDialog(child: ParentChildItem) {
+        val input = EditText(requireContext()).apply {
+            setText(child.nickname)
+            hint = getString(R.string.parent_add_child_hint)
+        }
+        AlertDialog.Builder(requireContext())
+            .setTitle(R.string.parent_child_manage_edit_nickname)
+            .setView(input)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                val name = input.text?.toString()?.trim().orEmpty()
+                when {
+                    name.isBlank() ->
+                        Snackbar.make(binding.root, R.string.auth_error_nickname_empty, Snackbar.LENGTH_SHORT).show()
+                    name.length > 20 ->
+                        Snackbar.make(binding.root, R.string.auth_error_nickname_length, Snackbar.LENGTH_SHORT).show()
+                    else -> viewModel.updateChildNickname(child.childId, name)
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun confirmRegenerateCode(childId: String) {
+        AlertDialog.Builder(requireContext())
+            .setMessage(R.string.parent_child_regenerate_code_confirm)
+            .setPositiveButton(android.R.string.ok) { _, _ -> viewModel.regenerateChildCode(childId) }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun confirmDeleteChild(child: ParentChildItem) {
+        AlertDialog.Builder(requireContext())
+            .setMessage(getString(R.string.parent_child_delete_confirm, child.nickname))
+            .setPositiveButton(R.string.parent_child_manage_delete) { _, _ ->
+                viewModel.deleteChild(child.childId)
             }
             .setNegativeButton(android.R.string.cancel, null)
             .show()

@@ -35,8 +35,8 @@ interface ParentRepository {
     suspend fun getPrivacyLog(childId: String, page: Int = 0, size: Int = 20): Result<ParentPrivacyLogResponseData>
     suspend fun getWeakPoints(childId: String, page: Int = 0, size: Int = 20): Result<ParentWeakPointsResponseData>
 
-    /** 로그아웃 전 서버 부모 FCM 해제 — Firebase ID 토큰 */
-    suspend fun deleteParentFcmToken(firebaseIdToken: String): Result<Unit>
+    /** POST /parent/logout — Firebase ID 토큰 */
+    suspend fun parentLogout(firebaseIdToken: String): Result<Unit>
 
     suspend fun patchParentChild(childId: String, body: PatchParentChildRequest): Result<ParentChildPatchResponseData>
 
