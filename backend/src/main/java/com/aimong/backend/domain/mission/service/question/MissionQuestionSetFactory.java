@@ -9,6 +9,7 @@ import com.aimong.backend.global.exception.ErrorCode;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -70,10 +71,11 @@ public class MissionQuestionSetFactory {
     ) {
         DifficultyQuota quota = DifficultyQuota.forStarLevel(starLevel);
         Set<UUID> attemptedQuestionIds = attemptedQuestionIds(childId, missionId);
+        Set<String> selectedPromptKeys = new HashSet<>();
         List<QuestionBank> selected = new java.util.ArrayList<>(missionQuestionProperties.setSize());
-        selected.addAll(selectByQuota(lowPool, attemptedQuestionIds, quota.low()));
-        selected.addAll(selectByQuota(mediumPool, attemptedQuestionIds, quota.medium()));
-        selected.addAll(selectByQuota(highPool, attemptedQuestionIds, quota.high()));
+        selected.addAll(selectByQuota(lowPool, attemptedQuestionIds, selectedPromptKeys, quota.low()));
+        selected.addAll(selectByQuota(mediumPool, attemptedQuestionIds, selectedPromptKeys, quota.medium()));
+        selected.addAll(selectByQuota(highPool, attemptedQuestionIds, selectedPromptKeys, quota.high()));
         return shuffleFinalSet(selected);
     }
 
@@ -84,14 +86,22 @@ public class MissionQuestionSetFactory {
         return new HashSet<>(missionAnswerResultRepository.findNormalAttemptedQuestionIds(childId, missionId));
     }
 
-    private List<QuestionBank> selectByQuota(List<QuestionBank> pool, Set<UUID> attemptedQuestionIds, int quota) {
-        if (pool.size() < quota) {
+    private List<QuestionBank> selectByQuota(
+            List<QuestionBank> pool,
+            Set<UUID> attemptedQuestionIds,
+            Set<String> selectedPromptKeys,
+            int quota
+    ) {
+        List<QuestionBank> available = pool.stream()
+                .filter(question -> !selectedPromptKeys.contains(promptKey(question)))
+                .toList();
+        if (available.size() < quota) {
             throw new AimongException(ErrorCode.MISSION_SET_NOT_READY);
         }
-        List<QuestionBank> unattempted = pool.stream()
+        List<QuestionBank> unattempted = available.stream()
                 .filter(question -> !attemptedQuestionIds.contains(question.getId()))
                 .collect(java.util.stream.Collectors.toCollection(java.util.ArrayList::new));
-        List<QuestionBank> attempted = pool.stream()
+        List<QuestionBank> attempted = available.stream()
                 .filter(question -> attemptedQuestionIds.contains(question.getId()))
                 .collect(java.util.stream.Collectors.toCollection(java.util.ArrayList::new));
 
@@ -99,14 +109,37 @@ public class MissionQuestionSetFactory {
         Collections.shuffle(attempted);
 
         List<QuestionBank> selected = new java.util.ArrayList<>(quota);
-        selected.addAll(unattempted.stream().limit(quota).toList());
-        if (selected.size() < quota) {
-            selected.addAll(attempted.stream().limit(quota - selected.size()).toList());
-        }
+        addUniquePrompts(selected, selectedPromptKeys, unattempted, quota);
+        addUniquePrompts(selected, selectedPromptKeys, attempted, quota);
         if (selected.size() != quota) {
             throw new AimongException(ErrorCode.MISSION_SET_NOT_READY);
         }
         return selected;
+    }
+
+    private void addUniquePrompts(
+            List<QuestionBank> selected,
+            Set<String> selectedPromptKeys,
+            List<QuestionBank> candidates,
+            int quota
+    ) {
+        for (QuestionBank candidate : candidates) {
+            if (selected.size() == quota) {
+                return;
+            }
+            String promptKey = promptKey(candidate);
+            if (selectedPromptKeys.add(promptKey)) {
+                selected.add(candidate);
+            }
+        }
+    }
+
+    private String promptKey(QuestionBank question) {
+        String prompt = question.getPrompt();
+        if (prompt == null || prompt.isBlank()) {
+            return "question:" + question.getId();
+        }
+        return prompt.trim().replaceAll("\\s+", " ").toLowerCase(Locale.ROOT);
     }
 
     private List<QuestionBank> shuffleFinalSet(List<QuestionBank> questionSet) {

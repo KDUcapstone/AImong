@@ -10,6 +10,7 @@ public record MissionStatusResponse(
         String title,
         boolean isUnlocked,
         boolean canStartMission,
+        int energyRequired,
         EnergyStatus energy,
         List<StarLevelStatus> starLevels,
         InProgressAttempt inProgressAttempt

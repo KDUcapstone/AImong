@@ -91,6 +91,7 @@ public class QuizAttemptService {
                 mission.getTitle(),
                 unlocked,
                 unlocked && childProfile.getEnergy() >= ChildProfile.MISSION_ENERGY_COST,
+                ChildProfile.MISSION_ENERGY_COST,
                 new MissionStatusResponse.EnergyStatus(
                         childProfile.getEnergy(),
                         ChildProfile.MISSION_ENERGY_COST,

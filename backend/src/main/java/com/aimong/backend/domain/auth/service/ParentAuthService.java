@@ -41,7 +41,7 @@ public class ParentAuthService {
 
     private static final int MAX_CODE_RETRY = 5;
     private static final int STARTER_TICKETS = 3;
-    private static final int MAX_CHILDREN_PER_PARENT = 5;
+    private static final int MAX_CHILDREN_PER_PARENT = 3;
 
     private final ParentAccountRepository parentAccountRepository;
     private final ChildProfileRepository childProfileRepository;

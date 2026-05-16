@@ -86,7 +86,7 @@ public class ChildProfile {
     private ProfileImageType profileImageType;
 
     @Column(name = "session_version", nullable = false)
-    private int sessionVersion;
+    private long sessionVersion;
 
     @Column(name = "fcm_token")
     private String fcmToken;
