@@ -11,7 +11,9 @@ data class StreakPartnerDto(
 data class StreakStatusData(
     @SerializedName("continuousDays") val continuousDays: Int,
     @SerializedName("lastCompletedDate") val lastCompletedDate: String?,
-    @SerializedName("todayMissionCount") val todayMissionCount: Int,
+    /** v2.0: 오늘 일반 모드 통과 학습 세트 수 (복습/실패 제외) */
+    @SerializedName(value = "todaySetCount", alternate = ["todayMissionCount"])
+    val todaySetCount: Int = 0,
     @SerializedName("shieldCount") val shieldCount: Int,
     @SerializedName("partner") val partner: StreakPartnerDto?
 )
@@ -23,6 +25,8 @@ data class StreakShieldPurchaseRequest(
 
 data class StreakShieldPurchaseResponseData(
     @SerializedName("shieldCount") val shieldCount: Int,
+    @SerializedName("purchasedCount") val purchasedCount: Int? = null,
+    @SerializedName("unitCost") val unitCost: Int? = null,
     @SerializedName("gear") val gear: Int? = null,
     @SerializedName("gearBalance") val gearBalance: Int? = null
 ) {

@@ -98,7 +98,8 @@ data class QuizSubmitResponse(
     @SerializedName("petStage") val petStage: String? = null,
     @SerializedName("petEvolved") val petEvolved: Boolean? = null,
     @SerializedName("streakDays") val streakDays: Int? = null,
-    @SerializedName("todayMissionCount") val todayMissionCount: Int? = null,
+    @SerializedName(value = "todaySetCount", alternate = ["todayMissionCount"])
+    val todaySetCount: Int? = null,
     @SerializedName("rewards")
     @JsonAdapter(SubmitRewardsListAdapter::class)
     val rewards: List<RewardResponse>? = null,

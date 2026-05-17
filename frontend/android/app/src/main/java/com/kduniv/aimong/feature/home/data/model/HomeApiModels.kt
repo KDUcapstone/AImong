@@ -78,7 +78,8 @@ data class RecommendedMissionDto(
 data class StreakDto(
     @SerializedName("continuousDays") val continuousDays: Int = 0,
     @SerializedName("lastCompletedDate") val lastCompletedDate: String? = null,
-    @SerializedName("todayMissionCount") val todayMissionCount: Int = 0,
+    @SerializedName(value = "todaySetCount", alternate = ["todayMissionCount"])
+    val todaySetCount: Int = 0,
     @SerializedName("shieldCount") val shieldCount: Int = 0,
     /** 확장 필드 — 구조 미정 시 무시 */
     @SerializedName("partner") val partner: JsonElement? = null

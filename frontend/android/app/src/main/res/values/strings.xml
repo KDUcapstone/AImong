@@ -23,6 +23,8 @@
     <string name="home_streak_praise_short">대단해요! %1$d일 연속 성장 중!</string>
     <string name="home_streak_calendar_no_completion_data">이번 달 완료 날짜는 표시할 수 없어요. 잠시 후 다시 열어 보세요.</string>
     <string name="home_streak_status_summary_fmt">연속 %1$d일 · 오늘 %2$d회 · 쉴드 %3$d</string>
+    <string name="home_streak_encourage_continue">오늘 일반 학습을 1세트 이상 완료하면 스트릭이 유지돼요!</string>
+    <string name="home_streak_encourage_start">지금 연속 학습 기록을 시작해 보세요!</string>
     <string name="home_streak_partner_fmt">파트너 %1$s · 오늘 완료: %2$s</string>
     <string name="home_yes">예</string>
     <string name="home_no">아니오</string>
@@ -360,6 +362,16 @@
     <string name="parent_child_delete_confirm">「%1$s」 프로필을 삭제할까요? 되돌릴 수 없습니다.</string>
     <string name="auth_parent_children_sync_failed">자녀 목록을 불러오지 못했습니다. 다시 시도해 주세요.</string>
     <string name="notification_settings_title">알림 설정</string>
+    <string name="child_my_stat_missions">완료한 미션</string>
+    <string name="child_my_stat_xp">모은 XP</string>
+    <string name="child_my_stat_pets">보유 펫</string>
+    <string name="child_my_stat_streak">연속 접속</string>
+    <string name="child_my_streak_days_fmt">%1$d일</string>
+    <string name="child_my_profile_subtitle_fmt">열심히 배우는 %1$s</string>
+    <string name="child_my_badges_title">획득한 배지</string>
+    <string name="child_my_badges_subtitle_fmt">업적 %1$d / %2$d</string>
+    <string name="child_my_badges_empty">아직 획득한 배지가 없어요. 미션과 퀘스트를 진행해 보세요!</string>
+    <string name="child_my_menu_pet_collection">펫 · 가챠</string>
     <string name="child_logout">로그아웃</string>
     <string name="child_logout_confirm">로그아웃할까요? 이 기기의 자녀 세션이 서버에서 만료돼요.</string>
 

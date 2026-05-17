@@ -1,7 +1,6 @@
 package com.kduniv.aimong.feature.home.presentation
 
 import android.app.Dialog
-import android.graphics.Color
 import android.graphics.Typeface
 import android.os.Bundle
 import android.view.Gravity
@@ -14,21 +13,23 @@ import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.core.content.ContextCompat
+import androidx.core.os.bundleOf
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.R as MaterialR
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import androidx.appcompat.widget.AppCompatButton
 import com.google.android.material.snackbar.Snackbar
 import com.kduniv.aimong.R
-import androidx.core.os.bundleOf
 import com.kduniv.aimong.feature.home.data.StreakCalendarMapper
 import com.kduniv.aimong.feature.home.domain.model.StreakCalendarResult
 import com.kduniv.aimong.feature.home.domain.repository.HomeRepository
 import com.kduniv.aimong.feature.streak.data.StreakRepository
+import com.kduniv.aimong.feature.streak.data.model.StreakStatusData
 import com.kduniv.aimong.feature.wallet.domain.repository.WalletRepository
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
-import com.google.android.material.button.MaterialButton
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
@@ -49,6 +50,7 @@ class StreakCalendarBottomSheet : BottomSheetDialogFragment() {
     lateinit var walletRepository: WalletRepository
 
     private var viewingYearMonth: String? = null
+    private var streakStatus: StreakStatusData? = null
     private var shieldCount: Int = 0
     private var streakShieldCost: Int = WalletBalanceDefaults.STREAK_SHIELD_COST
     private var gearBalance: Int = 0
@@ -57,8 +59,9 @@ class StreakCalendarBottomSheet : BottomSheetDialogFragment() {
         val dialog = super.onCreateDialog(savedInstanceState) as BottomSheetDialog
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
         dialog.setOnShowListener {
-            dialog.findViewById<FrameLayout>(MaterialR.id.design_bottom_sheet)
-                ?.setBackgroundColor(Color.TRANSPARENT)
+            dialog.findViewById<FrameLayout>(MaterialR.id.design_bottom_sheet)?.apply {
+                background = ContextCompat.getDrawable(context, R.drawable.bg_energy_bottom_sheet)
+            }
         }
         return dialog
     }
@@ -82,17 +85,16 @@ class StreakCalendarBottomSheet : BottomSheetDialogFragment() {
             loadAndRender(fallbackStreak)
         }
 
-        loadShieldSection()
         loadAndRender(fallbackStreak)
 
-        requireView().findViewById<MaterialButton>(R.id.btn_buy_shield).setOnClickListener { btn ->
+        requireView().findViewById<AppCompatButton>(R.id.btn_buy_shield).setOnClickListener { btn ->
             viewLifecycleOwner.lifecycleScope.launch {
                 btn.isEnabled = false
                 streakRepository.purchaseShield(1).fold(
                     onSuccess = { data ->
                         shieldCount = data.shieldCount
                         data.resolvedGearBalance()?.let { gearBalance = it }
-                        bindShieldSection()
+                        refreshStreakSnapshot()
                         btn.isEnabled = gearBalance >= streakShieldCost
                         Snackbar.make(requireView(), getString(R.string.streak_shield_purchase_success), Snackbar.LENGTH_SHORT).show()
                         parentFragmentManager.setFragmentResult(
@@ -106,29 +108,47 @@ class StreakCalendarBottomSheet : BottomSheetDialogFragment() {
                             e.message ?: getString(R.string.gear_shield_purchase_failed),
                             Snackbar.LENGTH_LONG
                         ).show()
-                        btn.isEnabled = true
+                        btn.isEnabled = gearBalance >= streakShieldCost
                     }
                 )
             }
         }
     }
 
-    private fun loadShieldSection() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            streakRepository.getStreak().getOrNull()?.let { shieldCount = it.shieldCount }
-            walletRepository.getWallet().getOrNull()?.let {
-                gearBalance = it.gear
-                streakShieldCost = it.streakShieldCost
-            }
-            bindShieldSection()
+    private suspend fun refreshStreakSnapshot() {
+        streakRepository.getStreak().getOrNull()?.let { status ->
+            streakStatus = status
+            shieldCount = status.shieldCount
         }
+        walletRepository.getWallet().getOrNull()?.let {
+            gearBalance = it.gear
+            streakShieldCost = it.streakShieldCost
+        }
+        bindStatusSummary()
+        bindShieldSection()
+    }
+
+    private fun bindStatusSummary() {
+        val tv = view?.findViewById<TextView>(R.id.tv_streak_status_summary) ?: return
+        val status = streakStatus
+        if (status == null) {
+            tv.visibility = View.GONE
+            return
+        }
+        tv.visibility = View.VISIBLE
+        tv.text = getString(
+            R.string.home_streak_status_summary_fmt,
+            status.continuousDays,
+            status.todaySetCount,
+            status.shieldCount
+        )
     }
 
     private fun bindShieldSection() {
         val root = view ?: return
         root.findViewById<TextView>(R.id.tv_shield_count).text =
             getString(R.string.streak_shield_count_fmt, shieldCount)
-        val btn = root.findViewById<MaterialButton>(R.id.btn_buy_shield)
+        val btn = root.findViewById<AppCompatButton>(R.id.btn_buy_shield)
         btn.text = getString(R.string.streak_buy_shield_btn, streakShieldCost)
         val canBuy = gearBalance >= streakShieldCost
         btn.isEnabled = canBuy
@@ -149,91 +169,124 @@ class StreakCalendarBottomSheet : BottomSheetDialogFragment() {
         val pb = root.findViewById<ProgressBar>(R.id.pb_streak_loading)
         pb.visibility = View.VISIBLE
         viewLifecycleOwner.lifecycleScope.launch {
-            val result = homeRepository.getStreakCalendar(viewingYearMonth).fold(
-                onSuccess = { it },
-                onFailure = { e ->
-                    Snackbar.make(root, e.message ?: getString(R.string.home_streak_load_failed), Snackbar.LENGTH_LONG).show()
-                    null
-                }
-            )
+            val streakDeferred = async { streakRepository.getStreak().getOrNull() }
+            val calendarDeferred = async {
+                homeRepository.getStreakCalendar(viewingYearMonth).fold(
+                    onSuccess = { it },
+                    onFailure = { e ->
+                        Snackbar.make(
+                            root,
+                            e.message ?: getString(R.string.home_streak_load_failed),
+                            Snackbar.LENGTH_LONG
+                        ).show()
+                        null
+                    }
+                )
+            }
+            streakDeferred.await()?.let { status ->
+                streakStatus = status
+                shieldCount = status.shieldCount
+            }
+            walletRepository.getWallet().getOrNull()?.let {
+                gearBalance = it.gear
+                streakShieldCost = it.streakShieldCost
+            }
+            bindStatusSummary()
+            bindShieldSection()
+
+            val result = calendarDeferred.await()
             pb.visibility = View.GONE
             if (result != null) {
                 viewingYearMonth = result.yearMonth
                 bind(result, fallbackStreak)
             } else {
-                bindEmpty(fallbackStreak)
+                bindEmpty(fallbackStreak, calendarLoadFailed = true)
             }
         }
     }
 
-    private fun bindEmpty(fallbackStreak: Int) {
-        val root = requireView()
+    private fun resolveContinuousDays(calendarContinuous: Int, fallbackStreak: Int): Int {
+        val fromStatus = streakStatus?.continuousDays ?: 0
+        return when {
+            fromStatus > 0 -> fromStatus
+            calendarContinuous > 0 -> calendarContinuous
+            else -> fallbackStreak
+        }
+    }
 
-        root.findViewById<TextView>(R.id.tv_streak_big_number).text = fallbackStreak.toString()
+    /** v2.0: GET /streak 의 todaySetCount가 정본 (KST 경계·복습 제외는 BE 처리) */
+    private fun isTodaySetCompleted(
+        calendarToday: LocalDate?,
+        calendarCompleted: Set<LocalDate>
+    ): Boolean {
+        streakStatus?.let { if (it.todaySetCount > 0) return true }
+        val today = calendarToday ?: return false
+        return calendarCompleted.contains(today)
+    }
+
+    private fun bindHeaderAndMessage(
+        root: View,
+        streakVal: Int,
+        isTodayCompleted: Boolean
+    ) {
+        root.findViewById<TextView>(R.id.tv_streak_big_number).text = streakVal.toString()
 
         val tvMessage = root.findViewById<TextView>(R.id.tv_streak_message)
         val ivIcon = root.findViewById<ImageView>(R.id.iv_message_icon)
         val lottiePet = root.findViewById<com.airbnb.lottie.LottieAnimationView>(R.id.lav_streak_pet)
 
-        val calendarNote = getString(R.string.home_streak_calendar_no_completion_data)
-        tvMessage.maxLines = 5
-        if (fallbackStreak > 0) {
-            tvMessage.text = getString(R.string.home_streak_praise_short, fallbackStreak) + "\n" + calendarNote
+        tvMessage.maxLines = 2
+        val accent = ContextCompat.getColor(requireContext(), R.color.child_streak_accent)
+        val warn = ContextCompat.getColor(requireContext(), R.color.quiz_red)
+        if (isTodayCompleted) {
+            tvMessage.text = getString(R.string.home_streak_praise_short, streakVal)
             ivIcon.setImageResource(R.drawable.ic_flame)
-            ivIcon.clearColorFilter()
-        } else {
-            tvMessage.text = getString(R.string.home_streak_load_failed) + "\n" + calendarNote
+            ivIcon.setColorFilter(accent)
+        } else if (streakVal > 0) {
+            tvMessage.text = getString(R.string.home_streak_encourage_continue)
             ivIcon.setImageResource(R.drawable.ic_star_filled)
-            ivIcon.setColorFilter(ContextCompat.getColor(requireContext(), R.color.quiz_red))
+            ivIcon.setColorFilter(warn)
+        } else {
+            tvMessage.text = getString(R.string.home_streak_encourage_start)
+            ivIcon.setImageResource(R.drawable.ic_star_filled)
+            ivIcon.setColorFilter(warn)
         }
         lottiePet.setAnimation(R.raw.pet_idle)
         if (!lottiePet.isAnimating) lottiePet.playAnimation()
+    }
+
+    private fun bindEmpty(fallbackStreak: Int, calendarLoadFailed: Boolean = false) {
+        val root = requireView()
+        val streakVal = resolveContinuousDays(0, fallbackStreak)
+        val kst = ZoneId.of("Asia/Seoul")
+        val today = LocalDate.now(kst)
+        bindHeaderAndMessage(root, streakVal, isTodaySetCompleted(today, emptySet()))
+
+        if (calendarLoadFailed) {
+            val calendarNote = getString(R.string.home_streak_calendar_no_completion_data)
+            root.findViewById<TextView>(R.id.tv_streak_message).apply {
+                maxLines = 5
+                text = "${text}\n$calendarNote"
+            }
+        }
 
         val ymStr = viewingYearMonth ?: StreakCalendarMapper.defaultYearMonthKst()
         root.findViewById<TextView>(R.id.tv_month_label).text = formatYearMonthLabel(ymStr)
-
         buildWeekdayRow(root)
-
-        val ym = YearMonth.parse(ymStr)
-        buildCalendarCells(root, ym, emptySet(), null)
+        buildCalendarCells(root, YearMonth.parse(ymStr), emptySet(), today)
         updateNavButtons(root)
     }
 
     private fun bind(result: StreakCalendarResult, fallbackStreak: Int) {
         val root = requireView()
-        root.findViewById<TextView>(R.id.tv_streak_message).maxLines = 2
         val ym = YearMonth.parse(result.yearMonth)
         val completed = result.completedDates.mapNotNull { runCatching { LocalDate.parse(it) }.getOrNull() }.toSet()
         val today = result.today?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
 
-        val streakVal = if (result.continuousDays > 0) result.continuousDays else fallbackStreak
+        val streakVal = resolveContinuousDays(result.continuousDays, fallbackStreak)
+        bindHeaderAndMessage(root, streakVal, isTodaySetCompleted(today, completed))
 
-        // 1. 헤더 연속 숫자 및 펫 메시지
-        root.findViewById<TextView>(R.id.tv_streak_big_number).text = streakVal.toString()
-        
-        val tvMessage = root.findViewById<TextView>(R.id.tv_streak_message)
-        val ivIcon = root.findViewById<ImageView>(R.id.iv_message_icon)
-        val lottiePet = root.findViewById<com.airbnb.lottie.LottieAnimationView>(R.id.lav_streak_pet)
-        
-        // 오늘 완료했는지 여부에 따라 분기
-        val isTodayCompleted = today != null && completed.contains(today)
-        if (isTodayCompleted || streakVal > 0) {
-            tvMessage.text = getString(R.string.home_streak_praise_short, streakVal)
-            ivIcon.setImageResource(R.drawable.ic_flame)
-            ivIcon.clearColorFilter()
-            lottiePet.setAnimation(R.raw.pet_idle)
-        } else {
-            tvMessage.text = "어제 학습이 잠시 멈췄습니다. 지금 연속 학습 기록을 이어가세요!"
-            ivIcon.setImageResource(R.drawable.ic_star_filled) // 임시 아이콘 (독려용)
-            ivIcon.setColorFilter(ContextCompat.getColor(requireContext(), R.color.quiz_red))
-            lottiePet.setAnimation(R.raw.pet_idle) // 슬픈/독려 애니메이션이 있으면 변경 가능
-        }
-        
-        if (!lottiePet.isAnimating) lottiePet.playAnimation()
-
-        // 2. 달력 레이블
         root.findViewById<TextView>(R.id.tv_month_label).text = formatYearMonthLabel(result.yearMonth)
-
         buildWeekdayRow(root)
         buildCalendarCells(root, ym, completed, today)
         updateNavButtons(root)
@@ -265,7 +318,7 @@ class StreakCalendarBottomSheet : BottomSheetDialogFragment() {
                 gravity = Gravity.CENTER
                 text = label
                 textSize = 12f
-                setTextColor(ContextCompat.getColor(requireContext(), R.color.text_sub_grey))
+                setTextColor(ContextCompat.getColor(requireContext(), R.color.child_quest_sheet_text_secondary))
             }
             row.addView(tv)
         }
@@ -279,6 +332,9 @@ class StreakCalendarBottomSheet : BottomSheetDialogFragment() {
         val offset = first.dayOfWeek.value % 7
         val daysInMonth = ym.lengthOfMonth()
         val totalCells = ((offset + daysInMonth) + 6) / 7 * 7
+
+        val textPrimary = ContextCompat.getColor(requireContext(), R.color.child_quest_sheet_text_primary)
+        val textOnAccent = ContextCompat.getColor(requireContext(), R.color.white)
 
         var day = 1
         for (rowStart in 0 until totalCells step 7) {
@@ -295,7 +351,7 @@ class StreakCalendarBottomSheet : BottomSheetDialogFragment() {
                     layoutParams = LinearLayout.LayoutParams(0, dp(40), 1f)
                     gravity = Gravity.CENTER
                     textSize = 13f
-                    setTextColor(ContextCompat.getColor(requireContext(), R.color.text_white))
+                    setTextColor(textPrimary)
                 }
                 when {
                     idx < offset || day > daysInMonth -> {
@@ -307,17 +363,21 @@ class StreakCalendarBottomSheet : BottomSheetDialogFragment() {
                         val date = ym.atDay(day)
                         cell.text = day.toString()
                         when {
-                            today != null && date == today -> {
-                                cell.setBackgroundResource(R.drawable.bg_streak_day_today)
-                                cell.setTypeface(null, Typeface.BOLD)
-                            }
                             completed.contains(date) -> {
                                 cell.setBackgroundResource(R.drawable.bg_streak_day_completed_duo)
-                                cell.setTextColor(ContextCompat.getColor(requireContext(), R.color.white))
+                                cell.setTextColor(textOnAccent)
+                                cell.setTypeface(null, Typeface.BOLD)
+                            }
+                            today != null && date == today -> {
+                                cell.setBackgroundResource(R.drawable.bg_streak_day_today)
+                                cell.setTextColor(
+                                    ContextCompat.getColor(requireContext(), R.color.child_streak_accent_dark)
+                                )
                                 cell.setTypeface(null, Typeface.BOLD)
                             }
                             else -> {
                                 cell.background = null
+                                cell.setTextColor(textPrimary)
                                 cell.setTypeface(null, Typeface.NORMAL)
                             }
                         }

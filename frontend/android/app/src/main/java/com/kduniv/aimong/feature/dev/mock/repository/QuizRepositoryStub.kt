@@ -176,7 +176,7 @@ class QuizRepositoryStub @Inject constructor() : QuizRepository {
                 bonusReason = null,
                 petEvolved = false,
                 streakDays = 1,
-                todayMissionCount = 1,
+                todaySetCount = 1,
                 rewards = gearRewards,
                 remainingTickets = null,
                 results = results,
@@ -288,7 +288,7 @@ class QuizRepositoryStub @Inject constructor() : QuizRepository {
                 bonusReason = null,
                 petEvolved = false,
                 streakDays = 1,
-                todayMissionCount = 1,
+                todaySetCount = 1,
                 rewards = emptyList(),
                 remainingTickets = null,
                 results = s.questions.mapIndexed { i, q ->

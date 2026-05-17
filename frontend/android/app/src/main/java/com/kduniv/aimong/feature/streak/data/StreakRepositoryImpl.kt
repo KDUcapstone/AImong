@@ -27,7 +27,7 @@ class StreakRepositoryImpl @Inject constructor(
                 StreakStatusData(
                     continuousDays = 5,
                     lastCompletedDate = "2026-03-28",
-                    todayMissionCount = 1,
+                    todaySetCount = 1,
                     shieldCount = stubShieldCount,
                     partner = StreakPartnerDto(
                         childId = "stub-partner",

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_horizontal"
+    android:orientation="vertical"
+    android:padding="4dp">
+
+    <FrameLayout
+        android:id="@+id/frame_badge"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:background="@drawable/bg_child_my_badge_unlocked">
+
+        <TextView
+            android:id="@+id/tv_badge_emoji"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:textSize="28sp"
+            tools:text="🔥" />
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/tv_badge_label"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:gravity="center"
+        android:maxLines="2"
+        android:textColor="@color/child_quest_sheet_text_secondary"
+        android:textSize="11sp"
+        tools:text="연속 학습" />
+</LinearLayout>

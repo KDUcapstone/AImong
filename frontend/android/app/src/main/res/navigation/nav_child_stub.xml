@@ -57,9 +57,9 @@
 
     <fragment
         android:id="@+id/myProfileFragment"
-        android:name="com.kduniv.aimong.feature.home.presentation.ChildMyProfilePlaceholderFragment"
+        android:name="com.kduniv.aimong.feature.home.presentation.my.ChildMyProfileFragment"
         android:label="MY"
-        tools:layout="@layout/fragment_child_my_profile_placeholder">
+        tools:layout="@layout/fragment_child_my_profile">
         <action
             android:id="@+id/action_myProfileFragment_to_notificationSettingsFragment"
             app:destination="@id/notificationSettingsFragment" />

@@ -303,7 +303,7 @@ class QuizRepositoryImpl @Inject constructor(
             bonusReason = data.bonusReason,
             petEvolved = data.petEvolved ?: false,
             streakDays = data.streakDays ?: 0,
-            todayMissionCount = data.todayMissionCount ?: 0,
+            todaySetCount = data.todaySetCount ?: 0,
             rewards = mapRewardsToDomain(data.rewards),
             remainingTickets = data.remainingTickets?.let {
                 RemainingTickets(normal = it.normal, rare = it.rare, epic = it.epic)
@@ -359,7 +359,7 @@ class QuizRepositoryImpl @Inject constructor(
             bonusReason = null,
             petEvolved = false,
             streakDays = 0,
-            todayMissionCount = 0,
+            todaySetCount = 0,
             rewards = mapRewardsToDomain(data.rewards),
             remainingTickets = null,
             results = data.results.orEmpty().map { r ->

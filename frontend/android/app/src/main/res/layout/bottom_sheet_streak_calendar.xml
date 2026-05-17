@@ -4,52 +4,50 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@drawable/bg_bottom_sheet"
+    android:background="@drawable/bg_energy_bottom_sheet"
+    android:gravity="center_horizontal"
     android:orientation="vertical"
-    android:padding="20dp"
-    android:gravity="center_horizontal">
+    android:paddingStart="24dp"
+    android:paddingTop="12dp"
+    android:paddingEnd="24dp"
+    android:paddingBottom="28dp">
 
-    <!-- 핸들 -->
     <View
         android:layout_width="40dp"
         android:layout_height="4dp"
-        android:background="#243B70" />
+        android:background="@drawable/bg_child_sheet_handle" />
 
-    <!-- 타이틀 (연속 학습) -->
     <TextView
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
-        android:text="연속 학습"
-        android:textColor="@color/white"
-        android:textSize="20sp"
-        android:textStyle="bold" />
+        android:layout_marginTop="16dp"
+        android:text="@string/home_streak_calendar_title"
+        android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
+        android:textColor="@color/child_quest_sheet_text_primary" />
 
-    <!-- 상단: 스트릭 숫자 + 펫 영역 -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="24dp">
+        android:layout_marginTop="20dp">
 
-        <!-- 왼쪽: 크게 연속 숫자 표시 -->
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
             android:gravity="center_horizontal"
+            android:orientation="vertical"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent">
+            app:layout_constraintTop_toTopOf="parent">
 
             <TextView
                 android:id="@+id/tv_streak_big_number"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textColor="#FF5A00"
+                android:includeFontPadding="false"
+                android:textColor="@color/child_streak_accent"
                 android:textSize="72sp"
                 android:textStyle="bold"
-                android:includeFontPadding="false"
-                tools:text="1" />
+                tools:text="5" />
 
             <TextView
                 android:id="@+id/tv_streak_big_text"
@@ -57,97 +55,101 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="-4dp"
                 android:text="일 연속 학습!"
-                android:textColor="#FF5A00"
+                android:textColor="@color/child_streak_accent_dark"
                 android:textSize="18sp"
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <!-- 오른쪽: 펫 애니메이션 -->
         <com.airbnb.lottie.LottieAnimationView
             android:id="@+id/lav_streak_pet"
-            android:layout_width="120dp"
-            android:layout_height="120dp"
+            android:layout_width="112dp"
+            android:layout_height="112dp"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"
             app:lottie_autoPlay="true"
             app:lottie_loop="true"
             app:lottie_rawRes="@raw/pet_idle" />
-
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <!-- 메시지 영역 -->
-    <com.google.android.material.card.MaterialCardView
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
-        app:cardBackgroundColor="#1A2B52"
-        app:cardCornerRadius="16dp"
-        app:cardElevation="0dp">
+        android:layout_marginTop="16dp"
+        android:background="@drawable/bg_child_streak_message_card"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="14dp"
+        android:paddingVertical="14dp">
 
-        <LinearLayout
-            android:layout_width="match_parent"
+        <ImageView
+            android:id="@+id/iv_message_icon"
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:layout_marginEnd="10dp"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_flame"
+            app:tint="@color/child_streak_accent" />
+
+        <TextView
+            android:id="@+id/tv_streak_message"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:paddingHorizontal="14dp"
-            android:paddingVertical="14dp"
-            android:gravity="center_vertical">
+            android:layout_weight="1"
+            android:autoSizeMaxTextSize="17sp"
+            android:autoSizeMinTextSize="12sp"
+            android:autoSizeStepGranularity="1sp"
+            android:autoSizeTextType="uniform"
+            android:includeFontPadding="false"
+            android:maxLines="3"
+            android:textColor="@color/child_quest_sheet_text_primary"
+            android:textSize="16sp"
+            tools:text="대단해요! 5일 연속 성장 중!" />
+    </LinearLayout>
 
-            <ImageView
-                android:id="@+id/iv_message_icon"
-                android:layout_width="26dp"
-                android:layout_height="26dp"
-                android:layout_marginStart="-2dp"
-                android:layout_marginEnd="8dp"
-                android:src="@drawable/ic_star_filled"
-                app:tint="#00E5FF" />
-
-            <TextView
-                android:id="@+id/tv_streak_message"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:includeFontPadding="false"
-                android:maxLines="2"
-                android:textColor="@color/white"
-                android:textSize="17sp"
-                android:autoSizeTextType="uniform"
-                android:autoSizeMinTextSize="12sp"
-                android:autoSizeMaxTextSize="18sp"
-                android:autoSizeStepGranularity="1sp"
-                tools:text="대단해요! 5일 연속 성장 중!" />
-        </LinearLayout>
-    </com.google.android.material.card.MaterialCardView>
+    <TextView
+        android:id="@+id/tv_streak_status_summary"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:gravity="center"
+        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+        android:textColor="@color/child_quest_sheet_text_secondary"
+        android:visibility="gone"
+        tools:text="연속 5일 · 오늘 1회 · 쉴드 2"
+        tools:visibility="visible" />
 
     <LinearLayout
         android:id="@+id/layout_shield_purchase"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:background="@drawable/bg_home_streak"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
+        android:background="@drawable/bg_child_streak_shield_row"
+        android:orientation="vertical"
         android:paddingHorizontal="14dp"
-        android:paddingVertical="12dp">
+        android:paddingVertical="14dp">
 
         <TextView
             android:id="@+id/tv_shield_count"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:textColor="@color/white"
+            android:textColor="@color/child_quest_sheet_text_primary"
             android:textSize="15sp"
             android:textStyle="bold"
             tools:text="보호권 2개" />
 
-        <com.google.android.material.button.MaterialButton
+        <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btn_buy_shield"
-            style="@style/Widget.Material3.Button.TonalButton"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:minHeight="40dp"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/bg_child_quest_action_filled"
+            android:minHeight="48dp"
             android:textAllCaps="false"
-            tools:text="보호권 구매 (30)" />
+            android:textColor="@color/white"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            tools:text="보호권 구매 (30 톱니바퀴)" />
     </LinearLayout>
 
     <ProgressBar
@@ -158,7 +160,6 @@
         android:layout_marginTop="16dp"
         android:visibility="gone" />
 
-    <!-- 달력 헤더 (연월 + 네비게이션) -->
     <LinearLayout
         android:id="@+id/layout_month_nav"
         android:layout_width="match_parent"
@@ -172,8 +173,8 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:textColor="@color/white"
-            android:textSize="20sp"
+            android:textColor="@color/child_quest_sheet_text_primary"
+            android:textSize="18sp"
             android:textStyle="bold"
             tools:text="2026년 5월" />
 
@@ -184,7 +185,7 @@
             android:background="?attr/selectableItemBackgroundBorderless"
             android:gravity="center"
             android:text="‹"
-            android:textColor="@color/text_white"
+            android:textColor="@color/child_quest_sheet_text_secondary"
             android:textSize="28sp"
             tools:ignore="HardcodedText" />
 
@@ -195,22 +196,27 @@
             android:background="?attr/selectableItemBackgroundBorderless"
             android:gravity="center"
             android:text="›"
-            android:textColor="@color/text_white"
+            android:textColor="@color/child_quest_sheet_text_secondary"
             android:textSize="28sp"
             tools:ignore="HardcodedText" />
     </LinearLayout>
 
-    <HorizontalScrollView
+    <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
-        android:fillViewport="true"
-        android:scrollbars="none">
+        app:cardBackgroundColor="@color/quiz_card_bg"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="0dp"
+        app:strokeColor="@color/quiz_option_default_stroke"
+        app:strokeWidth="1dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="12dp">
 
             <LinearLayout
                 android:id="@+id/layout_weekday_row"
@@ -222,8 +228,8 @@
                 android:id="@+id/layout_calendar_grid"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="4dp"
                 android:orientation="vertical" />
         </LinearLayout>
-    </HorizontalScrollView>
+    </com.google.android.material.card.MaterialCardView>
 </LinearLayout>

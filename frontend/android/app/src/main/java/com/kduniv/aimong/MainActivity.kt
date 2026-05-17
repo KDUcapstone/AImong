@@ -27,7 +27,8 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.NavOptions
-import com.kduniv.aimong.core.navigation.ChildTopLevelNav.navigateToChildTopLevel
+import com.kduniv.aimong.core.navigation.ChildTopLevelNav
+import com.kduniv.aimong.core.navigation.ChildTopLevelNav.onChildBottomNavTap
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.NavigationUI
@@ -201,6 +202,12 @@ class MainActivity : AppCompatActivity() {
                 savedInstanceState == null && intent.getBooleanExtra(EXTRA_IS_RESTART, false)
             if (forceGraphFromSessionRestart || currentGraphId != targetGraphId) {
                 navController.setGraph(targetGraphRes)
+                // 역할/그래프 전환 직후 이전 Nav 상태가 남으면 MY 등 복원 시 ClassNotFound가 날 수 있음
+                if (forceGraphFromSessionRestart) {
+                    runCatching {
+                        navController.popBackStack(navController.graph.startDestinationId, false)
+                    }
+                }
             }
             if (forceGraphFromSessionRestart) {
                 intent.removeExtra(EXTRA_IS_RESTART)
@@ -241,7 +248,8 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 binding.bottomNav.visibility = View.VISIBLE
-                binding.bottomNav.isSaveEnabled = true
+                // 선택 탭만 복원되고 Nav 화면은 홈으로 남으면 MY 재탭 시 popBackStack만 호출되어 진입이 막힐 수 있음
+                binding.bottomNav.isSaveEnabled = false
                 binding.bottomNav.menu.clear()
                 menuInflater.inflate(R.menu.bottom_nav_menu, binding.bottomNav.menu)
                 // setupWithNavController와 커스텀 탭 리스너가 겹치면 MY 등 일부 탭 전환이 실패할 수 있음
@@ -253,7 +261,8 @@ class MainActivity : AppCompatActivity() {
 
                 val childDestListener = NavController.OnDestinationChangedListener { _, destination, _ ->
                     if (suppressChildBottomNavItemSelected) return@OnDestinationChangedListener
-                    val menuId = mapChildDestinationToBottomNav(destination.id) ?: return@OnDestinationChangedListener
+                    val menuId = ChildTopLevelNav.mapDestinationToTab(destination.id)
+                        ?: return@OnDestinationChangedListener
                     if (binding.bottomNav.selectedItemId != menuId) {
                         suppressChildBottomNavItemSelected = true
                         try {
@@ -265,7 +274,7 @@ class MainActivity : AppCompatActivity() {
                 }
                 childNavDestinationListener = childDestListener
                 navController.addOnDestinationChangedListener(childDestListener)
-                mapChildDestinationToBottomNav(navController.currentDestination?.id)?.let { initial ->
+                ChildTopLevelNav.mapDestinationToTab(navController.currentDestination?.id)?.let { initial ->
                     suppressChildBottomNavItemSelected = true
                     try {
                         binding.bottomNav.selectedItemId = initial
@@ -276,26 +285,11 @@ class MainActivity : AppCompatActivity() {
 
                 binding.bottomNav.setOnItemSelectedListener { item ->
                     if (suppressChildBottomNavItemSelected) return@setOnItemSelectedListener true
-                    val currentId = navController.currentDestination?.id
-                    val targetId = item.itemId
-                    when {
-                        currentId == targetId -> {
-                            navController.popBackStack(targetId, false)
-                            true
-                        }
-                        else -> {
-                            try {
-                                navController.navigateToChildTopLevel(targetId)
-                                true
-                            } catch (_: IllegalArgumentException) {
-                                false
-                            }
-                        }
-                    }
+                    runCatching { navController.onChildBottomNavTap(item.itemId) }.isSuccess
                 }
 
                 binding.bottomNav.setOnItemReselectedListener { item ->
-                    navController.popBackStack(item.itemId, false)
+                    navController.onChildBottomNavTap(item.itemId)
                 }
             } else if (userRole == "PARENT") {
                 binding.bottomNav.visibility = View.VISIBLE
@@ -501,19 +495,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
         walk(itemRoot)
-    }
-
-    /** 퀴즈 등 홈 탭 하위 화면일 때 하단 네비는 홈 탭을 강조한다. */
-    private fun mapChildDestinationToBottomNav(destinationId: Int?): Int? = when (destinationId) {
-        R.id.homeFragment,
-        R.id.quizFragment,
-        -> R.id.homeFragment
-        R.id.chatFragment -> R.id.chatFragment
-        R.id.gachaFragment -> R.id.gachaFragment
-        R.id.myProfileFragment,
-        R.id.notificationSettingsFragment,
-        -> R.id.myProfileFragment
-        else -> null
     }
 
     /** 부모 하단 탭: `selectedItemId`·체크·스케일·색을 목적지와 맞춘다. */

@@ -47,7 +47,7 @@ data class QuizResult(
     val bonusReason: String? = null,
     val petEvolved: Boolean,
     val streakDays: Int,
-    val todayMissionCount: Int = 0,
+    val todaySetCount: Int = 0,
     val rewards: List<QuizReward> = emptyList(),
     val remainingTickets: RemainingTickets? = null,
     val results: List<QuestionResult>,

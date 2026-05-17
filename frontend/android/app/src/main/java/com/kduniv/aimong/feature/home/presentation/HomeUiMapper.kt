@@ -23,7 +23,7 @@ internal object HomeUiMapper {
         val todayDone = "${quests.completedCount}/${quests.totalCount}"
 
         val homeState = when {
-            mission.todayCompletedCount > 0 || streak.todayMissionCount > 0 -> HomeState.HAPPY
+            mission.todayCompletedCount > 0 || streak.todaySetCount > 0 -> HomeState.HAPPY
             else -> HomeState.IDLE
         }
 

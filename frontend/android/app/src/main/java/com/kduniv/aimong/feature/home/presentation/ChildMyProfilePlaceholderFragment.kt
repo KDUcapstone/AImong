@@ -1,50 +1,11 @@
 package com.kduniv.aimong.feature.home.presentation
 
-import android.content.Intent
-import androidx.appcompat.app.AlertDialog
-import androidx.lifecycle.lifecycleScope
-import androidx.navigation.fragment.findNavController
-import com.kduniv.aimong.MainActivity
-import com.kduniv.aimong.R
-import com.kduniv.aimong.core.ui.BaseFragment
-import com.kduniv.aimong.databinding.FragmentChildMyProfilePlaceholderBinding
-import com.kduniv.aimong.feature.auth.domain.LogoutChildUseCase
+import com.kduniv.aimong.feature.home.presentation.my.ChildMyProfileFragment
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.launch
-import javax.inject.Inject
 
-/** MY 탭 — 자녀 로그아웃 등 (실제·목업 동일 destination). */
+/**
+ * 이전 빌드의 FragmentManager 복원 호환용.
+ * 신규 화면은 [ChildMyProfileFragment]를 사용한다.
+ */
 @AndroidEntryPoint
-class ChildMyProfilePlaceholderFragment :
-    BaseFragment<FragmentChildMyProfilePlaceholderBinding>(FragmentChildMyProfilePlaceholderBinding::inflate) {
-
-    @Inject
-    lateinit var logoutChildUseCase: LogoutChildUseCase
-
-    override fun initView() {
-        binding.btnNotificationSettings.setOnClickListener {
-            findNavController().navigate(
-                R.id.action_myProfileFragment_to_notificationSettingsFragment
-            )
-        }
-        binding.btnChildLogout.setOnClickListener {
-            AlertDialog.Builder(requireContext())
-                .setMessage(R.string.child_logout_confirm)
-                .setPositiveButton(R.string.child_logout) { _, _ ->
-                    viewLifecycleOwner.lifecycleScope.launch {
-                        logoutChildUseCase()
-                        startActivity(
-                            Intent(requireContext(), MainActivity::class.java).apply {
-                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-                                putExtra(MainActivity.EXTRA_IS_RESTART, true)
-                            }
-                        )
-                    }
-                }
-                .setNegativeButton(android.R.string.cancel, null)
-                .show()
-        }
-    }
-
-    override fun initObserver() {}
-}
+class ChildMyProfilePlaceholderFragment : ChildMyProfileFragment()
