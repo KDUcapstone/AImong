@@ -27,13 +27,35 @@ data class MissionStarLevel(
         get() = isPlayable || isReviewable || isCompleted
 }
 
-/** 홈 경로 노드 아래 ★ 표시(0~3): 열린 최고 난이도 단계 */
+/** 홈 경로 노드 아래 ★ 표시(0~3): 열린 최고 난이도 단계 (난이도 피커 등) */
 fun List<MissionStarLevel>.openDifficultyCount(): Int =
     filter { it.isOpen }
         .maxOfOrNull { it.starLevel }
         ?.coerceIn(0, 3) ?: 0
 
 fun Mission.openDifficultyCount(): Int = starLevels.openDifficultyCount()
+
+/** 홈 경로 노드 아래 ★ 표시(0~3): 클리어한 난이도 개수 */
+fun List<MissionStarLevel>.completedDifficultyCount(): Int =
+    count { it.isCompleted }.coerceIn(0, 3)
+
+fun Mission.completedDifficultyCount(): Int = starLevels.completedDifficultyCount()
+
+/** API title에 붙은 missionCode·S1-M10 등 접미사 제거 */
+fun Mission.displayTitle(): String = title.toDisplayMissionTitle(missionCode)
+
+fun String.toDisplayMissionTitle(missionCode: String = ""): String {
+    var t = trim()
+    val code = missionCode.trim()
+    if (code.isNotBlank() && t.endsWith(code, ignoreCase = true)) {
+        t = t.removeSuffix(code).trim()
+    }
+    t = MISSION_CODE_SUFFIX_REGEX.replace(t, "").trim()
+    return t.ifBlank { code.ifBlank { trim() } }
+}
+
+private val MISSION_CODE_SUFFIX_REGEX =
+    Regex("""\s*S\d+-?M\d+\s*$""", RegexOption.IGNORE_CASE)
 
 data class MissionProgress(
     val completedSetCount: Int,

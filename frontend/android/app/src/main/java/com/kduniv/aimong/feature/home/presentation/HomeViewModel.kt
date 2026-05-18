@@ -13,8 +13,9 @@ import com.kduniv.aimong.feature.home.domain.repository.AppBootstrapRepository
 import com.kduniv.aimong.feature.home.domain.repository.HomeRepository
 import com.kduniv.aimong.feature.home.domain.HomePathBuilder
 import com.kduniv.aimong.feature.mission.data.model.MissionStarLevelDto
+import com.kduniv.aimong.feature.mission.domain.model.Mission
 import com.kduniv.aimong.feature.mission.domain.model.MissionStarLevel
-import com.kduniv.aimong.feature.mission.domain.model.openDifficultyCount
+import com.kduniv.aimong.feature.mission.domain.model.completedDifficultyCount
 import com.kduniv.aimong.feature.mission.domain.repository.MissionRepository
 import com.kduniv.aimong.feature.wallet.domain.repository.WalletRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -130,7 +131,8 @@ class HomeViewModel @Inject constructor(
             missionRepository.refreshMissions()
             getHomeStatusUseCase().fold(
                 onSuccess = { data ->
-                    val missions = missionRepository.getMissionsFlow().first()
+                    val rawMissions = missionRepository.getMissionsFlow().first()
+                    val missions = supplementMissionsStarLevels(rawMissions)
                     val path = HomePathBuilder.build(data, missions)
                     val notice = computeServerDayNotice(data.serverDate)
                         ?: bootstrapHomeUnavailableNotice()
@@ -211,8 +213,21 @@ class HomeViewModel @Inject constructor(
         return fresh
     }
 
+    /** GET /missions 에 starLevels가 비어 있으면 status로 채운 뒤 경로를 구성한다. */
+    private suspend fun supplementMissionsStarLevels(missions: List<Mission>): List<Mission> {
+        if (UiMode.useStubNav) return missions
+        return missions.map { mission ->
+            if (mission.starLevels.isNotEmpty()) mission
+            else {
+                fetchMissionStarLevelsFromStatus(mission.missionId)?.let { stars ->
+                    mission.copy(starLevels = stars)
+                } ?: mission
+            }
+        }
+    }
+
     private fun cacheMissionStarLevels(missionId: String, stars: List<MissionStarLevel>) {
-        val count = stars.openDifficultyCount()
+        val count = stars.completedDifficultyCount()
         _uiState.update { state ->
             state.copy(
                 missionStarLevelsById = state.missionStarLevelsById + (missionId to stars),

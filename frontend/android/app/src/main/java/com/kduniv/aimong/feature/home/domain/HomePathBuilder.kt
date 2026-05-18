@@ -6,7 +6,9 @@ import com.kduniv.aimong.feature.home.data.model.HomeScreenData
 import com.kduniv.aimong.feature.home.presentation.HomePathItem
 import com.kduniv.aimong.feature.home.presentation.HomeQuizNavigation
 import com.kduniv.aimong.feature.mission.domain.model.Mission
-import com.kduniv.aimong.feature.mission.domain.model.openDifficultyCount
+import com.kduniv.aimong.feature.mission.domain.model.completedDifficultyCount
+import com.kduniv.aimong.feature.mission.domain.model.displayTitle
+import com.kduniv.aimong.feature.mission.domain.model.toDisplayMissionTitle
 
 /**
  * GET /home 의 missionSummary + GET /missions(v2.3) 목록으로 학습 경로 노드를 구성합니다.
@@ -75,17 +77,21 @@ object HomePathBuilder {
             var nodeCount = 0
 
             sortedMissions.forEachIndexed { index, m ->
-                val stars = m.openDifficultyCount()
+                val stars = m.completedDifficultyCount()
+                val displayTitle = m.displayTitle()
                 if (rec != null && resolvedRecommendedMissionId != null && m.missionId == resolvedRecommendedMissionId) {
                     val todayNav = HomeQuizNavigation(
                         entrySetId = recSetIdStr.orEmpty(),
                         missionId = resolvedRecommendedMissionId,
                         starLevel = if (!recSetIdStr.isNullOrBlank()) -1 else 1
                     )
+                    val todayTitle = displayTitle.ifBlank {
+                        rec.title.toDisplayMissionTitle(rec.missionCode.orEmpty())
+                    }
                     items.add(
                         HomePathItem.TodayStart(
                             quizNav = todayNav,
-                            missionTitle = rec.title,
+                            missionTitle = todayTitle,
                             // 에너지 부족만으로 노드를 흐리게 하지 않음(탭 시 스낵바로 안내)
                             enabled = true,
                             starsFilled = stars
@@ -99,7 +105,7 @@ object HomePathBuilder {
                     items.add(
                         HomePathItem.Completed(
                             order = index + 1,
-                            title = m.title,
+                            title = displayTitle,
                             missionId = m.missionId,
                             quizNav = HomeQuizNavigation("", m.missionId, star),
                             icon = "⭐",
@@ -112,7 +118,7 @@ object HomePathBuilder {
                     items.add(
                         HomePathItem.Review(
                             quizNav = HomeQuizNavigation("", m.missionId, star),
-                            subtitle = m.title,
+                            subtitle = displayTitle,
                             starsFilled = stars
                         )
                     )
@@ -121,7 +127,7 @@ object HomePathBuilder {
                     items.add(
                         HomePathItem.Start(
                             quizNav = HomeQuizNavigation("", m.missionId, star),
-                            missionTitle = m.title,
+                            missionTitle = displayTitle,
                             enabled = true,
                             icon = "▶",
                             starsFilled = stars,

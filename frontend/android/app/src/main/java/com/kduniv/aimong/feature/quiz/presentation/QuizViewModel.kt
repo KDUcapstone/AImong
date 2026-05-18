@@ -635,6 +635,12 @@ class QuizViewModel @Inject constructor(
         }
     }
 
+    /** 톱니 부활 후 같은 문항에서 다시 풀 수 있도록 UI 상태를 문항 로드로 되돌린다. */
+    fun resumeAfterGearRevive() {
+        val qs = cachedQuestions ?: return
+        _uiState.value = QuizUiState.QuestionLoaded(qs)
+    }
+
     /**
      * 단건 check API 미사용으로, 문항별 즉시 정오 판정은 불가합니다. (최종 [submitQuiz]로만 확인)
      */

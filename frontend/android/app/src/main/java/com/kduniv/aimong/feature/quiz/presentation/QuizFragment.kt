@@ -584,10 +584,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         lifecycleScope.launch {
             viewModel.reviveCurrentAttempt().fold(
                 onSuccess = { data ->
-                    binding.layoutFeedbackPanel.visibility = View.GONE
-                    binding.btnFeedbackRefillHearts.visibility = View.GONE
-                    restoreDefaultFeedbackButtonStyles()
-                    updateHearts(data.remainingLives.coerceIn(0, 3), forceReset = true)
+                    resumeQuizAfterGearRevive(data.remainingLives.coerceIn(0, 3))
                     Toast.makeText(requireContext(), getString(R.string.quiz_btn_refill_hearts), Toast.LENGTH_SHORT).show()
                 },
                 onFailure = { e ->
@@ -598,6 +595,38 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                     ).show()
                 }
             )
+        }
+    }
+
+    /** 톱니 부활 성공 후 피드백·타이머·선택지를 복구해 같은 문항을 이어서 푼다. */
+    private fun resumeQuizAfterGearRevive(remainingLives: Int) {
+        binding.layoutFeedbackPanel.visibility = View.GONE
+        binding.btnFeedbackRefillHearts.visibility = View.GONE
+        restoreDefaultFeedbackButtonStyles()
+        updateHearts(remainingLives, forceReset = true)
+        lives = remainingLives
+        viewModel.resumeAfterGearRevive()
+
+        val question = viewModel.getCurrentCachedQuestion() ?: getCurrentQuestion() ?: return
+        resetOxButtons()
+        resetMultipleFixedOptions()
+        setupOptions(question)
+        binding.tvAttemptRecoverBanner.visibility = View.GONE
+
+        val total = (viewModel.uiState.value as? QuizUiState.QuestionLoaded)
+            ?.quizQuestions?.questions?.size ?: binding.pbQuizProgress.max
+        val index = viewModel.currentQuestionIndex.value
+        val isLast = index >= total - 1
+        binding.btnNextQuestion.text =
+            if (isLast) getString(R.string.quiz_btn_view_result) else getString(R.string.quiz_btn_next)
+        binding.btnNextQuestion.setOnClickListener {
+            binding.layoutFeedbackPanel.visibility = View.GONE
+            restoreDefaultFeedbackButtonStyles()
+            viewModel.nextQuestion()
+        }
+
+        if (!viewModel.isSolutionMode.value && binding.layoutQuizResult.visibility != View.VISIBLE) {
+            startTimer(reset = true)
         }
     }
 

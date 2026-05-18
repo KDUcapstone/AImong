@@ -260,6 +260,8 @@ class MainActivity : AppCompatActivity() {
                 binding.bottomNav.isItemActiveIndicatorEnabled = false
 
                 val childDestListener = NavController.OnDestinationChangedListener { _, destination, _ ->
+                    binding.bottomNav.visibility =
+                        if (ChildTopLevelNav.shouldHideBottomNav(destination.id)) View.GONE else View.VISIBLE
                     if (suppressChildBottomNavItemSelected) return@OnDestinationChangedListener
                     val menuId = ChildTopLevelNav.mapDestinationToTab(destination.id)
                         ?: return@OnDestinationChangedListener
@@ -274,6 +276,10 @@ class MainActivity : AppCompatActivity() {
                 }
                 childNavDestinationListener = childDestListener
                 navController.addOnDestinationChangedListener(childDestListener)
+                navController.currentDestination?.id?.let { currentId ->
+                    binding.bottomNav.visibility =
+                        if (ChildTopLevelNav.shouldHideBottomNav(currentId)) View.GONE else View.VISIBLE
+                }
                 ChildTopLevelNav.mapDestinationToTab(navController.currentDestination?.id)?.let { initial ->
                     suppressChildBottomNavItemSelected = true
                     try {
