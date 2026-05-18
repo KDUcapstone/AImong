@@ -32,9 +32,9 @@ public class GeneratedQuestionPersistenceService {
             String sourceType
     ) {
         List<QuestionBank> saved = new ArrayList<>();
-        List<String> existingMissionPrompts = questionBankRepository.findAllByMissionIdAndIsActiveTrue(missionId).stream()
+        List<String> existingMissionPrompts = new ArrayList<>(questionBankRepository.findAllByMissionIdAndIsActiveTrue(missionId).stream()
                 .map(QuestionBank::getPrompt)
-                .toList();
+                .toList());
 
         for (StructuredQuestionSchema candidate : candidates) {
             QuestionValidationReport report = questionValidationService.validate(
@@ -69,6 +69,7 @@ public class GeneratedQuestionPersistenceService {
                     normalizedCandidate.explanation()
             ));
             saved.add(questionBank);
+            existingMissionPrompts.add(normalizedCandidate.question());
         }
         return saved;
     }

@@ -4,12 +4,12 @@ import com.aimong.backend.domain.mission.config.MissionQuestionProperties;
 import com.aimong.backend.domain.mission.entity.DifficultyBand;
 import com.aimong.backend.domain.mission.entity.QuestionBank;
 import com.aimong.backend.domain.mission.repository.MissionAnswerResultRepository;
+import com.aimong.backend.domain.mission.service.generation.SimilarityDeduplicator;
 import com.aimong.backend.global.exception.AimongException;
 import com.aimong.backend.global.exception.ErrorCode;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,16 +21,19 @@ public class MissionQuestionSetFactory {
     private final ApprovedQuestionProvider approvedQuestionProvider;
     private final MissionQuestionProperties missionQuestionProperties;
     private final MissionAnswerResultRepository missionAnswerResultRepository;
+    private final SimilarityDeduplicator similarityDeduplicator;
 
     @Autowired
     public MissionQuestionSetFactory(
             ApprovedQuestionProvider approvedQuestionProvider,
             MissionQuestionProperties missionQuestionProperties,
-            MissionAnswerResultRepository missionAnswerResultRepository
+            MissionAnswerResultRepository missionAnswerResultRepository,
+            SimilarityDeduplicator similarityDeduplicator
     ) {
         this.approvedQuestionProvider = approvedQuestionProvider;
         this.missionQuestionProperties = missionQuestionProperties;
         this.missionAnswerResultRepository = missionAnswerResultRepository;
+        this.similarityDeduplicator = similarityDeduplicator;
     }
 
     public MissionQuestionSetFactory(
@@ -40,6 +43,7 @@ public class MissionQuestionSetFactory {
         this.approvedQuestionProvider = approvedQuestionProvider;
         this.missionQuestionProperties = missionQuestionProperties;
         this.missionAnswerResultRepository = null;
+        this.similarityDeduplicator = new SimilarityDeduplicator();
     }
 
     public List<QuestionBank> create(String setId, UUID missionId, UUID childId, boolean isReview) {
@@ -93,7 +97,7 @@ public class MissionQuestionSetFactory {
             int quota
     ) {
         List<QuestionBank> available = pool.stream()
-                .filter(question -> !selectedPromptKeys.contains(promptKey(question)))
+                .filter(question -> isPromptOriginal(question, selectedPromptKeys))
                 .toList();
         if (available.size() < quota) {
             throw new AimongException(ErrorCode.MISSION_SET_NOT_READY);
@@ -128,10 +132,28 @@ public class MissionQuestionSetFactory {
                 return;
             }
             String promptKey = promptKey(candidate);
-            if (selectedPromptKeys.add(promptKey)) {
+            if (isPromptOriginal(candidate, selectedPromptKeys) && selectedPromptKeys.add(promptKey)) {
                 selected.add(candidate);
             }
         }
+    }
+
+    private boolean isPromptOriginal(QuestionBank question, Set<String> selectedPromptKeys) {
+        String promptKey = promptKey(question);
+        if (selectedPromptKeys.contains(promptKey)) {
+            return false;
+        }
+        if (!containsHangul(promptKey) || promptKey.length() < 10) {
+            return true;
+        }
+        return selectedPromptKeys.stream()
+                .filter(selectedKey -> containsHangul(selectedKey) && selectedKey.length() >= 10)
+                .noneMatch(selectedKey -> similarityDeduplicator.isDuplicateOrNearDuplicate(promptKey, selectedKey));
+    }
+
+    private boolean containsHangul(String value) {
+        return value != null && value.codePoints()
+                .anyMatch(codePoint -> codePoint >= 0xAC00 && codePoint <= 0xD7A3);
     }
 
     private String promptKey(QuestionBank question) {
@@ -139,7 +161,7 @@ public class MissionQuestionSetFactory {
         if (prompt == null || prompt.isBlank()) {
             return "question:" + question.getId();
         }
-        return prompt.trim().replaceAll("\\s+", " ").toLowerCase(Locale.ROOT);
+        return similarityDeduplicator.nearDuplicateKey(prompt);
     }
 
     private List<QuestionBank> shuffleFinalSet(List<QuestionBank> questionSet) {

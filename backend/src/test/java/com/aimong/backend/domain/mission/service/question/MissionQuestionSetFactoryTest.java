@@ -141,6 +141,30 @@ class MissionQuestionSetFactoryTest {
     }
 
     @Test
+    void skipsNearDuplicatePromptsWithinSelectedQuestionSet() {
+        MissionQuestionSetFactory factory = factory();
+        UUID missionId = UUID.randomUUID();
+        List<QuestionBank> lowPool = new ArrayList<>(createQuestions(6, DifficultyBand.LOW, "low"));
+        lowPool.add(question(DifficultyBand.LOW, "\uBE44\uBC00\uBC88\uD638\uB97C \uCE5C\uAD6C\uC5D0\uAC8C \uC54C\uB824 \uC8FC\uBA74 \uC65C \uC704\uD5D8\uD55C\uAC00\uC694?"));
+        List<QuestionBank> mediumPool = List.of(
+                question(DifficultyBand.MEDIUM, "\uBE44\uBC00\uBC88\uD638\uB294 \uCE5C\uAD6C\uD55C\uD14C \uC54C\uB824\uC8FC\uBA74 \uC65C \uC704\uD5D8\uD560\uAE4C\uC694?"),
+                question(DifficultyBand.MEDIUM, "medium-1"),
+                question(DifficultyBand.MEDIUM, "medium-2")
+        );
+        List<QuestionBank> highPool = createQuestions(1, DifficultyBand.HIGH, "high");
+        stubMissionPools(missionId, lowPool, mediumPool, highPool);
+
+        List<QuestionBank> selected = factory.create(missionId, UUID.randomUUID(), false);
+
+        assertThat(selected).hasSize(10);
+        assertThat(selected.stream()
+                .filter(question -> question.getPrompt().contains("\uBE44\uBC00\uBC88\uD638"))
+                .map(QuestionBank::getPrompt)
+                .toList()).hasSize(1);
+        assertThat(selected.stream().filter(question -> question.getDifficulty() == DifficultyBand.MEDIUM).count()).isEqualTo(2);
+    }
+
+    @Test
     void failsWhenUniquePromptsCannotFillDifficultyQuota() {
         MissionQuestionSetFactory factory = factory();
         UUID missionId = UUID.randomUUID();
