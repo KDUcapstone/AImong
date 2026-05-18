@@ -40,6 +40,9 @@ sealed class HomePathItem {
         val quizNav: HomeQuizNavigation,
         val missionTitle: String,
         val enabled: Boolean,
+        /** 추천 세트가 복습 전용일 때 에너지 검증 생략 */
+        val skipEnergyCheck: Boolean = false,
+        val unlockMode: DifficultyUnlockMode = DifficultyUnlockMode.NEW_PLAY,
         val icon: String = "🌟",
         val starsFilled: Int = 0,
     ) : HomePathItem()

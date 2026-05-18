@@ -13,6 +13,7 @@ import com.kduniv.aimong.feature.home.domain.repository.AppBootstrapRepository
 import com.kduniv.aimong.feature.home.domain.repository.HomeRepository
 import com.kduniv.aimong.feature.home.domain.HomePathBuilder
 import com.kduniv.aimong.feature.home.domain.MissionPathDevHelper
+import com.kduniv.aimong.feature.home.presentation.resolveUnlockModeForPick
 import com.kduniv.aimong.feature.mission.data.model.MissionStarLevelDto
 import com.kduniv.aimong.feature.mission.domain.model.Mission
 import com.kduniv.aimong.feature.mission.domain.model.MissionStarLevel
@@ -129,15 +130,32 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null, subtleNotice = null) }
             // 홈 경로는 /missions 목록과 맞물리므로, 먼저 미션 캐시를 갱신한 뒤 홈·경로를 구성한다.
-            missionRepository.refreshMissions()
+            val missionsRefresh = missionRepository.refreshMissions()
             getHomeStatusUseCase().fold(
                 onSuccess = { data ->
                     val rawMissions = missionRepository.getMissionsFlow().first()
+                    if (rawMissions.isEmpty() && missionsRefresh.isFailure) {
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                errorMessage = missionsRefresh.exceptionOrNull()?.message
+                                    ?: appContext.getString(R.string.home_missions_refresh_failed),
+                            )
+                        }
+                        return@launch
+                    }
                     val missions = MissionPathDevHelper.ensureOnePlayablePerStage(
                         supplementMissionsStarLevels(rawMissions)
                     )
                     val path = HomePathBuilder.build(data, missions)
+                    val missionsRefreshNotice = if (missionsRefresh.isFailure && rawMissions.isNotEmpty()) {
+                        missionsRefresh.exceptionOrNull()?.message
+                            ?: appContext.getString(R.string.home_missions_refresh_failed)
+                    } else {
+                        null
+                    }
                     val notice = computeServerDayNotice(data.serverDate)
+                        ?: missionsRefreshNotice
                         ?: bootstrapHomeUnavailableNotice()
                     var ui = HomeUiMapper.toUiState(data).copy(
                         pathItems = path,
@@ -301,18 +319,20 @@ class HomeViewModel @Inject constructor(
             )
         }
 
-    /** 퀘스트 「미션 학습하기」 — 오늘/다음 시작 가능 미션 + 플레이 가능한 최저 별 단계 */
-    fun resolveQuestLearnQuizNav(): HomeQuizNavigation? {
+    /** 퀘스트 「미션 학습하기」 — 오늘/다음 시작 가능 미션 + 별 단계·진입 모드 */
+    fun resolveQuestLearnEntry(): Pair<HomeQuizNavigation, DifficultyUnlockMode>? {
         val items = _uiState.value.pathItems
-        val startItem = items.filterIsInstance<HomePathItem.TodayStart>().firstOrNull()
-            ?: items.filterIsInstance<HomePathItem.Start>().firstOrNull()
-            ?: return null
-        val base = when (startItem) {
-            is HomePathItem.TodayStart -> startItem.quizNav
-            is HomePathItem.Start -> startItem.quizNav
-            else -> return null
+        val today = items.filterIsInstance<HomePathItem.TodayStart>().firstOrNull()
+        if (today != null) {
+            return today.quizNav to today.unlockMode
         }
-        return resolveQuizNavWithSelectableStar(base)
+        val startItem = items.filterIsInstance<HomePathItem.Start>().firstOrNull() ?: return null
+        val nav = resolveQuizNavWithSelectableStar(startItem.quizNav) ?: return null
+        val mode = missionStarLevels(nav.missionId)
+            .firstOrNull { it.starLevel == nav.starLevel }
+            ?.resolveUnlockModeForPick()
+            ?: DifficultyUnlockMode.NEW_PLAY
+        return nav to mode
     }
 
     fun resolveQuizNavWithSelectableStar(base: HomeQuizNavigation): HomeQuizNavigation? {
@@ -321,10 +341,14 @@ class HomeViewModel @Inject constructor(
         val stars = missionStarLevels(base.missionId)
         if (base.starLevel in 1..3) {
             val current = stars.firstOrNull { it.starLevel == base.starLevel }
-            if (current?.isPlayable == true) return base
+            if (current?.isPlayable == true || current?.isReviewable == true) return base
         }
-        val next = stars.filter { it.isPlayable }.minByOrNull { it.starLevel }
-        return next?.let { base.copy(starLevel = it.starLevel) }
+        val nextPlayable = stars.filter { it.isPlayable }.minByOrNull { it.starLevel }
+        if (nextPlayable != null) {
+            return base.copy(starLevel = nextPlayable.starLevel)
+        }
+        val nextReview = stars.filter { it.isReviewable }.minByOrNull { it.starLevel }
+        return nextReview?.let { base.copy(starLevel = it.starLevel) }
     }
 
     /**
@@ -362,6 +386,7 @@ class HomeViewModel @Inject constructor(
             val allowed = when (unlockMode) {
                 DifficultyUnlockMode.NEW_PLAY -> sl?.isPlayable == true
                 DifficultyUnlockMode.REVIEW -> sl?.isReviewable == true
+                DifficultyUnlockMode.PER_STAR -> sl?.let { it.isPlayable || it.isReviewable } == true
             }
             if (!allowed) {
                 return Result.failure(Exception(appContext.getString(R.string.quiz_star_not_playable)))
@@ -384,7 +409,8 @@ class HomeViewModel @Inject constructor(
             stars.isEmpty() -> false
             sl == null -> false
             unlockMode == DifficultyUnlockMode.NEW_PLAY -> sl.isPlayable
-            else -> sl.isReviewable
+            unlockMode == DifficultyUnlockMode.REVIEW -> sl.isReviewable
+            else -> sl.isPlayable || sl.isReviewable
         }
         return if (allowed) Result.success(nav) else {
             Result.failure(Exception(appContext.getString(R.string.quiz_star_not_playable)))

@@ -3,6 +3,7 @@ package com.kduniv.aimong.feature.home.domain
 import androidx.annotation.DrawableRes
 import com.kduniv.aimong.R
 import com.kduniv.aimong.feature.home.data.model.HomeScreenData
+import com.kduniv.aimong.feature.home.presentation.DifficultyUnlockMode
 import com.kduniv.aimong.feature.home.presentation.HomePathItem
 import com.kduniv.aimong.feature.home.presentation.HomeQuizNavigation
 import com.kduniv.aimong.feature.mission.domain.model.Mission
@@ -58,8 +59,9 @@ object HomePathBuilder {
 
             val stageTitle = STAGE_TITLES[stage] ?: "단계 $stage"
             val meta = ISLAND_META.getOrNull(stage - 1) ?: ISLAND_META.first()
+            // v2.11: 스테이지 해금·진행 표시는 활성 별1(쉬움) 미션 완료 수 기준
             val completedInStage = sortedMissions.count { m ->
-                m.starLevels.any { it.isCompleted }
+                m.starLevels.any { it.starLevel == 1 && it.isCompleted }
             }
             val totalInStage = sortedMissions.size.coerceAtLeast(1)
             items.add(
@@ -88,18 +90,26 @@ object HomePathBuilder {
                     val todayTitle = displayTitle.ifBlank {
                         rec.title.toDisplayMissionTitle(rec.missionCode.orEmpty())
                     }
+                    val recMissionStars = m.starLevels
+                    val anyPlayable = recMissionStars.any { it.isPlayable }
+                    val todayUnlock = when {
+                        rec.isReviewable && !anyPlayable -> DifficultyUnlockMode.REVIEW
+                        rec.isReviewable && anyPlayable -> DifficultyUnlockMode.PER_STAR
+                        else -> DifficultyUnlockMode.NEW_PLAY
+                    }
                     items.add(
                         HomePathItem.TodayStart(
                             quizNav = todayNav,
                             missionTitle = todayTitle,
-                            // 에너지 부족만으로 노드를 흐리게 하지 않음(탭 시 스낵바로 안내)
-                            enabled = true,
+                            enabled = canStart,
+                            skipEnergyCheck = rec.isReviewable && !anyPlayable,
+                            unlockMode = todayUnlock,
                             starsFilled = stars
                         )
                     )
                 } else if (m.starLevels.any { it.isCompleted }) {
-                    val sl = m.starLevels.firstOrNull { it.isReviewable && it.isPlayable }
-                        ?: m.starLevels.firstOrNull { it.isPlayable }
+                    val sl = m.starLevels.firstOrNull { it.isPlayable }
+                        ?: m.starLevels.firstOrNull { it.isReviewable }
                         ?: m.starLevels.firstOrNull()
                     val star = sl?.starLevel?.takeIf { it in 1..3 } ?: 1
                     items.add(

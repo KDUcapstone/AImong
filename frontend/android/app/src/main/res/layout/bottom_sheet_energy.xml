@@ -37,6 +37,26 @@
         tools:text="다음 회복: …" />
 
     <TextView
+        android:id="@+id/tv_full_recover"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+        android:textColor="@color/child_quest_sheet_text_secondary"
+        android:visibility="gone"
+        tools:text="가득 찰 때까지: …" />
+
+    <TextView
+        android:id="@+id/tv_recover_interval"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+        android:textColor="@color/child_quest_sheet_text_secondary"
+        android:visibility="gone"
+        tools:text="10분마다 1 회복" />
+
+    <TextView
         android:id="@+id/tv_mission_cost"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

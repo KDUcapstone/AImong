@@ -76,7 +76,7 @@ class MissionDifficultyPicker(
         starLevels: List<MissionStarLevel>,
         unlockMode: DifficultyUnlockMode,
         anchorRow: View,
-        onPicked: (HomeQuizNavigation) -> Unit,
+        onPicked: (HomeQuizNavigation, DifficultyUnlockMode) -> Unit,
     ) {
         dismissImmediate()
         val parent = binding.layoutMissionPath
@@ -87,13 +87,19 @@ class MissionDifficultyPicker(
         val popup = layoutInflater.inflate(R.layout.mission_difficulty_popup, parent, false)
         popup.findViewById<TextView>(R.id.tv_mission_title).text = missionTitle
 
-        val pick: (Int) -> Unit = { starLevel ->
-            val nav = base.copy(starLevel = starLevel)
-            dismissImmediate()
-            onPicked(nav)
-        }
         // entrySetId가 있어도 미션별 잠금 상태는 starLevels 기준으로 표시 (오늘 추천만 전부 열리던 문제 방지)
         val useMissionStars = base.missionId.isNotBlank()
+        val pick: (Int) -> Unit = { starLevel ->
+            val nav = base.copy(starLevel = starLevel)
+            val resolvedMode = if (unlockMode == DifficultyUnlockMode.PER_STAR && useMissionStars) {
+                starLevels.firstOrNull { it.starLevel == starLevel }?.resolveUnlockModeForPick()
+                    ?: unlockMode
+            } else {
+                unlockMode
+            }
+            dismissImmediate()
+            onPicked(nav, resolvedMode)
+        }
         bindDifficultyCard(
             popup.findViewById(R.id.card_diff_1),
             starLevel = 1,
@@ -232,6 +238,7 @@ class MissionDifficultyPicker(
                 sl != null -> when (unlockMode) {
                     DifficultyUnlockMode.NEW_PLAY -> sl.isPlayable
                     DifficultyUnlockMode.REVIEW -> sl.isReviewable
+                    DifficultyUnlockMode.PER_STAR -> sl.isPlayable || sl.isReviewable
                 }
                 else -> false
             }

@@ -22,6 +22,8 @@ class HomeLayoutBinder(
     private val binding: FragmentHomeBinding,
     private val layoutInflater: LayoutInflater,
     private val onOpenDifficultyPicker: (String, HomeQuizNavigation, View, DifficultyUnlockMode) -> Unit,
+    private val onNavigateToQuiz: (HomeQuizNavigation, DifficultyUnlockMode) -> Unit,
+    private val onEnergyInsufficient: () -> Unit,
     private val onShowMissionHint: (String) -> Unit,
 ) {
 
@@ -152,7 +154,7 @@ class HomeLayoutBinder(
                                 item.title,
                                 item.quizNav,
                                 row.root,
-                                DifficultyUnlockMode.REVIEW,
+                                DifficultyUnlockMode.PER_STAR,
                             )
                         }
                     }
@@ -173,12 +175,22 @@ class HomeLayoutBinder(
                     val go = {
                         if (!item.enabled) {
                             onShowMissionHint(binding.root.context.getString(R.string.home_today_mission_locked_hint))
+                        } else if (!state.canOpenMissionPicker(
+                                item.unlockMode,
+                                state.missionStarLevelsById[item.quizNav.missionId].orEmpty(),
+                            )
+                        ) {
+                            onEnergyInsufficient()
+                        } else if (item.quizNav.entrySetId.isNotBlank() &&
+                            item.unlockMode != DifficultyUnlockMode.PER_STAR
+                        ) {
+                            onNavigateToQuiz(item.quizNav, item.unlockMode)
                         } else {
                             onOpenDifficultyPicker(
                                 item.missionTitle,
                                 item.quizNav,
                                 row.root,
-                                DifficultyUnlockMode.NEW_PLAY,
+                                item.unlockMode,
                             )
                         }
                     }

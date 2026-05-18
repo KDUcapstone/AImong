@@ -58,6 +58,8 @@ class EnergyBottomSheet : BottomSheetDialogFragment() {
         val tvTitle = view.findViewById<TextView>(R.id.tv_energy_title)
         val tvValue = view.findViewById<TextView>(R.id.tv_energy_value)
         val tvNext = view.findViewById<TextView>(R.id.tv_next_recover)
+        val tvFullRecover = view.findViewById<TextView>(R.id.tv_full_recover)
+        val tvRecoverInterval = view.findViewById<TextView>(R.id.tv_recover_interval)
         val tvCost = view.findViewById<TextView>(R.id.tv_mission_cost)
 
         tvTitle.setText(R.string.energy_sheet_title)
@@ -111,6 +113,23 @@ class EnergyBottomSheet : BottomSheetDialogFragment() {
                             R.string.energy_next_recover_fmt,
                             DateUtils.formatIsoUtcForLocal(next)
                         )
+                    }
+                    val fullRecover = state.fullRecoverAt?.trim()?.takeIf { it.isNotEmpty() }
+                    if (fullRecover.isNullOrEmpty()) {
+                        tvFullRecover.visibility = View.GONE
+                    } else {
+                        tvFullRecover.visibility = View.VISIBLE
+                        tvFullRecover.text = getString(
+                            R.string.energy_full_recover_fmt,
+                            DateUtils.formatIsoUtcForLocal(fullRecover),
+                        )
+                    }
+                    val intervalMin = state.recoverIntervalMinutes
+                    if (intervalMin != null && intervalMin > 0) {
+                        tvRecoverInterval.visibility = View.VISIBLE
+                        tvRecoverInterval.text = getString(R.string.energy_recover_interval_fmt, intervalMin)
+                    } else {
+                        tvRecoverInterval.visibility = View.GONE
                     }
                     val cost = state.missionStartCost
                     tvCost.text = if (cost != null) {

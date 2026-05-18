@@ -168,6 +168,7 @@ class QuizViewModel @Inject constructor(
                     .onSuccess { attempt ->
                         answeredQuestionIds = attempt.answeredQuestionIds.map { it.toString() }.toSet()
                         attempt.remainingLives?.let { _sessionLives.value = it.coerceIn(0, 3) }
+                        _isReviewMode.value = attempt.isReview
                     }
                 quizRepository.getQuestionsBySetId(inProgress.setId)
             } else {
@@ -206,7 +207,7 @@ class QuizViewModel @Inject constructor(
                 }
             }
             val sl = status.starLevels.firstOrNull { it.starLevel == starLevel }
-            if (sl != null && !sl.isPlayable) {
+            if (sl != null && !sl.isPlayable && !sl.isReviewable) {
                 return kotlin.Result.failure(Exception(appContext.getString(R.string.quiz_star_not_playable)))
             }
             kotlin.Result.success(Unit)

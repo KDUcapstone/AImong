@@ -59,7 +59,7 @@ class MockHomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::
             layoutInflater = layoutInflater,
             onOpenDifficultyPicker = { title, nav, anchor, unlockMode ->
                 val st = sampleState
-                if (!st.canAttemptMissionStart()) {
+                if (!st.canOpenMissionPicker(unlockMode)) {
                     Snackbar.make(
                         binding.root,
                         getString(R.string.home_energy_insufficient_toast),
@@ -73,7 +73,7 @@ class MockHomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::
                     missionDifficultyPicker?.dismissImmediate()
                     val picker = MissionDifficultyPicker(binding, layoutInflater)
                     missionDifficultyPicker = picker
-                    picker.show(title, nav, emptyList(), unlockMode, anchor) { picked ->
+                    picker.show(title, nav, emptyList(), unlockMode, anchor) { picked, _ ->
                         findNavController().navigate(
                             MockHomeFragmentDirections.actionHomeFragmentToQuizFragment(
                                 picked.entrySetId,
@@ -84,6 +84,22 @@ class MockHomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::
                         missionDifficultyPicker = null
                     }
                 }
+            },
+            onNavigateToQuiz = { nav, _ ->
+                findNavController().navigate(
+                    MockHomeFragmentDirections.actionHomeFragmentToQuizFragment(
+                        nav.entrySetId,
+                        nav.missionId,
+                        nav.starLevel,
+                    ),
+                )
+            },
+            onEnergyInsufficient = {
+                Snackbar.make(
+                    binding.root,
+                    getString(R.string.home_energy_insufficient_toast),
+                    Snackbar.LENGTH_SHORT,
+                ).show()
             },
             onShowMissionHint = { Snackbar.make(binding.root, it, Snackbar.LENGTH_SHORT).show() },
         )

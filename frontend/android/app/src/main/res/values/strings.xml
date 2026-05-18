@@ -90,6 +90,9 @@
     <string name="quiz_hearts_exhausted_toast">하트를 모두 사용했어요.</string>
     <string name="home_energy_insufficient_toast">에너지가 부족해요!</string>
     <string name="home_go_energy_charge">에너지 충전</string>
+    <string name="home_missions_refresh_failed">미션 목록을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.</string>
+    <string name="energy_full_recover_fmt">가득 찰 때까지: %1$s</string>
+    <string name="energy_recover_interval_fmt">%1$d분마다 1 회복</string>
 
     <!-- Quiz Feedback -->
     <string name="quiz_feedback_correct">🎉 정답이에요!</string>
@@ -137,7 +140,7 @@
     <string name="mission_stage_progress_title">단계별 완료 수</string>
     <string name="mission_stage_progress_subtitle">복습 제외 첫 클리어만 집계됩니다.</string>
     <string name="mission_stage_progress_counts">1단계 %1$d · 2단계 %2$d · 3단계 %3$d</string>
-    <string name="mission_stage_unlock_hint">2단계: 1단계 3개 이상 클리어 시 · 3단계: 2단계 4개 이상 클리어 시 잠금 해제</string>
+    <string name="mission_stage_unlock_hint">다음 단계는 이전 단계의 쉬움(별1) 미션을 모두 클리어하면 열려요</string>
     <string name="mission_badge_review">복습</string>
     <string name="mission_no_playable_star_level">지금 시작할 수 있는 난이도가 없어요.</string>
     <string name="mission_error_retry">다시 시도</string>

@@ -69,7 +69,23 @@ data class HomeUiState(
 ) {
     fun hasEnoughEnergyForMissionStart(): Boolean = energyCurrent >= missionStartCost
 
-    fun canAttemptMissionStart(): Boolean = canStartMission && hasEnoughEnergyForMissionStart()
+    /** 복습(REVIEW) 진입은 에너지 차감 없음 — v2.7 */
+    fun canAttemptMissionStart(skipEnergyBecauseReview: Boolean = false): Boolean =
+        canStartMission && (skipEnergyBecauseReview || hasEnoughEnergyForMissionStart())
+
+    /** 난이도 피커를 열 수 있는지(복습 가능 난이도가 있으면 에너지 부족해도 PER_STAR 허용) */
+    fun canOpenMissionPicker(
+        unlockMode: DifficultyUnlockMode,
+        starLevels: List<MissionStarLevel> = emptyList(),
+    ): Boolean {
+        if (!canStartMission) return false
+        return when (unlockMode) {
+            DifficultyUnlockMode.REVIEW -> true
+            DifficultyUnlockMode.NEW_PLAY -> hasEnoughEnergyForMissionStart()
+            DifficultyUnlockMode.PER_STAR ->
+                hasEnoughEnergyForMissionStart() || starLevels.any { it.isReviewable }
+        }
+    }
 
     companion object {
         const val DEFAULT_MISSION_START_COST = 5

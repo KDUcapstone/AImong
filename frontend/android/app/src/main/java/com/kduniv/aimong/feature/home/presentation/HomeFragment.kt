@@ -53,16 +53,12 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
             layoutInflater = layoutInflater,
             onOpenDifficultyPicker = { title, nav, anchor, unlockMode ->
                 val st = viewModel.uiState.value
-                if (!st.canAttemptMissionStart()) {
-                    Snackbar.make(
-                        binding.root,
-                        getString(R.string.home_energy_insufficient_toast),
-                        Snackbar.LENGTH_LONG
+                if (!st.canOpenMissionPicker(
+                        unlockMode,
+                        viewModel.missionStarLevels(nav.missionId),
                     )
-                        .setAction(getString(R.string.home_go_energy_charge)) {
-                            EnergyBottomSheet.newInstance().show(childFragmentManager, "energy_sheet")
-                        }
-                        .show()
+                ) {
+                    showEnergyInsufficientSnackbar()
                 } else {
                     missionDifficultyPicker?.dismissImmediate()
                     val picker = MissionDifficultyPicker(binding, layoutInflater)
@@ -70,13 +66,15 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
                     viewLifecycleOwner.lifecycleScope.launch {
                         val starLevels = viewModel.ensureMissionStarLevels(nav.missionId)
                         if (!isAdded) return@launch
-                        picker.show(title, nav, starLevels, unlockMode, anchor) { picked ->
-                            navigateToQuizAfterValidation(picked, unlockMode)
+                        picker.show(title, nav, starLevels, unlockMode, anchor) { picked, resolvedMode ->
+                            navigateToQuizAfterValidation(picked, resolvedMode)
                             missionDifficultyPicker = null
                         }
                     }
                 }
             },
+            onNavigateToQuiz = { nav, unlockMode -> navigateToQuizAfterValidation(nav, unlockMode) },
+            onEnergyInsufficient = { showEnergyInsufficientSnackbar() },
             onShowMissionHint = { showMissionHint(it) },
         )
         binding.layoutChipEnergy.setOnClickListener {
@@ -113,27 +111,41 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
     }
 
     private fun openMissionLearnFromQuest(state: HomeUiState) {
-        if (!state.canAttemptMissionStart()) {
-            Snackbar.make(
-                binding.root,
-                getString(R.string.home_energy_insufficient_toast),
-                Snackbar.LENGTH_LONG,
-            )
-                .setAction(getString(R.string.home_go_energy_charge)) {
-                    EnergyBottomSheet.newInstance().show(childFragmentManager, "energy_sheet")
-                }
-                .show()
-            return
-        }
-        val nav = viewModel.resolveQuestLearnQuizNav()
-        if (nav == null || !nav.canNavigate()) {
+        val entry = viewModel.resolveQuestLearnEntry()
+        if (entry == null) {
             showMissionHint(getString(R.string.mission_no_playable_star_level))
             return
         }
-        navigateToQuizAfterValidation(nav, DifficultyUnlockMode.NEW_PLAY)
+        val (nav, unlockMode) = entry
+        if (!nav.canNavigate()) {
+            showMissionHint(getString(R.string.mission_no_playable_star_level))
+            return
+        }
+        if (!state.canOpenMissionPicker(unlockMode, viewModel.missionStarLevels(nav.missionId))) {
+            showEnergyInsufficientSnackbar()
+            return
+        }
+        navigateToQuizAfterValidation(nav, unlockMode)
+    }
+
+    private fun showEnergyInsufficientSnackbar() {
+        Snackbar.make(
+            binding.root,
+            getString(R.string.home_energy_insufficient_toast),
+            Snackbar.LENGTH_LONG,
+        )
+            .setAction(getString(R.string.home_go_energy_charge)) {
+                EnergyBottomSheet.newInstance().show(childFragmentManager, "energy_sheet")
+            }
+            .show()
     }
 
     private fun navigateToQuizAfterValidation(nav: HomeQuizNavigation, unlockMode: DifficultyUnlockMode) {
+        val st = viewModel.uiState.value
+        if (!st.canAttemptMissionStart(skipEnergyBecauseReview = unlockMode == DifficultyUnlockMode.REVIEW)) {
+            showEnergyInsufficientSnackbar()
+            return
+        }
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.validateMissionQuizNav(nav, unlockMode)
                 .onSuccess { validated ->
