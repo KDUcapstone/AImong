@@ -27,6 +27,11 @@ class GachaFragment : BaseFragment<FragmentGachaBinding>(FragmentGachaBinding::i
     private lateinit var petAdapter: GachaPetAdapter
     private lateinit var ownedPetAdapter: GachaOwnedPetAdapter
 
+    override fun onResume() {
+        super.onResume()
+        viewModel.syncTicketsFromHome()
+    }
+
     override fun initView() {
         val onPetClick: (GachaPetCardUi) -> Unit = { item -> showPetDetailDialog(item) }
 
@@ -81,12 +86,8 @@ class GachaFragment : BaseFragment<FragmentGachaBinding>(FragmentGachaBinding::i
                     binding.tvEquipBanner.isVisible = !hasEquipped
 
                     if (eq != null) {
-                        val catalogEntry =
-                            GachaPetCatalog.entries.firstOrNull { it.petType == eq.petType }
-                        binding.tvEquippedEmoji.text =
-                            catalogEntry?.emoji ?: GachaUiMapper.petEmoji(eq)
-                        binding.tvEquippedName.text =
-                            catalogEntry?.displayName ?: GachaUiMapper.displayName(eq)
+                        binding.tvEquippedEmoji.text = GachaPetCatalog.emojiFor(eq.petType, eq.grade)
+                        binding.tvEquippedName.text = GachaPetCatalog.displayNameFor(eq.petType, eq.grade)
                     }
 
                     val tix = s.tickets

@@ -31,9 +31,18 @@
                 android:layout_width="30dp"
                 android:layout_height="30dp"
                 android:layout_gravity="center"
+                android:visibility="gone"
                 app:lottie_autoPlay="true"
                 app:lottie_loop="true"
                 app:lottie_rawRes="@raw/pet_idle" />
+
+            <TextView
+                android:id="@+id/tv_header_pet_emoji"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:textSize="22sp"
+                tools:text="⭐" />
         </FrameLayout>
 
         <LinearLayout

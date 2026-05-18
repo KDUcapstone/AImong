@@ -4,6 +4,9 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kduniv.aimong.R
+import com.kduniv.aimong.core.dev.UiMode
+import com.kduniv.aimong.feature.home.domain.ChildHomeRefreshBus
+import com.kduniv.aimong.feature.home.domain.HomeRefreshTrigger
 import com.kduniv.aimong.feature.quest.domain.repository.QuestRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -24,6 +27,7 @@ sealed interface QuestSheetEffect {
 @HiltViewModel
 class QuestListViewModel @Inject constructor(
     private val questRepository: QuestRepository,
+    private val homeRefreshBus: ChildHomeRefreshBus,
     @ApplicationContext private val appContext: Context
 ) : ViewModel() {
 
@@ -120,8 +124,12 @@ class QuestListViewModel @Inject constructor(
                 onSuccess = { data ->
                     val toast = QuestRewardToastFormatter.format(appContext, data.rewards)
                     _effects.trySend(QuestSheetEffect.ShowToast(toast))
-                    val t = data.remainingTickets
-                    _effects.trySend(QuestSheetEffect.TicketsPatched(t.normal, t.rare, t.epic))
+                    if (!UiMode.useStubNav) {
+                        homeRefreshBus.notify(HomeRefreshTrigger.Full)
+                    } else {
+                        val t = data.remainingTickets
+                        _effects.trySend(QuestSheetEffect.TicketsPatched(t.normal, t.rare, t.epic))
+                    }
                     when (period) {
                         QuestSheetPeriod.DAILY -> loadDaily()
                         QuestSheetPeriod.WEEKLY -> loadWeekly()

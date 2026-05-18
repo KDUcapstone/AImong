@@ -16,12 +16,14 @@ import com.google.android.material.chip.Chip
 import com.kduniv.aimong.R
 import com.kduniv.aimong.core.ui.BaseFragment
 import com.kduniv.aimong.databinding.FragmentQuizBinding
+import com.kduniv.aimong.feature.quiz.presentation.MissionHeartGrade
 
 class DummyQuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::inflate) {
 
     private var currentQuestionIndex = 0
     private var correctCount = 0
     private var lives = 3
+    private var totalHeartsLost = 0
     private var timer: CountDownTimer? = null
     private var questionTimeLeftMs: Long = 30000L
     private var maxPlayedIndex = 0
@@ -79,6 +81,7 @@ class DummyQuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding:
             maxPlayedIndex = 0
             correctCount = 0
             lives = 3
+            totalHeartsLost = 0
             isReviewMode = true
             updateHearts()
             showQuestion(0)
@@ -165,11 +168,20 @@ class DummyQuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding:
     }
 
     private fun updateHearts() {
+        val capped = lives.coerceIn(0, 3)
         val emptyHeart = R.drawable.ic_heart_empty
         val filledHeart = R.drawable.ic_heart_filled
-        binding.ivHeart1.setImageResource(if (lives >= 1) filledHeart else emptyHeart)
-        binding.ivHeart2.setImageResource(if (lives >= 2) filledHeart else emptyHeart)
-        binding.ivHeart3.setImageResource(if (lives >= 3) filledHeart else emptyHeart)
+        binding.ivHeart1.setImageResource(if (capped >= 1) filledHeart else emptyHeart)
+        binding.ivHeart2.setImageResource(if (capped >= 2) filledHeart else emptyHeart)
+        binding.ivHeart3.setImageResource(if (capped >= 3) filledHeart else emptyHeart)
+    }
+
+    private fun loseHeart() {
+        if (lives > 0) {
+            totalHeartsLost++
+            lives--
+            updateHearts()
+        }
     }
 
     private fun shakeView(v: View) {
@@ -354,7 +366,7 @@ class DummyQuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding:
             correctCount++ 
         } else { 
             binding.tvQuizQuestion.setTextColor(Color.WHITE)
-            lives--; updateHearts() 
+            loseHeart()
             shakeView(binding.layoutHearts)
             shakeScreen()
         }
@@ -391,27 +403,38 @@ class DummyQuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding:
         binding.layoutFeedbackPanel.visibility = View.GONE
         binding.layoutOptionsContainer.visibility = View.GONE
         binding.layoutQuizResult.visibility = View.VISIBLE
-        
-        val isPassed = lives > 0
-        binding.tvResultStatus.text = if (isPassed) "미션 성공!" else "미션 실패"
-        binding.tvResultStatus.setTextColor(if (isPassed) Color.parseColor("#00FFB2") else Color.parseColor("#FF4B4B"))
-        // 제목만 성공/실패 톤 적용, 부제는 중립 색 유지
-        binding.tvResultSub.text = if (isPassed) {
-            "정말 대단해! 리터러시 박사가 다 됐는걸?"
-        } else {
-            "아쉽게 탈락했어. 다시 한 번 도전해볼까?"
+
+        val heartsLost = maxOf(totalHeartsLost, (3 - lives.coerceIn(0, 3)).coerceAtLeast(0))
+        val grade = MissionHeartGrade.fromHeartsLost(heartsLost)
+        val missionCleared = grade != MissionHeartGrade.FAIL
+
+        binding.tvResultStatus.text = when (grade) {
+            MissionHeartGrade.PERFECT -> getString(R.string.quiz_result_perfect)
+            MissionHeartGrade.SUCCESS -> getString(R.string.quiz_result_success)
+            MissionHeartGrade.FAIL -> getString(R.string.quiz_result_fail)
+        }
+        binding.tvResultStatus.setTextColor(
+            if (missionCleared) Color.parseColor("#00FFB2") else Color.parseColor("#FF4B4B")
+        )
+        binding.tvResultSub.text = when (grade) {
+            MissionHeartGrade.PERFECT -> getString(R.string.quiz_result_perfect_subtitle)
+            MissionHeartGrade.SUCCESS -> getString(R.string.quiz_result_success_subtitle)
+            MissionHeartGrade.FAIL -> "아쉽게 탈락했어. 다시 한 번 도전해볼까?"
         }
         binding.tvResultSub.setTextColor(Color.parseColor("#8A96AD"))
 
-        // 결과는 전체 문항 기준으로 표시
         binding.tvResCorrectCount.text = "$correctCount / ${questions.size}"
+        binding.tvResPassStatus.text = when (grade) {
+            MissionHeartGrade.PERFECT -> getString(R.string.quiz_grade_perfect)
+            MissionHeartGrade.SUCCESS -> getString(R.string.quiz_grade_success)
+            MissionHeartGrade.FAIL -> getString(R.string.quiz_grade_fail)
+        }
+        binding.tvResPassStatus.setTextColor(
+            if (missionCleared) Color.parseColor("#00FFB2") else Color.parseColor("#FF4B4B")
+        )
 
-        // 통과 여부도 반드시 실패면 FAIL로 표시(기본값 PASS 잔상 방지)
-        binding.tvResPassStatus.text = if (isPassed) "PASS" else "FAIL"
-        binding.tvResPassStatus.setTextColor(if (isPassed) Color.parseColor("#00FFB2") else Color.parseColor("#FF4B4B"))
-
-        // 오답 수는 결과 화면에서 노출하지 않음
         binding.layoutWrongStat.visibility = View.GONE
+        binding.btnResRetry.visibility = if (missionCleared) View.GONE else View.VISIBLE
     }
 
     private fun showSolutionMock(index: Int) {

@@ -15,6 +15,40 @@ object GachaPetCatalog {
         val emoji: String,
     )
 
+    /** GET /pet 의 petType 과 도감 행 매칭 (대소문자·공백 무시) */
+    fun entryFor(petType: String?): Entry? {
+        if (petType.isNullOrBlank()) return null
+        val key = normalizePetTypeKey(petType)
+        return entries.firstOrNull { normalizePetTypeKey(it.petType) == key }
+    }
+
+    fun displayNameFor(petType: String, grade: String = "NORMAL"): String =
+        entryFor(petType)?.displayName ?: fallbackDisplayName(petType, grade)
+
+    fun emojiFor(petType: String, grade: String = "NORMAL"): String =
+        entryFor(petType)?.emoji ?: fallbackEmoji(grade)
+
+    private fun normalizePetTypeKey(petType: String): String =
+        petType.trim().lowercase().replace('-', '_')
+
+    private fun fallbackDisplayName(petType: String, grade: String): String {
+        val tail = petType.substringAfterLast('_', "").filter { it.isDigit() }
+        val gradeLabel = when (grade.uppercase()) {
+            "RARE" -> "레어"
+            "EPIC" -> "에픽"
+            "LEGEND", "LEGENDARY" -> "레전드"
+            else -> "커먼"
+        }
+        return if (tail.isNotBlank()) "$gradeLabel $tail" else petType
+    }
+
+    private fun fallbackEmoji(grade: String): String = when (grade.uppercase()) {
+        "RARE" -> "💎"
+        "EPIC" -> "👑"
+        "LEGEND", "LEGENDARY" -> "🌟"
+        else -> "⭐"
+    }
+
     val entries: List<Entry> = listOf(
         Entry("pet_normal_001", "반짝이", "NORMAL", "⭐"),
         Entry("pet_normal_002", "구름이", "NORMAL", "☁️"),

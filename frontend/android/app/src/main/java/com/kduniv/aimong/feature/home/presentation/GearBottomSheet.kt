@@ -18,6 +18,8 @@ import com.google.android.material.snackbar.Snackbar
 import com.kduniv.aimong.R
 import com.kduniv.aimong.core.dev.UiMode
 import com.kduniv.aimong.feature.dev.mock.MockGearBalance
+import com.kduniv.aimong.feature.home.domain.ChildHomeRefreshBus
+import com.kduniv.aimong.feature.home.domain.HomeRefreshTrigger
 import com.kduniv.aimong.feature.streak.data.StreakRepository
 import com.kduniv.aimong.feature.wallet.domain.repository.WalletRepository
 import dagger.hilt.android.AndroidEntryPoint
@@ -25,13 +27,14 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * v1.1: [GET /wallet] 잔액·비용 표시, [POST /streak/shields/purchase] 보호권 구매.
+ * v1.1: [GET /wallet] 잔액·비용 표시, [POST /wallet/add] 보충, [POST /streak/shields/purchase] 보호권 구매.
  */
 @AndroidEntryPoint
 class GearBottomSheet : BottomSheetDialogFragment() {
 
     @Inject lateinit var walletRepository: WalletRepository
     @Inject lateinit var streakRepository: StreakRepository
+    @Inject lateinit var homeRefreshBus: ChildHomeRefreshBus
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val dialog = super.onCreateDialog(savedInstanceState) as BottomSheetDialog
@@ -53,10 +56,33 @@ class GearBottomSheet : BottomSheetDialogFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val pb = view.findViewById<ProgressBar>(R.id.pb_gear_loading)
+        val btnAdd = view.findViewById<AppCompatButton>(R.id.btn_add_gear)
         val btnBuy = view.findViewById<AppCompatButton>(R.id.btn_buy_streak_shield)
         val tvValue = view.findViewById<TextView>(R.id.tv_gear_value)
         val tvHeart = view.findViewById<TextView>(R.id.tv_gear_heart_cost)
         val tvShield = view.findViewById<TextView>(R.id.tv_gear_shield_cost)
+
+        btnAdd.setOnClickListener {
+            if (UiMode.useStubNav) {
+                MockGearBalance.credit(ADD_AMOUNT)
+                notifyHomeRefreshAndDismiss()
+                return@setOnClickListener
+            }
+            viewLifecycleOwner.lifecycleScope.launch {
+                btnAdd.isEnabled = false
+                walletRepository.addGear(ADD_AMOUNT).fold(
+                    onSuccess = { notifyHomeRefreshAndDismiss() },
+                    onFailure = { e ->
+                        Snackbar.make(
+                            view,
+                            e.message ?: getString(R.string.gear_add_failed),
+                            Snackbar.LENGTH_LONG
+                        ).show()
+                        btnAdd.isEnabled = true
+                    }
+                )
+            }
+        }
 
         btnBuy.setOnClickListener {
             viewLifecycleOwner.lifecycleScope.launch {
@@ -64,11 +90,15 @@ class GearBottomSheet : BottomSheetDialogFragment() {
                 streakRepository.purchaseShield(1).fold(
                     onSuccess = {
                         Snackbar.make(view, getString(R.string.gear_shield_purchase_success), Snackbar.LENGTH_SHORT).show()
-                        parentFragmentManager.setFragmentResult(
-                            REQUEST_KEY,
-                            bundleOf(EXTRA_REFRESH_HOME to true)
-                        )
-                        loadWallet(tvValue, tvHeart, tvShield, btnBuy, pb)
+                        if (!UiMode.useStubNav) {
+                            homeRefreshBus.notify(HomeRefreshTrigger.Full)
+                        } else {
+                            parentFragmentManager.setFragmentResult(
+                                REQUEST_KEY,
+                                bundleOf(EXTRA_REFRESH_HOME to true)
+                            )
+                        }
+                        loadWallet(tvValue, tvHeart, tvShield, btnAdd, btnBuy, pb)
                     },
                     onFailure = { e ->
                         Snackbar.make(view, e.message ?: getString(R.string.gear_shield_purchase_failed), Snackbar.LENGTH_LONG).show()
@@ -78,24 +108,40 @@ class GearBottomSheet : BottomSheetDialogFragment() {
             }
         }
 
-        loadWallet(tvValue, tvHeart, tvShield, btnBuy, pb)
+        loadWallet(tvValue, tvHeart, tvShield, btnAdd, btnBuy, pb)
+    }
+
+    private fun notifyHomeRefreshAndDismiss() {
+        if (UiMode.useStubNav) {
+            parentFragmentManager.setFragmentResult(
+                REQUEST_KEY,
+                bundleOf(EXTRA_REFRESH_HOME to true)
+            )
+        } else {
+            homeRefreshBus.notify(HomeRefreshTrigger.Full)
+        }
+        dismissAllowingStateLoss()
     }
 
     private fun loadWallet(
         tvValue: TextView,
         tvHeart: TextView,
         tvShield: TextView,
+        btnAdd: AppCompatButton,
         btnBuy: AppCompatButton,
         pb: ProgressBar
     ) {
         viewLifecycleOwner.lifecycleScope.launch {
             pb.visibility = View.VISIBLE
+            btnAdd.isEnabled = false
             btnBuy.isEnabled = false
             walletRepository.getWallet().fold(
                 onSuccess = { wallet ->
                     tvValue.text = getString(R.string.gear_value_fmt, wallet.gear)
                     tvHeart.text = getString(R.string.gear_heart_revive_cost_fmt, wallet.heartReviveCost)
                     tvShield.text = getString(R.string.gear_streak_shield_cost_fmt, wallet.streakShieldCost)
+                    btnAdd.isEnabled = true
+                    btnAdd.alpha = 1f
                     val canBuy = if (UiMode.useStubNav) {
                         MockGearBalance.gear >= wallet.streakShieldCost
                     } else {
@@ -113,6 +159,7 @@ class GearBottomSheet : BottomSheetDialogFragment() {
                     tvValue.text = "—"
                     tvHeart.text = e.message ?: getString(R.string.gear_load_failed)
                     tvShield.text = ""
+                    btnAdd.isEnabled = false
                     btnBuy.isEnabled = false
                 }
             )
@@ -123,6 +170,7 @@ class GearBottomSheet : BottomSheetDialogFragment() {
     companion object {
         const val REQUEST_KEY = "aimong_gear_sheet"
         const val EXTRA_REFRESH_HOME = "refresh_home"
+        private const val ADD_AMOUNT = 10
 
         fun newInstance(): GearBottomSheet = GearBottomSheet()
     }

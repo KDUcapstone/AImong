@@ -32,6 +32,7 @@
         android:layout_width="48dp"
         android:layout_height="48dp"
         android:layout_marginTop="24dp"
+        android:visibility="gone"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/btn_back" />
@@ -46,35 +47,35 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/btn_back">
 
-        <com.google.android.material.materialswitch.MaterialSwitch
+        <com.google.android.material.switchmaterial.SwitchMaterial
             android:id="@+id/switch_privacy"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="개인정보 알림"
             android:textColor="#111827" />
 
-        <com.google.android.material.materialswitch.MaterialSwitch
+        <com.google.android.material.switchmaterial.SwitchMaterial
             android:id="@+id/switch_study"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="학습 리마인더"
             android:textColor="#111827" />
 
-        <com.google.android.material.materialswitch.MaterialSwitch
+        <com.google.android.material.switchmaterial.SwitchMaterial
             android:id="@+id/switch_return_reward"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="복귀 보상 알림"
             android:textColor="#111827" />
 
-        <com.google.android.material.materialswitch.MaterialSwitch
+        <com.google.android.material.switchmaterial.SwitchMaterial
             android:id="@+id/switch_quest_reward"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="퀘스트 보상 알림"
             android:textColor="#111827" />
 
-        <com.google.android.material.materialswitch.MaterialSwitch
+        <com.google.android.material.switchmaterial.SwitchMaterial
             android:id="@+id/switch_marketing"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

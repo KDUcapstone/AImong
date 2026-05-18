@@ -19,6 +19,8 @@ import com.kduniv.aimong.R
 import com.kduniv.aimong.core.dev.UiMode
 import com.kduniv.aimong.core.util.DateUtils
 import com.kduniv.aimong.feature.dev.mock.MockUiSamples
+import com.kduniv.aimong.feature.home.domain.ChildHomeRefreshBus
+import com.kduniv.aimong.feature.home.domain.HomeRefreshTrigger
 import com.kduniv.aimong.feature.home.domain.repository.HomeRepository
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -32,6 +34,9 @@ class EnergyBottomSheet : BottomSheetDialogFragment() {
 
     @Inject
     lateinit var homeRepository: HomeRepository
+
+    @Inject
+    lateinit var homeRefreshBus: ChildHomeRefreshBus
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val dialog = super.onCreateDialog(savedInstanceState) as BottomSheetDialog
@@ -78,10 +83,7 @@ class EnergyBottomSheet : BottomSheetDialogFragment() {
                 btnAdd.isEnabled = false
                 homeRepository.addEnergy(ADD_AMOUNT).fold(
                     onSuccess = {
-                        parentFragmentManager.setFragmentResult(
-                            REQUEST_KEY,
-                            bundleOf(EXTRA_REFRESH_HOME to true)
-                        )
+                        homeRefreshBus.notify(HomeRefreshTrigger.Full)
                         dismissAllowingStateLoss()
                     },
                     onFailure = { e ->

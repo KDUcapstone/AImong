@@ -12,6 +12,9 @@ data class ChatUiState(
     /** 장착 펫 이름 — 말풍선·헤더에 표시 */
     val petDisplayName: String = "에이몽",
     val petStage: String = "GROWTH",
+    val petType: String = "",
+    val petAvatarEmoji: String = "✨",
+    val hasEquippedPet: Boolean = false,
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
     /** 개인정보 감지 시 입력창 하이라이트(전체 문자열 기준). */

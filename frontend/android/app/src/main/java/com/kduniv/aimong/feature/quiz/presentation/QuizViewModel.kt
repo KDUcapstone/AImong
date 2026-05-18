@@ -10,8 +10,11 @@ import com.kduniv.aimong.feature.quiz.domain.model.QuestionReportResult
 import com.kduniv.aimong.feature.quiz.domain.model.QuestionResult
 import com.kduniv.aimong.feature.quiz.data.QuizSessionRules
 import com.kduniv.aimong.feature.quiz.domain.model.QuizQuestions
+import com.kduniv.aimong.feature.quiz.domain.model.QuizResultMapper
 import com.kduniv.aimong.feature.quiz.domain.model.QuizResult
 import com.kduniv.aimong.feature.quiz.domain.repository.QuizRepository
+import com.kduniv.aimong.feature.home.domain.ChildHomeRefreshBus
+import com.kduniv.aimong.feature.home.domain.HomeRefreshTrigger
 import com.kduniv.aimong.feature.home.presentation.WalletBalanceDefaults
 import com.kduniv.aimong.feature.wallet.domain.repository.WalletRepository
 import com.kduniv.aimong.R
@@ -41,6 +44,7 @@ import javax.inject.Inject
 class QuizViewModel @Inject constructor(
     private val quizRepository: QuizRepository,
     private val walletRepository: WalletRepository,
+    private val homeRefreshBus: ChildHomeRefreshBus,
     private val savedStateHandle: SavedStateHandle,
     @ApplicationContext private val appContext: Context,
     private val apiService: AimongApiService
@@ -328,31 +332,6 @@ class QuizViewModel @Inject constructor(
                     userAnswer = payload,
                     correctAnswer = if (isAnswerCorrect) payload else null
                 )
-                // 결과 객체가 필요하므로 가상의 결과 생성
-                if (quizResult == null) {
-                    quizResult = QuizResult(
-                        score = qs.questions.size - 1, // 가상의 점수
-                        total = qs.questions.size,
-                        wrongCount = 1,
-                        isPassed = true,
-                        isPerfect = false,
-                        xpEarned = 50,
-                        petEvolved = false,
-                        streakDays = 7,
-                        results = qs.questions.map { 
-                            QuestionResult(it.id, true, "목업 해설")
-                        }.toMutableList().apply {
-                            this[0] = QuestionResult(qs.questions[0].id, isAnswerCorrect, "목업 해설")
-                        },
-                        mode = if (_isReviewMode.value) "review" else "normal",
-                        equippedPetGrade = "LEGENDARY",
-                        bonusXp = 10,
-                        currentXp = 850,
-                        nextLevelXp = 1000,
-                        currentLevel = 5,
-                        remainingTickets = null
-                    )
-                }
                 maybePrefetchFinalSubmit()
                 return@launch
             }
@@ -449,6 +428,8 @@ class QuizViewModel @Inject constructor(
             }
         }
     }
+
+    fun peekQuizResult(): QuizResult? = quizResult
 
     fun finishQuizEarly() {
         quizResult?.let {
@@ -548,8 +529,17 @@ class QuizViewModel @Inject constructor(
                     reportDeferred?.cancel()
                     result
                 }
-                quizResult = merged
-                _uiState.value = QuizUiState.Finished(merged)
+                val enriched = QuizResultMapper.enrich(merged, qs.isReview)
+                quizResult = enriched
+                _uiState.value = QuizUiState.Finished(enriched)
+                if (!UiMode.useStubNav) {
+                    homeRefreshBus.notify(
+                        HomeRefreshTrigger.MissionCompleted(
+                            xpEarned = enriched.xpEarned,
+                            equippedPetXp = enriched.currentXp,
+                        )
+                    )
+                }
             }
             .onFailure {
                 reportDeferred?.cancel()

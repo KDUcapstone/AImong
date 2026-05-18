@@ -291,20 +291,8 @@ class MainActivity : AppCompatActivity() {
 
                 binding.bottomNav.setOnItemSelectedListener { item ->
                     if (suppressChildBottomNavItemSelected) return@setOnItemSelectedListener true
+                    // 네비 전환은 비동기 — post에서 currentDestination으로 맞추면 이전 탭(예: 수집)으로 되돌아감
                     runCatching { navController.onChildBottomNavTap(item.itemId) }
-                    binding.bottomNav.post {
-                        val tabId = ChildTopLevelNav.mapDestinationToTab(
-                            navController.currentDestination?.id
-                        ) ?: item.itemId
-                        if (binding.bottomNav.selectedItemId != tabId) {
-                            suppressChildBottomNavItemSelected = true
-                            try {
-                                binding.bottomNav.selectedItemId = tabId
-                            } finally {
-                                suppressChildBottomNavItemSelected = false
-                            }
-                        }
-                    }
                     true
                 }
 

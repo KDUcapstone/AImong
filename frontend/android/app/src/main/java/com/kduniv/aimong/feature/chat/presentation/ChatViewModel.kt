@@ -7,10 +7,11 @@ import com.kduniv.aimong.core.privacy.PrivacyRadar
 import com.kduniv.aimong.core.ui.BaseViewModel
 import com.kduniv.aimong.feature.chat.ChatForegroundTracker
 import com.kduniv.aimong.feature.chat.ChatHintNotifier
-import com.kduniv.aimong.feature.chat.ChatPetUiHelper
 import com.kduniv.aimong.feature.chat.domain.ReportPrivacyEventUseCase
 import com.kduniv.aimong.feature.chat.domain.SendChatMessageUseCase
-import com.kduniv.aimong.feature.home.domain.GetHomeStatusUseCase
+import com.kduniv.aimong.feature.gacha.GachaPetCatalog
+import com.kduniv.aimong.feature.home.data.PetRepository
+import com.kduniv.aimong.feature.pet.data.model.PetDto
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,7 +28,7 @@ class ChatViewModel @Inject constructor(
     private val privacyRadar: PrivacyRadar,
     private val chatForegroundTracker: ChatForegroundTracker,
     private val chatHintNotifier: ChatHintNotifier,
-    private val getHomeStatusUseCase: GetHomeStatusUseCase,
+    private val petRepository: PetRepository,
     @ApplicationContext private val appContext: Context
 ) : BaseViewModel() {
     private val messageSeq = AtomicLong(0L)
@@ -36,47 +37,81 @@ class ChatViewModel @Inject constructor(
     val uiState = _uiState.asStateFlow()
 
     init {
-        loadEquippedPet()
+        refreshEquippedPet()
     }
 
-    private fun loadEquippedPet() {
+    /** 수집 탭과 동일 — GET /pet 의 equippedPet 만 사용 */
+    fun refreshEquippedPet() {
         viewModelScope.launch {
-            getHomeStatusUseCase().fold(
-                onSuccess = { home ->
-                    applyPetContext(
-                        pet = home.equippedPet?.let {
-                            ChatPetUiHelper.displayName(it.petType, it.grade)
-                        } ?: "에이몽",
-                        stage = home.equippedPet?.stage ?: "GROWTH"
-                    )
+            petRepository.getPets().fold(
+                onSuccess = { data ->
+                    val equipped = data.equippedPet
+                    if (equipped != null) applyEquippedPet(equipped) else applyNoEquippedPet()
                 },
-                onFailure = {
-                    applyPetContext(pet = "에이몽", stage = "GROWTH")
-                }
+                onFailure = { applyNoEquippedPet() },
             )
         }
     }
 
-    private fun applyPetContext(pet: String, stage: String) {
+    private fun applyEquippedPet(pet: PetDto) {
+        applyPetContext(
+            petDisplayName = GachaPetCatalog.displayNameFor(pet.petType, pet.grade),
+            petType = pet.petType,
+            petStage = pet.stage,
+            petAvatarEmoji = GachaPetCatalog.emojiFor(pet.petType, pet.grade),
+            hasEquippedPet = true,
+        )
+    }
+
+    private fun applyNoEquippedPet() {
+        applyPetContext(
+            petDisplayName = appContext.getString(R.string.chat_default_pet_name),
+            petType = "",
+            petStage = "GROWTH",
+            petAvatarEmoji = "🐾",
+            hasEquippedPet = false,
+        )
+    }
+
+    private fun applyPetContext(
+        petDisplayName: String,
+        petType: String,
+        petStage: String,
+        petAvatarEmoji: String,
+        hasEquippedPet: Boolean,
+    ) {
         _uiState.update { state ->
-            val messages = if (state.messages.isEmpty()) {
-                listOf(
-                    ChatMessage(
-                        id = messageSeq.incrementAndGet(),
-                        text = appContext.getString(R.string.chat_welcome_pet_fmt, pet),
-                        isMine = false
-                    )
-                )
+            val welcomeText = if (hasEquippedPet) {
+                appContext.getString(R.string.chat_welcome_pet_fmt, petDisplayName)
             } else {
-                state.messages
+                appContext.getString(R.string.pet_equip_required_for_xp)
+            }
+            val messages = when {
+                state.messages.isEmpty() -> listOf(newWelcomeMessage(welcomeText))
+                shouldRefreshWelcomeOnly(state.messages) ->
+                    listOf(newWelcomeMessage(welcomeText))
+                else -> state.messages
             }
             state.copy(
-                petDisplayName = pet,
-                petStage = stage,
-                messages = messages
+                petDisplayName = petDisplayName,
+                petType = petType,
+                petStage = petStage,
+                petAvatarEmoji = petAvatarEmoji,
+                hasEquippedPet = hasEquippedPet,
+                messages = messages,
             )
         }
     }
+
+    private fun shouldRefreshWelcomeOnly(messages: List<ChatMessage>): Boolean =
+        messages.size == 1 && !messages.first().isMine
+
+    private fun newWelcomeMessage(text: String): ChatMessage =
+        ChatMessage(
+            id = messageSeq.incrementAndGet(),
+            text = text,
+            isMine = false,
+        )
 
     fun onInputChanged(length: Int) {
         _uiState.update {

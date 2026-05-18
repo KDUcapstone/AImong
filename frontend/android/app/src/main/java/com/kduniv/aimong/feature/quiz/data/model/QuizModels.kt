@@ -78,6 +78,7 @@ data class QuizSubmitResponse(
     @SerializedName("starLevel") val starLevel: Int? = null,
     @SerializedName("variantNo") val variantNo: Int? = null,
     @SerializedName("mode") val mode: String? = null,
+    @SerializedName("isReview") val isReview: Boolean? = null,
     @SerializedName("progressApplied") val progressApplied: Boolean? = null,
     @SerializedName("attemptState") val attemptState: String? = null,
     @SerializedName("score") val score: Int? = null,

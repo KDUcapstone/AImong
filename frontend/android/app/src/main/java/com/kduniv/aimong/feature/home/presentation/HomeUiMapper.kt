@@ -2,6 +2,10 @@ package com.kduniv.aimong.feature.home.presentation
 
 import com.kduniv.aimong.feature.home.data.model.DailyQuestItemDto
 import com.kduniv.aimong.feature.home.data.model.HomeScreenData
+import com.kduniv.aimong.feature.home.data.model.ProfileDto
+import com.kduniv.aimong.feature.home.data.model.TopStatusDto
+import com.kduniv.aimong.feature.home.domain.TicketTotals
+import com.kduniv.aimong.feature.pet.domain.PetGrowthRules
 
 internal object HomeUiMapper {
 
@@ -13,12 +17,18 @@ internal object HomeUiMapper {
         val quests = data.dailyQuestSummary
         val tickets = data.tickets
         val pet = data.equippedPet
+        val hasEquippedPet = pet != null
 
-        val userLevel = userLevelFromXp(profile.totalXp)
+        val userTotalXp = resolveUserTotalXp(profile, top)
+        val userLevel = userLevelFromXp(userTotalXp)
         val petStage = pet?.stage ?: "EGG"
-        val petLv = stageToDisplayLevel(petStage)
-        val petMax = maxXpForStage(petStage)
-        val petXp = pet?.xp?.coerceIn(0, petMax) ?: 0
+        val petLv = if (pet != null) PetGrowthRules.displayStageLevel(petStage) else 1
+        val petMax = if (pet != null) {
+            PetGrowthRules.progressMaxXp(pet.grade, petStage, pet.xp)
+        } else {
+            1
+        }
+        val petXp = pet?.xp?.coerceAtLeast(0) ?: 0
 
         val todayDone = "${quests.completedCount}/${quests.totalCount}"
 
@@ -29,7 +39,7 @@ internal object HomeUiMapper {
 
         return HomeUiState(
             nickname = profile.nickname,
-            totalXp = profile.totalXp,
+            totalXp = userTotalXp,
             /** 스펙: topStatus.streakDays ≡ streak.continuousDays — streak 객체 우선 */
             streakDays = streak.continuousDays,
             profileType = profile.profileImageType,
@@ -39,6 +49,7 @@ internal object HomeUiMapper {
             petMaxXp = petMax,
             petLevel = petLv,
             petStage = petStage,
+            hasEquippedPet = hasEquippedPet,
             homeState = homeState,
             petMessage = petMessage(data),
             normalTickets = tickets.normal,
@@ -46,8 +57,7 @@ internal object HomeUiMapper {
             energyCurrent = top.energy,
             energyMax = top.maxEnergy ?: 20,
             nextEnergyRecoverAt = top.nextEnergyRecoverAt,
-            /** 스펙: topStatus.xp ≡ profile.totalXp — 프로필을 단일 표시 소스로 */
-            topStatusXp = profile.totalXp,
+            topStatusXp = userTotalXp,
             rareEpicTicketCount = tickets.rare + tickets.epic,
             gachaDescription = gachaDescription(tickets),
             todayQuestProgress = todayDone,
@@ -55,12 +65,16 @@ internal object HomeUiMapper {
             isLoading = false,
             errorMessage = null,
             serverDate = data.serverDate,
-            topTicketCount = top.ticketCount,
+            topTicketCount = TicketTotals.displayTotal(top, tickets),
             canStartMission = mission.canStartMission,
             returnRewardPending = data.returnReward.hasReward,
             dailyQuestClaimableCount = quests.claimableCount
         )
     }
+
+    /** BE가 topStatus.xp / profile.totalXp 중 하나만 갱신하는 경우 대비 */
+    private fun resolveUserTotalXp(profile: ProfileDto, top: TopStatusDto): Int =
+        maxOf(profile.totalXp, top.xp)
 
     private fun userLevelFromXp(totalXp: Int): Int =
         1 + (totalXp / 80).coerceIn(0, 99)
@@ -79,24 +93,8 @@ internal object HomeUiMapper {
         }.trim()
     }
 
-    private fun stageToDisplayLevel(stage: String): Int =
-        when (stage.uppercase()) {
-            "EGG" -> 1
-            "HATCH", "BABY" -> 2
-            "GROWTH" -> 3
-            "ADULT", "MATURE" -> 4
-            else -> 2
-        }
-
-    private fun maxXpForStage(stage: String): Int =
-        when (stage.uppercase()) {
-            "EGG" -> 100
-            "GROWTH" -> 300
-            "HATCH", "BABY" -> 200
-            else -> 500
-        }
-
     private fun petMessage(data: HomeScreenData): String {
+        if (data.equippedPet == null) return ""
         if (data.returnReward.hasReward) {
             return "다시 만나서 반가워요! 보상을 확인해 보세요."
         }

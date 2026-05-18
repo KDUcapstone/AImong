@@ -1,7 +1,21 @@
 package com.kduniv.aimong.feature.chat
 
-/** 홈·챗봇에서 공통으로 쓰는 장착 펫 표시 이름·이모지 */
+import com.kduniv.aimong.feature.gacha.GachaPetCatalog
+
+/** 홈·챗봇에서 공통으로 쓰는 장착 펫 표시 이름·아바타 */
 object ChatPetUiHelper {
+
+    fun catalogEntry(petType: String): GachaPetCatalog.Entry? =
+        GachaPetCatalog.entryFor(petType)
+
+    /** 장착 펫 말풍선·헤더 아바타 — EGG는 단계 이모지, 그 외는 도감 펫 이모지 */
+    fun avatarEmoji(stage: String, petType: String, grade: String = "NORMAL"): String {
+        if (stage.equals("EGG", ignoreCase = true)) return stageEmoji(stage)
+        return GachaPetCatalog.emojiFor(petType, grade)
+    }
+
+    fun resolveDisplayName(petType: String, grade: String): String =
+        GachaPetCatalog.displayNameFor(petType, grade)
 
     fun displayName(petType: String, grade: String): String {
         val tail = petType.substringAfterLast('_', "")
@@ -23,7 +37,8 @@ object ChatPetUiHelper {
     fun stageEmoji(stage: String): String = when (stage.uppercase()) {
         "EGG" -> "🥚"
         "HATCH", "BABY" -> "🐣"
-        "GROWTH" -> "✨"
-        else -> "🌟"
+        "GROWTH" -> "🐣"
+        "AIMONG" -> "💫"
+        else -> "✨"
     }
 }

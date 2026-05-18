@@ -33,7 +33,7 @@ sealed class HomePathItem {
         val starsFilled: Int = 0,
     ) : HomePathItem()
 
-    /** 스테이지(10노드) 블록 사이 가로 구분선 1줄 */
+    /** 스테이지 블록 사이 가로 구분선 1줄 */
     object InterStageDivider : HomePathItem()
 
     data class TodayStart(

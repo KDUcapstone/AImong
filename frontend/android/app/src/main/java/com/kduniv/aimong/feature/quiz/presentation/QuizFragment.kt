@@ -28,6 +28,7 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.core.os.bundleOf
 import androidx.navigation.fragment.findNavController
 import com.kduniv.aimong.R
 import com.kduniv.aimong.core.ui.BaseFragment
@@ -55,6 +56,8 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
 
     private var lives = 3
     private var heartsAtQuizStart = 3
+    /** 세션 누적 하트 소모(부활로 잔량이 회복되어도 감소하지 않음) */
+    private var totalHeartsLost = 0
     private var maxPlayedIndex = 0
     private var timer: CountDownTimer? = null
     private var questionTimeLeftMs: Long = 30000L
@@ -120,6 +123,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             questionTimeLeftMs = 30000L
             lives = 3
             heartsAtQuizStart = 3
+            totalHeartsLost = 0
             maxPlayedIndex = 0
 
             binding.layoutFeedbackPanel.visibility = View.GONE
@@ -750,61 +754,68 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         binding.lavResultPet.setAnimation(R.raw.pet_idle)
         binding.lavResultPet.playAnimation()
 
-        val isReviewSubmit = result.mode == "review"
+        val isReviewSubmit = result.mode == "review" || viewModel.isReviewMode.value
 
         val totalCount = result.total.takeIf { it > 0 } ?: result.results.size
         val correctCount = result.results.count { it.isCorrect }
-        val wrongCount = (result.results.size - correctCount).coerceAtLeast(0)
-
-        // 서버/클라 지표를 함께 사용해 PASS/FAIL을 안전하게 결정
-        // - server veto: isPassed=false 또는 wrongCount>0 이면 무조건 FAIL
-        // - results 기반 교차검증: 모든 문항 정답이어야 PASS
-        val uiPassed =
-            result.isPassed &&
-                (result.wrongCount == 0) &&
-                (wrongCount == 0) &&
-                (correctCount == totalCount)
 
         val remainingHearts = viewModel.sessionLives.value.coerceIn(0, 3)
-        val heartsLost = (heartsAtQuizStart - remainingHearts).coerceAtLeast(0)
-        val isPerfectClear = uiPassed && !isReviewSubmit && heartsLost == 0
+        val heartsLost = maxOf(
+            totalHeartsLost,
+            (heartsAtQuizStart - remainingHearts).coerceAtLeast(0)
+        )
+        val grade = if (isReviewSubmit) {
+            null
+        } else {
+            MissionHeartGrade.fromHeartsLost(heartsLost)
+        }
+        val missionCleared = grade != MissionHeartGrade.FAIL
 
         binding.tvResultStatus.text = when {
-            !uiPassed -> getString(R.string.quiz_result_fail)
             isReviewSubmit -> "복습 완료!"
-            isPerfectClear -> getString(R.string.quiz_result_perfect)
+            grade == MissionHeartGrade.FAIL -> getString(R.string.quiz_result_fail)
+            grade == MissionHeartGrade.PERFECT -> getString(R.string.quiz_result_perfect)
             else -> getString(R.string.quiz_result_success)
         }
         binding.tvResultStatus.setTextColor(
-            if (uiPassed) quizColor(R.color.quiz_mint)
+            if (missionCleared || isReviewSubmit) quizColor(R.color.quiz_mint)
             else quizColor(R.color.quiz_red)
         )
 
         val baseSub = when {
-            !uiPassed -> "아쉽게 탈락했어. 다시 한 번 도전해볼까?"
+            isReviewSubmit && !result.isPassed ->
+                getString(R.string.quiz_result_review_subtitle_fail)
             isReviewSubmit -> getString(R.string.quiz_result_review_subtitle_pass)
-            isPerfectClear -> getString(R.string.quiz_result_perfect_subtitle)
-            uiPassed -> getString(R.string.quiz_result_success_subtitle)
+            grade == MissionHeartGrade.FAIL -> "아쉽게 탈락했어. 다시 한 번 도전해볼까?"
+            grade == MissionHeartGrade.PERFECT -> getString(R.string.quiz_result_perfect_subtitle)
+            grade == MissionHeartGrade.SUCCESS -> getString(R.string.quiz_result_success_subtitle)
             else -> "아쉽게 탈락했어. 다시 한 번 도전해볼까?"
         }
-        binding.tvResultSub.text = if (result.isFirstClear && uiPassed && !isReviewSubmit) {
+        binding.tvResultSub.text = if (result.isFirstClear && missionCleared && !isReviewSubmit) {
             "${getString(R.string.quiz_first_clear_badge)}\n$baseSub"
         } else {
             baseSub
         }
-        
+
         binding.tvResCorrectCount.text = "$correctCount / $totalCount"
-        binding.tvResPassStatus.text = if (uiPassed) "PASS" else "FAIL"
+        binding.tvResPassStatus.text = when {
+            isReviewSubmit -> getString(R.string.quiz_grade_success)
+            grade == MissionHeartGrade.PERFECT -> getString(R.string.quiz_grade_perfect)
+            grade == MissionHeartGrade.SUCCESS -> getString(R.string.quiz_grade_success)
+            else -> getString(R.string.quiz_grade_fail)
+        }
         binding.tvResPassStatus.setTextColor(
-            if (uiPassed) quizColor(R.color.quiz_mint)
-            else quizColor(R.color.quiz_red)
+            when (grade) {
+                MissionHeartGrade.PERFECT, MissionHeartGrade.SUCCESS ->
+                    quizColor(R.color.quiz_mint)
+                MissionHeartGrade.FAIL -> quizColor(R.color.quiz_red)
+                null -> quizColor(R.color.quiz_mint)
+            }
         )
 
-        // 오답 통계 표시
-        // 오답 수는 결과 화면에서 노출하지 않음
         binding.layoutWrongStat.visibility = View.GONE
         binding.layoutStatsContainer.weightSum = 3f
-        if (!uiPassed) {
+        if (!missionCleared && !isReviewSubmit) {
             binding.btnResRetry.visibility = View.VISIBLE
             binding.btnResFinish.text = "다음에 하기"
             binding.tvResPetBonus.setTextColor(quizColor(R.color.quiz_text_grey))
@@ -814,9 +825,10 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             binding.tvResPetBonus.setTextColor(quizColor(R.color.quiz_hint_gold))
         }
 
-        // 보너스 정보 (v1.4: 복습은 bonusXp/xpEarned 0, equippedPetGrade 등)
         binding.tvResPetBonus.text = when {
-            isReviewSubmit -> getString(R.string.quiz_bonus_review_none)
+            isReviewSubmit && result.xpEarned > 0 ->
+                getString(R.string.quiz_bonus_review_xp, result.xpEarned)
+            isReviewSubmit -> getString(R.string.quiz_bonus_review_no_xp)
             result.equippedPetGrade != null && result.bonusXp > 0 ->
                 getString(R.string.quiz_bonus_pet_grade, result.equippedPetGrade, result.bonusXp)
             result.bonusXp > 0 -> "+${result.bonusXp} XP"
@@ -847,10 +859,10 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         }
 
         val displayRewards = result.rewards.filter { reward ->
-            if (isReviewSubmit || !uiPassed) reward.type.uppercase() != "GEAR" else true
+            if (isReviewSubmit || !missionCleared) reward.type.uppercase() != "GEAR" else true
         }
         binding.layoutRewardsRow.visibility =
-            if (uiPassed && displayRewards.isNotEmpty()) View.VISIBLE else View.GONE
+            if (missionCleared && displayRewards.isNotEmpty()) View.VISIBLE else View.GONE
         binding.layoutRewardsContainer.removeAllViews()
         displayRewards.forEach { reward ->
             addRewardIcon(reward)
@@ -860,16 +872,23 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
     }
 
     private fun animateXpGain(gainedXp: Int, currentXp: Int, maxXp: Int, level: Int) {
-        val startXp = (currentXp - gainedXp).coerceAtLeast(0)
         binding.tvResXpGain.text = "+$gainedXp XP"
-        
-        ValueAnimator.ofInt(startXp, currentXp).apply {
+        val safeMax = maxXp.coerceAtLeast(1)
+        if (gainedXp <= 0) {
+            binding.pbResXpProgress.max = safeMax
+            binding.pbResXpProgress.progress = currentXp.coerceIn(0, safeMax)
+            binding.tvResXpStatus.text = "LV.$level (${currentXp.coerceIn(0, safeMax)} / $safeMax)"
+            return
+        }
+        val endXp = if (currentXp >= gainedXp) currentXp else gainedXp
+        val startXp = (endXp - gainedXp).coerceAtLeast(0)
+        ValueAnimator.ofInt(startXp, endXp).apply {
             duration = 1500
-            addUpdateListener { 
+            addUpdateListener {
                 val value = it.animatedValue as Int
                 binding.pbResXpProgress.progress = value
-                binding.pbResXpProgress.max = maxXp
-                binding.tvResXpStatus.text = "LV.$level ($value / $maxXp)"
+                binding.pbResXpProgress.max = safeMax
+                binding.tvResXpStatus.text = "LV.$level ($value / $safeMax)"
             }
             start()
         }
@@ -975,6 +994,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             binding.layoutHearts.visibility = View.VISIBLE
             if (index == 0) {
                 heartsAtQuizStart = 3
+                totalHeartsLost = 0
                 updateHearts(3, forceReset = true)
             }
             updateQuizModeBanner()
@@ -1066,6 +1086,9 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
     private fun updateHearts(newLives: Int, forceReset: Boolean = false) {
         val hearts = listOf(binding.ivHeart1, binding.ivHeart2, binding.ivHeart3)
         val capped = newLives.coerceIn(0, 3)
+        if (capped < lives) {
+            totalHeartsLost += (lives - capped)
+        }
         if (!forceReset && capped < lives) {
             shakeView(binding.layoutHearts)
         }
@@ -1409,5 +1432,11 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             Toast.makeText(requireContext(), "문제 세트를 준비하는 데 실패했습니다. 잠시 후 다시 시도해주세요.", Toast.LENGTH_LONG).show()
             findNavController().popBackStack()
         }
+    }
+
+    companion object {
+        /** 목업 홈([MockHomeFragment]) 전용 — 실 API는 [com.kduniv.aimong.feature.home.domain.ChildHomeRefreshBus] */
+        const val REQUEST_QUIZ_FINISHED = "quiz_finished"
+        const val EXTRA_REFRESH_HOME = "refresh_home"
     }
 }

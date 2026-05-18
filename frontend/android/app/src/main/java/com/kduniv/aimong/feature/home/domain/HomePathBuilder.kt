@@ -7,7 +7,7 @@ import com.kduniv.aimong.feature.home.presentation.DifficultyUnlockMode
 import com.kduniv.aimong.feature.home.presentation.HomePathItem
 import com.kduniv.aimong.feature.home.presentation.HomeQuizNavigation
 import com.kduniv.aimong.feature.mission.domain.model.Mission
-import com.kduniv.aimong.feature.mission.domain.model.completedDifficultyCount
+import com.kduniv.aimong.feature.mission.domain.model.openDifficultyCount
 import com.kduniv.aimong.feature.mission.domain.model.displayTitle
 import com.kduniv.aimong.feature.mission.domain.model.toDisplayMissionTitle
 
@@ -55,33 +55,34 @@ object HomePathBuilder {
             val stageMissions = groupedByStage[stage] ?: emptyList()
             val sortedMissions = stageMissions
                 .sortedBy { missionOrderKey(it.missionCode, it.title) }
-                .take(10)
 
             val stageTitle = STAGE_TITLES[stage] ?: "단계 $stage"
             val meta = ISLAND_META.getOrNull(stage - 1) ?: ISLAND_META.first()
-            // v2.11: 스테이지 해금·진행 표시는 활성 별1(쉬움) 미션 완료 수 기준
+            // 다음 스테이지(섬) 해금 조건: 이 스테이지 ★1(쉬움) 클리어 수 (BE isUnlocked 와 별개 축)
             val completedInStage = sortedMissions.count { m ->
-                m.starLevels.any { it.starLevel == 1 && it.isCompleted }
+                m.isUnlocked &&
+                    m.starLevels.any { it.starLevel == 1 && it.isCompleted }
             }
-            val totalInStage = sortedMissions.size.coerceAtLeast(1)
+            val unlockedInStage = sortedMissions.count { it.isUnlocked }
             items.add(
                 HomePathItem.SectionHeader(
                     stage = stage,
                     islandEmoji = meta.emoji,
                     islandName = meta.name,
                     progressCompleted = completedInStage,
-                    progressTotal = totalInStage,
+                    progressTotal = unlockedInStage.coerceAtLeast(1),
                     themeHint = stageTitle,
                     bannerDrawableRes = meta.banner,
                 )
             )
 
-            var nodeCount = 0
-
             sortedMissions.forEachIndexed { index, m ->
-                val stars = m.completedDifficultyCount()
+                // 노드 아래 ★: starLevels[].isPlayable 만 (미션 isUnlocked 와 별개)
+                val stars = m.openDifficultyCount()
                 val displayTitle = m.displayTitle()
-                if (rec != null && resolvedRecommendedMissionId != null && m.missionId == resolvedRecommendedMissionId) {
+                if (!m.isUnlocked) {
+                    items.add(HomePathItem.Locked(hint = "잠김"))
+                } else if (rec != null && resolvedRecommendedMissionId != null && m.missionId == resolvedRecommendedMissionId) {
                     val todayNav = HomeQuizNavigation(
                         entrySetId = recSetIdStr.orEmpty(),
                         missionId = resolvedRecommendedMissionId,
@@ -132,7 +133,7 @@ object HomePathBuilder {
                             starsFilled = stars
                         )
                     )
-                } else if (m.isUnlocked && m.starLevels.any { it.isPlayable }) {
+                } else if (m.starLevels.any { it.isPlayable }) {
                     val star = m.starLevels.firstOrNull { it.isPlayable }?.starLevel?.takeIf { it in 1..3 } ?: 1
                     items.add(
                         HomePathItem.Start(
@@ -143,17 +144,9 @@ object HomePathBuilder {
                             starsFilled = stars,
                         )
                     )
-                } else if (!m.isUnlocked) {
-                    items.add(HomePathItem.Locked(hint = "잠김"))
                 } else {
                     items.add(HomePathItem.Locked(hint = "대기 중"))
                 }
-                nodeCount++
-            }
-
-            while (nodeCount < 10) {
-                items.add(HomePathItem.Locked(hint = "준비 중"))
-                nodeCount++
             }
 
             if (stage < 3) {

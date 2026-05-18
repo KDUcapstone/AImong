@@ -284,10 +284,11 @@ class QuizRepositoryImpl @Inject constructor(
         val xpFromRewardList = data.rewards.orEmpty()
             .filter { normalizeRewardType(it.type) == "EXP" }
             .sumOf { it.count }
-        val xpEarnedResolved = (data.xpEarned ?: data.exp)?.takeIf { it > 0 }
-            ?: xpFromRewardList
+        val xpEarnedResolved = data.xpEarned ?: data.exp ?: xpFromRewardList
+        val isReview = data.mode == "review" || data.isReview == true
+        val progressXp = data.currentXp ?: data.equippedPetXp ?: 0
         return QuizResult(
-            mode = data.mode ?: "normal",
+            mode = if (isReview) "review" else (data.mode ?: "normal"),
             progressApplied = data.progressApplied ?: true,
             attemptState = normalizeAttemptStatus(data.attemptState),
             streakBonusApplied = data.streakBonusApplied ?: false,
@@ -316,7 +317,7 @@ class QuizRepositoryImpl @Inject constructor(
                 )
             },
             currentLevel = data.currentLevel ?: 1,
-            currentXp = data.currentXp ?: 0,
+            currentXp = progressXp,
             nextLevelXp = data.nextLevelXp ?: 100
         )
     }

@@ -3,7 +3,7 @@ package com.kduniv.aimong.feature.home.presentation
 import android.view.View
 import android.widget.ProgressBar
 import android.widget.TextView
-import androidx.fragment.app.viewModels
+import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.setFragmentResultListener
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -22,7 +22,7 @@ import kotlinx.coroutines.launch
 @AndroidEntryPoint
 class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::inflate) {
 
-    private val viewModel: HomeViewModel by viewModels()
+    private val viewModel: HomeViewModel by activityViewModels()
     private lateinit var homeLayoutBinder: HomeLayoutBinder
     private var missionDifficultyPicker: MissionDifficultyPicker? = null
 
@@ -32,43 +32,33 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
     }
 
     override fun initView() {
-        childFragmentManager.setFragmentResultListener(
-            EnergyBottomSheet.REQUEST_KEY,
-            viewLifecycleOwner
-        ) { _, bundle ->
-            if (bundle.getBoolean(EnergyBottomSheet.EXTRA_REFRESH_HOME, false)) {
-                viewModel.onHomeResumed()
-            }
-        }
-        childFragmentManager.setFragmentResultListener(
-            GearBottomSheet.REQUEST_KEY,
-            viewLifecycleOwner
-        ) { _, bundle ->
-            if (bundle.getBoolean(GearBottomSheet.EXTRA_REFRESH_HOME, false)) {
-                viewModel.onHomeResumed()
-            }
-        }
         homeLayoutBinder = HomeLayoutBinder(
             binding = binding,
             layoutInflater = layoutInflater,
             onOpenDifficultyPicker = { title, nav, anchor, unlockMode ->
                 val st = viewModel.uiState.value
-                if (!st.canOpenMissionPicker(
+                when {
+                    nav.missionId.isNotBlank() && !st.isMissionUnlocked(nav.missionId) ->
+                        showMissionHint(getString(R.string.quiz_mission_locked))
+                    !st.canOpenMissionPicker(
                         unlockMode,
                         viewModel.missionStarLevels(nav.missionId),
-                    )
-                ) {
-                    showEnergyInsufficientSnackbar()
-                } else {
-                    missionDifficultyPicker?.dismissImmediate()
-                    val picker = MissionDifficultyPicker(binding, layoutInflater)
-                    missionDifficultyPicker = picker
-                    viewLifecycleOwner.lifecycleScope.launch {
-                        val starLevels = viewModel.ensureMissionStarLevels(nav.missionId)
-                        if (!isAdded) return@launch
-                        picker.show(title, nav, starLevels, unlockMode, anchor) { picked, resolvedMode ->
-                            navigateToQuizAfterValidation(picked, resolvedMode)
-                            missionDifficultyPicker = null
+                    ) -> showEnergyInsufficientSnackbar()
+                    else -> {
+                        missionDifficultyPicker?.dismissImmediate()
+                        val picker = MissionDifficultyPicker(binding, layoutInflater)
+                        missionDifficultyPicker = picker
+                        viewLifecycleOwner.lifecycleScope.launch {
+                            val starLevels = viewModel.ensureMissionStarLevels(nav.missionId)
+                            if (!isAdded) return@launch
+                            if (nav.missionId.isNotBlank() && !viewModel.isMissionUnlocked(nav.missionId)) {
+                                showMissionHint(getString(R.string.quiz_mission_locked))
+                                return@launch
+                            }
+                            picker.show(title, nav, starLevels, unlockMode, anchor) { picked, resolvedMode ->
+                                navigateToQuizAfterValidation(picked, resolvedMode)
+                                missionDifficultyPicker = null
+                            }
                         }
                     }
                 }
@@ -86,14 +76,6 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
         binding.fabChildQuest.setOnClickListener { openQuestList() }
         binding.cardFloatPet.setOnClickListener { showPetStatsSheet() }
         binding.layoutChipTicket.setOnClickListener { openGacha() }
-        parentFragmentManager.setFragmentResultListener(
-            StreakCalendarBottomSheet.REQUEST_KEY,
-            viewLifecycleOwner
-        ) { _, bundle ->
-            if (bundle.getBoolean(StreakCalendarBottomSheet.EXTRA_REFRESH_HOME, false)) {
-                viewModel.onHomeResumed()
-            }
-        }
         binding.layoutChipStreak.setOnClickListener { openStreakSheet() }
         parentFragmentManager.setFragmentResultListener(
             QuestListBottomSheet.REQUEST_OPEN_MISSION_LEARN,
@@ -184,6 +166,10 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
 
     private fun showPetStatsSheet() {
         val s = viewModel.uiState.value
+        if (!s.hasEquippedPet) {
+            showMissionHint(getString(R.string.pet_equip_required_for_xp))
+            return
+        }
         val dialog = BottomSheetDialog(requireContext())
         val v = layoutInflater.inflate(R.layout.bottomsheet_pet_stats, null, false)
         v.findViewById<TextView>(R.id.tv_pet_emoji).text = when (s.petStage) {

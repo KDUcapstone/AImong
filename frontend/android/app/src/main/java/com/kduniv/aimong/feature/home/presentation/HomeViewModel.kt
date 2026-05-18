@@ -8,7 +8,9 @@ import com.kduniv.aimong.core.dev.UiMode
 import com.kduniv.aimong.core.network.AimongApiService
 import com.kduniv.aimong.core.network.ApiErrorMapper
 import com.kduniv.aimong.core.network.toResult
+import com.kduniv.aimong.feature.home.domain.ChildHomeRefreshBus
 import com.kduniv.aimong.feature.home.domain.GetHomeStatusUseCase
+import com.kduniv.aimong.feature.home.domain.HomeRefreshTrigger
 import com.kduniv.aimong.feature.home.domain.repository.AppBootstrapRepository
 import com.kduniv.aimong.feature.home.domain.repository.HomeRepository
 import com.kduniv.aimong.feature.home.domain.HomePathBuilder
@@ -17,14 +19,16 @@ import com.kduniv.aimong.feature.home.presentation.resolveUnlockModeForPick
 import com.kduniv.aimong.feature.mission.data.model.MissionStarLevelDto
 import com.kduniv.aimong.feature.mission.domain.model.Mission
 import com.kduniv.aimong.feature.mission.domain.model.MissionStarLevel
-import com.kduniv.aimong.feature.mission.domain.model.completedDifficultyCount
+import com.kduniv.aimong.feature.mission.domain.model.openDifficultyCount
 import com.kduniv.aimong.feature.mission.domain.repository.MissionRepository
 import com.kduniv.aimong.feature.wallet.domain.repository.WalletRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -39,6 +43,7 @@ class HomeViewModel @Inject constructor(
     private val walletRepository: WalletRepository,
     private val appBootstrapRepository: AppBootstrapRepository,
     private val apiService: AimongApiService,
+    private val homeRefreshBus: ChildHomeRefreshBus,
     @ApplicationContext private val appContext: Context
 ) : ViewModel() {
 
@@ -49,8 +54,48 @@ class HomeViewModel @Inject constructor(
         appContext.getSharedPreferences(PREFS_HOME, Context.MODE_PRIVATE)
     }
 
+    private var homeLoadJob: Job? = null
+
+    init {
+        if (!UiMode.useStubNav) {
+            viewModelScope.launch {
+                homeRefreshBus.events
+                    .debounce(200)
+                    .collect { handleRefreshTrigger(it) }
+            }
+        }
+    }
+
     fun onHomeResumed() {
-        loadHome()
+        loadHome(showLoading = _uiState.value.pathItems.isEmpty())
+    }
+
+    private fun handleRefreshTrigger(trigger: HomeRefreshTrigger) {
+        when (trigger) {
+            is HomeRefreshTrigger.MissionCompleted -> {
+                applyMissionXpHint(trigger.xpEarned, trigger.equippedPetXp)
+                loadHome(showLoading = false)
+            }
+            HomeRefreshTrigger.Full -> loadHome(showLoading = false)
+        }
+    }
+
+    private fun applyMissionXpHint(xpEarned: Int, equippedPetXp: Int) {
+        if (xpEarned <= 0 && equippedPetXp <= 0) return
+        _uiState.update { s ->
+            val userXp = if (xpEarned > 0) s.topStatusXp + xpEarned else s.topStatusXp
+            val petXp = when {
+                equippedPetXp > 0 -> equippedPetXp
+                xpEarned > 0 && s.hasEquippedPet -> s.petXp + xpEarned
+                else -> s.petXp
+            }
+            s.copy(
+                topStatusXp = userXp,
+                totalXp = userXp,
+                userLevel = 1 + (userXp / 80).coerceIn(0, 99),
+                petXp = petXp,
+            )
+        }
     }
 
     fun consumeError() {
@@ -107,6 +152,9 @@ class HomeViewModel @Inject constructor(
                     if (rem != null) {
                         applyRemainingTickets(rem.normal, rem.rare, rem.epic)
                     }
+                    if (!UiMode.useStubNav) {
+                        homeRefreshBus.notify(HomeRefreshTrigger.Full)
+                    }
                     val extra = data.ticketEarned?.let { te ->
                         val cnt = te.count
                         if (cnt > 0) " (티켓 ${cnt}장)" else null
@@ -126,9 +174,12 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    private fun loadHome() {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, errorMessage = null, subtleNotice = null) }
+    private fun loadHome(showLoading: Boolean = true) {
+        homeLoadJob?.cancel()
+        homeLoadJob = viewModelScope.launch {
+            if (showLoading) {
+                _uiState.update { it.copy(isLoading = true, errorMessage = null, subtleNotice = null) }
+            }
             // 홈 경로는 /missions 목록과 맞물리므로, 먼저 미션 캐시를 갱신한 뒤 홈·경로를 구성한다.
             val missionsRefresh = missionRepository.refreshMissions()
             getHomeStatusUseCase().fold(
@@ -160,6 +211,7 @@ class HomeViewModel @Inject constructor(
                     var ui = HomeUiMapper.toUiState(data).copy(
                         pathItems = path,
                         missionStarLevelsById = missions.associate { it.missionId to it.starLevels },
+                        missionUnlockedById = missions.associate { it.missionId to it.isUnlocked },
                         isLoading = false,
                         errorMessage = null,
                         subtleNotice = notice
@@ -227,12 +279,15 @@ class HomeViewModel @Inject constructor(
     suspend fun ensureMissionStarLevels(missionId: String): List<MissionStarLevel> {
         if (missionId.isBlank()) return emptyList()
         val cached = missionStarLevels(missionId)
-        if (cached.isNotEmpty()) return cached
+        if (cached.isNotEmpty() && isMissionUnlocked(missionId)) return cached
         if (UiMode.useStubNav) return cached
-        val fresh = fetchMissionStarLevelsFromStatus(missionId) ?: return cached
-        cacheMissionStarLevels(missionId, fresh)
-        return fresh
+        val snapshot = fetchMissionStatusSnapshot(missionId) ?: return cached
+        cacheMissionStatus(missionId, snapshot.stars, snapshot.isUnlocked)
+        return snapshot.stars.ifEmpty { cached }
     }
+
+    fun isMissionUnlocked(missionId: String): Boolean =
+        _uiState.value.isMissionUnlocked(missionId)
 
     /** GET /missions 에 starLevels가 비어 있으면 status로 채운 뒤 경로를 구성한다. */
     private suspend fun supplementMissionsStarLevels(missions: List<Mission>): List<Mission> {
@@ -240,18 +295,27 @@ class HomeViewModel @Inject constructor(
         return missions.map { mission ->
             if (mission.starLevels.isNotEmpty()) mission
             else {
-                fetchMissionStarLevelsFromStatus(mission.missionId)?.let { stars ->
-                    mission.copy(starLevels = stars)
+                fetchMissionStatusSnapshot(mission.missionId)?.let { snapshot ->
+                    mission.copy(starLevels = snapshot.stars)
                 } ?: mission
             }
         }
     }
 
-    private fun cacheMissionStarLevels(missionId: String, stars: List<MissionStarLevel>) {
-        val count = stars.completedDifficultyCount()
+    private fun cacheMissionStatus(
+        missionId: String,
+        stars: List<MissionStarLevel>,
+        isUnlocked: Boolean? = null,
+    ) {
+        val count = stars.openDifficultyCount()
         _uiState.update { state ->
             state.copy(
                 missionStarLevelsById = state.missionStarLevelsById + (missionId to stars),
+                missionUnlockedById = if (isUnlocked != null) {
+                    state.missionUnlockedById + (missionId to isUnlocked)
+                } else {
+                    state.missionUnlockedById
+                },
                 pathItems = state.pathItems.map { item ->
                     patchPathItemStars(item, missionId, count)
                 },
@@ -272,10 +336,18 @@ class HomeViewModel @Inject constructor(
             else -> item
         }
 
-    private suspend fun fetchMissionStarLevelsFromStatus(missionId: String): List<MissionStarLevel>? {
+    private data class MissionStatusSnapshot(
+        val stars: List<MissionStarLevel>,
+        val isUnlocked: Boolean,
+    )
+
+    private suspend fun fetchMissionStatusSnapshot(missionId: String): MissionStatusSnapshot? {
         return try {
             val status = apiService.getMissionStatus(missionId).toResult().getOrThrow()
-            mapStarLevelDtos(status.starLevels)
+            MissionStatusSnapshot(
+                stars = mapStarLevelDtos(status.starLevels),
+                isUnlocked = status.isUnlocked,
+            )
         } catch (_: HttpException) {
             null
         } catch (_: Throwable) {
@@ -291,7 +363,9 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             ids.forEach { missionId ->
                 if (missionStarLevels(missionId).isNotEmpty()) return@forEach
-                fetchMissionStarLevelsFromStatus(missionId)?.let { cacheMissionStarLevels(missionId, it) }
+                fetchMissionStatusSnapshot(missionId)?.let {
+                    cacheMissionStatus(missionId, it.stars, it.isUnlocked)
+                }
             }
         }
     }
@@ -374,7 +448,7 @@ class HomeViewModel @Inject constructor(
         return try {
             val status = apiService.getMissionStatus(nav.missionId).toResult().getOrThrow()
             val stars = mapStarLevelDtos(status.starLevels)
-            cacheMissionStarLevels(nav.missionId, stars)
+            cacheMissionStatus(nav.missionId, stars, status.isUnlocked)
             if (!status.isUnlocked) {
                 return Result.failure(Exception(appContext.getString(R.string.quiz_mission_locked)))
             }

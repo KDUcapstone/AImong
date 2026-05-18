@@ -22,6 +22,9 @@ import androidx.appcompat.widget.AppCompatButton
 import com.google.android.material.snackbar.Snackbar
 import com.kduniv.aimong.R
 import com.kduniv.aimong.feature.home.data.StreakCalendarMapper
+import com.kduniv.aimong.core.dev.UiMode
+import com.kduniv.aimong.feature.home.domain.ChildHomeRefreshBus
+import com.kduniv.aimong.feature.home.domain.HomeRefreshTrigger
 import com.kduniv.aimong.feature.home.domain.model.StreakCalendarResult
 import com.kduniv.aimong.feature.home.domain.repository.HomeRepository
 import com.kduniv.aimong.feature.streak.data.StreakRepository
@@ -48,6 +51,9 @@ class StreakCalendarBottomSheet : BottomSheetDialogFragment() {
 
     @Inject
     lateinit var walletRepository: WalletRepository
+
+    @Inject
+    lateinit var homeRefreshBus: ChildHomeRefreshBus
 
     private var viewingYearMonth: String? = null
     private var streakStatus: StreakStatusData? = null
@@ -97,10 +103,14 @@ class StreakCalendarBottomSheet : BottomSheetDialogFragment() {
                         refreshStreakSnapshot()
                         btn.isEnabled = gearBalance >= streakShieldCost
                         Snackbar.make(requireView(), getString(R.string.streak_shield_purchase_success), Snackbar.LENGTH_SHORT).show()
-                        parentFragmentManager.setFragmentResult(
-                            REQUEST_KEY,
-                            bundleOf(EXTRA_REFRESH_HOME to true)
-                        )
+                        if (!UiMode.useStubNav) {
+                            homeRefreshBus.notify(HomeRefreshTrigger.Full)
+                        } else {
+                            parentFragmentManager.setFragmentResult(
+                                REQUEST_KEY,
+                                bundleOf(EXTRA_REFRESH_HOME to true)
+                            )
+                        }
                     },
                     onFailure = { e ->
                         Snackbar.make(

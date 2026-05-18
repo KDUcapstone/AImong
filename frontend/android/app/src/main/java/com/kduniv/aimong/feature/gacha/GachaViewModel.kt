@@ -11,7 +11,9 @@ import com.kduniv.aimong.feature.gacha.data.model.FragmentGradeRow
 import com.kduniv.aimong.feature.gacha.data.model.GachaPullData
 import com.kduniv.aimong.feature.gacha.data.model.RemainingTicketsDto
 import com.kduniv.aimong.feature.home.data.PetRepository
+import com.kduniv.aimong.feature.home.domain.ChildHomeRefreshBus
 import com.kduniv.aimong.feature.home.domain.GetHomeStatusUseCase
+import com.kduniv.aimong.feature.home.domain.HomeRefreshTrigger
 import com.kduniv.aimong.feature.pet.data.model.PetDto
 import com.kduniv.aimong.feature.pet.data.model.PetListData
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -29,6 +31,7 @@ class GachaViewModel @Inject constructor(
     private val petRepository: PetRepository,
     private val gachaRepository: GachaRepository,
     private val getHomeStatusUseCase: GetHomeStatusUseCase,
+    private val homeRefreshBus: ChildHomeRefreshBus,
     @ApplicationContext private val appContext: Context
 ) : ViewModel() {
 
@@ -71,6 +74,15 @@ class GachaViewModel @Inject constructor(
 
     fun setTicketType(type: String) {
         _state.update { it.copy(selectedTicket = type) }
+    }
+
+    /** 홈·퀘스트 보상 후 수집 탭 티켓 칩만 GET /home 으로 맞춤 */
+    fun syncTicketsFromHome() {
+        viewModelScope.launch {
+            loadTickets().getOrNull()?.let { tickets ->
+                _state.update { it.copy(tickets = tickets) }
+            }
+        }
     }
 
     fun refresh() {
@@ -138,6 +150,9 @@ class GachaViewModel @Inject constructor(
                             transientMessage = appContext.getString(R.string.gacha_equip_done)
                         )
                     }
+                    if (!UiMode.useStubNav) {
+                        homeRefreshBus.notify(HomeRefreshTrigger.Full)
+                    }
                 },
                 onFailure = { e ->
                     _state.update { it.copy(loading = false, transientMessage = e.message) }
@@ -168,6 +183,9 @@ class GachaViewModel @Inject constructor(
                             ownedCatalogCount = lists.ownedCount,
                             transientMessage = err ?: appContext.getString(R.string.gacha_exchange_done)
                         )
+                    }
+                    if (!UiMode.useStubNav) {
+                        homeRefreshBus.notify(HomeRefreshTrigger.Full)
                     }
                 },
                 onFailure = { e ->
@@ -203,15 +221,12 @@ class GachaViewModel @Inject constructor(
                 transientMessage = err ?: levelMsg
             )
         }
+        if (!UiMode.useStubNav) {
+            homeRefreshBus.notify(HomeRefreshTrigger.Full)
+        }
     }
 
     private suspend fun loadTickets(): Result<RemainingTicketsDto> {
-        val fromHome = getHomeStatusUseCase().getOrNull()?.tickets?.let {
-            RemainingTicketsDto(normal = it.normal, rare = it.rare, epic = it.epic)
-        }
-        if (fromHome != null) {
-            return Result.success(fromHome)
-        }
         if (UiMode.useStubNav) {
             return Result.success(StubPetGachaStore.currentTickets())
         }
@@ -219,7 +234,7 @@ class GachaViewModel @Inject constructor(
             RemainingTicketsDto(
                 normal = home.tickets.normal,
                 rare = home.tickets.rare,
-                epic = home.tickets.epic
+                epic = home.tickets.epic,
             )
         }
     }
@@ -255,15 +270,14 @@ class GachaViewModel @Inject constructor(
         equippedId: String?,
         rows: List<FragmentGradeRow>
     ): GachaPetCardUi {
-        val entry = GachaPetCatalog.entries.firstOrNull { it.petType == pet.petType }
         val (count, threshold) = GachaUiMapper.fragmentProgress(pet, rows)
         return GachaPetCardUi(
             catalogPetType = pet.petType,
             pet = pet,
             isLocked = false,
             isEquipped = pet.id == equippedId,
-            displayName = entry?.displayName ?: GachaUiMapper.displayName(pet),
-            emoji = entry?.emoji ?: GachaUiMapper.petEmoji(pet),
+            displayName = GachaPetCatalog.displayNameFor(pet.petType, pet.grade),
+            emoji = GachaPetCatalog.emojiFor(pet.petType, pet.grade),
             grade = pet.grade,
             levelLabel = GachaUiMapper.displayLevel(pet),
             fragmentCount = count,

@@ -46,10 +46,25 @@
         tools:text="스트릭 보호권: 30" />
 
     <androidx.appcompat.widget.AppCompatButton
-        android:id="@+id/btn_buy_streak_shield"
+        android:id="@+id/btn_add_gear"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
+        android:background="@drawable/bg_child_quest_action_filled"
+        android:minHeight="56dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:text="@string/gear_add_ten"
+        android:textAllCaps="false"
+        android:textColor="@color/white"
+        android:textSize="17sp"
+        android:textStyle="bold" />
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btn_buy_streak_shield"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
         android:background="@drawable/bg_child_quest_action_filled"
         android:minHeight="56dp"
         android:paddingStart="16dp"

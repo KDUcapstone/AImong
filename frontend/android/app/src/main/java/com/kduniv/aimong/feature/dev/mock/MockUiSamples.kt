@@ -20,15 +20,19 @@ object MockUiSamples {
     }
 
     fun homeUiState(): HomeUiState {
+        val userXp = MockXpLedger.userTotalXp
         return HomeUiState(
             nickname = "목업",
+            totalXp = userXp,
             streakDays = 5,
             profileType = "SPROUT",
-            userLevel = 4,
+            userLevel = 1 + (userXp / 80).coerceIn(0, 99),
             petName = "별이",
-            petXp = 120,
-            petMaxXp = 200,
-            petLevel = 3,
+            petXp = MockXpLedger.petXp,
+            petMaxXp = 10,
+            hasEquippedPet = true,
+            petStage = "EGG",
+            petLevel = 1,
             petMessage = "오늘도 AI 탐험 화이팅!",
             energyCurrent = mockEnergyCurrent,
             energyMax = MOCK_ENERGY_MAX,
@@ -37,7 +41,7 @@ object MockUiSamples {
             streakShieldCost = WalletBalanceDefaults.STREAK_SHIELD_COST,
             missionStartCost = HomeUiState.DEFAULT_MISSION_START_COST,
             nextEnergyRecoverAt = null,
-            topStatusXp = 1520,
+            topStatusXp = userXp,
             normalTickets = 2,
             topTicketCount = 4,
             canStartMission = true,
@@ -135,7 +139,7 @@ object MockUiSamples {
                         islandEmoji = "🌋",
                         islandName = "탐험의 화산섬",
                         progressCompleted = 0,
-                        progressTotal = 10,
+                        progressTotal = 1,
                         themeHint = "AI 잘 쓰기",
                         bannerDrawableRes = R.drawable.bg_home_section_banner_stage2,
                     )
@@ -149,7 +153,6 @@ object MockUiSamples {
                         starsFilled = 0,
                     )
                 )
-                repeat(9) { add(HomePathItem.Locked(hint = "준비 중")) }
                 add(HomePathItem.InterStageDivider)
                 add(
                     HomePathItem.SectionHeader(
@@ -157,7 +160,7 @@ object MockUiSamples {
                         islandEmoji = "⭐",
                         islandName = "마스터의 별섬",
                         progressCompleted = 0,
-                        progressTotal = 10,
+                        progressTotal = 1,
                         themeHint = "비판적으로 생각하기",
                         bannerDrawableRes = R.drawable.bg_home_section_banner_stage3,
                     )
@@ -171,8 +174,6 @@ object MockUiSamples {
                         starsFilled = 0,
                     )
                 )
-                repeat(9) { add(HomePathItem.Locked(hint = "준비 중")) }
-                add(HomePathItem.InterStageDivider)
             }
         )
     }

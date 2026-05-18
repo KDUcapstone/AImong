@@ -17,6 +17,7 @@ import com.kduniv.aimong.feature.home.presentation.DifficultyUnlockMode
 import com.kduniv.aimong.feature.home.presentation.MissionDifficultyPicker
 import com.kduniv.aimong.feature.home.presentation.QuestListBottomSheet
 import com.kduniv.aimong.feature.home.presentation.StreakCalendarBottomSheet
+import com.kduniv.aimong.feature.quiz.presentation.QuizFragment
 import dagger.hilt.android.AndroidEntryPoint
 
 /** [HomeFragment]와 동일 레이아웃 — [MockUiSamples] 고정 데이터. */
@@ -123,6 +124,14 @@ class MockHomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::
             viewLifecycleOwner
         ) { _, bundle ->
             if (bundle.getBoolean(StreakCalendarBottomSheet.EXTRA_REFRESH_HOME, false)) {
+                binding.root.post { homeLayoutBinder.bind(MockUiSamples.homeUiState()) }
+            }
+        }
+        parentFragmentManager.setFragmentResultListener(
+            QuizFragment.REQUEST_QUIZ_FINISHED,
+            viewLifecycleOwner,
+        ) { _, bundle ->
+            if (bundle.getBoolean(QuizFragment.EXTRA_REFRESH_HOME, false)) {
                 binding.root.post { homeLayoutBinder.bind(MockUiSamples.homeUiState()) }
             }
         }

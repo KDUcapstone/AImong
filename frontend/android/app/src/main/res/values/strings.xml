@@ -55,6 +55,10 @@
     <string name="quiz_result_success_subtitle">하트를 남기고 미션을 클리어했어!</string>
     <string name="quiz_result_perfect_subtitle">하트를 하나도 잃지 않고 완벽하게 클리어했어!</string>
     <string name="quiz_result_fail">미션 실패</string>
+    <string name="quiz_grade_label">클리어 등급</string>
+    <string name="quiz_grade_perfect">PERFECT</string>
+    <string name="quiz_grade_success">성공</string>
+    <string name="quiz_grade_fail">실패</string>
     <string name="quiz_result_score">%1$d문제 중 %2$d문제 정답</string>
     <string name="quiz_result_xp">+%1$d XP 획득!</string>
     <string name="quiz_wrong_count">오답: %1$d/3</string>
@@ -80,6 +84,8 @@
     <string name="gear_streak_shield_cost_fmt">스트릭 보호권 구매: %1$d개</string>
     <string name="gear_buy_streak_shield">스트릭 보호권 구매</string>
     <string name="gear_buy_streak_shield_cost_fmt">보호권 구매 (%1$d개) · 보유 %2$d</string>
+    <string name="gear_add_ten">톱니바퀴 +10</string>
+    <string name="gear_add_failed">톱니바퀴 추가에 실패했어요.</string>
     <string name="gear_load_failed">톱니바퀴 정보를 불러오지 못했어요.</string>
     <string name="gear_shield_purchase_success">스트릭 보호권을 구매했어요!</string>
     <string name="gear_shield_purchase_failed">보호권 구매에 실패했어요.</string>
@@ -114,9 +120,10 @@
 
     <string name="quiz_mode_retry_challenge">다시 도전하기</string>
     <string name="quiz_mode_review_and_retry">복습 · 다시 도전하기</string>
-    <string name="quiz_result_review_subtitle_pass">복습으로 제출되었어요. XP·진행도·보상은 적용되지 않았어요.</string>
-    <string name="quiz_result_review_subtitle_fail">복습 결과예요. XP·진행도·보상은 적용되지 않았어요.</string>
-    <string name="quiz_bonus_review_none">복습 · XP·보상 미적용</string>
+    <string name="quiz_result_review_subtitle_pass">복습 완료! EXP는 정상의 50%%만 쌓여요. (스트릭·티켓·기어 보상 없음)</string>
+    <string name="quiz_result_review_subtitle_fail">복습이에요. 통과하면 EXP 50%%를 받을 수 있어요.</string>
+    <string name="quiz_bonus_review_xp">복습 · +%1$d EXP (50%%)</string>
+    <string name="quiz_bonus_review_no_xp">복습 · EXP 없음</string>
     <string name="quiz_bonus_pet_grade">%1$s 등급 보너스 · +%2$d XP</string>
     <string name="quiz_remaining_tickets_line">남은 티켓 · 일반 %1$d · 레어 %2$d · 에픽 %3$d</string>
 
@@ -211,6 +218,7 @@
     <string name="chat_send">전송</string>
     <string name="chat_online">온라인</string>
     <string name="chat_privacy_banner">개인정보는 절대 말하지 마세요. 펫과 안전하게 대화해요!</string>
+    <string name="chat_default_pet_name">에이몽</string>
     <string name="chat_welcome_pet_fmt">안녕! 나는 %1$s이야. 궁금한 걸 편하게 물어봐!</string>
     <string name="chat_remaining_calls_fmt">오늘 AI 친구와 %1$d번 더 이야기할 수 있어요</string>
     <string name="chat_remaining_calls_zero">오늘은 AI 친구와 이야기할 횟수를 다 썼어요. 내일 또 만나요!</string>

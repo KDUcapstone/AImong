@@ -13,9 +13,11 @@ data class HomeUiState(
     // 펫 정보 및 상태
     val petName: String = "",
     val petXp: Int = 0,
-    val petMaxXp: Int = 500,
+    val petMaxXp: Int = 10,
     val petLevel: Int = 1,
     val petStage: String = "EGG",
+    /** GET /home·/pet 의 equippedPet 없음 — XP 미적립 안내용 */
+    val hasEquippedPet: Boolean = false,
     val homeState: HomeState = HomeState.IDLE,
     val petMessage: String = "",
     
@@ -65,8 +67,13 @@ data class HomeUiState(
     val pathItems: List<HomePathItem> = emptyList(),
 
     /** missionId → 별 난이도(1~3) — 난이도 피커 잠금/퀘스트 학습 진입에 사용 */
-    val missionStarLevelsById: Map<String, List<MissionStarLevel>> = emptyMap()
+    val missionStarLevelsById: Map<String, List<MissionStarLevel>> = emptyMap(),
+
+    /** missionId → 소단원(챕터 슬롯) 해금 — GET /missions·status 의 isUnlocked */
+    val missionUnlockedById: Map<String, Boolean> = emptyMap(),
 ) {
+    fun isMissionUnlocked(missionId: String): Boolean =
+        missionId.isBlank() || missionUnlockedById[missionId] != false
     fun hasEnoughEnergyForMissionStart(): Boolean = energyCurrent >= missionStartCost
 
     /** 복습(REVIEW) 진입은 에너지 차감 없음 — v2.7 */

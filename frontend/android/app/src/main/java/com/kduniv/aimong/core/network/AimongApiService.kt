@@ -64,6 +64,8 @@ import com.kduniv.aimong.feature.pet.data.model.PetListData
 import com.kduniv.aimong.feature.streak.data.model.StreakShieldPurchaseRequest
 import com.kduniv.aimong.feature.streak.data.model.StreakShieldPurchaseResponseData
 import com.kduniv.aimong.feature.streak.data.model.StreakStatusData
+import com.kduniv.aimong.feature.wallet.data.model.GearAddRequest
+import com.kduniv.aimong.feature.wallet.data.model.GearAddResponseData
 import com.kduniv.aimong.feature.wallet.data.model.WalletResponseData
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -211,6 +213,9 @@ interface AimongApiService {
 
     @GET("wallet")
     suspend fun getWallet(): ApiResponse<WalletResponseData>
+
+    @POST("wallet/add")
+    suspend fun addGear(@Body body: GearAddRequest): ApiResponse<GearAddResponseData>
 
     @GET("quests/daily")
     suspend fun getDailyQuests(): ApiResponse<DailyQuestsResponseData>

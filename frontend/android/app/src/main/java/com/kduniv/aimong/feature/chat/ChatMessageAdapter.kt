@@ -12,8 +12,7 @@ import com.kduniv.aimong.feature.chat.presentation.ChatMessage
 
 class ChatMessageAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(Diff) {
 
-    var petDisplayName: String = "에이몽"
-    var petStage: String = "GROWTH"
+    var petAvatarEmoji: String = "✨"
 
     override fun getItemViewType(position: Int): Int =
         if (getItem(position).isMine) VIEW_TYPE_USER else VIEW_TYPE_PET
@@ -33,7 +32,7 @@ class ChatMessageAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(Dif
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         val item = getItem(position)
         when (holder) {
-            is PetVh -> holder.bind(item, petStage)
+            is PetVh -> holder.bind(item, petAvatarEmoji)
             is UserVh -> holder.bind(item)
         }
     }
@@ -42,15 +41,11 @@ class ChatMessageAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(Dif
         private val binding: ItemChatMessagePetBinding
     ) : RecyclerView.ViewHolder(binding.root) {
 
-        fun bind(item: ChatMessage, stage: String) {
+        fun bind(item: ChatMessage, avatarEmoji: String) {
             binding.tvMessage.text = item.text
-            val emoji = ChatPetUiHelper.stageEmoji(stage)
-            val useEmoji = stage.equals("EGG", ignoreCase = true)
-            binding.lavPetAvatar.visibility = if (useEmoji) View.GONE else View.VISIBLE
-            binding.tvPetAvatarEmoji.visibility = if (useEmoji) View.VISIBLE else View.GONE
-            if (useEmoji) {
-                binding.tvPetAvatarEmoji.text = emoji
-            }
+            binding.lavPetAvatar.visibility = View.GONE
+            binding.tvPetAvatarEmoji.visibility = View.VISIBLE
+            binding.tvPetAvatarEmoji.text = avatarEmoji
         }
     }
 

@@ -67,6 +67,7 @@ class ChatFragment : BaseFragment<FragmentChatBinding>(FragmentChatBinding::infl
     override fun onResume() {
         super.onResume()
         chatForegroundTracker.isChatVisible = true
+        viewModel.refreshEquippedPet()
     }
 
     override fun onPause() {
@@ -78,9 +79,13 @@ class ChatFragment : BaseFragment<FragmentChatBinding>(FragmentChatBinding::infl
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
-                    chatAdapter.petDisplayName = state.petDisplayName
-                    chatAdapter.petStage = state.petStage
+                    val prevEmoji = chatAdapter.petAvatarEmoji
+                    chatAdapter.petAvatarEmoji = state.petAvatarEmoji
                     binding.tvChatTitle.text = state.petDisplayName
+                    binding.tvHeaderPetEmoji.text = state.petAvatarEmoji
+                    if (prevEmoji != state.petAvatarEmoji) {
+                        chatAdapter.notifyDataSetChanged()
+                    }
                     chatAdapter.submitList(state.messages) {
                         if (state.messages.isNotEmpty()) {
                             binding.rvChat.scrollToPosition(state.messages.size - 1)

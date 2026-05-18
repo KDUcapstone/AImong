@@ -21,21 +21,21 @@ data class MissionStarLevel(
 ) {
     val isCompleted: Boolean
         get() = totalSetCount > 0 && completedSetCount >= totalSetCount
-
-    /** 플레이·복습·클리어 중 하나라도 가능한 난이도면 열린 것으로 본다 */
-    val isOpen: Boolean
-        get() = isPlayable || isReviewable || isCompleted
 }
 
-/** 홈 경로 노드 아래 ★ 표시(0~3): 열린 최고 난이도 단계 (난이도 피커 등) */
+/**
+ * 홈 미션 노드 아래 ★ 채움(0~3): [isPlayable]인 최고 난이도까지.
+ * 별 단계에는 isUnlocked 없음 — 소단원 [Mission.isUnlocked]·복습 [isReviewable]과 별개.
+ * 예) ★1·★2 playable → 2 → `★★☆`
+ */
 fun List<MissionStarLevel>.openDifficultyCount(): Int =
-    filter { it.isOpen }
+    filter { it.isPlayable }
         .maxOfOrNull { it.starLevel }
         ?.coerceIn(0, 3) ?: 0
 
 fun Mission.openDifficultyCount(): Int = starLevels.openDifficultyCount()
 
-/** 홈 경로 노드 아래 ★ 표시(0~3): 클리어한 난이도 개수 */
+/** 스테이지 진행·완료 배지 등: 세트까지 전부 깬 난이도 개수 */
 fun List<MissionStarLevel>.completedDifficultyCount(): Int =
     count { it.isCompleted }.coerceIn(0, 3)
 

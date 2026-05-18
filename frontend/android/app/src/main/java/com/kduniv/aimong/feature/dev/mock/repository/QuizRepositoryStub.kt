@@ -13,6 +13,7 @@ import com.kduniv.aimong.feature.quiz.domain.model.QuestionType
 import com.kduniv.aimong.feature.quiz.domain.model.TermHint
 import com.kduniv.aimong.feature.quiz.domain.model.QuizQuestions
 import com.kduniv.aimong.feature.dev.mock.MockGearBalance
+import com.kduniv.aimong.feature.dev.mock.MockXpLedger
 import com.kduniv.aimong.feature.quiz.domain.model.QuizReward
 import com.kduniv.aimong.feature.quiz.domain.model.QuizResult
 import com.kduniv.aimong.feature.quiz.domain.repository.QuizRepository
@@ -158,6 +159,16 @@ class QuizRepositoryStub @Inject constructor() : QuizRepository {
         } else {
             emptyList()
         }
+        val baseXp = if (passed) {
+            var xp = 10
+            if (correct == total) xp += 10
+            xp
+        } else {
+            0
+        }
+        val xpEarned = if (session.isReview) baseXp / 2 else baseXp
+        val petXpAfter = (40 + xpEarned).coerceAtLeast(xpEarned)
+        MockXpLedger.applyMissionReward(xpEarned, petXpAfter)
         return Result.success(
             QuizResult(
                 mode = if (session.isReview) "review" else "normal",
@@ -171,7 +182,7 @@ class QuizRepositoryStub @Inject constructor() : QuizRepository {
                 isPerfect = correct == total,
                 isFirstClear = passed && !session.isReview,
                 equippedPetGrade = null,
-                xpEarned = correct * 5,
+                xpEarned = xpEarned,
                 bonusXp = 0,
                 bonusReason = null,
                 petEvolved = false,
@@ -181,7 +192,7 @@ class QuizRepositoryStub @Inject constructor() : QuizRepository {
                 remainingTickets = null,
                 results = results,
                 currentLevel = 2,
-                currentXp = 40,
+                currentXp = petXpAfter,
                 nextLevelXp = 100
             )
         )
