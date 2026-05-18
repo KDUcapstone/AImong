@@ -49,7 +49,7 @@ _generated/
 _generated/*
 !_generated/question-bank/
 _generated/question-bank/*
-!_generated/question-bank/question-bank-1056-diversified-v4-polished-current-criteria-fixed-trimmed-prompts-starlevel-high-expanded.json
+!_generated/question-bank/question-bank-1056-starlevel-edits.json
 !_generated/question-bank/question-bank-1056-starlevel-seed.sql
 private-docs/test.html
 
