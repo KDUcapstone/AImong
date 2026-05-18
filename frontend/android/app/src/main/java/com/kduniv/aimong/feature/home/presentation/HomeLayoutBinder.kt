@@ -152,7 +152,7 @@ class HomeLayoutBinder(
                                 item.title,
                                 item.quizNav,
                                 row.root,
-                                DifficultyUnlockMode.NEW_PLAY,
+                                DifficultyUnlockMode.REVIEW,
                             )
                         }
                     }

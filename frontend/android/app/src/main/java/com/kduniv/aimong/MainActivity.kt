@@ -291,7 +291,21 @@ class MainActivity : AppCompatActivity() {
 
                 binding.bottomNav.setOnItemSelectedListener { item ->
                     if (suppressChildBottomNavItemSelected) return@setOnItemSelectedListener true
-                    runCatching { navController.onChildBottomNavTap(item.itemId) }.isSuccess
+                    runCatching { navController.onChildBottomNavTap(item.itemId) }
+                    binding.bottomNav.post {
+                        val tabId = ChildTopLevelNav.mapDestinationToTab(
+                            navController.currentDestination?.id
+                        ) ?: item.itemId
+                        if (binding.bottomNav.selectedItemId != tabId) {
+                            suppressChildBottomNavItemSelected = true
+                            try {
+                                binding.bottomNav.selectedItemId = tabId
+                            } finally {
+                                suppressChildBottomNavItemSelected = false
+                            }
+                        }
+                    }
+                    true
                 }
 
                 binding.bottomNav.setOnItemReselectedListener { item ->

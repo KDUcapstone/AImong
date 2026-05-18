@@ -22,6 +22,7 @@ import android.widget.EditText
 import android.widget.Toast
 import android.util.Log
 import androidx.core.content.ContextCompat
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.chip.Chip
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -53,6 +54,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         ContextCompat.getColor(requireContext(), resId)
 
     private var lives = 3
+    private var heartsAtQuizStart = 3
     private var maxPlayedIndex = 0
     private var timer: CountDownTimer? = null
     private var questionTimeLeftMs: Long = 30000L
@@ -117,6 +119,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             timer?.cancel()
             questionTimeLeftMs = 30000L
             lives = 3
+            heartsAtQuizStart = 3
             maxPlayedIndex = 0
 
             binding.layoutFeedbackPanel.visibility = View.GONE
@@ -216,8 +219,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                 launch {
                     viewModel.sessionLives.collect { count ->
                         if (!viewModel.isSolutionMode.value && binding.layoutFeedbackPanel.visibility != View.VISIBLE) {
-                            val max = if (viewModel.isReviewMode.value) 1 else 3
-                            updateHearts(count.coerceIn(0, max), forceReset = true)
+                            updateHearts(count.coerceIn(0, 3), forceReset = true)
                         }
                     }
                 }
@@ -643,7 +645,6 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         gearBalance: Int? = null
     ) {
         binding.layoutQuizResult.visibility = View.GONE
-        binding.layoutHintButton.visibility = View.GONE
         binding.btnFeedbackRefillHearts.visibility = View.GONE
         if (!viewModel.isSolutionMode.value) {
             binding.tvQuizModeBanner.visibility = View.GONE
@@ -764,9 +765,14 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                 (wrongCount == 0) &&
                 (correctCount == totalCount)
 
+        val remainingHearts = viewModel.sessionLives.value.coerceIn(0, 3)
+        val heartsLost = (heartsAtQuizStart - remainingHearts).coerceAtLeast(0)
+        val isPerfectClear = uiPassed && !isReviewSubmit && heartsLost == 0
+
         binding.tvResultStatus.text = when {
             !uiPassed -> getString(R.string.quiz_result_fail)
             isReviewSubmit -> "복습 완료!"
+            isPerfectClear -> getString(R.string.quiz_result_perfect)
             else -> getString(R.string.quiz_result_success)
         }
         binding.tvResultStatus.setTextColor(
@@ -777,7 +783,9 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         val baseSub = when {
             !uiPassed -> "아쉽게 탈락했어. 다시 한 번 도전해볼까?"
             isReviewSubmit -> getString(R.string.quiz_result_review_subtitle_pass)
-            else -> "정말 대단해! 리터러시 박사가 다 됐는걸?"
+            isPerfectClear -> getString(R.string.quiz_result_perfect_subtitle)
+            uiPassed -> getString(R.string.quiz_result_success_subtitle)
+            else -> "아쉽게 탈락했어. 다시 한 번 도전해볼까?"
         }
         binding.tvResultSub.text = if (result.isFirstClear && uiPassed && !isReviewSubmit) {
             "${getString(R.string.quiz_first_clear_badge)}\n$baseSub"
@@ -848,10 +856,6 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             addRewardIcon(reward)
         }
 
-        if (viewModel.strictSingleLifeRetry.value && !result.isPassed) {
-            updateHearts(0, forceReset = true)
-        }
-
         binding.tvWrongCount.text = "오답: ${result.wrongCount}개"
     }
 
@@ -893,16 +897,21 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                 text = hint.term
                 isClickable = true
                 isCheckable = false
-                setOnClickListener {
-                    AlertDialog.Builder(requireContext())
-                        .setTitle(hint.term)
-                        .setMessage(hint.description)
-                        .setPositiveButton(android.R.string.ok, null)
-                        .show()
-                }
+                chipBackgroundColor = ColorStateList.valueOf(quizColor(R.color.quiz_button_secondary_bg))
+                setTextColor(quizColor(R.color.quiz_hint_gold))
+                setOnClickListener { showTermHintSheet(hint) }
             }
             binding.chipGroupTermHints.addView(chip)
         }
+    }
+
+    private fun showTermHintSheet(hint: TermHint) {
+        val sheet = BottomSheetDialog(requireContext())
+        val content = layoutInflater.inflate(R.layout.bottom_sheet_term_hint, null, false)
+        content.findViewById<TextView>(R.id.tv_term_title).text = hint.term
+        content.findViewById<TextView>(R.id.tv_term_description).text = hint.description
+        sheet.setContentView(content)
+        sheet.show()
     }
 
     private fun addRewardIcon(reward: QuizReward) {
@@ -964,9 +973,10 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             bindTermHints(question.termHints)
 
             binding.layoutHearts.visibility = View.VISIBLE
-            // 복습 모드도 하트 1개로 시작
-            val maxLives = if (viewModel.isReviewMode.value || viewModel.strictSingleLifeRetry.value) 1 else 3
-            if (index == 0) updateHearts(maxLives, forceReset = true)
+            if (index == 0) {
+                heartsAtQuizStart = 3
+                updateHearts(3, forceReset = true)
+            }
             updateQuizModeBanner()
             setupOptions(question)
             // v2.4: 이미 답한 문항(복구)이라면 입력을 막는다.
@@ -1134,7 +1144,6 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         binding.btnOxX.isClickable = true
         binding.btnOxO.alpha = 1f
         binding.btnOxX.alpha = 1f
-        binding.layoutHintButton.visibility = View.VISIBLE
     }
 
     private fun setupMultipleFixedOptions(question: Question) {
@@ -1343,7 +1352,6 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
 
     private fun showFeedback(title: String, content: String) {
         binding.layoutQuizResult.visibility = View.GONE
-        binding.layoutHintButton.visibility = View.GONE
         binding.btnFeedbackRefillHearts.visibility = View.GONE
         binding.layoutFeedbackPanel.visibility = View.VISIBLE
         binding.tvFeedbackTitle.text = title

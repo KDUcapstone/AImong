@@ -206,6 +206,12 @@ class GachaViewModel @Inject constructor(
     }
 
     private suspend fun loadTickets(): Result<RemainingTicketsDto> {
+        val fromHome = getHomeStatusUseCase().getOrNull()?.tickets?.let {
+            RemainingTicketsDto(normal = it.normal, rare = it.rare, epic = it.epic)
+        }
+        if (fromHome != null) {
+            return Result.success(fromHome)
+        }
         if (UiMode.useStubNav) {
             return Result.success(StubPetGachaStore.currentTickets())
         }

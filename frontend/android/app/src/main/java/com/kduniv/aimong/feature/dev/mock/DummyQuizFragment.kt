@@ -78,8 +78,7 @@ class DummyQuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding:
             currentQuestionIndex = 0
             maxPlayedIndex = 0
             correctCount = 0
-            // 목업에서도 복습 모드는 하트 1개로 시작
-            lives = 1
+            lives = 3
             isReviewMode = true
             updateHearts()
             showQuestion(0)

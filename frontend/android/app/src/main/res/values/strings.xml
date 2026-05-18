@@ -51,6 +51,9 @@
 
     <!-- Quiz Result -->
     <string name="quiz_result_success">미션 성공!</string>
+    <string name="quiz_result_perfect">퍼펙트!</string>
+    <string name="quiz_result_success_subtitle">하트를 남기고 미션을 클리어했어!</string>
+    <string name="quiz_result_perfect_subtitle">하트를 하나도 잃지 않고 완벽하게 클리어했어!</string>
     <string name="quiz_result_fail">미션 실패</string>
     <string name="quiz_result_score">%1$d문제 중 %2$d문제 정답</string>
     <string name="quiz_result_xp">+%1$d XP 획득!</string>

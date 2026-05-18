@@ -271,15 +271,6 @@
                         android:textSize="14sp" />
                 </LinearLayout>
 
-                <com.google.android.material.chip.ChipGroup
-                    android:id="@+id/chip_group_term_hints"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:visibility="gone"
-                    app:singleLine="true"
-                    app:chipSpacingHorizontal="6dp" />
-
                 <TextView
                     android:id="@+id/tv_attempt_recover_banner"
                     android:layout_width="match_parent"
@@ -303,7 +294,7 @@
         android:layout_height="0dp"
         android:layout_marginHorizontal="20dp"
         android:layout_marginTop="12dp"
-        app:layout_constraintBottom_toTopOf="@id/layout_hint_button"
+        app:layout_constraintBottom_toTopOf="@id/chip_group_term_hints"
         app:layout_constraintTop_toBottomOf="@id/layout_question_card"
         app:layout_constraintVertical_bias="0.0">
 
@@ -601,28 +592,19 @@
 
     </FrameLayout>
 
-    <!-- 힌트 버튼 -->
-    <LinearLayout
-        android:id="@+id/layout_hint_button"
+    <!-- v2.8: 어려운 개념어 — 탭하면 설명 바텀시트 -->
+    <com.google.android.material.chip.ChipGroup
+        android:id="@+id/chip_group_term_hints"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="12dp"
-        android:background="@drawable/bg_hint_button"
-        android:gravity="center"
-        android:paddingHorizontal="14dp"
-        android:paddingVertical="6dp"
+        android:visibility="gone"
+        app:chipSpacingHorizontal="6dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent">
-        <TextView
-            android:id="@+id/tv_hint"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="💡 힌트 보기"
-            android:textColor="@color/quiz_hint_gold"
-            android:textSize="12sp"
-            android:textStyle="bold" />
-    </LinearLayout>
+        app:layout_constraintStart_toStartOf="parent"
+        app:singleLine="true"
+        tools:visibility="visible" />
 
     <!-- 피드백 패널 -->
     <androidx.cardview.widget.CardView

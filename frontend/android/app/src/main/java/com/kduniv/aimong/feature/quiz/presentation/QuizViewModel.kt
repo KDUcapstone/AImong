@@ -123,7 +123,7 @@ class QuizViewModel @Inject constructor(
                         attemptId = aid
                     }
                     _isReviewMode.value = questions.isReview
-                    _sessionLives.value = if (questions.isReview) 1 else 3
+                    _sessionLives.value = 3
                     // 프로세스 재생성/복원 등으로 currentIndex가 남아 있을 수 있어, 새 문제 세트 기준으로 안전 보정
                     val last = (questions.questions.size - 1).coerceAtLeast(0)
                     val clamped = currentQuestionIndex.value.coerceIn(0, last)
@@ -459,7 +459,7 @@ class QuizViewModel @Inject constructor(
     }
 
     /**
-     * 복습 모드(하트 1개)에서 오답 발생 시 즉시 실패 처리.
+     * 복습 모드에서 오답 즉시 종료(레거시). 현재 UI에서는 호출하지 않음.
      * 서버 제출 없이 현재 인덱스 기준으로 결과를 구성해 결과 화면으로 전환한다.
      */
     fun finishReviewImmediatelyOnWrong(explanation: String) {
@@ -586,7 +586,8 @@ class QuizViewModel @Inject constructor(
     }
 
     fun retryQuiz() {
-        savedStateHandle["strictSingleLifeRetry"] = true
+        savedStateHandle["strictSingleLifeRetry"] = false
+        _sessionLives.value = 3
         // 이전 텀(결과/풀이보기)의 상태가 두 번째 텀에 섞이지 않도록, ViewModel 내부 상태를 강제 초기화한다.
         timerJob?.cancel()
         _timeLeft.value = 0
