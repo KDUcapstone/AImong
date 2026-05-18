@@ -53,7 +53,6 @@ class QuestionBankToolTest {
                       "contentTags": ["FACT"],
                       "curriculumRef": "KERIS-1 Ch2.1 pp.27-29",
                       "difficulty": "LOW",
-                      "difficultyBand": "LOW",
                       "packNo": 1,
                       "sourceType": "STATIC"
                     },
@@ -111,6 +110,8 @@ class QuestionBankToolTest {
         assertThat(sql).contains("$aimong$LOW$aimong$");
         assertThat(sql).contains("$aimong$MEDIUM$aimong$");
         assertThat(sql).contains("$aimong$HIGH$aimong$");
+        assertThat(sql).contains("$aimong$2$aimong$");
+        assertThat(sql).containsPattern("\\$aimong\\$\\[\\s*2\\s*]\\$aimong\\$");
         assertThat(sql).contains("$aimong$");
         assertThat(sql).doesNotContain("'KERIS-1 Ch2.1 pp.27-29; Ch3.1 pp.83-96; D0qG389 STEP 1', NULL, TRUE");
         assertThat(sql).contains("mission_code = EXCLUDED.mission_code");

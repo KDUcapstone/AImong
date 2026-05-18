@@ -175,7 +175,7 @@ public final class QuestionBankSqlExporter {
     }
 
     private String toAnswerPayload(AuditQuestion question) {
-        return toJson(question.answer());
+        return toJson(toExternalAnswer(question.type() == null ? "" : question.type().name(), question.answer()));
     }
 
     private Object toExternalAnswer(String type, Object answer) {
