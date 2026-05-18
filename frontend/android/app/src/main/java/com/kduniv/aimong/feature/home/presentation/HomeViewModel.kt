@@ -12,6 +12,7 @@ import com.kduniv.aimong.feature.home.domain.GetHomeStatusUseCase
 import com.kduniv.aimong.feature.home.domain.repository.AppBootstrapRepository
 import com.kduniv.aimong.feature.home.domain.repository.HomeRepository
 import com.kduniv.aimong.feature.home.domain.HomePathBuilder
+import com.kduniv.aimong.feature.home.domain.MissionPathDevHelper
 import com.kduniv.aimong.feature.mission.data.model.MissionStarLevelDto
 import com.kduniv.aimong.feature.mission.domain.model.Mission
 import com.kduniv.aimong.feature.mission.domain.model.MissionStarLevel
@@ -132,7 +133,9 @@ class HomeViewModel @Inject constructor(
             getHomeStatusUseCase().fold(
                 onSuccess = { data ->
                     val rawMissions = missionRepository.getMissionsFlow().first()
-                    val missions = supplementMissionsStarLevels(rawMissions)
+                    val missions = MissionPathDevHelper.ensureOnePlayablePerStage(
+                        supplementMissionsStarLevels(rawMissions)
+                    )
                     val path = HomePathBuilder.build(data, missions)
                     val notice = computeServerDayNotice(data.serverDate)
                         ?: bootstrapHomeUnavailableNotice()

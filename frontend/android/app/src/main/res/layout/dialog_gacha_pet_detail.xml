@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_horizontal"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <TextView
+        android:id="@+id/tv_pet_emoji"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="56sp"
+        tools:text="⭐" />
+
+    <TextView
+        android:id="@+id/tv_pet_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:textColor="@color/quiz_text_primary"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        tools:text="반짝이" />
+
+    <TextView
+        android:id="@+id/tv_pet_grade"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textColor="@color/quiz_text_secondary"
+        android:textSize="14sp"
+        tools:text="등급 · 레어" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_equip"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:text="@string/gacha_equip_action" />
+</LinearLayout>

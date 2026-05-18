@@ -222,11 +222,24 @@
     <!-- Pet / Gacha (CHILD) -->
     <string name="pet_equip_required_for_xp">펫을 장착해야 XP를 얻을 수 있어요!</string>
     <string name="gacha_screen_title">펫 · 가챠</string>
+    <string name="gacha_owned_shards">보유 조각</string>
+    <string name="gacha_shards_count_fmt">%1$d 개</string>
+    <string name="gacha_encyclopedia_title">도감</string>
+    <string name="gacha_encyclopedia_progress_fmt">%1$d / %2$d</string>
+    <string name="gacha_equip_slot_empty">장착할 펫을 선택하세요</string>
+    <string name="gacha_fragment_progress_fmt">%1$d / %2$d</string>
+    <string name="gacha_fragment_locked_fmt">0 / %1$d</string>
+    <string name="gacha_ticket_pick_title">어떤 티켓으로 뽑을까요?</string>
+    <string name="gacha_ticket_pick_subtitle">보유한 티켓만 선택할 수 있어요.</string>
+    <string name="gacha_ticket_pick_normal_fmt">일반 티켓 · %1$d장</string>
+    <string name="gacha_ticket_pick_rare_fmt">레어 티켓 · %1$d장</string>
+    <string name="gacha_ticket_pick_epic_fmt">에픽 티켓 · %1$d장</string>
+    <string name="gacha_ticket_insufficient">티켓이 부족해요.</string>
     <string name="gacha_ticket_label">티켓 종류</string>
     <string name="gacha_ticket_normal">일반</string>
     <string name="gacha_ticket_rare">레어</string>
     <string name="gacha_ticket_epic">에픽</string>
-    <string name="gacha_pull">뽑기</string>
+    <string name="gacha_pull">✨ 뽑기</string>
     <string name="gacha_refresh">새로고침</string>
     <string name="gacha_tickets_unknown">티켓 수는 뽑기 후 표시돼요.</string>
     <string name="gacha_tickets_fmt">티켓 · 일반 %1$d · 레어 %2$d · 에픽 %3$d</string>
@@ -242,7 +255,15 @@
     <string name="gacha_equipped_fmt">장착: %1$s · %2$s · %3$s · XP %4$d</string>
     <string name="gacha_probabilities">뽑기 확률</string>
     <string name="gacha_probabilities_title">뽑기 확률</string>
-    <string name="gacha_probabilities_body" formatted="false">[Lv.1] (0~19)\nNORMAL 75% · RARE 21% · EPIC 3.5% · LEGEND 0.5%\n\n[Lv.2] (20~49)\nNORMAL 66% · RARE 24% · EPIC 7.5% · LEGEND 2.5%\n\n[Lv.3] (50~99)\nNORMAL 56% · RARE 27% · EPIC 13% · LEGEND 4%\n\n[Lv.4] (100+)\nNORMAL 44% · RARE 29% · EPIC 22% · LEGEND 5%\n\nSR 보너스(v1.9)\n- srBonusRaw = srMissCount >= 10 ? (srMissCount - 9) * 0.01 : 0.0\n- 응답 srBonus는 실제 적용치(appliedSrBonus)\n- NORMAL 티켓이 아닌 경우 srBonus는 0.0</string>
+    <string name="gacha_probabilities_body" formatted="false">Lv.1 (0~19)\n일반 75% · 레어 21% · 영웅 3.5% · 전설 0.5%\n\nLv.2 (20~49)\n일반 66% · 레어 24% · 영웅 7.5% · 전설 2.5%\n\nLv.3 (50~99)\n일반 56% · 레어 27% · 영웅 13% · 전설 4%\n\nLv.4 (100+)\n일반 44% · 레어 29% · 영웅 22% · 전설 5%</string>
+    <string name="gacha_grade_normal">일반</string>
+    <string name="gacha_grade_rare">레어</string>
+    <string name="gacha_grade_epic">영웅</string>
+    <string name="gacha_grade_legend">전설</string>
+    <string name="gacha_owned_pets_empty">아직 보유한 펫이 없어요</string>
+    <string name="gacha_equip_action">장착하기</string>
+    <string name="gacha_pet_grade_fmt">등급 · %1$s</string>
+    <string name="gacha_equipped_now">현재 장착 중</string>
     <string name="gacha_equip_done">장착했어요.</string>
     <string name="gacha_level_up">가챠 레벨 업! 티켓이 추가됐어요.</string>
     <string name="gacha_pull_summary_fmt">%1$s (%2$s) · %3$s\n신규: %4$s · 조각 +%5$d\nSR 미스: %6$d · 적용 보너스: %7$.4f\n레벨업: %8$s\n%9$s</string>

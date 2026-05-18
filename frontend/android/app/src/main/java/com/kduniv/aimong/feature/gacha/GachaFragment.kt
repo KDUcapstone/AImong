@@ -2,17 +2,20 @@ package com.kduniv.aimong.feature.gacha
 
 import android.view.LayoutInflater
 import androidx.core.view.isVisible
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.kduniv.aimong.R
 import com.kduniv.aimong.core.ui.BaseFragment
+import com.kduniv.aimong.databinding.BottomSheetGachaProbabilitiesBinding
+import com.kduniv.aimong.databinding.BottomSheetGachaTicketBinding
+import com.kduniv.aimong.databinding.DialogGachaPetDetailBinding
 import com.kduniv.aimong.databinding.FragmentGachaBinding
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -22,39 +25,47 @@ class GachaFragment : BaseFragment<FragmentGachaBinding>(FragmentGachaBinding::i
 
     private val viewModel: GachaViewModel by viewModels()
     private lateinit var petAdapter: GachaPetAdapter
+    private lateinit var ownedPetAdapter: GachaOwnedPetAdapter
 
     override fun initView() {
-        petAdapter = GachaPetAdapter { petId -> viewModel.equipPet(petId) }
+        val onPetClick: (GachaPetCardUi) -> Unit = { item -> showPetDetailDialog(item) }
+
+        petAdapter = GachaPetAdapter(onPetClick)
         binding.rvPets.layoutManager = GridLayoutManager(requireContext(), 4)
         binding.rvPets.adapter = petAdapter
+        binding.rvPets.setHasFixedSize(true)
 
-        // 상단바 인셋만큼 전체를 아래로
-        val baseTopPadding = binding.layoutGachaRoot.paddingTop
-        ViewCompat.setOnApplyWindowInsetsListener(binding.scrollGacha) { _, insets ->
-            val top = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
-            binding.layoutGachaRoot.setPadding(
-                binding.layoutGachaRoot.paddingLeft,
+        ownedPetAdapter = GachaOwnedPetAdapter(onPetClick)
+        binding.rvOwnedPets.layoutManager =
+            LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+        binding.rvOwnedPets.adapter = ownedPetAdapter
+
+        applyWindowInsets()
+
+        binding.btnProbabilities.bringToFront()
+        binding.btnProbabilities.setOnClickListener { showProbabilitySheet() }
+
+        binding.btnPull.setOnClickListener {
+            if (viewModel.state.value.hasAnyTicket) {
+                showTicketPickerSheet()
+            } else {
+                Snackbar.make(binding.root, R.string.gacha_ticket_insufficient, Snackbar.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun applyWindowInsets() {
+        val baseTopPadding = binding.headerContainer.paddingTop
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(binding.layoutGachaRoot) { _, insets ->
+            val top = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.statusBars()).top
+            binding.headerContainer.setPadding(
+                binding.headerContainer.paddingLeft,
                 baseTopPadding + top,
-                binding.layoutGachaRoot.paddingRight,
-                binding.layoutGachaRoot.paddingBottom
+                binding.headerContainer.paddingRight,
+                binding.headerContainer.paddingBottom
             )
             insets
         }
-
-        binding.chipsTicket.setOnCheckedStateChangeListener { _, checkedIds ->
-            val id = checkedIds.firstOrNull()
-            val type = when (id) {
-                R.id.chip_ticket_rare -> "RARE"
-                R.id.chip_ticket_epic -> "EPIC"
-                else -> "NORMAL"
-            }
-            viewModel.setTicketType(type)
-        }
-
-        binding.btnPull.setOnClickListener { viewModel.pull() }
-        binding.btnRefresh.setOnClickListener { viewModel.refresh() }
-        binding.btnProbabilities.setOnClickListener { showProbabilityDialog() }
-        binding.btnExchange.setOnClickListener { showExchangeDialog() }
     }
 
     override fun initObserver() {
@@ -62,65 +73,128 @@ class GachaFragment : BaseFragment<FragmentGachaBinding>(FragmentGachaBinding::i
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.state.collect { s ->
                     binding.pbGacha.isVisible = s.loading
-                    binding.tvEquipBanner.isVisible = s.pets?.equippedPet == null
 
                     val eq = s.pets?.equippedPet
-                    binding.tvEquippedSummary.text = if (eq != null) {
-                        getString(
-                            R.string.gacha_equipped_fmt,
-                            eq.petType,
-                            eq.grade,
-                            eq.stage,
-                            eq.xp
-                        )
-                    } else {
-                        ""
+                    val hasEquipped = eq != null
+                    binding.layoutEquippedPet.isVisible = hasEquipped
+                    binding.tvEquipEmpty.isVisible = !hasEquipped
+                    binding.tvEquipBanner.isVisible = !hasEquipped
+
+                    if (eq != null) {
+                        val catalogEntry =
+                            GachaPetCatalog.entries.firstOrNull { it.petType == eq.petType }
+                        binding.tvEquippedEmoji.text =
+                            catalogEntry?.emoji ?: GachaUiMapper.petEmoji(eq)
+                        binding.tvEquippedName.text =
+                            catalogEntry?.displayName ?: GachaUiMapper.displayName(eq)
                     }
 
-                    val tix = s.lastRemainingTickets
-                    binding.tvTicketsLine.text = if (tix != null) {
-                        getString(R.string.gacha_tickets_fmt, tix.normal, tix.rare, tix.epic)
-                    } else {
-                        getString(R.string.gacha_tickets_unknown)
-                    }
+                    val tix = s.tickets
+                    binding.tvTicketNormal.text = (tix?.normal ?: 0).toString()
+                    binding.tvTicketRare.text = (tix?.rare ?: 0).toString()
+                    binding.tvTicketEpic.text = (tix?.epic ?: 0).toString()
 
-                    binding.tvPullResult.text = s.pullSummary.orEmpty()
-                    binding.tvFragmentsBody.text = s.fragmentsText
+                    val hasOwned = s.ownedPetCards.isNotEmpty()
+                    binding.rvOwnedPets.isVisible = hasOwned
+                    binding.tvOwnedEmpty.isVisible = !hasOwned
+                    ownedPetAdapter.submitList(s.ownedPetCards)
 
-                    petAdapter.equippedPetId = s.pets?.equippedPet?.id
-                    petAdapter.submitList(s.pets?.pets.orEmpty())
+                    binding.tvEncyclopediaProgress.text = getString(
+                        R.string.gacha_encyclopedia_progress_fmt,
+                        s.ownedCatalogCount,
+                        GachaPetCatalog.TOTAL
+                    )
+
+                    petAdapter.submitList(s.petCards)
+                    bindPullButton(s)
 
                     s.transientMessage?.let { msg ->
                         Snackbar.make(binding.root, msg, Snackbar.LENGTH_LONG).show()
                         viewModel.consumeTransientMessage()
+                    }
+
+                    s.pullSummary?.let { summary ->
+                        Snackbar.make(binding.root, summary, Snackbar.LENGTH_LONG).show()
+                        viewModel.consumePullSummary()
                     }
                 }
             }
         }
     }
 
-    private fun showProbabilityDialog() {
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle(getString(R.string.gacha_probabilities_title))
-            .setMessage(getString(R.string.gacha_probabilities_body))
-            .setPositiveButton(android.R.string.ok, null)
-            .show()
+    private fun bindPullButton(s: GachaViewModel.UiState) {
+        val enabled = s.hasAnyTicket
+        binding.btnPull.isEnabled = enabled
+        binding.btnPull.alpha = if (enabled) 1f else 0.5f
+        binding.btnPull.setBackgroundResource(
+            if (enabled) R.drawable.bg_gacha_pull_enabled else R.drawable.bg_gacha_pull_disabled
+        )
     }
 
-    private fun showExchangeDialog() {
-        val view = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_gacha_exchange, null, false)
-        val gradeEt = view.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.et_exchange_grade)
-        val typeEt = view.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.et_exchange_pet_type)
+    private fun showPetDetailDialog(item: GachaPetCardUi) {
+        val pet = item.pet ?: return
+        val dialogBinding =
+            DialogGachaPetDetailBinding.inflate(LayoutInflater.from(requireContext()))
 
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle(getString(R.string.gacha_exchange_title))
-            .setView(view)
-            .setNegativeButton(android.R.string.cancel, null)
-            .setPositiveButton(R.string.gacha_exchange_button) { _, _ ->
-                val grade = gradeEt.text?.toString().orEmpty()
-                val petType = typeEt.text?.toString().orEmpty()
-                viewModel.exchange(grade.trim(), petType.trim())
+        dialogBinding.tvPetEmoji.text = item.emoji
+        dialogBinding.tvPetName.text = item.displayName
+        dialogBinding.tvPetGrade.text = getString(
+            R.string.gacha_pet_grade_fmt,
+            GachaUiMapper.gradeLabel(item.grade)
+        )
+
+        val dialog = MaterialAlertDialogBuilder(requireContext())
+            .setView(dialogBinding.root)
+            .create()
+
+        if (item.isEquipped) {
+            dialogBinding.btnEquip.isEnabled = false
+            dialogBinding.btnEquip.text = getString(R.string.gacha_equipped_now)
+        } else {
+            dialogBinding.btnEquip.setOnClickListener {
+                viewModel.equipPet(pet.id)
+                dialog.dismiss()
             }
-            .show()
+        }
+
+        dialog.show()
+    }
+
+    private fun showTicketPickerSheet() {
+        val state = viewModel.state.value
+        val sheet = BottomSheetDialog(requireContext())
+        val sheetBinding = BottomSheetGachaTicketBinding.inflate(LayoutInflater.from(requireContext()))
+        sheet.setContentView(sheetBinding.root)
+
+        fun bindPickButton(
+            button: com.google.android.material.button.MaterialButton,
+            type: String,
+            labelRes: Int
+        ) {
+            val count = state.ticketCount(type)
+            button.text = getString(labelRes, count)
+            button.isEnabled = count > 0
+            button.alpha = if (count > 0) 1f else 0.45f
+            button.setOnClickListener {
+                viewModel.setTicketType(type)
+                sheet.dismiss()
+                viewModel.pull()
+            }
+        }
+
+        bindPickButton(sheetBinding.btnPickNormal, "NORMAL", R.string.gacha_ticket_pick_normal_fmt)
+        bindPickButton(sheetBinding.btnPickRare, "RARE", R.string.gacha_ticket_pick_rare_fmt)
+        bindPickButton(sheetBinding.btnPickEpic, "EPIC", R.string.gacha_ticket_pick_epic_fmt)
+
+        sheet.show()
+    }
+
+    private fun showProbabilitySheet() {
+        val sheet = BottomSheetDialog(requireContext())
+        val sheetBinding =
+            BottomSheetGachaProbabilitiesBinding.inflate(LayoutInflater.from(requireContext()))
+        sheetBinding.tvProbabilitiesBody.text = getString(R.string.gacha_probabilities_body)
+        sheet.setContentView(sheetBinding.root)
+        sheet.show()
     }
 }

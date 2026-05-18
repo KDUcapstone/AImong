@@ -64,4 +64,10 @@
     <color name="text_grey">#9E9E9E</color>
     <color name="text_sub_grey">#757575</color>
     <color name="chat_privacy_highlight">#66FF6D00</color>
+
+    <!-- 수집(가챠) 도감 카드 등급 테두리 -->
+    <color name="gacha_rarity_normal">#F97316</color>
+    <color name="gacha_rarity_rare">#3B82F6</color>
+    <color name="gacha_rarity_epic">#A855F7</color>
+    <color name="gacha_rarity_legend">#EAB308</color>
 </resources>

@@ -41,13 +41,46 @@ object StubPetGachaStore {
             id = "stub-pet-2",
             petType = "pet_rare_003",
             grade = "RARE",
-            xp = 0,
-            stage = "EGG",
+            xp = 52,
+            stage = "GROWTH",
             mood = "IDLE",
             crownUnlocked = true,
             crownType = "gold",
             obtainedAt = "2026-03-27T15:30:00Z"
-        )
+        ),
+        PetDto(
+            id = "stub-pet-3",
+            petType = "pet_epic_001",
+            grade = "EPIC",
+            xp = 8,
+            stage = "EGG",
+            mood = "HAPPY",
+            crownUnlocked = false,
+            crownType = null,
+            obtainedAt = "2026-04-01T09:00:00Z"
+        ),
+        PetDto(
+            id = "stub-pet-4",
+            petType = "pet_normal_007",
+            grade = "NORMAL",
+            xp = 3,
+            stage = "EGG",
+            mood = "IDLE",
+            crownUnlocked = false,
+            crownType = null,
+            obtainedAt = "2026-04-10T11:00:00Z"
+        ),
+        PetDto(
+            id = "stub-pet-5",
+            petType = "pet_legend_001",
+            grade = "LEGEND",
+            xp = 120,
+            stage = "ADULT",
+            mood = "HAPPY",
+            crownUnlocked = true,
+            crownType = "gold",
+            obtainedAt = "2026-05-01T08:00:00Z"
+        ),
     )
 
     private val fragmentRows = mutableListOf(
@@ -57,12 +90,15 @@ object StubPetGachaStore {
         FragmentGradeRow("LEGEND", 0, 200)
     )
 
+    fun currentTickets(): RemainingTicketsDto = synchronized(lock) {
+        RemainingTicketsDto(normalTickets, rareTickets, epicTickets)
+    }
+
     fun getPetList(): PetListData = synchronized(lock) {
         val equipped = equippedPetId?.let { id -> ownedPets.find { it.id == id } }
-        val others = ownedPets.filter { it.id != equippedPetId }
         PetListData(
             equippedPet = equipped,
-            pets = others,
+            pets = ownedPets.toList(),
             totalPetCount = ownedPets.size
         )
     }

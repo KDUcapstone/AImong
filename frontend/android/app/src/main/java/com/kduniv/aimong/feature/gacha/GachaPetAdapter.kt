@@ -2,53 +2,81 @@ package com.kduniv.aimong.feature.gacha
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.kduniv.aimong.R
 import com.kduniv.aimong.databinding.ItemGachaPetCardBinding
-import com.kduniv.aimong.feature.pet.data.model.PetDto
 
 class GachaPetAdapter(
-    private val onEquip: (String) -> Unit
-) : ListAdapter<PetDto, GachaPetAdapter.Vh>(Diff) {
-
-    var equippedPetId: String? = null
-        set(value) {
-            field = value
-            notifyItemRangeChanged(0, itemCount)
-        }
+    private val onPetClick: (GachaPetCardUi) -> Unit
+) : ListAdapter<GachaPetCardUi, GachaPetAdapter.Vh>(Diff) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): Vh {
         val binding = ItemGachaPetCardBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-        return Vh(binding, onEquip)
+        return Vh(binding, onPetClick)
     }
 
     override fun onBindViewHolder(holder: Vh, position: Int) {
-        holder.bind(getItem(position), equippedPetId)
+        holder.bind(getItem(position))
     }
 
     class Vh(
         private val binding: ItemGachaPetCardBinding,
-        private val onEquip: (String) -> Unit
+        private val onPetClick: (GachaPetCardUi) -> Unit
     ) : RecyclerView.ViewHolder(binding.root) {
 
-        fun bind(pet: PetDto, equippedId: String?) {
-            val isEquipped = pet.id == equippedId
-            binding.tvBadgeEquipped.isVisible = isEquipped
-            binding.tvPetName.text = pet.petType
-            binding.tvPetMeta.text = "${pet.grade} · ${pet.stage}"
-            binding.tvPetXp.text = "XP ${pet.xp}"
-
-            // 카드 탭으로 장착 (단일 장착)
-            binding.root.setOnClickListener {
-                if (!isEquipped) onEquip(pet.id)
+        fun bind(item: GachaPetCardUi) {
+            val ctx = binding.root.context
+            val strokeColor = if (item.isLocked) {
+                ContextCompat.getColor(ctx, R.color.quiz_option_default_stroke)
+            } else {
+                ContextCompat.getColor(ctx, GachaUiMapper.rarityStrokeColorRes(item.grade))
             }
+
+            binding.cardPet.strokeColor = strokeColor
+            binding.viewLockedOverlay.isVisible = item.isLocked
+            binding.tvLocked.isVisible = item.isLocked
+            binding.tvPetEmoji.text = item.emoji
+            binding.tvPetEmoji.alpha = if (item.isLocked) 0.35f else 1f
+            binding.tvPetName.text = item.displayName
+            binding.tvPetName.setTextColor(
+                ContextCompat.getColor(
+                    ctx,
+                    if (item.isLocked) R.color.quiz_text_secondary else R.color.quiz_text_primary
+                )
+            )
+            binding.tvPetLevel.text = item.levelLabel
+            binding.tvPetLevel.isVisible = item.levelLabel.isNotBlank()
+
+            val threshold = item.fragmentThreshold.coerceAtLeast(1)
+            val count = item.fragmentCount.coerceAtLeast(0)
+            val progress = if (item.isLocked) {
+                0
+            } else {
+                ((count.toFloat() / threshold) * 100f).toInt().coerceIn(0, 100)
+            }
+            binding.pbFragments.progress = progress
+            binding.pbFragments.alpha = if (item.isLocked) 0.4f else 1f
+            binding.tvFragmentCount.text = if (item.isLocked) {
+                ctx.getString(R.string.gacha_fragment_locked_fmt, threshold)
+            } else {
+                ctx.getString(R.string.gacha_fragment_progress_fmt, count, threshold)
+            }
+
+            binding.root.setOnClickListener {
+                if (!item.isLocked) onPetClick(item)
+            }
+            binding.root.isClickable = !item.isLocked
         }
     }
 
-    private object Diff : DiffUtil.ItemCallback<PetDto>() {
-        override fun areItemsTheSame(a: PetDto, b: PetDto): Boolean = a.id == b.id
-        override fun areContentsTheSame(a: PetDto, b: PetDto): Boolean = a == b
+    private object Diff : DiffUtil.ItemCallback<GachaPetCardUi>() {
+        override fun areItemsTheSame(a: GachaPetCardUi, b: GachaPetCardUi): Boolean =
+            a.catalogPetType == b.catalogPetType
+
+        override fun areContentsTheSame(a: GachaPetCardUi, b: GachaPetCardUi): Boolean = a == b
     }
 }

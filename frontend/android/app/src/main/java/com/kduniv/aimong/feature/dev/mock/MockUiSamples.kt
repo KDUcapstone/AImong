@@ -140,8 +140,17 @@ object MockUiSamples {
                         bannerDrawableRes = R.drawable.bg_home_section_banner_stage2,
                     )
                 )
+                add(
+                    HomePathItem.Start(
+                        quizNav = HomeQuizNavigation("", "mock-stage2", 1),
+                        missionTitle = "2단계 체험 미션",
+                        enabled = true,
+                        icon = "▶",
+                        starsFilled = 0,
+                    )
+                )
+                repeat(9) { add(HomePathItem.Locked(hint = "준비 중")) }
                 add(HomePathItem.InterStageDivider)
-                repeat(10) { add(HomePathItem.Locked(hint = "준비 중")) }
                 add(
                     HomePathItem.SectionHeader(
                         stage = 3,
@@ -153,8 +162,17 @@ object MockUiSamples {
                         bannerDrawableRes = R.drawable.bg_home_section_banner_stage3,
                     )
                 )
+                add(
+                    HomePathItem.Start(
+                        quizNav = HomeQuizNavigation("", "mock-stage3", 1),
+                        missionTitle = "3단계 체험 미션",
+                        enabled = true,
+                        icon = "▶",
+                        starsFilled = 0,
+                    )
+                )
+                repeat(9) { add(HomePathItem.Locked(hint = "준비 중")) }
                 add(HomePathItem.InterStageDivider)
-                repeat(10) { add(HomePathItem.Locked(hint = "준비 중")) }
             }
         )
     }
