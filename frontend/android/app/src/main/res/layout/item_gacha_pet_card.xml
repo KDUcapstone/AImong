@@ -5,9 +5,9 @@
     android:id="@+id/card_pet"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="4dp"
+    android:layout_margin="@dimen/gacha_pet_card_margin"
     app:cardBackgroundColor="@color/quiz_card_bg"
-    app:cardCornerRadius="12dp"
+    app:cardCornerRadius="14dp"
     app:cardElevation="1dp"
     app:strokeWidth="2dp"
     tools:strokeColor="@color/gacha_rarity_rare">
@@ -15,7 +15,7 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="8dp">
+        android:padding="@dimen/gacha_pet_card_padding">
 
         <TextView
             android:id="@+id/tv_pet_level"
@@ -27,28 +27,62 @@
             app:layout_constraintTop_toTopOf="parent"
             tools:text="Lv.12" />
 
-        <ImageView
-            android:id="@+id/iv_pet_sprite"
-            android:layout_width="0dp"
-            android:layout_height="52dp"
-            android:contentDescription="@null"
-            android:scaleType="fitCenter"
+        <TextView
+            android:id="@+id/tv_badge_equipped"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_gacha_equipped_badge"
+            android:paddingHorizontal="5dp"
+            android:paddingVertical="1dp"
+            android:text="@string/gacha_equipped_badge_short"
+            android:textColor="@color/quiz_mint_dark"
+            android:textSize="9sp"
+            android:textStyle="bold"
             android:visibility="gone"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tv_pet_level"
+            app:layout_constraintTop_toTopOf="parent"
             tools:visibility="visible" />
 
-        <TextView
-            android:id="@+id/tv_pet_emoji"
+        <FrameLayout
+            android:id="@+id/layout_pet_art"
             android:layout_width="0dp"
-            android:layout_height="52dp"
-            android:gravity="center"
-            android:textSize="28sp"
+            android:layout_height="@dimen/gacha_pet_card_art_height"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tv_pet_level"
-            tools:text="🤖" />
+            app:layout_constraintTop_toBottomOf="@id/tv_pet_level">
+
+            <ImageView
+                android:id="@+id/iv_pet_sprite"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:contentDescription="@null"
+                android:scaleType="fitCenter"
+                android:visibility="gone"
+                tools:visibility="visible" />
+
+            <TextView
+                android:id="@+id/tv_pet_emoji"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:textSize="38sp"
+                tools:text="🤖" />
+        </FrameLayout>
+
+        <ImageView
+            android:id="@+id/iv_locked"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:contentDescription="@null"
+            android:elevation="2dp"
+            android:src="@drawable/ic_lock"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@id/layout_pet_art"
+            app:layout_constraintEnd_toEndOf="@id/layout_pet_art"
+            app:layout_constraintStart_toStartOf="@id/layout_pet_art"
+            app:layout_constraintTop_toTopOf="@id/layout_pet_art"
+            app:tint="@color/quiz_text_secondary"
+            tools:visibility="visible" />
 
         <TextView
             android:id="@+id/tv_pet_name"
@@ -59,18 +93,18 @@
             android:gravity="center"
             android:maxLines="1"
             android:textColor="@color/quiz_text_primary"
-            android:textSize="11sp"
+            android:textSize="12sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tv_pet_emoji"
+            app:layout_constraintTop_toBottomOf="@id/layout_pet_art"
             tools:text="반짝이" />
 
         <ProgressBar
             android:id="@+id/pb_fragments"
             style="?android:attr/progressBarStyleHorizontal"
             android:layout_width="0dp"
-            android:layout_height="6dp"
-            android:layout_marginTop="6dp"
+            android:layout_height="7dp"
+            android:layout_marginTop="8dp"
             android:max="100"
             android:progressDrawable="@drawable/bg_gacha_fragment_progress"
             app:layout_constraintEnd_toEndOf="parent"
@@ -85,36 +119,10 @@
             android:layout_marginTop="2dp"
             android:gravity="center"
             android:textColor="@color/quiz_text_secondary"
-            android:textSize="9sp"
+            android:textSize="10sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/pb_fragments"
             tools:text="7 / 30" />
-
-        <View
-            android:id="@+id/view_locked_overlay"
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:background="#99F8FAFC"
-            android:visibility="gone"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            tools:visibility="visible" />
-
-        <ImageView
-            android:id="@+id/iv_locked"
-            android:layout_width="28dp"
-            android:layout_height="28dp"
-            android:contentDescription="@null"
-            android:src="@drawable/ic_lock"
-            android:visibility="gone"
-            app:tint="@color/quiz_text_secondary"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            tools:visibility="visible" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 </com.google.android.material.card.MaterialCardView>

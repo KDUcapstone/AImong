@@ -12,10 +12,10 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
-import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.snackbar.Snackbar
 import com.kduniv.aimong.R
+import com.kduniv.aimong.core.navigation.ChildTopLevelNav.onChildBottomNavTap
 import com.kduniv.aimong.core.ui.BaseFragment
 import com.kduniv.aimong.databinding.FragmentHomeBinding
 import com.kduniv.aimong.feature.gacha.PetArtAssets
@@ -190,7 +190,7 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
     }
 
     private fun openGacha() {
-        requireActivity().findViewById<BottomNavigationView>(R.id.bottom_nav).selectedItemId = R.id.gachaFragment
+        findNavController().onChildBottomNavTap(R.id.gachaFragment)
     }
 
     private fun openStreakSheet() {

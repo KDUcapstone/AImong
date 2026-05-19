@@ -22,20 +22,25 @@ object MockUiSamples {
 
     fun homeUiState(): HomeUiState {
         val userXp = MockXpLedger.userTotalXp
+        val equipped = StubPetGachaStore.getPetList().equippedPet
+        val petType = equipped?.petType?.takeIf { it.isNotBlank() } ?: "pet_normal_002"
+        val petGrade = equipped?.grade?.takeIf { it.isNotBlank() } ?: "NORMAL"
+        val petStage = equipped?.stage?.takeIf { it.isNotBlank() } ?: "GROWTH"
+        val petLevel = equipped?.let { (it.xp / 10).coerceAtLeast(1) } ?: 1
         return HomeUiState(
             nickname = "목업",
             totalXp = userXp,
             streakDays = 5,
             profileType = "SPROUT",
             userLevel = 1 + (userXp / 80).coerceIn(0, 99),
-            petName = GachaPetCatalog.displayNameFor("pet_normal_002", "NORMAL"),
+            petName = GachaPetCatalog.displayNameFor(petType, petGrade),
             petXp = MockXpLedger.petXp,
             petMaxXp = 10,
-            hasEquippedPet = true,
-            equippedPetType = "pet_normal_002",
-            equippedPetGrade = "NORMAL",
-            petStage = "EGG",
-            petLevel = 1,
+            hasEquippedPet = equipped != null,
+            equippedPetType = petType,
+            equippedPetGrade = petGrade,
+            petStage = petStage,
+            petLevel = petLevel,
             petMessage = "오늘도 AI 탐험 화이팅!",
             energyCurrent = mockEnergyCurrent,
             energyMax = MOCK_ENERGY_MAX,

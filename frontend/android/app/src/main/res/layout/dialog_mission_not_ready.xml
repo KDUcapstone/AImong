@@ -19,8 +19,8 @@
         android:padding="24dp">
 
         <FrameLayout
-            android:layout_width="160dp"
-            android:layout_height="160dp">
+            android:layout_width="@dimen/pet_sprite_mission_dialog"
+            android:layout_height="@dimen/pet_sprite_mission_dialog">
 
             <com.airbnb.lottie.LottieAnimationView
                 android:id="@+id/lav_mission_not_ready_effect"

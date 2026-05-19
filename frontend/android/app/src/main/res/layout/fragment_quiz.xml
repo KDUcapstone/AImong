@@ -145,8 +145,8 @@
 
         <FrameLayout
             android:id="@+id/fl_quiz_pet"
-            android:layout_width="100dp"
-            android:layout_height="100dp"
+            android:layout_width="@dimen/pet_sprite_quiz_feedback"
+            android:layout_height="@dimen/pet_sprite_quiz_feedback"
             android:layout_marginStart="8dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -174,7 +174,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:gravity="center"
-                android:textSize="48sp"
+                android:textSize="56sp"
                 android:visibility="gone"
                 tools:text="✨" />
         </FrameLayout>
@@ -740,8 +740,8 @@
 
                 <FrameLayout
                     android:id="@+id/fl_result_pet"
-                    android:layout_width="180dp"
-                    android:layout_height="180dp"
+                    android:layout_width="@dimen/pet_sprite_quiz_result"
+                    android:layout_height="@dimen/pet_sprite_quiz_result"
                     android:layout_marginTop="20dp"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"

@@ -62,8 +62,8 @@
 
         <FrameLayout
             android:id="@+id/fl_streak_pet"
-            android:layout_width="112dp"
-            android:layout_height="112dp"
+            android:layout_width="@dimen/pet_sprite_stats_sheet"
+            android:layout_height="@dimen/pet_sprite_stats_sheet"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent">

@@ -3,8 +3,16 @@ package com.kduniv.aimong.feature.dev.mock
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.fragment.app.setFragmentResultListener
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
-import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.kduniv.aimong.core.navigation.ChildTopLevelNav.onChildBottomNavTap
+import com.kduniv.aimong.feature.home.domain.ChildHomeRefreshBus
+import com.kduniv.aimong.feature.home.domain.HomeRefreshTrigger
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
+import kotlinx.coroutines.launch
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.snackbar.Snackbar
 import com.kduniv.aimong.R
@@ -19,11 +27,11 @@ import com.kduniv.aimong.feature.home.presentation.QuestListBottomSheet
 import com.kduniv.aimong.feature.home.presentation.StreakCalendarBottomSheet
 import com.kduniv.aimong.feature.gacha.PetArtAssets
 import com.kduniv.aimong.feature.quiz.presentation.QuizFragment
-import dagger.hilt.android.AndroidEntryPoint
-
 /** [HomeFragment]와 동일 레이아웃 — [MockUiSamples] 고정 데이터. */
 @AndroidEntryPoint
 class MockHomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::inflate) {
+
+    @Inject lateinit var homeRefreshBus: ChildHomeRefreshBus
 
     private lateinit var homeLayoutBinder: HomeLayoutBinder
     private val sampleState get() = MockUiSamples.homeUiState()
@@ -36,7 +44,7 @@ class MockHomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::
         ) { _, bundle ->
             if (bundle.getBoolean(EnergyBottomSheet.EXTRA_REFRESH_HOME, false)) {
                 binding.root.post {
-                    homeLayoutBinder.bind(MockUiSamples.homeUiState())
+                    bindHome()
                     Snackbar.make(
                         binding.root,
                         getString(R.string.mock_home_energy_refreshed),
@@ -51,7 +59,7 @@ class MockHomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::
         ) { _, bundle ->
             if (bundle.getBoolean(GearBottomSheet.EXTRA_REFRESH_HOME, false)) {
                 binding.root.post {
-                    homeLayoutBinder.bind(MockUiSamples.homeUiState())
+                    bindHome()
                 }
             }
         }
@@ -118,14 +126,14 @@ class MockHomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::
         binding.cardFloatPet.setOnClickListener { showPetStatsSheet() }
 
         binding.layoutChipTicket.setOnClickListener {
-            requireActivity().findViewById<BottomNavigationView>(R.id.bottom_nav).selectedItemId = R.id.gachaFragment
+            findNavController().onChildBottomNavTap(R.id.gachaFragment)
         }
         parentFragmentManager.setFragmentResultListener(
             StreakCalendarBottomSheet.REQUEST_KEY,
             viewLifecycleOwner
         ) { _, bundle ->
             if (bundle.getBoolean(StreakCalendarBottomSheet.EXTRA_REFRESH_HOME, false)) {
-                binding.root.post { homeLayoutBinder.bind(MockUiSamples.homeUiState()) }
+                binding.root.post { bindHome() }
             }
         }
         parentFragmentManager.setFragmentResultListener(
@@ -133,7 +141,7 @@ class MockHomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::
             viewLifecycleOwner,
         ) { _, bundle ->
             if (bundle.getBoolean(QuizFragment.EXTRA_REFRESH_HOME, false)) {
-                binding.root.post { homeLayoutBinder.bind(MockUiSamples.homeUiState()) }
+                binding.root.post { bindHome() }
             }
         }
         binding.layoutChipStreak.setOnClickListener {
@@ -145,7 +153,30 @@ class MockHomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::
             ).show(parentFragmentManager, "streak_calendar")
         }
 
-        binding.root.post { homeLayoutBinder.bind(sampleState) }
+        binding.root.post { bindHome() }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (::homeLayoutBinder.isInitialized) {
+            bindHome()
+        }
+    }
+
+    override fun initObserver() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                homeRefreshBus.events.collect { trigger ->
+                    if (trigger is HomeRefreshTrigger.Full && ::homeLayoutBinder.isInitialized) {
+                        bindHome()
+                    }
+                }
+            }
+        }
+    }
+
+    private fun bindHome() {
+        homeLayoutBinder.bind(MockUiSamples.homeUiState())
     }
 
     override fun onDestroyView() {
@@ -177,6 +208,4 @@ class MockHomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::
         dialog.setContentView(v)
         dialog.show()
     }
-
-    override fun initObserver() {}
 }

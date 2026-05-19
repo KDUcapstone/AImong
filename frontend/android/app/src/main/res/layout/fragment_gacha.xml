@@ -23,7 +23,7 @@
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:minHeight="132dp"
+            android:minHeight="112dp"
             android:paddingTop="8dp">
 
             <LinearLayout
@@ -56,52 +56,123 @@
                     tools:text="5" />
             </LinearLayout>
 
-            <LinearLayout
+            <androidx.constraintlayout.widget.ConstraintLayout
                 android:id="@+id/layout_equipped_pet"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="32dp"
-                android:gravity="center_horizontal"
-                android:orientation="vertical"
+                android:layout_marginTop="24dp"
+                android:clipChildren="false"
+                android:clipToPadding="false"
+                android:paddingHorizontal="12dp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/layout_tickets">
 
-                <FrameLayout
-                    android:layout_width="72dp"
-                    android:layout_height="72dp">
+                <View
+                    android:id="@+id/view_equipped_glow"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:layout_margin="6dp"
+                    android:background="@drawable/bg_gacha_equipped_glow"
+                    app:layout_constraintBottom_toBottomOf="@id/card_equipped_showcase"
+                    app:layout_constraintEnd_toEndOf="@id/card_equipped_showcase"
+                    app:layout_constraintStart_toStartOf="@id/card_equipped_showcase"
+                    app:layout_constraintTop_toTopOf="@id/card_equipped_showcase" />
 
-                    <ImageView
-                        android:id="@+id/iv_equipped_sprite"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:contentDescription="@null"
-                        android:scaleType="fitCenter"
-                        android:visibility="gone" />
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/card_equipped_showcase"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:cardBackgroundColor="#F0FDF9"
+                    app:cardCornerRadius="20dp"
+                    app:cardElevation="0dp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:strokeColor="@color/quiz_mint"
+                    app:strokeWidth="2dp">
 
-                    <TextView
-                        android:id="@+id/tv_equipped_emoji"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:gravity="center"
-                        android:textSize="52sp"
-                        tools:text="⭐" />
-                </FrameLayout>
+                    <androidx.constraintlayout.widget.ConstraintLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:padding="14dp">
+
+                        <FrameLayout
+                            android:id="@+id/layout_equipped_sprite"
+                            android:layout_width="@dimen/pet_sprite_gacha_header"
+                            android:layout_height="@dimen/pet_sprite_gacha_header"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toTopOf="parent">
+
+                            <ImageView
+                                android:id="@+id/iv_equipped_sprite"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:contentDescription="@null"
+                                android:scaleType="fitCenter"
+                                android:visibility="gone" />
+
+                            <TextView
+                                android:id="@+id/tv_equipped_emoji"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:gravity="center"
+                                android:textSize="64sp"
+                                tools:text="⭐" />
+                        </FrameLayout>
+
+                        <TextView
+                            android:id="@+id/tv_equipped_badge"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_gacha_equipped_badge"
+                            android:paddingHorizontal="8dp"
+                            android:paddingVertical="3dp"
+                            android:text="@string/gacha_equipped_now"
+                            android:textColor="@color/quiz_mint_dark"
+                            android:textSize="10sp"
+                            android:textStyle="bold"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintTop_toTopOf="parent" />
+                    </androidx.constraintlayout.widget.ConstraintLayout>
+                </com.google.android.material.card.MaterialCardView>
 
                 <TextView
                     android:id="@+id/tv_equipped_name"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
+                    android:layout_marginTop="10dp"
                     android:ellipsize="end"
                     android:gravity="center"
                     android:maxLines="1"
                     android:textColor="@color/quiz_text_primary"
-                    android:textSize="15sp"
+                    android:textSize="16sp"
                     android:textStyle="bold"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/card_equipped_showcase"
                     tools:text="반짝이" />
-            </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tv_equipped_stage"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:background="@drawable/bg_gacha_level_pill"
+                    android:paddingHorizontal="10dp"
+                    android:paddingVertical="2dp"
+                    android:textColor="@color/quiz_on_accent"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:visibility="gone"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/tv_equipped_name"
+                    tools:text="성장"
+                    tools:visibility="visible" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
 
             <TextView
                 android:id="@+id/tv_equip_empty"
@@ -130,35 +201,6 @@
             android:visibility="gone"
             tools:visibility="visible" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="@string/gacha_owned_pets"
-            android:textColor="@color/quiz_text_primary"
-            android:textSize="14sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/tv_owned_empty"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:text="@string/gacha_owned_pets_empty"
-            android:textColor="@color/quiz_text_secondary"
-            android:textSize="12sp"
-            android:visibility="gone"
-            tools:visibility="visible" />
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rv_owned_pets"
-            android:layout_width="match_parent"
-            android:layout_height="88dp"
-            android:layout_marginTop="6dp"
-            android:clipToPadding="false"
-            android:orientation="horizontal"
-            android:paddingEnd="8dp"
-            tools:listitem="@layout/item_gacha_owned_pet" />
     </LinearLayout>
 
     <LinearLayout
@@ -198,8 +240,9 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:clipToPadding="false"
-        android:paddingHorizontal="8dp"
-        android:paddingBottom="8dp"
+        android:paddingHorizontal="12dp"
+        android:paddingTop="4dp"
+        android:paddingBottom="12dp"
         app:layout_constraintBottom_toTopOf="@id/bottom_draw_container"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -212,6 +255,8 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:background="@color/quiz_bg"
+        android:clipChildren="false"
+        android:clipToPadding="false"
         android:paddingHorizontal="16dp"
         android:paddingTop="10dp"
         android:paddingBottom="12dp"
@@ -219,36 +264,22 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
 
-        <ImageButton
-            android:id="@+id/btn_probabilities"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:background="@drawable/bg_gacha_ticket_chip"
-            android:contentDescription="@string/gacha_probabilities"
-            android:padding="8dp"
-            android:scaleType="fitCenter"
-            android:src="@android:drawable/ic_menu_info_details"
-            app:layout_constraintBottom_toBottomOf="@id/layout_gacha_level_strip"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="@id/layout_gacha_level_strip"
-            app:tint="@color/quiz_mint_dark" />
-
         <LinearLayout
             android:id="@+id/layout_gacha_level_strip"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="10dp"
             android:gravity="center_horizontal"
             android:orientation="vertical"
             app:layout_constraintBottom_toTopOf="@id/btn_pull"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@id/btn_probabilities"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent">
 
             <TextView
                 android:id="@+id/tv_gacha_level"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
                 android:background="@drawable/bg_gacha_level_pill"
                 android:paddingHorizontal="12dp"
                 android:paddingVertical="4dp"
@@ -299,11 +330,31 @@
             android:textSize="17sp"
             android:textStyle="bold"
             app:backgroundTint="@null"
-            app:iconPadding="0dp"
+            app:icon="@drawable/ic_sparkles"
+            app:iconGravity="textStart"
+            app:iconPadding="8dp"
+            app:iconSize="22dp"
+            app:iconTint="@color/quiz_on_accent"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/layout_gacha_level_strip" />
+
+        <ImageButton
+            android:id="@+id/btn_probabilities"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="-6dp"
+            android:background="@drawable/bg_gacha_ticket_chip"
+            android:contentDescription="@string/gacha_probabilities"
+            android:elevation="6dp"
+            android:padding="8dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_info_outline"
+            app:layout_constraintStart_toStartOf="@id/btn_pull"
+            app:layout_constraintTop_toTopOf="@id/btn_pull"
+            app:tint="@color/quiz_mint_dark" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <ProgressBar

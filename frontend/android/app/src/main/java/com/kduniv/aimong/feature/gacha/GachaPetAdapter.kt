@@ -1,5 +1,7 @@
 package com.kduniv.aimong.feature.gacha
 
+import android.graphics.ColorMatrix
+import android.graphics.ColorMatrixColorFilter
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
@@ -14,6 +16,11 @@ class GachaPetAdapter(
     private val onPetClick: (GachaPetCardUi) -> Unit
 ) : ListAdapter<GachaPetCardUi, GachaPetAdapter.Vh>(Diff) {
 
+    companion object {
+        private val LOCKED_SPRITE_FILTER =
+            ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0f) })
+    }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): Vh {
         val binding = ItemGachaPetCardBinding.inflate(LayoutInflater.from(parent.context), parent, false)
         return Vh(binding, onPetClick)
@@ -21,6 +28,11 @@ class GachaPetAdapter(
 
     override fun onBindViewHolder(holder: Vh, position: Int) {
         holder.bind(getItem(position))
+    }
+
+    override fun onViewRecycled(holder: Vh) {
+        holder.clearSpriteRequest()
+        super.onViewRecycled(holder)
     }
 
     class Vh(
@@ -37,18 +49,30 @@ class GachaPetAdapter(
             }
 
             binding.cardPet.strokeColor = strokeColor
-            binding.viewLockedOverlay.isVisible = item.isLocked
+            binding.tvBadgeEquipped.isVisible = item.isEquipped && !item.isLocked
             binding.ivLocked.isVisible = item.isLocked
-            val artStage = item.pet?.stage ?: "EGG"
+            val artStage = when {
+                item.isLocked -> "GROWTH"
+                else -> item.pet?.stage ?: "EGG"
+            }
+            val allowStageFallback = item.isLocked
             PetArtAssets.bindSprite(
                 image = binding.ivPetSprite,
                 emojiFallback = binding.tvPetEmoji,
                 petType = item.catalogPetType,
                 stage = artStage,
                 emoji = item.emoji,
+                allowStageFallback = allowStageFallback,
             )
-            binding.ivPetSprite.alpha = if (item.isLocked) 0.35f else 1f
-            binding.tvPetEmoji.alpha = if (item.isLocked) 0.35f else 1f
+            if (item.isLocked) {
+                binding.ivPetSprite.colorFilter = GachaPetAdapter.LOCKED_SPRITE_FILTER
+                binding.ivPetSprite.alpha = 0.5f
+                binding.tvPetEmoji.alpha = 0.5f
+            } else {
+                binding.ivPetSprite.colorFilter = null
+                binding.ivPetSprite.alpha = 1f
+                binding.tvPetEmoji.alpha = 1f
+            }
             binding.tvPetName.text = item.displayName
             binding.tvPetName.setTextColor(
                 ContextCompat.getColor(
@@ -69,6 +93,10 @@ class GachaPetAdapter(
 
             binding.root.setOnClickListener { onPetClick(item) }
             binding.root.isClickable = true
+        }
+
+        fun clearSpriteRequest() {
+            PetArtAssets.clearSprite(binding.ivPetSprite)
         }
     }
 

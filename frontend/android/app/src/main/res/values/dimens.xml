@@ -2,7 +2,27 @@
 <resources>
     <!-- 칩·섹션 아래 전체를 스크롤이 차지하고, 미션은 FAB 겹침만큼 margin으로 내림 → 빈 '화면' 제거 -->
     <dimen name="home_path_scroll_padding_top">0dp</dimen>
+    <dimen name="home_path_scroll_padding_bottom">28dp</dimen>
     <dimen name="home_mission_path_top_clearance">120dp</dimen>
     <dimen name="content_max_width">432dp</dimen>
     <dimen name="chat_input_column_padding_bottom">12dp</dimen>
+
+    <!-- 수집 · 도감 그리드 -->
+    <dimen name="gacha_encyclopedia_grid_spacing">10dp</dimen>
+    <dimen name="gacha_pet_card_margin">5dp</dimen>
+    <dimen name="gacha_pet_card_padding">10dp</dimen>
+    <dimen name="gacha_pet_card_art_height">96dp</dimen>
+
+    <!-- 펫 누끼(스프라이트) 표시 크기 — 화면별 통일 -->
+    <dimen name="pet_sprite_gacha_header">104dp</dimen>
+    <dimen name="pet_sprite_home_float">76dp</dimen>
+    <dimen name="pet_sprite_chat_header">56dp</dimen>
+    <dimen name="pet_sprite_chat_bubble">68dp</dimen>
+    <dimen name="pet_sprite_detail_dialog">128dp</dimen>
+    <dimen name="pet_sprite_stats_sheet">120dp</dimen>
+    <dimen name="pet_sprite_quiz_feedback">120dp</dimen>
+    <dimen name="pet_sprite_quiz_result">200dp</dimen>
+    <dimen name="pet_sprite_gacha_reveal">200dp</dimen>
+    <dimen name="pet_sprite_evolution">200dp</dimen>
+    <dimen name="pet_sprite_mission_dialog">180dp</dimen>
 </resources>

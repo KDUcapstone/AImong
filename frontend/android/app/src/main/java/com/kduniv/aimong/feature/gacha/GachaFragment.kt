@@ -7,13 +7,14 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.kduniv.aimong.R
 import com.kduniv.aimong.core.ui.BaseFragment
 import com.kduniv.aimong.databinding.DialogGachaPetDetailBinding
 import com.kduniv.aimong.databinding.FragmentGachaBinding
+import com.kduniv.aimong.feature.pet.data.model.PetDto
+import com.kduniv.aimong.feature.pet.data.model.PetListData
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import kotlin.math.max
@@ -23,26 +24,30 @@ class GachaFragment : BaseFragment<FragmentGachaBinding>(FragmentGachaBinding::i
 
     private val viewModel: GachaViewModel by viewModels()
     private lateinit var petAdapter: GachaPetAdapter
-    private lateinit var ownedPetAdapter: GachaOwnedPetAdapter
     private var pullRevealShowing = false
+    private var lastEquippedBindKey: String? = null
+    private var lastPetListRevisionKey: String? = null
 
     override fun onResume() {
         super.onResume()
         viewModel.syncTicketsFromHome()
+        viewModel.reloadEquippedPet()
     }
 
     override fun initView() {
         val onPetClick: (GachaPetCardUi) -> Unit = { item -> showPetDetailDialog(item) }
 
         petAdapter = GachaPetAdapter(onPetClick)
-        binding.rvPets.layoutManager = GridLayoutManager(requireContext(), 4)
+        val encyclopediaSpan = resources.getInteger(R.integer.gacha_encyclopedia_span_count)
+        val gridSpacing = resources.getDimensionPixelSize(R.dimen.gacha_encyclopedia_grid_spacing)
+        binding.rvPets.layoutManager = GridLayoutManager(requireContext(), encyclopediaSpan)
+        if (binding.rvPets.itemDecorationCount == 0) {
+            binding.rvPets.addItemDecoration(
+                GachaGridSpacingDecoration(encyclopediaSpan, gridSpacing),
+            )
+        }
         binding.rvPets.adapter = petAdapter
         binding.rvPets.setHasFixedSize(true)
-
-        ownedPetAdapter = GachaOwnedPetAdapter(onPetClick)
-        binding.rvOwnedPets.layoutManager =
-            LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
-        binding.rvOwnedPets.adapter = ownedPetAdapter
 
         applyWindowInsets()
 
@@ -83,25 +88,26 @@ class GachaFragment : BaseFragment<FragmentGachaBinding>(FragmentGachaBinding::i
                     binding.tvEquipEmpty.isVisible = !hasEquipped
                     binding.tvEquipBanner.isVisible = !hasEquipped
 
-                    if (eq != null) {
-                        val emoji = GachaPetCatalog.emojiFor(eq.petType, eq.grade)
-                        PetArtAssets.bindSprite(
-                            image = binding.ivEquippedSprite,
-                            emojiFallback = binding.tvEquippedEmoji,
-                            petType = eq.petType,
-                            stage = eq.stage,
-                            emoji = emoji,
-                        )
-                        binding.tvEquippedName.text = GachaPetCatalog.displayNameFor(eq.petType, eq.grade)
+                    resolveEquippedPet(s.pets)?.let { equipped ->
+                        val bindKey = "${equipped.id}|${equipped.petType}|${equipped.stage}"
+                        if (bindKey != lastEquippedBindKey) {
+                            lastEquippedBindKey = bindKey
+                            PetArtAssets.bindEquipped(
+                                image = binding.ivEquippedSprite,
+                                emojiFallback = binding.tvEquippedEmoji,
+                                petType = equipped.petType,
+                                stage = equipped.stage,
+                                grade = equipped.grade,
+                            )
+                        }
+                        binding.tvEquippedName.text = GachaUiMapper.displayName(equipped)
+                        val stageLabel = stageLabelFor(equipped.stage)
+                        binding.tvEquippedStage.isVisible = stageLabel != null
+                        binding.tvEquippedStage.text = stageLabel.orEmpty()
                     }
 
                     binding.tvTicketNormal.text = s.normalTicketCount.toString()
                     bindGachaLevelStrip(s.gachaPullCount)
-
-                    val hasOwned = s.ownedPetCards.isNotEmpty()
-                    binding.rvOwnedPets.isVisible = hasOwned
-                    binding.tvOwnedEmpty.isVisible = !hasOwned
-                    ownedPetAdapter.submitList(s.ownedPetCards)
 
                     binding.tvEncyclopediaProgress.text = getString(
                         R.string.gacha_encyclopedia_progress_fmt,
@@ -109,7 +115,17 @@ class GachaFragment : BaseFragment<FragmentGachaBinding>(FragmentGachaBinding::i
                         GachaPetCatalog.TOTAL
                     )
 
-                    petAdapter.submitList(s.petCards)
+                    val listRevisionKey = buildString {
+                        append(s.petCards.size)
+                        append('|')
+                        append(s.ownedCatalogCount)
+                        append('|')
+                        append(s.pets?.equippedPet?.id.orEmpty())
+                    }
+                    if (listRevisionKey != lastPetListRevisionKey) {
+                        lastPetListRevisionKey = listRevisionKey
+                        petAdapter.submitList(s.petCards)
+                    }
                     bindPullButton(s)
 
                     s.transientMessage?.let { msg ->
@@ -246,6 +262,7 @@ class GachaFragment : BaseFragment<FragmentGachaBinding>(FragmentGachaBinding::i
             petType = pet.petType,
             stage = pet.stage,
             emoji = item.emoji,
+            allowStageFallback = false,
         )
         dialogBinding.tvPetName.text = item.displayName
         dialogBinding.tvPetGrade.text = getString(
@@ -263,8 +280,8 @@ class GachaFragment : BaseFragment<FragmentGachaBinding>(FragmentGachaBinding::i
             dialogBinding.btnEquip.text = getString(R.string.gacha_equipped_now)
         } else {
             dialogBinding.btnEquip.setOnClickListener {
-                viewModel.equipPet(pet.id)
                 dialog.dismiss()
+                binding.root.post { viewModel.equipPet(pet.id) }
             }
         }
     }
@@ -272,5 +289,18 @@ class GachaFragment : BaseFragment<FragmentGachaBinding>(FragmentGachaBinding::i
     private fun showProbabilitySheet() {
         val level = viewModel.state.value.gachaLevel
         GachaProbabilityDialog.show(this, level)
+    }
+
+    /** equippedPet 요약과 도감 카드가 동일 PetDto 를 쓰도록 목록에서 재조회 */
+    private fun resolveEquippedPet(pets: PetListData?): PetDto? {
+        val summary = pets?.equippedPet ?: return null
+        return pets.pets.firstOrNull { it.id == summary.id } ?: summary
+    }
+
+    private fun stageLabelFor(stage: String?): String? = when (stage?.trim()?.uppercase()) {
+        "EGG" -> getString(R.string.gacha_stage_egg)
+        "HATCH", "BABY", "GROWTH" -> getString(R.string.gacha_stage_growth)
+        "AIMONG", "ADULT", "MATURE", "FINAL" -> getString(R.string.gacha_stage_aimong)
+        else -> null
     }
 }

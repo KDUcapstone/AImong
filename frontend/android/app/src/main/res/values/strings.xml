@@ -197,7 +197,7 @@
     <string name="stub_mock_retry_toast">목업 모드: 새로고침은 실제 화면에서 확인해 주세요.</string>
 
     <!-- Quest sheet -->
-    <string name="quest_sheet_title">📝 퀘스트</string>
+    <string name="quest_sheet_title">퀘스트</string>
     <string name="quest_tab_daily">데일리</string>
     <string name="quest_tab_weekly">위클리</string>
     <string name="quest_action_completed">완료</string>
@@ -261,7 +261,7 @@
     <string name="gacha_ticket_normal">일반</string>
     <string name="gacha_ticket_rare">레어</string>
     <string name="gacha_ticket_epic">에픽</string>
-    <string name="gacha_pull">✨ 뽑기</string>
+    <string name="gacha_pull">뽑기</string>
     <string name="gacha_refresh">새로고침</string>
     <string name="gacha_tickets_unknown">티켓 수는 뽑기 후 표시돼요.</string>
     <string name="gacha_tickets_remaining_fmt">남은 티켓 %1$d장</string>
@@ -286,6 +286,7 @@
     <string name="gacha_owned_pets">보유 펫</string>
     <string name="gacha_equip">장착</string>
     <string name="gacha_equipped_label">장착됨</string>
+    <string name="gacha_equipped_badge_short">장착</string>
     <string name="gacha_equipped_fmt">장착: %1$s · %2$s · %3$s · XP %4$d</string>
     <string name="gacha_probabilities">뽑기 확률</string>
     <string name="gacha_probabilities_title">뽑기 확률</string>
@@ -305,6 +306,9 @@
     <string name="gacha_equip_action">장착하기</string>
     <string name="gacha_pet_grade_fmt">등급 · %1$s</string>
     <string name="gacha_equipped_now">현재 장착 중</string>
+    <string name="gacha_stage_egg">알</string>
+    <string name="gacha_stage_growth">성장</string>
+    <string name="gacha_stage_aimong">에이몽</string>
     <string name="gacha_equip_done">장착했어요.</string>
     <string name="gacha_level_up">가챠 레벨 업! 티켓이 추가됐어요.</string>
     <string name="gacha_pull_summary_fmt">%1$s (%2$s) · %3$s\n신규: %4$s · 조각 +%5$d\nSR 미스: %6$d · 적용 보너스: %7$.4f\n레벨업: %8$s\n%9$s</string>

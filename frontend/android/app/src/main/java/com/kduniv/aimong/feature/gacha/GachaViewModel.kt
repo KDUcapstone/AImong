@@ -19,11 +19,13 @@ import com.kduniv.aimong.feature.pet.data.model.PetDto
 import com.kduniv.aimong.feature.pet.data.model.PetListData
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
@@ -39,7 +41,6 @@ class GachaViewModel @Inject constructor(
     data class UiState(
         val loading: Boolean = false,
         val pets: PetListData? = null,
-        val ownedPetCards: List<GachaPetCardUi> = emptyList(),
         val petCards: List<GachaPetCardUi> = emptyList(),
         val fragmentRows: List<FragmentGradeRow> = emptyList(),
         val ownedCatalogCount: Int = 0,
@@ -63,6 +64,19 @@ class GachaViewModel @Inject constructor(
 
     init {
         refresh()
+        prewarmPetArtCache()
+    }
+
+    private fun prewarmPetArtCache() {
+        viewModelScope.launch(Dispatchers.Default) {
+            val stages = listOf("EGG", "GROWTH", "AIMONG")
+            for (entry in GachaPetCatalog.entries) {
+                for (stage in stages) {
+                    PetArtAssets.drawableRes(appContext, entry.petType, stage, allowStageFallback = true)
+                    PetArtAssets.drawableRes(appContext, entry.petType, stage, allowStageFallback = false)
+                }
+            }
+        }
     }
 
     fun consumeTransientMessage() {
@@ -79,6 +93,35 @@ class GachaViewModel @Inject constructor(
             loadTickets().getOrNull()?.let { tickets ->
                 _state.update { it.copy(tickets = tickets) }
             }
+        }
+    }
+
+    /** 홈·다른 탭에서 장착이 바뀐 뒤 수집 상단 장착 영역 동기화 */
+    fun reloadEquippedPet() {
+        viewModelScope.launch {
+            val petData = withContext(Dispatchers.IO) { petRepository.getPets().getOrNull() }
+                ?: return@launch
+            applyEquippedPetChange(petData, message = null)
+        }
+    }
+
+    /** 장착 변경 시 도감 전체를 다시 그리지 않고 장착 배지만 갱신 */
+    private fun applyEquippedPetChange(petData: PetListData?, message: String?) {
+        _state.update { s ->
+            val equippedId = petData?.equippedPet?.id
+            val cards = if (s.petCards.isNotEmpty() && petData != null) {
+                s.petCards.map { card ->
+                    card.copy(isEquipped = card.pet?.id == equippedId)
+                }
+            } else {
+                buildPetLists(petData, s.fragmentRows).encyclopedia
+            }
+            s.copy(
+                pets = petData,
+                petCards = cards,
+                ownedCatalogCount = countOwnedInCatalog(petData),
+                transientMessage = message ?: s.transientMessage,
+            )
         }
     }
 
@@ -100,7 +143,6 @@ class GachaViewModel @Inject constructor(
                 it.copy(
                     loading = false,
                     pets = petData,
-                    ownedPetCards = lists.owned,
                     petCards = lists.encyclopedia,
                     fragmentRows = rows,
                     ownedCatalogCount = lists.ownedCount,
@@ -132,28 +174,17 @@ class GachaViewModel @Inject constructor(
 
     fun equipPet(petId: String) {
         viewModelScope.launch {
-            _state.update { it.copy(loading = true, transientMessage = null) }
             petRepository.equipPet(petId).fold(
                 onSuccess = {
-                    val petData = petRepository.getPets().getOrNull()
-                    val rows = _state.value.fragmentRows
-                    _state.update { s ->
-                        val lists = buildPetLists(petData, rows)
-                        s.copy(
-                            loading = false,
-                            pets = petData,
-                            ownedPetCards = lists.owned,
-                            petCards = lists.encyclopedia,
-                            ownedCatalogCount = lists.ownedCount,
-                            transientMessage = appContext.getString(R.string.gacha_equip_done)
-                        )
-                    }
-                    if (!UiMode.useStubNav) {
-                        homeRefreshBus.notify(HomeRefreshTrigger.Full)
-                    }
+                    val petData = withContext(Dispatchers.IO) { petRepository.getPets().getOrNull() }
+                    applyEquippedPetChange(
+                        petData = petData,
+                        message = appContext.getString(R.string.gacha_equip_done),
+                    )
+                    homeRefreshBus.notify(HomeRefreshTrigger.Full)
                 },
                 onFailure = { e ->
-                    _state.update { it.copy(loading = false, transientMessage = e.message) }
+                    _state.update { it.copy(transientMessage = e.message) }
                 }
             )
         }
@@ -175,7 +206,6 @@ class GachaViewModel @Inject constructor(
                         s.copy(
                             loading = false,
                             pets = petData,
-                            ownedPetCards = lists.owned,
                             petCards = lists.encyclopedia,
                             fragmentRows = rows,
                             ownedCatalogCount = lists.ownedCount,
@@ -207,7 +237,6 @@ class GachaViewModel @Inject constructor(
             it.copy(
                 loading = false,
                 pets = petData,
-                ownedPetCards = lists.owned,
                 petCards = lists.encyclopedia,
                 fragmentRows = rows,
                 ownedCatalogCount = lists.ownedCount,
@@ -246,50 +275,15 @@ class GachaViewModel @Inject constructor(
     }
 
     private data class PetLists(
-        val owned: List<GachaPetCardUi>,
         val encyclopedia: List<GachaPetCardUi>,
         val ownedCount: Int,
     )
 
     private fun buildPetLists(pets: PetListData?, rows: List<FragmentGradeRow>): PetLists =
         PetLists(
-            owned = buildOwnedPetCards(pets, rows),
             encyclopedia = buildEncyclopediaCards(pets, rows),
             ownedCount = countOwnedInCatalog(pets),
         )
-
-    private fun buildOwnedPetCards(
-        pets: PetListData?,
-        rows: List<FragmentGradeRow>
-    ): List<GachaPetCardUi> {
-        if (pets == null) return emptyList()
-        val equippedId = pets.equippedPet?.id
-        val allOwned = buildList {
-            pets.equippedPet?.let { add(it) }
-            addAll(pets.pets)
-        }.distinctBy { it.id }
-        return allOwned.map { pet -> toOwnedCardUi(pet, equippedId, rows) }
-    }
-
-    private fun toOwnedCardUi(
-        pet: PetDto,
-        equippedId: String?,
-        rows: List<FragmentGradeRow>
-    ): GachaPetCardUi {
-        val (count, threshold) = GachaUiMapper.fragmentProgress(pet, rows)
-        return GachaPetCardUi(
-            catalogPetType = pet.petType,
-            pet = pet,
-            isLocked = false,
-            isEquipped = pet.id == equippedId,
-            displayName = GachaPetCatalog.displayNameFor(pet.petType, pet.grade),
-            emoji = GachaPetCatalog.emojiFor(pet.petType, pet.grade),
-            grade = pet.grade,
-            levelLabel = GachaUiMapper.displayLevel(pet),
-            fragmentCount = count,
-            fragmentThreshold = threshold
-        )
-    }
 
     private fun countOwnedInCatalog(pets: PetListData?): Int {
         if (pets == null) return 0
@@ -304,33 +298,32 @@ class GachaViewModel @Inject constructor(
         pets: PetListData?,
         rows: List<FragmentGradeRow>
     ): List<GachaPetCardUi> {
-        val equippedType = pets?.equippedPet?.petType
+        val equippedId = pets?.equippedPet?.id
         val ownedByType = buildMap {
             pets?.pets.orEmpty().forEach { put(it.petType, it) }
             pets?.equippedPet?.let { put(it.petType, it) }
         }
-        return GachaPetCatalog.entries
-            .filter { it.petType != equippedType }
-            .map { entry ->
-                val owned = ownedByType[entry.petType]
-                val isLocked = owned == null
-                val (count, threshold) = if (owned != null) {
-                    GachaUiMapper.fragmentProgress(owned, rows)
-                } else {
-                    GachaUiMapper.fragmentProgressForGrade(entry.grade, rows)
-                }
-                GachaPetCardUi(
-                    catalogPetType = entry.petType,
-                    pet = owned,
-                    isLocked = isLocked,
-                    displayName = entry.displayName,
-                    emoji = entry.emoji,
-                    grade = entry.grade,
-                    levelLabel = owned?.let { GachaUiMapper.displayLevel(it) }.orEmpty(),
-                    fragmentCount = count,
-                    fragmentThreshold = threshold
-                )
+        return GachaPetCatalog.entries.map { entry ->
+            val owned = ownedByType[entry.petType]
+            val isLocked = owned == null
+            val (count, threshold) = if (owned != null) {
+                GachaUiMapper.fragmentProgress(owned, rows)
+            } else {
+                GachaUiMapper.fragmentProgressForGrade(entry.grade, rows)
             }
+            GachaPetCardUi(
+                catalogPetType = entry.petType,
+                pet = owned,
+                isLocked = isLocked,
+                isEquipped = owned != null && owned.id == equippedId,
+                displayName = entry.displayName,
+                emoji = entry.emoji,
+                grade = entry.grade,
+                levelLabel = owned?.let { GachaUiMapper.displayLevel(it) }.orEmpty(),
+                fragmentCount = count,
+                fragmentThreshold = threshold,
+            )
+        }
     }
 
 }

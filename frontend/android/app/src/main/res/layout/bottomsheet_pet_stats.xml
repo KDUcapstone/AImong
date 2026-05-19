@@ -10,8 +10,8 @@
     android:paddingBottom="28dp">
 
     <FrameLayout
-        android:layout_width="96dp"
-        android:layout_height="96dp">
+        android:layout_width="@dimen/pet_sprite_stats_sheet"
+        android:layout_height="@dimen/pet_sprite_stats_sheet">
 
         <ImageView
             android:id="@+id/iv_pet_sprite"
@@ -26,7 +26,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:gravity="center"
-            android:textSize="48sp"
+            android:textSize="58sp"
             tools:text="✨" />
     </FrameLayout>
 

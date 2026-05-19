@@ -89,11 +89,11 @@
         android:id="@+id/scroll_path"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:clipChildren="true"
-        android:clipToPadding="true"
+        android:clipChildren="false"
+        android:clipToPadding="false"
         android:overScrollMode="never"
         android:paddingTop="@dimen/home_path_scroll_padding_top"
-        android:paddingBottom="112dp"
+        android:paddingBottom="@dimen/home_path_scroll_padding_bottom"
         android:scrollbars="none"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -115,7 +115,6 @@
                 android:id="@+id/layout_mission_path"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:minHeight="420dp"
                 android:clipChildren="true"
                 android:clipToPadding="true"
                 android:clickable="true"
@@ -126,13 +125,13 @@
 
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/card_float_pet"
-        android:layout_width="56dp"
-        android:layout_height="56dp"
+        android:layout_width="@dimen/pet_sprite_home_float"
+        android:layout_height="@dimen/pet_sprite_home_float"
         android:layout_marginTop="10dp"
         android:clickable="true"
         android:focusable="true"
         app:cardBackgroundColor="@color/white"
-        app:cardCornerRadius="28dp"
+        app:cardCornerRadius="34dp"
         app:cardElevation="14dp"
         app:layout_constraintStart_toStartOf="@id/card_floating_section"
         app:layout_constraintTop_toBottomOf="@id/card_floating_section">
@@ -154,7 +153,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:contentDescription="@null"
-                android:padding="6dp"
+                android:padding="3dp"
                 android:scaleType="fitCenter"
                 android:visibility="gone" />
 

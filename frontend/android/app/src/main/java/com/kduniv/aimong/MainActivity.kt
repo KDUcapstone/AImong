@@ -89,7 +89,7 @@ class MainActivity : AppCompatActivity() {
     private var exitConfirmDialog: AlertDialog? = null
     private var parentNavDestinationListener: NavController.OnDestinationChangedListener? = null
     private var childNavDestinationListener: NavController.OnDestinationChangedListener? = null
-    /** [syncParentBottomNavTabSelection]에서 `selectedItemId` 변경 시 `OnItemSelected` 재진입 방지 */
+    /** 하단 탭 `selectedItemId` 프로그램 변경 시 `OnItemSelected` 재진입 방지 */
     private var suppressParentBottomNavItemSelected = false
     private var suppressChildBottomNavItemSelected = false
 
@@ -265,14 +265,7 @@ class MainActivity : AppCompatActivity() {
                     if (suppressChildBottomNavItemSelected) return@OnDestinationChangedListener
                     val menuId = ChildTopLevelNav.mapDestinationToTab(destination.id)
                         ?: return@OnDestinationChangedListener
-                    if (binding.bottomNav.selectedItemId != menuId) {
-                        suppressChildBottomNavItemSelected = true
-                        try {
-                            binding.bottomNav.selectedItemId = menuId
-                        } finally {
-                            suppressChildBottomNavItemSelected = false
-                        }
-                    }
+                    syncChildBottomNavTabSelection(binding.bottomNav, menuId)
                 }
                 childNavDestinationListener = childDestListener
                 navController.addOnDestinationChangedListener(childDestListener)
@@ -281,18 +274,17 @@ class MainActivity : AppCompatActivity() {
                         if (ChildTopLevelNav.shouldHideBottomNav(currentId)) View.GONE else View.VISIBLE
                 }
                 ChildTopLevelNav.mapDestinationToTab(navController.currentDestination?.id)?.let { initial ->
-                    suppressChildBottomNavItemSelected = true
-                    try {
-                        binding.bottomNav.selectedItemId = initial
-                    } finally {
-                        suppressChildBottomNavItemSelected = false
-                    }
+                    syncChildBottomNavTabSelection(binding.bottomNav, initial)
                 }
 
                 binding.bottomNav.setOnItemSelectedListener { item ->
                     if (suppressChildBottomNavItemSelected) return@setOnItemSelectedListener true
-                    // 네비 전환은 비동기 — post에서 currentDestination으로 맞추면 이전 탭(예: 수집)으로 되돌아감
                     runCatching { navController.onChildBottomNavTap(item.itemId) }
+                    binding.bottomNav.post {
+                        ChildTopLevelNav.mapDestinationToTab(navController.currentDestination?.id)?.let { tabId ->
+                            syncChildBottomNavTabSelection(binding.bottomNav, tabId)
+                        }
+                    }
                     true
                 }
 
@@ -357,6 +349,69 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        if (navigationUserRole == "CHILD" && ::navController.isInitialized) {
+            ChildTopLevelNav.mapDestinationToTab(navController.currentDestination?.id)?.let { tabId ->
+                syncChildBottomNavTabSelection(binding.bottomNav, tabId)
+            }
+        }
+    }
+
+    /** MY 등 화면과 하단 탭 선택 상태가 어긋날 때 Fragment에서 호출 */
+    fun syncChildBottomNavForCurrentDestination() {
+        if (navigationUserRole != "CHILD" || !::navController.isInitialized) return
+        ChildTopLevelNav.mapDestinationToTab(navController.currentDestination?.id)?.let { tabId ->
+            syncChildBottomNavTabSelection(binding.bottomNav, tabId)
+        }
+    }
+
+    /** 자녀 하단 탭: 선택 탭만 초록·확대, 나머지는 회색·기본 크기로 맞춘다. */
+    private fun syncChildBottomNavTabSelection(bottomNav: BottomNavigationView, selectedMenuItemId: Int) {
+        bottomNav.post {
+            if (!bottomNav.isAttachedToWindow) return@post
+            suppressChildBottomNavItemSelected = true
+            try {
+                bottomNav.selectedItemId = selectedMenuItemId
+                for (i in 0 until bottomNav.menu.size()) {
+                    val mi = bottomNav.menu.getItem(i)
+                    val selected = mi.itemId == selectedMenuItemId
+                    mi.isChecked = selected
+                    val tab = bottomNav.findViewById<View>(mi.itemId) ?: continue
+                    if (tab is Checkable) {
+                        tab.isChecked = selected
+                    }
+                    tab.isSelected = selected
+                    tab.animate().cancel()
+                    val target = if (selected) 1.12f else 1f
+                    if ((tab.scaleX - target) * (tab.scaleX - target) > 0.0004f) {
+                        tab.animate().scaleX(target).scaleY(target).setDuration(120).start()
+                    } else {
+                        tab.scaleX = target
+                        tab.scaleY = target
+                    }
+                    applyChildBottomNavItemContentColors(tab, selected)
+                }
+                bottomNav.invalidate()
+            } finally {
+                suppressChildBottomNavItemSelected = false
+            }
+        }
+    }
+
+    private fun applyChildBottomNavItemContentColors(itemRoot: View, selected: Boolean) {
+        val green = ContextCompat.getColor(itemRoot.context, R.color.child_nav_item_selected)
+        val muted = ContextCompat.getColor(itemRoot.context, R.color.child_nav_item_unselected)
+        val color = if (selected) green else muted
+        val iconTint = ColorStateList.valueOf(color)
+        fun walk(v: View) {
+            when (v) {
+                is ImageView -> v.imageTintList = iconTint
+                is TextView -> v.setTextColor(color)
+                is ViewGroup -> {
+                    for (i in 0 until v.childCount) walk(v.getChildAt(i))
+                }
+            }
+        }
+        walk(itemRoot)
     }
 
     /** 부모 하단 탭: 아이콘·라벨에 선택 여부에 따른 색을 직접 적용한다. */

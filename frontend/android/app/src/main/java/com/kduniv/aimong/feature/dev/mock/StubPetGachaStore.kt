@@ -28,7 +28,7 @@ object StubPetGachaStore {
     private val ownedPets = mutableListOf(
         PetDto(
             id = "stub-pet-1",
-            petType = "pet_normal_001",
+            petType = "pet_normal_002",
             grade = "NORMAL",
             xp = 12,
             stage = "GROWTH",

@@ -8,7 +8,6 @@ import com.kduniv.aimong.feature.chat.data.ChatRepositoryImpl
 import com.kduniv.aimong.feature.chat.domain.repository.ChatRepository
 import com.kduniv.aimong.feature.dev.mock.repository.ChatRepositoryStub
 import com.kduniv.aimong.feature.dev.mock.repository.GachaRepositoryStub
-import com.kduniv.aimong.feature.dev.mock.repository.PetRepositoryStub
 import com.kduniv.aimong.feature.dev.mock.repository.QuestRepositoryStub
 import com.kduniv.aimong.feature.dev.mock.repository.QuizRepositoryStub
 import com.kduniv.aimong.feature.dev.mock.repository.WalletRepositoryStub
@@ -65,10 +64,7 @@ object StubRepositoryModule {
 
     @Provides
     @Singleton
-    fun providePetRepository(
-        impl: PetRepositoryImpl,
-        stub: PetRepositoryStub
-    ): PetRepository = if (UiMode.useStubNav) stub else impl
+    fun providePetRepository(impl: PetRepositoryImpl): PetRepository = impl
 
     @Provides
     @Singleton

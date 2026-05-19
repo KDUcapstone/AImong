@@ -10,7 +10,7 @@
     <FrameLayout
         android:id="@+id/fl_evolution_pet"
         android:layout_width="match_parent"
-        android:layout_height="200dp"
+        android:layout_height="@dimen/pet_sprite_evolution"
         app:layout_constraintTop_toTopOf="parent">
 
         <com.airbnb.lottie.LottieAnimationView

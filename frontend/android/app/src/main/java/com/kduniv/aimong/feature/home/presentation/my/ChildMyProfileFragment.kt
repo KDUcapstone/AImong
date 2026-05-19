@@ -8,8 +8,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
-import com.google.android.material.bottomnavigation.BottomNavigationView
-import com.kduniv.aimong.core.navigation.ChildTopLevelNav
 import androidx.recyclerview.widget.GridLayoutManager
 import com.kduniv.aimong.MainActivity
 import com.kduniv.aimong.R
@@ -84,13 +82,7 @@ open class ChildMyProfileFragment :
 
     /** 화면은 MY인데 하단바가 이전 탭(수집 등)으로 남는 경우 보정 */
     private fun syncChildBottomNavSelection() {
-        val bottomNav = activity?.findViewById<BottomNavigationView>(R.id.bottom_nav) ?: return
-        val tabId = ChildTopLevelNav.mapDestinationToTab(
-            findNavController().currentDestination?.id
-        ) ?: return
-        if (bottomNav.selectedItemId != tabId) {
-            bottomNav.selectedItemId = tabId
-        }
+        (activity as? MainActivity)?.syncChildBottomNavForCurrentDestination()
     }
 
     private fun bindStatTiles() {
