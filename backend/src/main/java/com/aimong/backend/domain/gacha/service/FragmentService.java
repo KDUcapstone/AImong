@@ -1,7 +1,6 @@
 package com.aimong.backend.domain.gacha.service;
 
 import com.aimong.backend.domain.gacha.entity.Fragment;
-import com.aimong.backend.domain.gacha.entity.FragmentId;
 import com.aimong.backend.domain.gacha.repository.FragmentRepository;
 import com.aimong.backend.domain.pet.entity.PetGrade;
 import java.util.Arrays;
@@ -17,7 +16,7 @@ public class FragmentService {
 
     public void initializeInventory(UUID childId) {
         Arrays.stream(PetGrade.values())
-                .filter(grade -> fragmentRepository.findById(new FragmentId(childId, grade)).isEmpty())
+                .filter(grade -> fragmentRepository.findByChildIdAndGrade(childId, grade).isEmpty())
                 .map(grade -> Fragment.create(childId, grade))
                 .forEach(fragmentRepository::save);
     }

@@ -12,6 +12,7 @@ import com.aimong.backend.domain.mission.repository.QuestionAnswerKeyRepository;
 import com.aimong.backend.domain.mission.entity.QuestionAnswerKey;
 import com.aimong.backend.domain.mission.entity.QuestionBank;
 import com.aimong.backend.domain.mission.repository.MissionSetRepository;
+import com.aimong.backend.domain.reward.service.CurrencyService;
 import com.aimong.backend.global.exception.AimongException;
 import com.aimong.backend.global.exception.ErrorCode;
 import java.util.List;
@@ -27,8 +28,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class MissionSetReportService {
-
-    private static final int MISSION_CLEAR_COIN = 30;
 
     private final MissionSetRepository missionSetRepository;
     private final MissionAnswerResultRepository missionAnswerResultRepository;
@@ -75,7 +74,7 @@ public class MissionSetReportService {
                 attempt.isReview(),
                 attempt.getSubmittedAt(),
                 new MissionSetReportResponse.RewardsResponse(
-                        coinEarned(attempt),
+                        gearEarned(attempt),
                         attempt.getXpEarned(),
                         List.of()
                 ),
@@ -85,8 +84,8 @@ public class MissionSetReportService {
         );
     }
 
-    private int coinEarned(MissionAttempt attempt) {
-        return attempt.isPassed() && !attempt.isReview() ? MISSION_CLEAR_COIN : 0;
+    private int gearEarned(MissionAttempt attempt) {
+        return attempt.isPassed() && !attempt.isReview() ? CurrencyService.MISSION_CLEAR_GEAR : 0;
     }
 
     private int responseScore(int correctCount, int total) {

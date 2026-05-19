@@ -117,6 +117,72 @@ class MissionQuestionSetFactoryTest {
         assertThat(selected.stream().filter(question -> question.getDifficulty() == DifficultyBand.HIGH).count()).isEqualTo(1);
     }
 
+    @Test
+    void skipsDuplicatePromptsWithinSelectedQuestionSet() {
+        MissionQuestionSetFactory factory = factory();
+        UUID missionId = UUID.randomUUID();
+        List<QuestionBank> lowPool = new ArrayList<>(createQuestions(6, DifficultyBand.LOW, "low"));
+        lowPool.add(question(DifficultyBand.LOW, "shared prompt"));
+        List<QuestionBank> mediumPool = List.of(
+                question(DifficultyBand.MEDIUM, "shared prompt"),
+                question(DifficultyBand.MEDIUM, "medium-1"),
+                question(DifficultyBand.MEDIUM, "medium-2")
+        );
+        List<QuestionBank> highPool = createQuestions(1, DifficultyBand.HIGH, "high");
+        stubMissionPools(missionId, lowPool, mediumPool, highPool);
+
+        List<QuestionBank> selected = factory.create(missionId, UUID.randomUUID(), false);
+
+        assertThat(selected).hasSize(10);
+        assertThat(selected.stream().map(QuestionBank::getPrompt).toList()).doesNotHaveDuplicates();
+        assertThat(selected.stream().filter(question -> question.getDifficulty() == DifficultyBand.LOW).count()).isEqualTo(7);
+        assertThat(selected.stream().filter(question -> question.getDifficulty() == DifficultyBand.MEDIUM).count()).isEqualTo(2);
+        assertThat(selected.stream().filter(question -> question.getDifficulty() == DifficultyBand.HIGH).count()).isEqualTo(1);
+    }
+
+    @Test
+    void skipsNearDuplicatePromptsWithinSelectedQuestionSet() {
+        MissionQuestionSetFactory factory = factory();
+        UUID missionId = UUID.randomUUID();
+        List<QuestionBank> lowPool = new ArrayList<>(createQuestions(6, DifficultyBand.LOW, "low"));
+        lowPool.add(question(DifficultyBand.LOW, "\uBE44\uBC00\uBC88\uD638\uB97C \uCE5C\uAD6C\uC5D0\uAC8C \uC54C\uB824 \uC8FC\uBA74 \uC65C \uC704\uD5D8\uD55C\uAC00\uC694?"));
+        List<QuestionBank> mediumPool = List.of(
+                question(DifficultyBand.MEDIUM, "\uBE44\uBC00\uBC88\uD638\uB294 \uCE5C\uAD6C\uD55C\uD14C \uC54C\uB824\uC8FC\uBA74 \uC65C \uC704\uD5D8\uD560\uAE4C\uC694?"),
+                question(DifficultyBand.MEDIUM, "medium-1"),
+                question(DifficultyBand.MEDIUM, "medium-2")
+        );
+        List<QuestionBank> highPool = createQuestions(1, DifficultyBand.HIGH, "high");
+        stubMissionPools(missionId, lowPool, mediumPool, highPool);
+
+        List<QuestionBank> selected = factory.create(missionId, UUID.randomUUID(), false);
+
+        assertThat(selected).hasSize(10);
+        assertThat(selected.stream()
+                .filter(question -> question.getPrompt().contains("\uBE44\uBC00\uBC88\uD638"))
+                .map(QuestionBank::getPrompt)
+                .toList()).hasSize(1);
+        assertThat(selected.stream().filter(question -> question.getDifficulty() == DifficultyBand.MEDIUM).count()).isEqualTo(2);
+    }
+
+    @Test
+    void failsWhenUniquePromptsCannotFillDifficultyQuota() {
+        MissionQuestionSetFactory factory = factory();
+        UUID missionId = UUID.randomUUID();
+        List<QuestionBank> lowPool = new ArrayList<>(createQuestions(6, DifficultyBand.LOW, "low"));
+        lowPool.add(question(DifficultyBand.LOW, "shared prompt"));
+        List<QuestionBank> mediumPool = List.of(
+                question(DifficultyBand.MEDIUM, "shared prompt"),
+                question(DifficultyBand.MEDIUM, "medium-1")
+        );
+        List<QuestionBank> highPool = createQuestions(1, DifficultyBand.HIGH, "high");
+        stubMissionPools(missionId, lowPool, mediumPool, highPool);
+
+        assertThatThrownBy(() -> factory.create(missionId, UUID.randomUUID(), false))
+                .isInstanceOf(AimongException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.MISSION_SET_NOT_READY);
+    }
+
     private void assertMissionSetNotReady(int lowCount, int mediumCount, int highCount) {
         MissionQuestionSetFactory factory = factory();
         UUID missionId = UUID.randomUUID();
@@ -136,9 +202,18 @@ class MissionQuestionSetFactoryTest {
     }
 
     private void stubMissionPools(UUID missionId, int lowCount, int mediumCount, int highCount) {
-        List<QuestionBank> lowPool = createQuestions(lowCount, DifficultyBand.LOW);
-        List<QuestionBank> mediumPool = createQuestions(mediumCount, DifficultyBand.MEDIUM);
-        List<QuestionBank> highPool = createQuestions(highCount, DifficultyBand.HIGH);
+        List<QuestionBank> lowPool = createQuestions(lowCount, DifficultyBand.LOW, "low");
+        List<QuestionBank> mediumPool = createQuestions(mediumCount, DifficultyBand.MEDIUM, "medium");
+        List<QuestionBank> highPool = createQuestions(highCount, DifficultyBand.HIGH, "high");
+        stubMissionPools(missionId, lowPool, mediumPool, highPool);
+    }
+
+    private void stubMissionPools(
+            UUID missionId,
+            List<QuestionBank> lowPool,
+            List<QuestionBank> mediumPool,
+            List<QuestionBank> highPool
+    ) {
         when(approvedQuestionProvider.findActiveQuestionsByMissionIdAndDifficulty(missionId, DifficultyBand.LOW))
                 .thenReturn(lowPool);
         when(approvedQuestionProvider.findActiveQuestionsByMissionIdAndDifficulty(missionId, DifficultyBand.MEDIUM))
@@ -147,13 +222,19 @@ class MissionQuestionSetFactoryTest {
                 .thenReturn(highPool);
     }
 
-    private List<QuestionBank> createQuestions(int count, DifficultyBand difficulty) {
+    private List<QuestionBank> createQuestions(int count, DifficultyBand difficulty, String promptPrefix) {
         List<QuestionBank> questions = new ArrayList<>();
         for (int index = 0; index < count; index++) {
-            QuestionBank question = org.mockito.Mockito.mock(QuestionBank.class);
-            when(question.getDifficulty()).thenReturn(difficulty);
-            questions.add(question);
+            questions.add(question(difficulty, promptPrefix + "-" + index));
         }
         return List.copyOf(questions);
+    }
+
+    private QuestionBank question(DifficultyBand difficulty, String prompt) {
+        QuestionBank question = org.mockito.Mockito.mock(QuestionBank.class);
+        when(question.getId()).thenReturn(UUID.randomUUID());
+        when(question.getDifficulty()).thenReturn(difficulty);
+        when(question.getPrompt()).thenReturn(prompt);
+        return question;
     }
 }

@@ -4,6 +4,7 @@ import com.aimong.backend.domain.mission.config.MissionQuestionProperties;
 import com.aimong.backend.domain.mission.entity.DifficultyBand;
 import com.aimong.backend.domain.mission.entity.QuestionBank;
 import com.aimong.backend.domain.mission.repository.MissionAnswerResultRepository;
+import com.aimong.backend.domain.mission.service.generation.SimilarityDeduplicator;
 import com.aimong.backend.global.exception.AimongException;
 import com.aimong.backend.global.exception.ErrorCode;
 import java.util.Collections;
@@ -20,16 +21,19 @@ public class MissionQuestionSetFactory {
     private final ApprovedQuestionProvider approvedQuestionProvider;
     private final MissionQuestionProperties missionQuestionProperties;
     private final MissionAnswerResultRepository missionAnswerResultRepository;
+    private final SimilarityDeduplicator similarityDeduplicator;
 
     @Autowired
     public MissionQuestionSetFactory(
             ApprovedQuestionProvider approvedQuestionProvider,
             MissionQuestionProperties missionQuestionProperties,
-            MissionAnswerResultRepository missionAnswerResultRepository
+            MissionAnswerResultRepository missionAnswerResultRepository,
+            SimilarityDeduplicator similarityDeduplicator
     ) {
         this.approvedQuestionProvider = approvedQuestionProvider;
         this.missionQuestionProperties = missionQuestionProperties;
         this.missionAnswerResultRepository = missionAnswerResultRepository;
+        this.similarityDeduplicator = similarityDeduplicator;
     }
 
     public MissionQuestionSetFactory(
@@ -39,6 +43,7 @@ public class MissionQuestionSetFactory {
         this.approvedQuestionProvider = approvedQuestionProvider;
         this.missionQuestionProperties = missionQuestionProperties;
         this.missionAnswerResultRepository = null;
+        this.similarityDeduplicator = new SimilarityDeduplicator();
     }
 
     public List<QuestionBank> create(String setId, UUID missionId, UUID childId, boolean isReview) {
@@ -70,10 +75,11 @@ public class MissionQuestionSetFactory {
     ) {
         DifficultyQuota quota = DifficultyQuota.forStarLevel(starLevel);
         Set<UUID> attemptedQuestionIds = attemptedQuestionIds(childId, missionId);
+        Set<String> selectedPromptKeys = new HashSet<>();
         List<QuestionBank> selected = new java.util.ArrayList<>(missionQuestionProperties.setSize());
-        selected.addAll(selectByQuota(lowPool, attemptedQuestionIds, quota.low()));
-        selected.addAll(selectByQuota(mediumPool, attemptedQuestionIds, quota.medium()));
-        selected.addAll(selectByQuota(highPool, attemptedQuestionIds, quota.high()));
+        selected.addAll(selectByQuota(lowPool, attemptedQuestionIds, selectedPromptKeys, quota.low()));
+        selected.addAll(selectByQuota(mediumPool, attemptedQuestionIds, selectedPromptKeys, quota.medium()));
+        selected.addAll(selectByQuota(highPool, attemptedQuestionIds, selectedPromptKeys, quota.high()));
         return shuffleFinalSet(selected);
     }
 
@@ -84,14 +90,22 @@ public class MissionQuestionSetFactory {
         return new HashSet<>(missionAnswerResultRepository.findNormalAttemptedQuestionIds(childId, missionId));
     }
 
-    private List<QuestionBank> selectByQuota(List<QuestionBank> pool, Set<UUID> attemptedQuestionIds, int quota) {
-        if (pool.size() < quota) {
+    private List<QuestionBank> selectByQuota(
+            List<QuestionBank> pool,
+            Set<UUID> attemptedQuestionIds,
+            Set<String> selectedPromptKeys,
+            int quota
+    ) {
+        List<QuestionBank> available = pool.stream()
+                .filter(question -> isPromptOriginal(question, selectedPromptKeys))
+                .toList();
+        if (available.size() < quota) {
             throw new AimongException(ErrorCode.MISSION_SET_NOT_READY);
         }
-        List<QuestionBank> unattempted = pool.stream()
+        List<QuestionBank> unattempted = available.stream()
                 .filter(question -> !attemptedQuestionIds.contains(question.getId()))
                 .collect(java.util.stream.Collectors.toCollection(java.util.ArrayList::new));
-        List<QuestionBank> attempted = pool.stream()
+        List<QuestionBank> attempted = available.stream()
                 .filter(question -> attemptedQuestionIds.contains(question.getId()))
                 .collect(java.util.stream.Collectors.toCollection(java.util.ArrayList::new));
 
@@ -99,14 +113,55 @@ public class MissionQuestionSetFactory {
         Collections.shuffle(attempted);
 
         List<QuestionBank> selected = new java.util.ArrayList<>(quota);
-        selected.addAll(unattempted.stream().limit(quota).toList());
-        if (selected.size() < quota) {
-            selected.addAll(attempted.stream().limit(quota - selected.size()).toList());
-        }
+        addUniquePrompts(selected, selectedPromptKeys, unattempted, quota);
+        addUniquePrompts(selected, selectedPromptKeys, attempted, quota);
         if (selected.size() != quota) {
             throw new AimongException(ErrorCode.MISSION_SET_NOT_READY);
         }
         return selected;
+    }
+
+    private void addUniquePrompts(
+            List<QuestionBank> selected,
+            Set<String> selectedPromptKeys,
+            List<QuestionBank> candidates,
+            int quota
+    ) {
+        for (QuestionBank candidate : candidates) {
+            if (selected.size() == quota) {
+                return;
+            }
+            String promptKey = promptKey(candidate);
+            if (isPromptOriginal(candidate, selectedPromptKeys) && selectedPromptKeys.add(promptKey)) {
+                selected.add(candidate);
+            }
+        }
+    }
+
+    private boolean isPromptOriginal(QuestionBank question, Set<String> selectedPromptKeys) {
+        String promptKey = promptKey(question);
+        if (selectedPromptKeys.contains(promptKey)) {
+            return false;
+        }
+        if (!containsHangul(promptKey) || promptKey.length() < 10) {
+            return true;
+        }
+        return selectedPromptKeys.stream()
+                .filter(selectedKey -> containsHangul(selectedKey) && selectedKey.length() >= 10)
+                .noneMatch(selectedKey -> similarityDeduplicator.isDuplicateOrNearDuplicate(promptKey, selectedKey));
+    }
+
+    private boolean containsHangul(String value) {
+        return value != null && value.codePoints()
+                .anyMatch(codePoint -> codePoint >= 0xAC00 && codePoint <= 0xD7A3);
+    }
+
+    private String promptKey(QuestionBank question) {
+        String prompt = question.getPrompt();
+        if (prompt == null || prompt.isBlank()) {
+            return "question:" + question.getId();
+        }
+        return similarityDeduplicator.nearDuplicateKey(prompt);
     }
 
     private List<QuestionBank> shuffleFinalSet(List<QuestionBank> questionSet) {

@@ -8,8 +8,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.aimong.backend.domain.auth.entity.ChildProfile;
+import com.aimong.backend.domain.auth.entity.ParentAccount;
 import com.aimong.backend.domain.auth.repository.ChildProfileRepository;
 import com.aimong.backend.domain.auth.service.ChildActivityService;
+import com.aimong.backend.domain.reward.repository.CurrencyTransactionRepository;
+import com.aimong.backend.domain.reward.service.CurrencyService;
 import com.aimong.backend.domain.streak.entity.FriendStreak;
 import com.aimong.backend.domain.streak.entity.StreakRecord;
 import com.aimong.backend.domain.streak.repository.FriendStreakRepository;
@@ -34,6 +37,7 @@ class StreakServiceTest {
     @Mock private FriendStreakRepository friendStreakRepository;
     @Mock private ChildProfileRepository childProfileRepository;
     @Mock private ChildActivityService childActivityService;
+    @Mock private CurrencyTransactionRepository currencyTransactionRepository;
 
     @Test
     void getStreakReturnsZeroTodayMissionCountWhenLastCompletedDateIsNotToday() {
@@ -159,12 +163,39 @@ class StreakServiceTest {
         verify(childActivityService).touchLastActiveAt(childId);
     }
 
+    @Test
+    void purchaseShieldsConsumesGearAndAddsShield() {
+        StreakService service = serviceWithCurrency();
+        ChildProfile child = ChildProfile.create(ParentAccount.create("parent-id", "parent@example.com"), "child", "123456");
+        child.addGear(60);
+
+        when(childProfileRepository.findWithLockById(child.getId())).thenReturn(Optional.of(child));
+
+        var response = service.purchaseShields(child.getId(), 2);
+
+        assertThat(response.shieldCount()).isEqualTo(2);
+        assertThat(response.purchasedCount()).isEqualTo(2);
+        assertThat(response.unitCost()).isEqualTo(30);
+        assertThat(response.gearBalance()).isZero();
+        verify(currencyTransactionRepository).save(any());
+    }
+
     private StreakService service() {
         return new StreakService(
                 streakRecordRepository,
                 friendStreakRepository,
                 childProfileRepository,
                 childActivityService
+        );
+    }
+
+    private StreakService serviceWithCurrency() {
+        return new StreakService(
+                streakRecordRepository,
+                friendStreakRepository,
+                childProfileRepository,
+                childActivityService,
+                new CurrencyService(currencyTransactionRepository)
         );
     }
 

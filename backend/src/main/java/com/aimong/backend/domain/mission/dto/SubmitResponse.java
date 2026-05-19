@@ -44,7 +44,7 @@ public record SubmitResponse(
         int todaySetCount
 ) {
     public record RewardsResponse(
-            int coin,
+            int gear,
             int exp,
             List<FragmentResponse> fragments
     ) {

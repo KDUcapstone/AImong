@@ -67,6 +67,18 @@ public class QuizAttempt {
     @Column(name = "abandon_reason", length = 64)
     private String abandonReason;
 
+    @Column(name = "remaining_lives", nullable = false)
+    private int remainingLives;
+
+    @Column(name = "wrong_count_in_session", nullable = false)
+    private int wrongCountInSession;
+
+    @Column(name = "revive_count", nullable = false)
+    private int reviveCount;
+
+    @Column(name = "revived_at")
+    private Instant revivedAt;
+
     public static QuizAttempt create(UUID childId, UUID missionId, String questionIdsJson, Instant expiresAt, boolean isReview) {
         return create(childId, missionId, null, 1, questionIdsJson, expiresAt, isReview);
     }
@@ -91,6 +103,9 @@ public class QuizAttempt {
         attempt.expiresAt = expiresAt;
         attempt.isReview = isReview;
         attempt.status = QuizAttemptStatus.IN_PROGRESS;
+        attempt.remainingLives = 3;
+        attempt.wrongCountInSession = 0;
+        attempt.reviveCount = 0;
         return attempt;
     }
 
@@ -113,6 +128,23 @@ public class QuizAttempt {
         this.abandonReason = reason;
     }
 
+    public void recordWrongAnswer() {
+        wrongCountInSession += 1;
+        if (remainingLives > 0) {
+            remainingLives -= 1;
+        }
+    }
+
+    public boolean canRevive() {
+        return !isReview && status == QuizAttemptStatus.IN_PROGRESS && remainingLives == 0 && reviveCount == 0;
+    }
+
+    public void revive(Instant revivedAt) {
+        remainingLives = 3;
+        reviveCount += 1;
+        this.revivedAt = revivedAt;
+    }
+
     @PrePersist
     void prePersist() {
         if (createdAt == null) {
@@ -123,6 +155,9 @@ public class QuizAttempt {
         }
         if (answeredQuestionIdsJson == null) {
             answeredQuestionIdsJson = "[]";
+        }
+        if (remainingLives == 0 && wrongCountInSession == 0 && reviveCount == 0) {
+            remainingLives = 3;
         }
     }
 }

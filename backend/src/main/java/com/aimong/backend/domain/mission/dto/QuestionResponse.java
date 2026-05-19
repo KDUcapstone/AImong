@@ -10,10 +10,11 @@ public record QuestionResponse(
         String difficulty,
         String prompt,
         List<String> choices,
-        String answerFormat
+        String answerFormat,
+        List<TermHintResponse> termHints
 ) {
     public QuestionResponse(UUID questionId, String type, String prompt, List<String> choices) {
-        this(questionId, 1, type, null, prompt, choices, answerFormatFor(choices));
+        this(questionId, 1, type, null, prompt, choices, answerFormatFor(choices), List.of());
     }
 
     public static String answerFormatFor(List<String> choices) {

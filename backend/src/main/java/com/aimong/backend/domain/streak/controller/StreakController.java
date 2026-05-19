@@ -3,6 +3,8 @@ package com.aimong.backend.domain.streak.controller;
 import com.aimong.backend.domain.streak.dto.PartnerConnectRequest;
 import com.aimong.backend.domain.streak.dto.PartnerConnectResponse;
 import com.aimong.backend.domain.streak.dto.PartnerDisconnectResponse;
+import com.aimong.backend.domain.streak.dto.ShieldPurchaseRequest;
+import com.aimong.backend.domain.streak.dto.ShieldPurchaseResponse;
 import com.aimong.backend.domain.streak.dto.StreakResponse;
 import com.aimong.backend.domain.streak.service.StreakService;
 import com.aimong.backend.global.response.ApiResponse;
@@ -62,5 +64,16 @@ public class StreakController {
     @DeleteMapping("/partner")
     public ApiResponse<PartnerDisconnectResponse> disconnectPartner(Authentication authentication) {
         return ApiResponse.success(streakService.disconnectPartner(UUID.fromString(authentication.getName())));
+    }
+
+    @PostMapping("/shields/purchase")
+    public ApiResponse<ShieldPurchaseResponse> purchaseShields(
+            Authentication authentication,
+            @Valid @RequestBody ShieldPurchaseRequest request
+    ) {
+        return ApiResponse.success(streakService.purchaseShields(
+                UUID.fromString(authentication.getName()),
+                request.count()
+        ));
     }
 }

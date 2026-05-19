@@ -42,6 +42,12 @@ public class StreakMilestone {
     private Instant createdAt;
 
     public static StreakMilestone create(UUID childId, short targetDays, short tier) {
+        if (targetDays <= 30) {
+            throw new IllegalArgumentException("targetDays must be greater than 30");
+        }
+        if (tier < 1 || tier > 3) {
+            throw new IllegalArgumentException("tier must be one of 1, 2, or 3");
+        }
         StreakMilestone milestone = new StreakMilestone();
         milestone.id = UUID.randomUUID();
         milestone.childId = childId;

@@ -1,5 +1,7 @@
 package com.aimong.backend.domain.mission.service;
 
+import com.aimong.backend.domain.auth.entity.ChildProfile;
+import com.aimong.backend.domain.auth.repository.ChildProfileRepository;
 import com.aimong.backend.domain.auth.service.ChildActivityService;
 import com.aimong.backend.domain.mission.dto.MissionSetCheckRequest;
 import com.aimong.backend.domain.mission.dto.QuestionCheckResponse;
@@ -9,6 +11,7 @@ import com.aimong.backend.domain.mission.entity.QuizAttemptStatus;
 import com.aimong.backend.domain.mission.repository.QuestionAnswerKeyRepository;
 import com.aimong.backend.domain.mission.repository.QuestionBankRepository;
 import com.aimong.backend.domain.mission.repository.QuizAttemptRepository;
+import com.aimong.backend.domain.reward.service.CurrencyService;
 import com.aimong.backend.global.exception.AimongException;
 import com.aimong.backend.global.exception.ErrorCode;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -30,6 +33,7 @@ public class QuestionCheckService {
     private final QuestionAnswerKeyRepository questionAnswerKeyRepository;
     private final QuestionBankRepository questionBankRepository;
     private final QuizAttemptRepository quizAttemptRepository;
+    private final ChildProfileRepository childProfileRepository;
     private final ChildActivityService childActivityService;
     private final QuestionAnswerMatcher questionAnswerMatcher;
     private final ObjectMapper objectMapper;
@@ -82,12 +86,24 @@ public class QuestionCheckService {
 
         QuestionAnswerKey answerKey = questionAnswerKeyRepository.findById(questionId)
                 .orElseThrow(() -> new AimongException(ErrorCode.QUESTION_NOT_FOUND));
-        recordAnsweredQuestion(quizAttempt, questionId);
+        boolean isCorrect = questionAnswerMatcher.matches(question, answerKey.getAnswerPayload(), answer);
+        boolean firstAnswerForQuestion = recordAnsweredQuestion(quizAttempt, questionId);
+        if (!isCorrect && firstAnswerForQuestion) {
+            quizAttempt.recordWrongAnswer();
+        }
+        ChildProfile childProfile = childProfileRepository.findById(quizAttempt.getChildId())
+                .orElseThrow(() -> new AimongException(ErrorCode.CHILD_NOT_FOUND));
+        boolean canRevive = quizAttempt.canRevive();
         return new QuestionCheckResponse(
                 questionId,
-                questionAnswerMatcher.matches(question, answerKey.getAnswerPayload(), answer),
+                isCorrect,
                 questionAnswerMatcher.displayAnswer(question, answerKey.getAnswerPayload()),
-                answerKey.getExplanation()
+                answerKey.getExplanation(),
+                quizAttempt.getRemainingLives(),
+                canRevive,
+                CurrencyService.HEART_REVIVE_COST,
+                childProfile.getGear(),
+                canRevive ? List.of("REVIVE", "ABANDON") : List.of()
         );
     }
 
@@ -108,7 +124,7 @@ public class QuestionCheckService {
         }
     }
 
-    private void recordAnsweredQuestion(QuizAttempt quizAttempt, UUID questionId) {
+    private boolean recordAnsweredQuestion(QuizAttempt quizAttempt, UUID questionId) {
         try {
             Set<String> answeredQuestionIds = new LinkedHashSet<>(objectMapper.readValue(
                     quizAttempt.getAnsweredQuestionIdsJson() == null ? "[]" : quizAttempt.getAnsweredQuestionIdsJson(),
@@ -117,7 +133,9 @@ public class QuestionCheckService {
             ));
             if (answeredQuestionIds.add(questionId.toString())) {
                 quizAttempt.updateAnsweredQuestionIdsJson(objectMapper.writeValueAsString(answeredQuestionIds));
+                return true;
             }
+            return false;
         } catch (JsonProcessingException exception) {
             throw new AimongException(ErrorCode.INTERNAL_SERVER_ERROR, exception);
         }

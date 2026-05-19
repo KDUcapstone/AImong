@@ -34,7 +34,7 @@ public class JwtProvider {
         this.signingKey = Keys.hmacShaKeyFor(jwtProperties.getSecret().getBytes(StandardCharsets.UTF_8));
     }
 
-    public String createChildSessionToken(String childId, int sessionVersion) {
+    public String createChildSessionToken(String childId, long sessionVersion) {
         Date now = new Date();
         Date expiration = new Date(now.getTime() + jwtProperties.getChildSessionExpiration());
 
@@ -57,7 +57,7 @@ public class JwtProvider {
         }
 
         UUID childId = UUID.fromString(claims.get(CHILD_ID_CLAIM, String.class));
-        Integer tokenSessionVersion = claims.get(SESSION_VERSION_CLAIM, Integer.class);
+        Number tokenSessionVersion = claims.get(SESSION_VERSION_CLAIM, Number.class);
 
         ChildProfile childProfile = childProfileRepository.findById(childId)
                 .orElseThrow(() -> new AimongException(ErrorCode.UNAUTHORIZED));
@@ -65,7 +65,7 @@ public class JwtProvider {
             throw new AimongException(ErrorCode.UNAUTHORIZED);
         }
 
-        if (tokenSessionVersion == null || tokenSessionVersion != childProfile.getSessionVersion()) {
+        if (tokenSessionVersion == null || tokenSessionVersion.longValue() != childProfile.getSessionVersion()) {
             throw new AimongException(ErrorCode.INVALID_TOKEN);
         }
     }

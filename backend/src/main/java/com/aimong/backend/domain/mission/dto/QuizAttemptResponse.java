@@ -14,6 +14,10 @@ public record QuizAttemptResponse(
         Instant expiresAt,
         long remainingSeconds,
         List<String> answeredQuestionIds,
+        int remainingLives,
+        int wrongCountInSession,
+        int reviveCount,
+        boolean canRevive,
         int questionCount
 ) {
 }
