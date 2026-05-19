@@ -16,8 +16,6 @@ import com.aimong.backend.domain.mission.entity.MissionDailyProgress;
 import com.aimong.backend.domain.mission.repository.MissionAttemptRepository;
 import com.aimong.backend.domain.mission.repository.MissionDailyProgressRepository;
 import com.aimong.backend.domain.mission.repository.MissionRepository;
-import com.aimong.backend.domain.mission.repository.MissionSetProgressRepository;
-import com.aimong.backend.domain.mission.repository.MissionSetRepository;
 import com.aimong.backend.domain.mission.service.MissionService;
 import com.aimong.backend.domain.mission.entity.MissionSet;
 import com.aimong.backend.domain.pet.entity.Pet;
@@ -61,8 +59,6 @@ public class HomeService {
     private final MissionRepository missionRepository;
     private final MissionAttemptRepository missionAttemptRepository;
     private final MissionDailyProgressRepository missionDailyProgressRepository;
-    private final MissionSetRepository missionSetRepository;
-    private final MissionSetProgressRepository missionSetProgressRepository;
     private final MissionService missionService;
     private final StreakRecordRepository streakRecordRepository;
     private final FriendStreakRepository friendStreakRepository;
@@ -210,17 +206,14 @@ public class HomeService {
     }
 
     private HomeResponse.RecommendedMissionResponse recommendedMission(UUID childId) {
-        List<MissionSet> unlockedSets = missionSetRepository
-                .findAllByActiveTrueOrderByStageAscDisplayOrderAscStarLevelAscVariantNoAscSetIdAsc()
-                .stream()
-                .filter(set -> missionService.isUnlocked(childId, set))
-                .toList();
+        MissionService.MissionSetAvailability availability = missionService.missionSetAvailability(childId);
+        List<MissionSet> unlockedSets = availability.playableSets();
         return unlockedSets.stream()
-                .filter(set -> !missionSetProgressRepository.existsByChildIdAndSetId(childId, set.getSetId()))
+                .filter(set -> !availability.progressBySetId().containsKey(set.getSetId()))
                 .findFirst()
                 .map(set -> toRecommendedMission(set, false))
                 .orElseGet(() -> unlockedSets.stream()
-                        .filter(set -> missionSetProgressRepository.existsByChildIdAndSetId(childId, set.getSetId()))
+                        .filter(set -> availability.progressBySetId().containsKey(set.getSetId()))
                         .findFirst()
                         .map(set -> toRecommendedMission(set, true))
                         .orElse(null));

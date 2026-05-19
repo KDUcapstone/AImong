@@ -219,9 +219,15 @@ public class SubmitService {
     @Transactional
     public SubmitResponse submit(UUID childId, String setId, SubmitRequest request) {
         childActivityService.touchLastActiveAt(childId);
-        MissionSet missionSet = missionSetRepository.findBySetIdAndActiveTrue(setId)
+        MissionService.MissionSetAvailability availabilityBeforeSubmit = missionService.missionSetAvailability(childId);
+        MissionSet missionSet = availabilityBeforeSubmit.activeSets()
+                .stream()
+                .filter(set -> setId.equals(set.getSetId()))
+                .findFirst()
                 .orElseThrow(() -> new AimongException(ErrorCode.MISSION_SET_NOT_FOUND));
-        if (!missionService.isStarLevelPlayable(childId, missionSet.getMissionId(), missionSet.getStarLevel())) {
+        if (availabilityBeforeSubmit.playableSets()
+                .stream()
+                .noneMatch(set -> setId.equals(set.getSetId()))) {
             throw new AimongException(ErrorCode.MISSION_SET_LOCKED);
         }
         Mission mission = missionRepository.findById(missionSet.getMissionId())
@@ -234,7 +240,7 @@ public class SubmitService {
         if (quizAttempt.getSetId() == null || !quizAttempt.getSetId().equals(setId)) {
             throw new AimongException(ErrorCode.MISSION_SET_MISMATCH);
         }
-        return submitValidated(childId, mission, missionSet, quizAttempt, request);
+        return submitValidated(childId, mission, missionSet, quizAttempt, request, availabilityBeforeSubmit);
     }
 
     private QuizAttempt resolveQuizAttempt(UUID childId, UUID missionId, UUID quizAttemptId) {
@@ -271,6 +277,17 @@ public class SubmitService {
             MissionSet missionSet,
             QuizAttempt quizAttempt,
             SubmitRequest request
+    ) {
+        return submitValidated(childId, mission, missionSet, quizAttempt, request, null);
+    }
+
+    private SubmitResponse submitValidated(
+            UUID childId,
+            Mission mission,
+            MissionSet missionSet,
+            QuizAttempt quizAttempt,
+            SubmitRequest request,
+            MissionService.MissionSetAvailability availabilityBeforeSubmit
     ) {
         if (quizAttempt.getStatus() == QuizAttemptStatus.SUBMITTED || quizAttempt.getSubmittedAt() != null) {
             throw new AimongException(ErrorCode.QUIZ_ATTEMPT_ALREADY_SUBMITTED);
@@ -398,7 +415,7 @@ public class SubmitService {
         boolean streakBonusApplied = isPartnerCompletedToday(childId, today);
         int xpEarned = calculateEarnedXp(normalModeBaseXp, streakBonusApplied);
         int previousLevel = childProfile.getLevel();
-        Set<String> unlockedBeforeCompletion = unlockedIncompleteSetIds(childId);
+        Set<String> unlockedBeforeCompletion = unlockedIncompleteSetIds(childId, availabilityBeforeSubmit);
 
         childProfile.applyMissionXp(xpEarned, today, weekStart);
         childProfile.refreshProfileImageType();
@@ -827,13 +844,18 @@ public class SubmitService {
     }
 
     private Set<String> unlockedIncompleteSetIds(UUID childId) {
+        return unlockedIncompleteSetIds(childId, null);
+    }
+
+    private Set<String> unlockedIncompleteSetIds(UUID childId, MissionService.MissionSetAvailability availability) {
         if (missionSetRepository == null || missionSetProgressRepository == null) {
             return Set.of();
         }
-        return missionSetRepository.findAllByActiveTrueOrderByStageAscDisplayOrderAscStarLevelAscVariantNoAscSetIdAsc()
+        MissionService.MissionSetAvailability resolvedAvailability =
+                availability == null ? missionService.missionSetAvailability(childId) : availability;
+        return resolvedAvailability.playableSets()
                 .stream()
-                .filter(set -> missionService.isStarLevelPlayable(childId, set.getMissionId(), set.getStarLevel()))
-                .filter(set -> !missionSetProgressRepository.existsByChildIdAndSetId(childId, set.getSetId()))
+                .filter(set -> !resolvedAvailability.progressBySetId().containsKey(set.getSetId()))
                 .map(MissionSet::getSetId)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }

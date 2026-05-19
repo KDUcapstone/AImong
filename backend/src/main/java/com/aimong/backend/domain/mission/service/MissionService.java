@@ -131,16 +131,16 @@ public class MissionService {
         if (!isValidStarLevel(starLevel)) {
             throw new AimongException(ErrorCode.INVALID_STAR_LEVEL);
         }
-        List<MissionSet> missionSets = missionSetRepository
-                .findAllByMissionIdAndActiveTrueOrderByStarLevelAscVariantNoAscSetIdAsc(missionId);
-        if (missionSets.isEmpty()) {
+        MissionSetAvailability availability = missionSetAvailability(childId);
+        boolean missionHasActiveSets = availability.activeSets()
+                .stream()
+                .anyMatch(set -> missionId.equals(set.getMissionId()));
+        if (!missionHasActiveSets) {
             return false;
         }
-        if (!isUnlocked(childId, missionSets.getFirst())) {
-            return false;
-        }
-        Map<Integer, List<MissionSet>> setsByStarLevel = groupByStarLevel(missionSets);
-        return isStarLevelUnlocked(starLevel, setsByStarLevel, progressBySetId(childId, missionSets));
+        return availability.playableSets()
+                .stream()
+                .anyMatch(set -> missionId.equals(set.getMissionId()) && set.getStarLevel() == starLevel);
     }
 
     public MissionSet resolvePlayableSet(UUID childId, UUID missionId) {
@@ -151,25 +151,55 @@ public class MissionService {
         if (!isValidStarLevel(starLevel)) {
             throw new AimongException(ErrorCode.INVALID_STAR_LEVEL);
         }
-        List<MissionSet> candidates = missionSetRepository
-                .findAllByMissionIdAndStarLevelAndActiveTrueOrderByVariantNoAscSetIdAsc(missionId, starLevel);
+        MissionSetAvailability availability = missionSetAvailability(childId);
+        List<MissionSet> candidates = availability.activeSets()
+                .stream()
+                .filter(set -> missionId.equals(set.getMissionId()) && set.getStarLevel() == starLevel)
+                .toList();
         if (candidates.isEmpty()) {
             throw new AimongException(ErrorCode.MISSION_SET_NOT_READY);
         }
-        if (!isStarLevelPlayable(childId, missionId, starLevel)) {
-            throw new AimongException(ErrorCode.MISSION_SET_LOCKED);
-        }
-        List<MissionSet> unlocked = candidates.stream()
-                .filter(set -> isUnlocked(childId, set))
+        List<MissionSet> unlocked = availability.playableSets()
+                .stream()
+                .filter(set -> missionId.equals(set.getMissionId()) && set.getStarLevel() == starLevel)
                 .toList();
         if (unlocked.isEmpty()) {
             throw new AimongException(ErrorCode.MISSION_SET_LOCKED);
         }
         List<MissionSet> incomplete = unlocked.stream()
-                .filter(set -> !missionSetProgressRepository.existsByChildIdAndSetId(childId, set.getSetId()))
+                .filter(set -> !availability.progressBySetId().containsKey(set.getSetId()))
                 .toList();
         List<MissionSet> pool = incomplete.isEmpty() ? unlocked : incomplete;
         return pool.get(ThreadLocalRandom.current().nextInt(pool.size()));
+    }
+
+    public MissionSetAvailability missionSetAvailability(UUID childId) {
+        List<MissionSet> missionSets = missionSetRepository
+                .findAllByActiveTrueOrderByStageAscDisplayOrderAscStarLevelAscVariantNoAscSetIdAsc();
+        Map<String, MissionSetProgress> progressBySetId = progressBySetId(childId, missionSets);
+        StageProgressResponse stageProgress = stageProgress(missionSets, progressBySetId);
+        Map<UUID, Map<Integer, List<MissionSet>>> setsByStarLevelByMissionId = missionSets.stream()
+                .collect(Collectors.groupingBy(
+                        MissionSet::getMissionId,
+                        LinkedHashMap::new,
+                        Collectors.collectingAndThen(Collectors.toList(), this::groupByStarLevel)
+                ));
+        List<MissionSet> playableSets = missionSets.stream()
+                .filter(set -> isStageUnlocked(set.getStage(), stageProgress))
+                .filter(set -> isStarLevelUnlocked(
+                        set.getStarLevel(),
+                        setsByStarLevelByMissionId.getOrDefault(set.getMissionId(), Map.of()),
+                        progressBySetId
+                ))
+                .toList();
+        return new MissionSetAvailability(missionSets, playableSets, progressBySetId);
+    }
+
+    public record MissionSetAvailability(
+            List<MissionSet> activeSets,
+            List<MissionSet> playableSets,
+            Map<String, MissionSetProgress> progressBySetId
+    ) {
     }
 
     private MissionListResponse.StageResponse toStageResponse(
