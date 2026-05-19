@@ -1,5 +1,7 @@
 package com.kduniv.aimong.feature.home.presentation.my
 
+import androidx.annotation.DrawableRes
+
 data class ChildMyProfileUiState(
     val nickname: String = "",
     val profileSubtitle: String = "",
@@ -15,6 +17,6 @@ data class ChildMyProfileUiState(
 data class ChildMyBadgeUi(
     val achievementType: String,
     val label: String,
-    val emoji: String,
-    val isUnlocked: Boolean
+    @DrawableRes val iconRes: Int,
+    val isUnlocked: Boolean,
 )

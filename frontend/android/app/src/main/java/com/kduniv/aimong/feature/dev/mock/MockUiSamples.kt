@@ -3,6 +3,7 @@ package com.kduniv.aimong.feature.dev.mock
 import com.kduniv.aimong.R
 import com.kduniv.aimong.feature.home.presentation.HomePathItem
 import com.kduniv.aimong.feature.home.presentation.HomeQuizNavigation
+import com.kduniv.aimong.feature.gacha.GachaPetCatalog
 import com.kduniv.aimong.feature.home.presentation.HomeUiState
 import com.kduniv.aimong.feature.home.presentation.WalletBalanceDefaults
 import com.kduniv.aimong.feature.home.presentation.QuestItemUiState
@@ -27,10 +28,12 @@ object MockUiSamples {
             streakDays = 5,
             profileType = "SPROUT",
             userLevel = 1 + (userXp / 80).coerceIn(0, 99),
-            petName = "별이",
+            petName = GachaPetCatalog.displayNameFor("pet_normal_002", "NORMAL"),
             petXp = MockXpLedger.petXp,
             petMaxXp = 10,
             hasEquippedPet = true,
+            equippedPetType = "pet_normal_002",
+            equippedPetGrade = "NORMAL",
             petStage = "EGG",
             petLevel = 1,
             petMessage = "오늘도 AI 탐험 화이팅!",
@@ -45,7 +48,6 @@ object MockUiSamples {
             normalTickets = 2,
             topTicketCount = 4,
             canStartMission = true,
-            gachaDescription = "목업: 실제 연동 시 서버 문구가 표시됩니다.",
             todayQuestProgress = "2/3",
             quests = listOf(
                 QuestItemUiState("q1", "출석하기", "+10 XP", null, isCompleted = false, canStart = true),
@@ -56,7 +58,7 @@ object MockUiSamples {
                 add(
                     HomePathItem.SectionHeader(
                         stage = 1,
-                        islandEmoji = "🏝️",
+                        islandIconRes = R.drawable.ic_nav_home_color,
                         islandName = "시작의 섬",
                         progressCompleted = 3,
                         progressTotal = 5,
@@ -70,7 +72,6 @@ object MockUiSamples {
                         title = "입문 미션 완료",
                         missionId = "mock-a",
                         quizNav = HomeQuizNavigation("", "mock-a", 1),
-                        icon = "📖",
                         starsFilled = 3,
                     )
                 )
@@ -80,7 +81,6 @@ object MockUiSamples {
                         title = "AI 란 무엇인가",
                         missionId = "mock-b",
                         quizNav = HomeQuizNavigation("", "mock-b", 1),
-                        icon = "🤖",
                         starsFilled = 2,
                     )
                 )
@@ -90,7 +90,6 @@ object MockUiSamples {
                         title = "데이터의 이해",
                         missionId = "mock-c",
                         quizNav = HomeQuizNavigation("", "mock-c", 1),
-                        icon = "📊",
                         starsFilled = 1,
                     )
                 )
@@ -100,7 +99,6 @@ object MockUiSamples {
                         title = "머신러닝의 기초",
                         missionId = "mock-d",
                         quizNav = HomeQuizNavigation("", "mock-d", 1),
-                        icon = "🧠",
                         starsFilled = 0,
                     )
                 )
@@ -110,7 +108,6 @@ object MockUiSamples {
                         title = "딥러닝 알아보기",
                         missionId = "mock-e",
                         quizNav = HomeQuizNavigation("", "mock-e", 1),
-                        icon = "💡",
                         starsFilled = 0,
                     )
                 )
@@ -119,7 +116,6 @@ object MockUiSamples {
                         quizNav = HomeQuizNavigation("100", "mock-mission-1", -1),
                         missionTitle = "오늘의 AI 탐험",
                         enabled = true,
-                        icon = "🌟",
                         starsFilled = 0,
                     )
                 )
@@ -136,7 +132,7 @@ object MockUiSamples {
                 add(
                     HomePathItem.SectionHeader(
                         stage = 2,
-                        islandEmoji = "🌋",
+                        islandIconRes = R.drawable.ic_nav_ai_color,
                         islandName = "탐험의 화산섬",
                         progressCompleted = 0,
                         progressTotal = 1,
@@ -149,7 +145,6 @@ object MockUiSamples {
                         quizNav = HomeQuizNavigation("", "mock-stage2", 1),
                         missionTitle = "2단계 체험 미션",
                         enabled = true,
-                        icon = "▶",
                         starsFilled = 0,
                     )
                 )
@@ -157,7 +152,7 @@ object MockUiSamples {
                 add(
                     HomePathItem.SectionHeader(
                         stage = 3,
-                        islandEmoji = "⭐",
+                        islandIconRes = R.drawable.ic_nav_study_color,
                         islandName = "마스터의 별섬",
                         progressCompleted = 0,
                         progressTotal = 1,
@@ -170,7 +165,6 @@ object MockUiSamples {
                         quizNav = HomeQuizNavigation("", "mock-stage3", 1),
                         missionTitle = "3단계 체험 미션",
                         enabled = true,
-                        icon = "▶",
                         starsFilled = 0,
                     )
                 )

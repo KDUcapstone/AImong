@@ -278,8 +278,12 @@ class QuizRepositoryImpl @Inject constructor(
 
     private fun mapSubmitResponse(data: QuizSubmitResponse): QuizResult {
         val total = data.questionCount ?: data.total ?: 10
-        val correct = data.correctCount ?: 0
-        val score = data.score ?: if (total > 0) correct * 100 / total else 0
+        val correct = data.correctCount
+            ?: data.results?.count { it.isCorrect }
+            ?: 0
+        // v2.11: score는 100점 환산, correctCount는 정답 개수
+        val scorePercent = data.score
+            ?: if (total > 0) (correct * 100 / total).coerceIn(0, 100) else 0
         val wrong = data.wrongCount ?: (total - correct).coerceAtLeast(0)
         val xpFromRewardList = data.rewards.orEmpty()
             .filter { normalizeRewardType(it.type) == "EXP" }
@@ -292,10 +296,11 @@ class QuizRepositoryImpl @Inject constructor(
             progressApplied = data.progressApplied ?: true,
             attemptState = normalizeAttemptStatus(data.attemptState),
             streakBonusApplied = data.streakBonusApplied ?: false,
-            score = score,
+            score = scorePercent,
+            correctCount = correct,
             total = total,
             wrongCount = wrong,
-            isPassed = data.isPassed ?: (correct * 10 >= total * 6),
+            isPassed = data.isPassed == true,
             isPerfect = data.isPerfect ?: (correct == total && wrong == 0),
             isFirstClear = data.isFirstClear == true,
             equippedPetGrade = data.equippedPetGrade,
@@ -307,7 +312,7 @@ class QuizRepositoryImpl @Inject constructor(
             todaySetCount = data.todaySetCount ?: 0,
             rewards = mapRewardsToDomain(data.rewards),
             remainingTickets = data.remainingTickets?.let {
-                RemainingTickets(normal = it.normal, rare = it.rare, epic = it.epic)
+                RemainingTickets(normal = it.normal)
             },
             results = data.results.orEmpty().map {
                 QuestionResult(
@@ -339,7 +344,8 @@ class QuizRepositoryImpl @Inject constructor(
         val correct = data.correctCount
             ?: (data.results?.count { it.isCorrect } ?: 0)
         val wrong = data.wrongCount ?: (total - correct).coerceAtLeast(0)
-        val score = data.score ?: if (total > 0) correct * 100 / total else 0
+        val scorePercent = data.score
+            ?: if (total > 0) (correct * 100 / total).coerceIn(0, 100) else 0
         val xpFromRewards = data.rewards.orEmpty()
             .filter { normalizeRewardType(it.type) == "EXP" }
             .sumOf { it.count }
@@ -348,10 +354,11 @@ class QuizRepositoryImpl @Inject constructor(
             progressApplied = true,
             attemptState = AttemptStatus.SUBMITTED.name,
             streakBonusApplied = false,
-            score = score,
+            score = scorePercent,
+            correctCount = correct,
             total = total,
             wrongCount = wrong,
-            isPassed = data.isPassed ?: (correct * 10 >= total * 6),
+            isPassed = data.isPassed == true,
             isPerfect = data.isPerfect ?: (correct == total && wrong == 0),
             isFirstClear = data.isFirstClear == true,
             equippedPetGrade = null,

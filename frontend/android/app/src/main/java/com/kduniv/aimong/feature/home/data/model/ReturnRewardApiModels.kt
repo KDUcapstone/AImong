@@ -30,7 +30,5 @@ data class ReturnRewardItemDto(
 
 data class ReturnRewardRemainingTicketsDto(
     @SerializedName("normal") val normal: Int = 0,
-    @SerializedName("rare") val rare: Int = 0,
-    @SerializedName("epic") val epic: Int = 0
 )
 

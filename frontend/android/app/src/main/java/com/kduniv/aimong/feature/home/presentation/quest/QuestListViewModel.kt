@@ -7,6 +7,7 @@ import com.kduniv.aimong.R
 import com.kduniv.aimong.core.dev.UiMode
 import com.kduniv.aimong.feature.home.domain.ChildHomeRefreshBus
 import com.kduniv.aimong.feature.home.domain.HomeRefreshTrigger
+import com.kduniv.aimong.feature.quest.domain.QuestPolicy
 import com.kduniv.aimong.feature.quest.domain.repository.QuestRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -21,7 +22,7 @@ import javax.inject.Inject
 sealed interface QuestSheetEffect {
     data class ShowToast(val message: String) : QuestSheetEffect
     data class Snackbar(val message: String) : QuestSheetEffect
-    data class TicketsPatched(val normal: Int, val rare: Int, val epic: Int) : QuestSheetEffect
+    data class TicketsPatched(val normal: Int) : QuestSheetEffect
 }
 
 @HiltViewModel
@@ -114,6 +115,14 @@ class QuestListViewModel @Inject constructor(
     }
 
     fun onClaim(questType: String, period: QuestSheetPeriod) {
+        if (QuestPolicy.isAutoClaimQuest(questType)) {
+            viewModelScope.launch {
+                _effects.trySend(
+                    QuestSheetEffect.Snackbar(appContext.getString(R.string.quest_auto_no_claim)),
+                )
+            }
+            return
+        }
         val periodStr = when (period) {
             QuestSheetPeriod.DAILY -> "daily"
             QuestSheetPeriod.WEEKLY -> "weekly"
@@ -124,11 +133,11 @@ class QuestListViewModel @Inject constructor(
                 onSuccess = { data ->
                     val toast = QuestRewardToastFormatter.format(appContext, data.rewards)
                     _effects.trySend(QuestSheetEffect.ShowToast(toast))
+                    _effects.trySend(
+                        QuestSheetEffect.TicketsPatched(data.remainingTickets.normal),
+                    )
                     if (!UiMode.useStubNav) {
                         homeRefreshBus.notify(HomeRefreshTrigger.Full)
-                    } else {
-                        val t = data.remainingTickets
-                        _effects.trySend(QuestSheetEffect.TicketsPatched(t.normal, t.rare, t.epic))
                     }
                     when (period) {
                         QuestSheetPeriod.DAILY -> loadDaily()
@@ -143,21 +152,4 @@ class QuestListViewModel @Inject constructor(
         }
     }
 
-    fun onCheckAchievements() {
-        viewModelScope.launch {
-            _loading.value = true
-            questRepository.getAchievements().fold(
-                onSuccess = { data ->
-                    val completed = data.achievements.count { it.isCompleted }
-                    val total = data.achievements.size
-                    _effects.trySend(QuestSheetEffect.Snackbar("업적 $completed / $total"))
-                    _loading.value = false
-                },
-                onFailure = { e ->
-                    _loading.value = false
-                    _effects.trySend(QuestSheetEffect.Snackbar(e.message ?: "업적 조회에 실패했습니다."))
-                }
-            )
-        }
-    }
 }

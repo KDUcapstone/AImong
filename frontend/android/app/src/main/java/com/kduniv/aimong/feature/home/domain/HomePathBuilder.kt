@@ -7,6 +7,8 @@ import com.kduniv.aimong.feature.home.presentation.DifficultyUnlockMode
 import com.kduniv.aimong.feature.home.presentation.HomePathItem
 import com.kduniv.aimong.feature.home.presentation.HomeQuizNavigation
 import com.kduniv.aimong.feature.mission.domain.model.Mission
+import com.kduniv.aimong.feature.mission.domain.model.hasActiveStar1
+import com.kduniv.aimong.feature.mission.domain.model.isStar1Completed
 import com.kduniv.aimong.feature.mission.domain.model.openDifficultyCount
 import com.kduniv.aimong.feature.mission.domain.model.displayTitle
 import com.kduniv.aimong.feature.mission.domain.model.toDisplayMissionTitle
@@ -22,12 +24,16 @@ object HomePathBuilder {
         3 to "비판적으로 생각하기"
     )
 
-    private data class IslandMeta(val emoji: String, val name: String, @DrawableRes val banner: Int)
+    private data class IslandMeta(
+        @DrawableRes val iconRes: Int,
+        val name: String,
+        @DrawableRes val banner: Int,
+    )
 
     private val ISLAND_META = listOf(
-        IslandMeta("🏝️", "시작의 섬", R.drawable.bg_home_section_banner_stage1),
-        IslandMeta("🌋", "탐험의 화산섬", R.drawable.bg_home_section_banner_stage2),
-        IslandMeta("⭐", "마스터의 별섬", R.drawable.bg_home_section_banner_stage3),
+        IslandMeta(R.drawable.ic_nav_home_color, "시작의 섬", R.drawable.bg_home_section_banner_stage1),
+        IslandMeta(R.drawable.ic_nav_ai_color, "탐험의 화산섬", R.drawable.bg_home_section_banner_stage2),
+        IslandMeta(R.drawable.ic_nav_study_color, "마스터의 별섬", R.drawable.bg_home_section_banner_stage3),
     )
 
     fun build(data: HomeScreenData, missions: List<Mission>): List<HomePathItem> {
@@ -58,19 +64,16 @@ object HomePathBuilder {
 
             val stageTitle = STAGE_TITLES[stage] ?: "단계 $stage"
             val meta = ISLAND_META.getOrNull(stage - 1) ?: ISLAND_META.first()
-            // 다음 스테이지(섬) 해금 조건: 이 스테이지 ★1(쉬움) 클리어 수 (BE isUnlocked 와 별개 축)
-            val completedInStage = sortedMissions.count { m ->
-                m.isUnlocked &&
-                    m.starLevels.any { it.starLevel == 1 && it.isCompleted }
-            }
-            val unlockedInStage = sortedMissions.count { it.isUnlocked }
+            // v2.11: 섬 진행 = 활성 별1 미션 중 ★1 세트 전부 완료 수 (별2·3은 해금 조건 제외)
+            val star1Missions = sortedMissions.filter { it.hasActiveStar1() }
+            val completedStar1 = star1Missions.count { it.isStar1Completed() }
             items.add(
                 HomePathItem.SectionHeader(
                     stage = stage,
-                    islandEmoji = meta.emoji,
+                    islandIconRes = meta.iconRes,
                     islandName = meta.name,
-                    progressCompleted = completedInStage,
-                    progressTotal = unlockedInStage.coerceAtLeast(1),
+                    progressCompleted = completedStar1,
+                    progressTotal = star1Missions.size.coerceAtLeast(1),
                     themeHint = stageTitle,
                     bannerDrawableRes = meta.banner,
                 )
@@ -119,8 +122,7 @@ object HomePathBuilder {
                             title = displayTitle,
                             missionId = m.missionId,
                             quizNav = HomeQuizNavigation("", m.missionId, star),
-                            icon = "⭐",
-                            starsFilled = stars
+                            starsFilled = stars,
                         )
                     )
                 } else if (m.starLevels.any { it.isReviewable }) {
@@ -140,7 +142,6 @@ object HomePathBuilder {
                             quizNav = HomeQuizNavigation("", m.missionId, star),
                             missionTitle = displayTitle,
                             enabled = true,
-                            icon = "▶",
                             starsFilled = stars,
                         )
                     )

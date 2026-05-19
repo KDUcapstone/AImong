@@ -7,7 +7,6 @@ import com.kduniv.aimong.core.network.model.ParentRegisterResponse
 import com.kduniv.aimong.core.network.model.PatchParentChildRequest
 import com.kduniv.aimong.core.network.model.ParentChildPatchResponseData
 import com.kduniv.aimong.feature.parent.data.model.ParentChildSummaryResponseData
-import com.kduniv.aimong.feature.parent.data.model.ParentPrivacyLogResponseData
 import com.kduniv.aimong.feature.parent.data.model.ParentWeakPointsResponseData
 import com.kduniv.aimong.feature.parent.data.model.ParentWeeklyStatsResponseData
 import kotlinx.coroutines.flow.Flow
@@ -32,8 +31,10 @@ interface ParentRepository {
 
     suspend fun getChildSummary(childId: String): Result<ParentChildSummaryResponseData>
     suspend fun getWeeklyStats(childId: String): Result<ParentWeeklyStatsResponseData>
-    suspend fun getPrivacyLog(childId: String, page: Int = 0, size: Int = 20): Result<ParentPrivacyLogResponseData>
     suspend fun getWeakPoints(childId: String, page: Int = 0, size: Int = 20): Result<ParentWeakPointsResponseData>
+
+    /** DELETE /parent/fcm-token — 로그아웃 직전 best-effort */
+    suspend fun deleteParentFcmToken(firebaseIdToken: String): Result<Unit>
 
     /** POST /parent/logout — Firebase ID 토큰 */
     suspend fun parentLogout(firebaseIdToken: String): Result<Unit>

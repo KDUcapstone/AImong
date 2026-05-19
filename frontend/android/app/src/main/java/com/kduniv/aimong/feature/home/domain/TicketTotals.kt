@@ -3,15 +3,15 @@ package com.kduniv.aimong.feature.home.domain
 import com.kduniv.aimong.feature.home.data.model.TicketsDto
 import com.kduniv.aimong.feature.home.data.model.TopStatusDto
 
-/** GET /home 티켓 — topStatus.ticketCount 와 tickets breakdown 정합 */
+/** GET /home 티켓 — `topStatus.ticketCount` 와 `tickets.normal` 정합 (v2.3 단일 티켓) */
 object TicketTotals {
 
-    fun sum(tickets: TicketsDto): Int =
-        tickets.normal + tickets.rare + tickets.epic
+    fun sum(tickets: TicketsDto): Int = tickets.normal
 
-    /** 홈 칩·요약용: 등급별 합이 있으면 그것을, 없으면 topStatus 요약값 */
-    fun displayTotal(top: TopStatusDto, tickets: TicketsDto): Int {
-        val breakdownSum = sum(tickets)
-        return if (breakdownSum > 0) breakdownSum else top.ticketCount
+    /** 상단 뽑기 티켓 칩: topStatus.ticketCount 우선, 없으면 tickets.normal */
+    fun displayTotal(top: TopStatusDto, tickets: TicketsDto): Int = when {
+        top.ticketCount > 0 -> top.ticketCount
+        tickets.normal > 0 -> tickets.normal
+        else -> 0
     }
 }

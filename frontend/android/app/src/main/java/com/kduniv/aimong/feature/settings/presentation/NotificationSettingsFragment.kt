@@ -28,6 +28,21 @@ class NotificationSettingsFragment :
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
+                    viewModel.canEdit.collect { editable ->
+                        binding.btnSave.visibility = if (editable) View.VISIBLE else View.GONE
+                        binding.tvChildReadonlyHint.visibility =
+                            if (editable) View.GONE else View.VISIBLE
+                        val switches = listOf(
+                            binding.switchPrivacy,
+                            binding.switchStudy,
+                            binding.switchReturnReward,
+                            binding.switchQuestReward,
+                            binding.switchMarketing,
+                        )
+                        switches.forEach { it.isEnabled = editable }
+                    }
+                }
+                launch {
                     viewModel.settings.collect { s ->
                         if (s == null) return@collect
                         binding.switchPrivacy.isChecked = s.privacyAlertEnabled

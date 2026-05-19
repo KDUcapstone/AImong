@@ -34,7 +34,8 @@ class AttemptIdStringAdapter : TypeAdapter<String?>() {
 }
 
 /**
- * v2.5 제출/리포트: `rewards`가 객체 `{ coin, exp, fragments }` 이거나 레거시 배열일 수 있음.
+ * v2.10/11 제출·리포트: `rewards` 객체 `{ gear, exp, fragments }` 또는 레거시 배열.
+ * 일반 모드 통과 시에만 gear가 내려오며, 복습·실패는 gear 없음(BE).
  */
 class SubmitRewardsListAdapter : TypeAdapter<List<RewardResponse>?>() {
 

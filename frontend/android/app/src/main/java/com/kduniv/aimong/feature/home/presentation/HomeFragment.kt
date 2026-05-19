@@ -3,6 +3,9 @@ package com.kduniv.aimong.feature.home.presentation
 import android.view.View
 import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.setFragmentResultListener
 import androidx.lifecycle.Lifecycle
@@ -15,6 +18,7 @@ import com.google.android.material.snackbar.Snackbar
 import com.kduniv.aimong.R
 import com.kduniv.aimong.core.ui.BaseFragment
 import com.kduniv.aimong.databinding.FragmentHomeBinding
+import com.kduniv.aimong.feature.gacha.PetArtAssets
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -32,6 +36,7 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
     }
 
     override fun initView() {
+        applyHomeTopChromeInsets()
         homeLayoutBinder = HomeLayoutBinder(
             binding = binding,
             layoutInflater = layoutInflater,
@@ -83,6 +88,39 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
         ) { _, _ ->
             binding.root.post { openMissionLearnFromQuest() }
         }
+        childFragmentManager.setFragmentResultListener(
+            EnergyBottomSheet.REQUEST_KEY,
+            viewLifecycleOwner,
+        ) { _, bundle ->
+            if (bundle.getBoolean(EnergyBottomSheet.EXTRA_REFRESH_HOME, false)) {
+                viewModel.onHomeResumed()
+            }
+        }
+        parentFragmentManager.setFragmentResultListener(
+            StreakCalendarBottomSheet.REQUEST_KEY,
+            viewLifecycleOwner,
+        ) { _, bundle ->
+            if (bundle.getBoolean(StreakCalendarBottomSheet.EXTRA_REFRESH_HOME, false)) {
+                viewModel.onHomeResumed()
+            }
+        }
+    }
+
+    private fun applyHomeTopChromeInsets() {
+        val topColor = ContextCompat.getColor(requireContext(), R.color.child_home_gradient_top)
+        requireActivity().window.statusBarColor = topColor
+        val baseChromePaddingTop = binding.layoutHomeTopChrome.paddingTop
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, insets ->
+            val statusTop = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
+            binding.layoutHomeTopChrome.setPadding(
+                binding.layoutHomeTopChrome.paddingLeft,
+                baseChromePaddingTop + statusTop,
+                binding.layoutHomeTopChrome.paddingRight,
+                binding.layoutHomeTopChrome.paddingBottom,
+            )
+            insets
+        }
+        ViewCompat.requestApplyInsets(binding.root)
     }
 
     private fun openMissionLearnFromQuest() {
@@ -156,8 +194,14 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
     }
 
     private fun openStreakSheet() {
-        val streak = viewModel.uiState.value.streakDays
-        StreakCalendarBottomSheet.newInstance(streak).show(parentFragmentManager, "streak_calendar")
+        val s = viewModel.uiState.value
+        val streak = s.streakDays
+        StreakCalendarBottomSheet.newInstance(
+            fallbackStreakDaysFromHome = streak,
+            petType = s.equippedPetType,
+            petStage = s.petStage,
+            petGrade = s.equippedPetGrade,
+        ).show(parentFragmentManager, "streak_calendar")
     }
 
     private fun showMissionHint(message: String) {
@@ -172,11 +216,13 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
         }
         val dialog = BottomSheetDialog(requireContext())
         val v = layoutInflater.inflate(R.layout.bottomsheet_pet_stats, null, false)
-        v.findViewById<TextView>(R.id.tv_pet_emoji).text = when (s.petStage) {
-            "EGG" -> "🥚"
-            "GROWTH" -> "🐣"
-            else -> "✨"
-        }
+        PetArtAssets.bindEquipped(
+            image = v.findViewById(R.id.iv_pet_sprite),
+            emojiFallback = v.findViewById(R.id.tv_pet_emoji),
+            petType = s.equippedPetType,
+            stage = s.petStage,
+            grade = s.equippedPetGrade,
+        )
         v.findViewById<TextView>(R.id.tv_pet_name).text =
             s.petName.ifBlank { getString(R.string.home_pet_name_default) }
         v.findViewById<TextView>(R.id.tv_pet_level).text =

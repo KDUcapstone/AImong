@@ -16,6 +16,9 @@ data class HomeUiState(
     val petMaxXp: Int = 10,
     val petLevel: Int = 1,
     val petStage: String = "EGG",
+    /** 장착 펫 PNG — `pet_normal_001` 형식 */
+    val equippedPetType: String = "",
+    val equippedPetGrade: String = "NORMAL",
     /** GET /home·/pet 의 equippedPet 없음 — XP 미적립 안내용 */
     val hasEquippedPet: Boolean = false,
     val homeState: HomeState = HomeState.IDLE,
@@ -36,15 +39,9 @@ data class HomeUiState(
     val heartReviveCost: Int = WalletBalanceDefaults.HEART_REVIVE_COST,
     val streakShieldCost: Int = WalletBalanceDefaults.STREAK_SHIELD_COST,
 
+    /** GET /home `tickets.normal` — 가챠·보상 동기화용 */
     val normalTickets: Int = 0,
     val shieldCount: Int = 0,
-    
-    /**
-     * 레어·에픽 티켓 장수 합(홈 요약용).
-     * `POST /gacha/pull` 응답의 `srBonus`(확률 보정 실수)와는 무관하다.
-     */
-    val rareEpicTicketCount: Int = 0,
-    val gachaDescription: String = "",
 
     // 오늘의 퀘스트
     val todayQuestProgress: String = "0/0",
@@ -57,7 +54,7 @@ data class HomeUiState(
 
     /** API 원본 보조 (추가 UI·디버그용) */
     val serverDate: String? = null,
-    /** 상단 고정 티켓 요약(있으면 표시 규칙에 활용) */
+    /** 상단 뽑기 티켓 칩 — `topStatus.ticketCount` / `tickets.normal` (v2.3) */
     val topTicketCount: Int = 0,
     val canStartMission: Boolean = false,
     val returnRewardPending: Boolean = false,

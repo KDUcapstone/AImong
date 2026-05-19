@@ -30,6 +30,7 @@ import com.kduniv.aimong.feature.home.domain.repository.HomeRepository
 import com.kduniv.aimong.feature.streak.data.StreakRepository
 import com.kduniv.aimong.feature.streak.data.model.StreakStatusData
 import com.kduniv.aimong.feature.wallet.domain.repository.WalletRepository
+import com.kduniv.aimong.feature.gacha.PetArtAssets
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
@@ -243,7 +244,17 @@ class StreakCalendarBottomSheet : BottomSheetDialogFragment() {
 
         val tvMessage = root.findViewById<TextView>(R.id.tv_streak_message)
         val ivIcon = root.findViewById<ImageView>(R.id.iv_message_icon)
-        val lottiePet = root.findViewById<com.airbnb.lottie.LottieAnimationView>(R.id.lav_streak_pet)
+        val petType = requireArguments().getString(ARG_PET_TYPE).orEmpty()
+        val petStage = requireArguments().getString(ARG_PET_STAGE).orEmpty().ifBlank { "EGG" }
+        val petGrade = requireArguments().getString(ARG_PET_GRADE).orEmpty().ifBlank { "NORMAL" }
+        PetArtAssets.bindEquipped(
+            image = root.findViewById(R.id.iv_streak_pet_sprite),
+            emojiFallback = root.findViewById(R.id.tv_streak_pet_emoji),
+            petType = petType,
+            stage = petStage,
+            grade = petGrade,
+            lottie = root.findViewById(R.id.lav_streak_pet),
+        )
 
         tvMessage.maxLines = 2
         val accent = ContextCompat.getColor(requireContext(), R.color.child_streak_accent)
@@ -261,8 +272,6 @@ class StreakCalendarBottomSheet : BottomSheetDialogFragment() {
             ivIcon.setImageResource(R.drawable.ic_star_filled)
             ivIcon.setColorFilter(warn)
         }
-        lottiePet.setAnimation(R.raw.pet_idle)
-        if (!lottiePet.isAnimating) lottiePet.playAnimation()
     }
 
     private fun bindEmpty(fallbackStreak: Int, calendarLoadFailed: Boolean = false) {
@@ -407,12 +416,23 @@ class StreakCalendarBottomSheet : BottomSheetDialogFragment() {
         const val EXTRA_REFRESH_HOME = "refresh_home"
 
         private const val ARG_FALLBACK_STREAK = "fallbackStreak"
+        private const val ARG_PET_TYPE = "petType"
+        private const val ARG_PET_STAGE = "petStage"
+        private const val ARG_PET_GRADE = "petGrade"
 
-        fun newInstance(fallbackStreakDaysFromHome: Int): StreakCalendarBottomSheet {
+        fun newInstance(
+            fallbackStreakDaysFromHome: Int,
+            petType: String = "",
+            petStage: String = "EGG",
+            petGrade: String = "NORMAL",
+        ): StreakCalendarBottomSheet {
             return StreakCalendarBottomSheet().apply {
-                arguments = Bundle().apply {
-                    putInt(ARG_FALLBACK_STREAK, fallbackStreakDaysFromHome)
-                }
+                arguments = bundleOf(
+                    ARG_FALLBACK_STREAK to fallbackStreakDaysFromHome,
+                    ARG_PET_TYPE to petType,
+                    ARG_PET_STAGE to petStage,
+                    ARG_PET_GRADE to petGrade,
+                )
             }
         }
     }

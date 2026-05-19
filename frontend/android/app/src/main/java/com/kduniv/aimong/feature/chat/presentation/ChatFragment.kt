@@ -6,7 +6,10 @@ import android.text.TextWatcher
 import android.text.style.BackgroundColorSpan
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
+import androidx.core.view.updatePadding
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -19,6 +22,7 @@ import com.kduniv.aimong.core.ui.BaseFragment
 import com.kduniv.aimong.databinding.FragmentChatBinding
 import com.kduniv.aimong.feature.chat.ChatForegroundTracker
 import com.kduniv.aimong.feature.chat.ChatMessageAdapter
+import com.kduniv.aimong.feature.gacha.PetArtAssets
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -39,11 +43,19 @@ class ChatFragment : BaseFragment<FragmentChatBinding>(FragmentChatBinding::infl
 
     private var privacyDialog: AlertDialog? = null
 
+    override fun shouldApplySystemBarInsets(): Boolean = false
+
     override fun initView() {
         binding.rvChat.layoutManager = LinearLayoutManager(requireContext()).apply {
             stackFromEnd = true
         }
         binding.rvChat.adapter = chatAdapter
+        applyChatImeInsets()
+
+        binding.etMessage.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus) scrollChatToBottom()
+        }
+        binding.etMessage.setOnClickListener { scrollChatToBottom() }
 
         binding.etMessage.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
@@ -81,15 +93,22 @@ class ChatFragment : BaseFragment<FragmentChatBinding>(FragmentChatBinding::infl
                 viewModel.uiState.collect { state ->
                     val prevEmoji = chatAdapter.petAvatarEmoji
                     chatAdapter.petAvatarEmoji = state.petAvatarEmoji
+                    chatAdapter.petType = state.petType
+                    chatAdapter.petStage = state.petStage
                     binding.tvChatTitle.text = state.petDisplayName
-                    binding.tvHeaderPetEmoji.text = state.petAvatarEmoji
+                    PetArtAssets.bindEquipped(
+                        image = binding.ivHeaderPetSprite,
+                        emojiFallback = binding.tvHeaderPetEmoji,
+                        petType = state.petType,
+                        stage = state.petStage,
+                        grade = state.petGrade,
+                        lottie = binding.lavHeaderPet,
+                    )
                     if (prevEmoji != state.petAvatarEmoji) {
                         chatAdapter.notifyDataSetChanged()
                     }
                     chatAdapter.submitList(state.messages) {
-                        if (state.messages.isNotEmpty()) {
-                            binding.rvChat.scrollToPosition(state.messages.size - 1)
-                        }
+                        scrollChatToBottom()
                     }
                     binding.btnSend.isEnabled = state.sendEnabled
                     binding.btnSend.alpha = if (state.sendEnabled) 1f else 0.45f
@@ -145,6 +164,50 @@ class ChatFragment : BaseFragment<FragmentChatBinding>(FragmentChatBinding::infl
                     }
                 }
             }
+        }
+    }
+
+    private fun applyChatImeInsets() {
+        val header = binding.layoutChatHeader
+        val inputColumn = binding.layoutInputColumn
+        val headerPadH = header.paddingLeft
+        val headerPadBottom = header.paddingBottom
+        val inputPadH = inputColumn.paddingLeft
+        val inputPadTop = inputColumn.paddingTop
+        val inputBaseBottom = resources.getDimensionPixelSize(R.dimen.chat_input_column_padding_bottom)
+
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, insets ->
+            val statusBars = insets.getInsets(WindowInsetsCompat.Type.statusBars())
+            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
+            val navBars = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
+
+            header.updatePadding(
+                left = headerPadH,
+                top = statusBars.top,
+                right = headerPadH,
+                bottom = headerPadBottom,
+            )
+
+            val keyboardLift = (ime.bottom - navBars.bottom).coerceAtLeast(0)
+            inputColumn.updatePadding(
+                left = inputPadH,
+                top = inputPadTop,
+                right = inputPadH,
+                bottom = inputBaseBottom + keyboardLift,
+            )
+
+            if (keyboardLift > 0) {
+                binding.root.post { scrollChatToBottom() }
+            }
+            insets
+        }
+        ViewCompat.requestApplyInsets(binding.root)
+    }
+
+    private fun scrollChatToBottom() {
+        val count = chatAdapter.itemCount
+        if (count > 0) {
+            binding.rvChat.scrollToPosition(count - 1)
         }
     }
 

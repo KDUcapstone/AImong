@@ -13,21 +13,21 @@ import javax.inject.Singleton
 @Singleton
 class GachaRepositoryStub @Inject constructor() : GachaRepository {
 
-    override suspend fun pull(ticketType: String): Result<GachaPullData> {
+    override suspend fun pull(): Result<GachaPullData> {
         return Result.success(
             GachaPullData(
                 result = GachaPullResultDto(
                     petId = "mock-pet-1",
-                    petType = "SPROUT",
-                    petName = "목업 펫",
+                    petType = "pet_normal_002",
+                    petName = "방울펭귄",
                     grade = "NORMAL",
                     isNew = false,
                     fragmentsGot = 2
                 ),
-                srMissCount = 0,
+                srMissCount = 8,
                 srBonus = 0.0,
                 levelUp = false,
-                remainingTickets = RemainingTicketsDto(normal = 10, rare = 2, epic = 1)
+                remainingTickets = RemainingTicketsDto(normal = 2)
             )
         )
     }
@@ -36,9 +36,10 @@ class GachaRepositoryStub @Inject constructor() : GachaRepository {
         return Result.success(
             GachaFragmentsData(
                 fragments = listOf(
-                    FragmentGradeRow("NORMAL", count = 12, exchangeThreshold = 20),
-                    FragmentGradeRow("RARE", count = 4, exchangeThreshold = 10),
-                    FragmentGradeRow("EPIC", count = 1, exchangeThreshold = 5)
+                    FragmentGradeRow("NORMAL", count = 7, exchangeThreshold = 10),
+                    FragmentGradeRow("RARE", count = 12, exchangeThreshold = 30),
+                    FragmentGradeRow("EPIC", count = 0, exchangeThreshold = 80),
+                    FragmentGradeRow("LEGEND", count = 0, exchangeThreshold = 200),
                 )
             )
         )

@@ -3,6 +3,7 @@ package com.kduniv.aimong.feature.chat.presentation
 import android.content.Context
 import androidx.lifecycle.viewModelScope
 import com.kduniv.aimong.R
+import com.kduniv.aimong.core.network.ChatMessageResponse
 import com.kduniv.aimong.core.privacy.PrivacyRadar
 import com.kduniv.aimong.core.ui.BaseViewModel
 import com.kduniv.aimong.feature.chat.ChatForegroundTracker
@@ -59,6 +60,7 @@ class ChatViewModel @Inject constructor(
             petType = pet.petType,
             petStage = pet.stage,
             petAvatarEmoji = GachaPetCatalog.emojiFor(pet.petType, pet.grade),
+            petGrade = pet.grade,
             hasEquippedPet = true,
         )
     }
@@ -69,6 +71,7 @@ class ChatViewModel @Inject constructor(
             petType = "",
             petStage = "GROWTH",
             petAvatarEmoji = "🐾",
+            petGrade = "NORMAL",
             hasEquippedPet = false,
         )
     }
@@ -78,6 +81,7 @@ class ChatViewModel @Inject constructor(
         petType: String,
         petStage: String,
         petAvatarEmoji: String,
+        petGrade: String = "NORMAL",
         hasEquippedPet: Boolean,
     ) {
         _uiState.update { state ->
@@ -96,6 +100,7 @@ class ChatViewModel @Inject constructor(
                 petDisplayName = petDisplayName,
                 petType = petType,
                 petStage = petStage,
+                petGrade = petGrade,
                 petAvatarEmoji = petAvatarEmoji,
                 hasEquippedPet = hasEquippedPet,
                 messages = messages,
@@ -131,20 +136,15 @@ class ChatViewModel @Inject constructor(
         if (!state.sendEnabled) return
 
         viewModelScope.launch {
-            _uiState.update {
-                it.copy(
-                    isLoading = true,
-                    errorMessage = null,
-                    privacyPrompt = null,
-                    privacyHighlightRanges = emptyList()
-                )
-            }
+            appendOutgoingAndTyping(text.trim())
             when (val result = sendChatMessageUseCase(text)) {
                 is SendChatMessageUseCase.Result.PrivacyBlocked -> {
                     val detectedType = privacyRadar.detectedPrivacyApiType(text)
                     _uiState.update {
                         it.copy(
+                            messages = removeTypingPlaceholder(it.messages).dropLast(1),
                             isLoading = false,
+                            pendingInputClear = false,
                             privacyHighlightRanges = result.sensitiveRanges,
                             privacyPrompt = ChatPrivacyPrompt(
                                 originalText = text,
@@ -155,27 +155,16 @@ class ChatViewModel @Inject constructor(
                     }
                 }
                 is SendChatMessageUseCase.Result.Success -> {
-                    val r = result.response
-                    val shownMine = result.sentMessage
-                    val base = _uiState.value.messages.toMutableList()
-                    base.add(ChatMessage(id = messageSeq.incrementAndGet(), text = shownMine, isMine = true))
-                    base.add(ChatMessage(id = messageSeq.incrementAndGet(), text = r.reply, isMine = false))
-                    _uiState.update {
-                        it.copy(
-                            messages = base,
-                            isLoading = false,
-                            remainingCalls = r.remainingCalls,
-                            pendingInputClear = true
-                        )
-                    }
-                    val hint = r.hintSuggestion?.trim().orEmpty()
-                    if (hint.isNotEmpty() && !chatForegroundTracker.isChatVisible) {
-                        chatHintNotifier.offerHint(hint)
-                    }
+                    applyAssistantReply(result.response, result.sentMessage)
                 }
                 is SendChatMessageUseCase.Result.Error -> {
                     _uiState.update {
-                        it.copy(isLoading = false, errorMessage = result.message)
+                        it.copy(
+                            messages = removeTypingPlaceholder(it.messages),
+                            isLoading = false,
+                            pendingInputClear = false,
+                            errorMessage = result.message,
+                        )
                     }
                 }
             }
@@ -198,47 +187,102 @@ class ChatViewModel @Inject constructor(
         val detectedType = prompt.detectedType
         viewModelScope.launch {
             reportPrivacyEventUseCase(detectedType, masked = true)
-            _uiState.update {
-                it.copy(
-                    isLoading = true,
-                    errorMessage = null,
-                    privacyPrompt = null,
-                    privacyHighlightRanges = emptyList()
-                )
+            val (maskedPreview, _) = privacyRadar.maskForChatSend(text)
+            val displayOutgoing = maskedPreview.trim()
+            if (displayOutgoing.isEmpty()) {
+                _uiState.update {
+                    it.copy(errorMessage = "보낼 내용이 없어요. 문장을 조금 더 적어 주세요.")
+                }
+                return@launch
             }
+            appendOutgoingAndTyping(displayOutgoing)
             when (val result = sendChatMessageUseCase.sendMasked(text)) {
                 is SendChatMessageUseCase.Result.Success -> {
-                    val r = result.response
-                    val shownMine = result.sentMessage
-                    val base = _uiState.value.messages.toMutableList()
-                    base.add(ChatMessage(id = messageSeq.incrementAndGet(), text = shownMine, isMine = true))
-                    base.add(ChatMessage(id = messageSeq.incrementAndGet(), text = r.reply, isMine = false))
-                    _uiState.update {
-                        it.copy(
-                            messages = base,
-                            isLoading = false,
-                            remainingCalls = r.remainingCalls,
-                            pendingInputClear = true
-                        )
-                    }
-                    val hint = r.hintSuggestion?.trim().orEmpty()
-                    if (hint.isNotEmpty() && !chatForegroundTracker.isChatVisible) {
-                        chatHintNotifier.offerHint(hint)
-                    }
+                    applyAssistantReply(result.response, result.sentMessage)
                 }
                 is SendChatMessageUseCase.Result.Error -> {
                     _uiState.update {
-                        it.copy(isLoading = false, errorMessage = result.message)
+                        it.copy(
+                            messages = removeTypingPlaceholder(it.messages),
+                            isLoading = false,
+                            pendingInputClear = false,
+                            errorMessage = result.message,
+                        )
                     }
                 }
                 is SendChatMessageUseCase.Result.PrivacyBlocked -> {
                     _uiState.update {
-                        it.copy(isLoading = false, errorMessage = "가리고 보내기 처리에 실패했어요. 다시 시도해 주세요.")
+                        it.copy(
+                            messages = removeTypingPlaceholder(it.messages).dropLast(1),
+                            isLoading = false,
+                            pendingInputClear = false,
+                            errorMessage = "가리고 보내기 처리에 실패했어요. 다시 시도해 주세요.",
+                        )
                     }
                 }
             }
         }
     }
+
+    private fun appendOutgoingAndTyping(outgoingText: String) {
+        val user = ChatMessage(
+            id = messageSeq.incrementAndGet(),
+            text = outgoingText,
+            isMine = true,
+        )
+        val typing = ChatMessage(
+            id = messageSeq.incrementAndGet(),
+            text = "",
+            isMine = false,
+            isTyping = true,
+        )
+        _uiState.update {
+            it.copy(
+                messages = it.messages + user + typing,
+                isLoading = true,
+                pendingInputClear = true,
+                errorMessage = null,
+                privacyPrompt = null,
+                privacyHighlightRanges = emptyList(),
+            )
+        }
+    }
+
+    private fun applyAssistantReply(response: ChatMessageResponse, sentMessage: String) {
+        val r = response
+        _uiState.update { state ->
+            val withoutTyping = removeTypingPlaceholder(state.messages)
+            val last = withoutTyping.lastOrNull()
+            val withUser = if (last?.isMine == true && last.text == sentMessage) {
+                withoutTyping
+            } else if (last?.isMine == true) {
+                withoutTyping.dropLast(1) + last.copy(text = sentMessage)
+            } else {
+                withoutTyping + ChatMessage(
+                    id = messageSeq.incrementAndGet(),
+                    text = sentMessage,
+                    isMine = true,
+                )
+            }
+            state.copy(
+                messages = withUser + ChatMessage(
+                    id = messageSeq.incrementAndGet(),
+                    text = r.reply,
+                    isMine = false,
+                ),
+                isLoading = false,
+                remainingCalls = r.remainingCalls,
+                pendingInputClear = true,
+            )
+        }
+        val hint = r.hintSuggestion?.trim().orEmpty()
+        if (hint.isNotEmpty() && !chatForegroundTracker.isChatVisible) {
+            chatHintNotifier.offerHint(hint)
+        }
+    }
+
+    private fun removeTypingPlaceholder(messages: List<ChatMessage>): List<ChatMessage> =
+        messages.filterNot { it.isTyping }
 
     fun clearError() {
         _uiState.update { it.copy(errorMessage = null) }
@@ -253,5 +297,6 @@ data class ChatMessage(
     val id: Long,
     val text: String,
     val isMine: Boolean,
-    val timestamp: Long = System.currentTimeMillis()
+    val isTyping: Boolean = false,
+    val timestamp: Long = System.currentTimeMillis(),
 )

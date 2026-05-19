@@ -12,9 +12,6 @@
         android:label="Parent Dashboard"
         tools:layout="@layout/fragment_parent_dashboard">
         <action
-            android:id="@+id/action_parentDashboardFragment_to_privacyLogFragment"
-            app:destination="@id/privacyLogFragment" />
-        <action
             android:id="@+id/action_parentDashboardFragment_to_parentSettingsFragment"
             app:destination="@id/parentSettingsFragment" />
     </fragment>
@@ -34,11 +31,5 @@
         android:name="com.kduniv.aimong.feature.settings.presentation.NotificationSettingsFragment"
         android:label="@string/notification_settings_title"
         tools:layout="@layout/fragment_notification_settings" />
-
-    <fragment
-        android:id="@+id/privacyLogFragment"
-        android:name="com.kduniv.aimong.feature.parent.presentation.PrivacyLogFragment"
-        android:label="Privacy Log"
-        tools:layout="@layout/fragment_parent_privacy_log" />
 
 </navigation>

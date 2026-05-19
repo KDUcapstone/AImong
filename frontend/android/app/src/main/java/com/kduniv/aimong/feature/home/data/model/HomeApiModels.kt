@@ -111,8 +111,7 @@ data class ReturnRewardDto(
     @SerializedName("hasReward") val hasReward: Boolean = false
 )
 
+/** v2.3: 미사용 기본 티켓만 (`used_at IS NULL`) */
 data class TicketsDto(
     @SerializedName("normal") val normal: Int = 0,
-    @SerializedName("rare") val rare: Int = 0,
-    @SerializedName("epic") val epic: Int = 0
 )

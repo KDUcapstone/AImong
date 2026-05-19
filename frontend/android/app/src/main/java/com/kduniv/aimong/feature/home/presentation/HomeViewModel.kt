@@ -106,16 +106,13 @@ class HomeViewModel @Inject constructor(
         _uiState.update { it.copy(subtleNotice = null) }
     }
 
-    /** 퀘스트 수령 등으로 서버가 준 티켓 보유량만 반영 (전체 홈 재로드 없음) */
-    fun applyRemainingTickets(normal: Int, rare: Int, epic: Int) {
+    /** 퀘스트·복귀 보상 등으로 서버가 준 기본 티켓 보유량만 반영 */
+    fun applyRemainingTickets(normal: Int) {
+        val count = normal.coerceAtLeast(0)
         _uiState.update { s ->
-            val desc = if (normal == 0 && rare == 0 && epic == 0) ""
-            else "일반 $normal · 레어 $rare · 에픽 $epic"
             s.copy(
-                normalTickets = normal,
-                rareEpicTicketCount = rare + epic,
-                gachaDescription = desc,
-                topTicketCount = normal + rare + epic
+                normalTickets = count,
+                topTicketCount = count,
             )
         }
     }
@@ -150,7 +147,7 @@ class HomeViewModel @Inject constructor(
                 onSuccess = { data ->
                     val rem = data.remainingTickets
                     if (rem != null) {
-                        applyRemainingTickets(rem.normal, rem.rare, rem.epic)
+                        applyRemainingTickets(rem.normal)
                     }
                     if (!UiMode.useStubNav) {
                         homeRefreshBus.notify(HomeRefreshTrigger.Full)

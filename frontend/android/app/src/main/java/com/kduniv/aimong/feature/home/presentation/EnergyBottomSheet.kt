@@ -84,6 +84,10 @@ class EnergyBottomSheet : BottomSheetDialogFragment() {
                 homeRepository.addEnergy(ADD_AMOUNT).fold(
                     onSuccess = {
                         homeRefreshBus.notify(HomeRefreshTrigger.Full)
+                        parentFragmentManager.setFragmentResult(
+                            REQUEST_KEY,
+                            bundleOf(EXTRA_REFRESH_HOME to true),
+                        )
                         dismissAllowingStateLoss()
                     },
                     onFailure = { e ->

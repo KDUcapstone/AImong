@@ -31,24 +31,6 @@
             android:textColor="@color/child_quest_sheet_text_primary"
             android:textSize="20sp"
             android:textStyle="bold" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_check_achievements"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:minHeight="40dp"
-            android:text="업적 조회"
-            android:textColor="@color/child_nav_item_selected"
-            android:textSize="12sp"
-            app:cornerRadius="12dp"
-            app:icon="@drawable/ic_star_filled"
-            app:iconGravity="textStart"
-            app:iconPadding="6dp"
-            app:iconSize="18dp"
-            app:iconTint="@color/child_nav_item_selected"
-            app:strokeColor="@color/child_nav_item_selected"
-            app:strokeWidth="1dp" />
     </LinearLayout>
 
     <com.google.android.material.tabs.TabLayout

@@ -34,7 +34,14 @@ class GachaOwnedPetAdapter(
                 GachaUiMapper.rarityStrokeColorRes(item.grade)
             )
             binding.tvBadgeEquipped.isVisible = item.isEquipped
-            binding.tvPetEmoji.text = item.emoji
+            val pet = item.pet
+            PetArtAssets.bindSprite(
+                image = binding.ivPetSprite,
+                emojiFallback = binding.tvPetEmoji,
+                petType = pet?.petType ?: item.catalogPetType,
+                stage = pet?.stage,
+                emoji = item.emoji,
+            )
             binding.tvPetName.text = item.displayName
             binding.root.setOnClickListener { onPetClick(item) }
         }

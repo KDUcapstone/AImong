@@ -182,26 +182,6 @@
                         app:strokeWidth="1dp">
 
                         <TextView
-                            android:id="@+id/tv_parent_privacy_log"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:padding="16dp"
-                            android:text="개인정보 감지: -"
-                            android:textColor="@color/parent_mock_text_primary"
-                            android:textSize="14sp" />
-                    </com.google.android.material.card.MaterialCardView>
-
-                    <com.google.android.material.card.MaterialCardView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="12dp"
-                        app:cardBackgroundColor="@color/parent_mock_surface"
-                        app:cardCornerRadius="12dp"
-                        app:cardElevation="2dp"
-                        app:strokeColor="@color/parent_mock_border"
-                        app:strokeWidth="1dp">
-
-                        <TextView
                             android:id="@+id/tv_parent_weak_points"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"

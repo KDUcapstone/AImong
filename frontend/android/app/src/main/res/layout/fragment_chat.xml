@@ -4,8 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_child_home_gradient"
-    android:fitsSystemWindows="true">
+    android:background="@drawable/bg_child_home_gradient">
 
     <LinearLayout
         android:id="@+id/layout_chat_header"
@@ -35,6 +34,14 @@
                 app:lottie_autoPlay="true"
                 app:lottie_loop="true"
                 app:lottie_rawRes="@raw/pet_idle" />
+
+            <ImageView
+                android:id="@+id/iv_header_pet_sprite"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:contentDescription="@null"
+                android:scaleType="fitCenter"
+                android:visibility="gone" />
 
             <TextView
                 android:id="@+id/tv_header_pet_emoji"

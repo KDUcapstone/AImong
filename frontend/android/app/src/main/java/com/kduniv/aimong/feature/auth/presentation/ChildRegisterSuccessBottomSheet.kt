@@ -39,6 +39,15 @@ class ChildRegisterSuccessBottomSheet : BottomSheetDialogFragment() {
         isCancelable = false
 
         val code = arguments?.getString(ARG_CODE) ?: ""
+        val starterTickets = arguments?.getInt(ARG_TICKETS, 0) ?: 0
+
+        if (starterTickets > 0) {
+            binding.tvStarterTickets.visibility = View.VISIBLE
+            binding.tvStarterTickets.text =
+                getString(R.string.auth_register_success_starter_tickets_fmt, starterTickets)
+        } else {
+            binding.tvStarterTickets.visibility = View.GONE
+        }
 
         binding.tvConnectCode.text = code
 

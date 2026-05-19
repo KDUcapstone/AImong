@@ -300,127 +300,9 @@ class MainActivity : AppCompatActivity() {
                     navController.onChildBottomNavTap(item.itemId)
                 }
             } else if (userRole == "PARENT") {
-                binding.bottomNav.visibility = View.VISIBLE
-                // 그래프/역할 전환 후 복원되면 선택 탭만 복구되어 화면과 불일치할 수 있음
-                binding.bottomNav.isSaveEnabled = false
-                binding.bottomNav.menu.clear()
-                menuInflater.inflate(R.menu.bottom_nav_parent, binding.bottomNav.menu)
-                // XML에 자녀용 메뉴를 붙였다가 2탭으로 바꾸면, 내부 선택 인덱스가 남아 두 번째 탭만 강조되는 경우가 있음(메뉴는 코드에서만 붙임)
-                // RTL에서 자식 순서가 메뉴 인덱스와 어긋나면 스케일/틴트가 잘못된 탭에 적용됨
-                binding.bottomNav.layoutDirection = View.LAYOUT_DIRECTION_LTR
-                binding.bottomNav.setBackgroundColor(ContextCompat.getColor(this@MainActivity, R.color.parent_mock_surface))
-                // 전역 ColorStateList는 Material3 탭 내부 상태와 어긋나 둘 다 회색으로 남는 경우가 있어, 동기화 시 탭별로 색을 직접 입힌다.
-                binding.bottomNav.itemIconTintList = null
-                binding.bottomNav.itemTextColor = null
-                // 부모는 커스텀 navigate/pop이 있어 setupWithNavController와 중복 리스너가 되면 selectedItemId·틴트가 꼬임
-                binding.bottomNav.selectedItemId = when (navController.currentDestination?.id) {
-                    R.id.privacyLogFragment -> R.id.privacyLogFragment
-                    else -> R.id.parentDashboardFragment
-                }
-
-                binding.bottomNav.setOnItemSelectedListener { item ->
-                    if (suppressParentBottomNavItemSelected) return@setOnItemSelectedListener true
-                    val currentId = navController.currentDestination?.id
-                    val targetId = item.itemId
-                    val navigated = if (currentId == targetId) {
-                        true
-                    } else {
-                        when {
-                            targetId == R.id.parentDashboardFragment &&
-                                currentId == R.id.privacyLogFragment -> {
-                                val popped = navController.popBackStack(R.id.parentDashboardFragment, false)
-                                if (popped) {
-                                    true
-                                } else {
-                                    val options = NavOptions.Builder()
-                                        .setLaunchSingleTop(true)
-                                        .setRestoreState(true)
-                                        .setPopUpTo(navController.graph.findStartDestination().id, false, true)
-                                        .build()
-                                    try {
-                                        navController.navigate(targetId, null, options)
-                                        true
-                                    } catch (_: IllegalArgumentException) {
-                                        false
-                                    }
-                                }
-                            }
-                            targetId == R.id.privacyLogFragment &&
-                                currentId == R.id.parentDashboardFragment -> {
-                                try {
-                                    navController.navigate(
-                                        R.id.action_parentDashboardFragment_to_privacyLogFragment,
-                                    )
-                                    true
-                                } catch (_: IllegalArgumentException) {
-                                    false
-                                }
-                            }
-                            else -> {
-                                val options = NavOptions.Builder()
-                                    .setLaunchSingleTop(true)
-                                    .setRestoreState(true)
-                                    .setPopUpTo(navController.graph.findStartDestination().id, false, true)
-                                    .build()
-                                try {
-                                    navController.navigate(targetId, null, options)
-                                    true
-                                } catch (_: IllegalArgumentException) {
-                                    false
-                                }
-                            }
-                        }
-                    }
-                    if (navigated || currentId == targetId) {
-                        syncParentBottomNavTabSelection(binding.bottomNav, item.itemId)
-                    }
-                    navigated
-                }
-
-                val parentDestListener = NavController.OnDestinationChangedListener { _, destination, _ ->
-                    when (destination.id) {
-                        R.id.parentDashboardFragment,
-                        R.id.privacyLogFragment,
-                        -> syncParentBottomNavTabSelection(binding.bottomNav, destination.id)
-                    }
-                }
-                parentNavDestinationListener = parentDestListener
-                navController.addOnDestinationChangedListener(parentDestListener)
-
-                val initialDestId = when (val id = navController.currentDestination?.id) {
-                    R.id.parentDashboardFragment,
-                    R.id.privacyLogFragment,
-                    -> id
-                    else -> R.id.parentDashboardFragment
-                }
-                syncParentBottomNavTabSelection(binding.bottomNav, initialDestId)
-                binding.bottomNav.doOnLayout {
-                    val dest = when (val id = navController.currentDestination?.id) {
-                        R.id.parentDashboardFragment,
-                        R.id.privacyLogFragment,
-                        -> id
-                        else -> R.id.parentDashboardFragment
-                    }
-                    syncParentBottomNavTabSelection(binding.bottomNav, dest)
-                }
-
-                binding.bottomNav.setOnItemReselectedListener { item ->
-                    if (suppressParentBottomNavItemSelected) return@setOnItemReselectedListener
-                    val destId = navController.currentDestination?.id
-                    when {
-                        item.itemId == R.id.privacyLogFragment &&
-                            destId == R.id.parentDashboardFragment -> {
-                            runCatching {
-                                navController.navigate(R.id.action_parentDashboardFragment_to_privacyLogFragment)
-                            }
-                        }
-                        item.itemId == R.id.parentDashboardFragment &&
-                            destId == R.id.privacyLogFragment -> {
-                            navController.popBackStack(R.id.parentDashboardFragment, false)
-                        }
-                        else -> syncParentBottomNavTabSelection(binding.bottomNav, item.itemId)
-                    }
-                }
+                binding.bottomNav.visibility = View.GONE
+                binding.bottomNav.setOnItemSelectedListener(null)
+                binding.bottomNav.setOnItemReselectedListener(null)
             } else {
                 binding.bottomNav.visibility = View.GONE
             }
@@ -437,10 +319,7 @@ class MainActivity : AppCompatActivity() {
                 R.id.gachaFragment,
                 R.id.myProfileFragment,
             )
-            "PARENT" -> setOf(
-                R.id.parentDashboardFragment,
-                R.id.privacyLogFragment,
-            )
+            "PARENT" -> setOf(R.id.parentDashboardFragment)
             else -> setOf(R.id.roleSelectFragment)
         }
         val appBarConfig = AppBarConfiguration(topLevelDestinations)
@@ -478,13 +357,6 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        if (navigationUserRole != "PARENT" || !::navController.isInitialized) return
-        if (binding.bottomNav.visibility != View.VISIBLE) return
-        when (val id = navController.currentDestination?.id) {
-            R.id.parentDashboardFragment,
-            R.id.privacyLogFragment,
-            -> syncParentBottomNavTabSelection(binding.bottomNav, id)
-        }
     }
 
     /** 부모 하단 탭: 아이콘·라벨에 선택 여부에 따른 색을 직접 적용한다. */

@@ -15,13 +15,14 @@ import com.google.android.material.snackbar.Snackbar
 import com.kduniv.aimong.R
 import com.kduniv.aimong.core.network.model.ParentChildDetailData
 import com.kduniv.aimong.core.network.model.ParentChildItem
+import com.kduniv.aimong.core.network.model.ParentRegisterResponse
 import com.kduniv.aimong.core.network.model.PatchParentChildRequest
+import com.kduniv.aimong.feature.auth.presentation.ChildRegisterSuccessBottomSheet
 import com.kduniv.aimong.feature.parent.domain.ParentAuthPolicy
 import com.kduniv.aimong.core.ui.BaseFragment
 import com.kduniv.aimong.databinding.FragmentParentDashboardBinding
 import com.kduniv.aimong.feature.parent.data.ParentRepository
 import com.kduniv.aimong.feature.parent.data.model.ParentChildSummaryResponseData
-import com.kduniv.aimong.feature.parent.data.model.ParentPrivacyLogResponseData
 import com.kduniv.aimong.feature.parent.data.model.ParentWeakPointsResponseData
 import com.kduniv.aimong.feature.parent.data.model.ParentWeeklyStatsResponseData
 import dagger.hilt.android.AndroidEntryPoint
@@ -82,10 +83,6 @@ class ParentDashboardFragment :
         val rich = binding.includeDashboardRich
         rich.rowDashboardChildSelector.setOnClickListener { showChildSelectSheet() }
         binding.cardEmptyChildren.setOnClickListener { showChildSelectSheet() }
-
-        binding.includeDashboardRich.btnDashboardPrivacyMore.setOnClickListener {
-            findNavController().navigate(R.id.action_parentDashboardFragment_to_privacyLogFragment)
-        }
 
         binding.btnSettings.setOnClickListener {
             findNavController().navigate(R.id.action_parentDashboardFragment_to_parentSettingsFragment)
@@ -236,16 +233,6 @@ class ParentDashboardFragment :
         }
     }
 
-    private fun applyRichPrivacy(p: ParentPrivacyLogResponseData?) {
-        val rich = binding.includeDashboardRich
-        if (p == null) return
-        val first = p.events.firstOrNull()
-        val base = getString(R.string.parent_dash_privacy_fmt, p.weeklyCount, p.totalCount)
-        rich.tvParentDashPrivacySummary.text =
-            if (first != null) "$base\n${getString(R.string.parent_dash_privacy_recent, first.detectedType)}"
-            else base
-    }
-
     private fun applyRichWeak(wp: ParentWeakPointsResponseData?) {
         val rich = binding.includeDashboardRich
         val points = wp?.weakPoints.orEmpty().take(3)
@@ -290,24 +277,12 @@ class ParentDashboardFragment :
         return "$pct%"
     }
 
-    private fun applyRichRecent(
-        summary: ParentChildSummaryResponseData?,
-        privacy: ParentPrivacyLogResponseData?,
-    ) {
+    private fun applyRichRecent(summary: ParentChildSummaryResponseData?) {
         val rich = binding.includeDashboardRich
         val container = rich.layoutDashboardRecentRows
         container.removeAllViews()
         val inflater = LayoutInflater.from(requireContext())
         var rowCount = 0
-
-        privacy?.events?.take(2)?.forEach { event ->
-            val row = inflater.inflate(R.layout.include_parent_recent_row_privacy, container, false)
-            row.findViewById<TextView>(R.id.tv_recent_privacy_title)?.text =
-                getString(R.string.parent_dashboard_recent_privacy_fmt, event.detectedType)
-            row.findViewById<TextView>(R.id.tv_recent_privacy_time)?.text = event.detectedAt
-            container.addView(row)
-            rowCount++
-        }
 
         if (summary != null && summary.lastActiveAt != null) {
             val row = inflater.inflate(R.layout.include_parent_recent_row_mission, container, false)
@@ -370,7 +345,7 @@ class ParentDashboardFragment :
                 launch {
                     viewModel.childSummary.collect { s ->
                         applyRichSummary(s)
-                        applyRichRecent(s, viewModel.privacyLog.value)
+                        applyRichRecent(s)
                         if (s == null) return@collect
                         binding.tvParentSummary.text =
                             "요약\n- 닉네임: ${s.nickname}\n- XP: ${s.totalXp}\n- 스트릭: ${s.continuousDays}일\n- 실드: ${s.shieldCount}\n- 주간 완료 세트: ${s.weeklyCompletedSetCount}\n- 총 완료 세트: ${s.totalCompletedSetCount}\n- 현재 레벨: ${s.currentLevelNo}\n- 마지막 활동: ${s.lastActiveAt ?: "-"}"
@@ -385,20 +360,6 @@ class ParentDashboardFragment :
                         }
                         binding.tvParentWeeklyStats.text =
                             "주간 통계 (${w.weekStart ?: "-"} ~ ${w.weekEnd ?: "-"})\n- 주간 XP: ${w.totalWeeklyXp}\n- 주간 완료 세트: ${w.totalWeeklyMissions}\n$lines"
-                    }
-                }
-                launch {
-                    viewModel.privacyLog.collect { p ->
-                        applyRichPrivacy(p)
-                        applyRichRecent(viewModel.childSummary.value, p)
-                        if (p == null) return@collect
-                        val lines = p.events.joinToString(separator = "\n") { e ->
-                            "- ${e.detectedType} (masked=${e.masked}) @ ${e.detectedAt}"
-                        }
-                        val pagesNote =
-                            if (p.totalPages > 0) "\n- totalPages: ${p.totalPages}" else ""
-                        binding.tvParentPrivacyLog.text =
-                            "개인정보 감지\n- weekly: ${p.weeklyCount}\n- total: ${p.totalCount}$pagesNote\n$lines"
                     }
                 }
                 launch {
@@ -425,7 +386,21 @@ class ParentDashboardFragment :
                         Snackbar.make(binding.root, message, Snackbar.LENGTH_LONG).show()
                     }
                 }
+                launch {
+                    viewModel.childRegisteredEvent.collect { data ->
+                        showChildRegisterSuccessSheet(data)
+                    }
+                }
             }
         }
+    }
+
+    private fun showChildRegisterSuccessSheet(data: ParentRegisterResponse) {
+        val bottomSheet = ChildRegisterSuccessBottomSheet.newInstance(data)
+        bottomSheet.onConfirmClick = {
+            updateDashboardTitle()
+            updateRichChildLabel()
+        }
+        bottomSheet.show(childFragmentManager, "child_register_success")
     }
 }

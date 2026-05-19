@@ -17,6 +17,7 @@ import com.kduniv.aimong.feature.home.presentation.DifficultyUnlockMode
 import com.kduniv.aimong.feature.home.presentation.MissionDifficultyPicker
 import com.kduniv.aimong.feature.home.presentation.QuestListBottomSheet
 import com.kduniv.aimong.feature.home.presentation.StreakCalendarBottomSheet
+import com.kduniv.aimong.feature.gacha.PetArtAssets
 import com.kduniv.aimong.feature.quiz.presentation.QuizFragment
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -136,8 +137,12 @@ class MockHomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::
             }
         }
         binding.layoutChipStreak.setOnClickListener {
-            StreakCalendarBottomSheet.newInstance(sampleState.streakDays)
-                .show(parentFragmentManager, "streak_calendar")
+            StreakCalendarBottomSheet.newInstance(
+                fallbackStreakDaysFromHome = sampleState.streakDays,
+                petType = sampleState.equippedPetType,
+                petStage = sampleState.petStage,
+                petGrade = sampleState.equippedPetGrade,
+            ).show(parentFragmentManager, "streak_calendar")
         }
 
         binding.root.post { homeLayoutBinder.bind(sampleState) }
@@ -153,11 +158,13 @@ class MockHomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::
         val s = sampleState
         val dialog = BottomSheetDialog(requireContext())
         val v = layoutInflater.inflate(R.layout.bottomsheet_pet_stats, null, false)
-        v.findViewById<TextView>(R.id.tv_pet_emoji).text = when (s.petStage) {
-            "EGG" -> "🥚"
-            "GROWTH" -> "🐣"
-            else -> "✨"
-        }
+        PetArtAssets.bindEquipped(
+            image = v.findViewById(R.id.iv_pet_sprite),
+            emojiFallback = v.findViewById(R.id.tv_pet_emoji),
+            petType = s.equippedPetType,
+            stage = s.petStage,
+            grade = s.equippedPetGrade,
+        )
         v.findViewById<TextView>(R.id.tv_pet_name).text =
             s.petName.ifBlank { getString(R.string.home_pet_name_default) }
         v.findViewById<TextView>(R.id.tv_pet_level).text =

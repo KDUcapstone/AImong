@@ -5,6 +5,7 @@ import com.kduniv.aimong.feature.home.data.model.HomeScreenData
 import com.kduniv.aimong.feature.home.data.model.ProfileDto
 import com.kduniv.aimong.feature.home.data.model.TopStatusDto
 import com.kduniv.aimong.feature.home.domain.TicketTotals
+import com.kduniv.aimong.feature.gacha.GachaPetCatalog
 import com.kduniv.aimong.feature.pet.domain.PetGrowthRules
 
 internal object HomeUiMapper {
@@ -44,11 +45,13 @@ internal object HomeUiMapper {
             streakDays = streak.continuousDays,
             profileType = profile.profileImageType,
             userLevel = userLevel,
-            petName = pet?.let { petDisplayName(it.petType, it.grade) } ?: "",
+            petName = pet?.let { GachaPetCatalog.displayNameFor(it.petType, it.grade) } ?: "",
             petXp = petXp,
             petMaxXp = petMax,
             petLevel = petLv,
             petStage = petStage,
+            equippedPetType = pet?.petType.orEmpty(),
+            equippedPetGrade = pet?.grade ?: "NORMAL",
             hasEquippedPet = hasEquippedPet,
             homeState = homeState,
             petMessage = petMessage(data),
@@ -58,8 +61,6 @@ internal object HomeUiMapper {
             energyMax = top.maxEnergy ?: 20,
             nextEnergyRecoverAt = top.nextEnergyRecoverAt,
             topStatusXp = userTotalXp,
-            rareEpicTicketCount = tickets.rare + tickets.epic,
-            gachaDescription = gachaDescription(tickets),
             todayQuestProgress = todayDone,
             quests = quests.quests.map { mapQuest(it, mission.canStartMission) },
             isLoading = false,
@@ -79,20 +80,6 @@ internal object HomeUiMapper {
     private fun userLevelFromXp(totalXp: Int): Int =
         1 + (totalXp / 80).coerceIn(0, 99)
 
-    private fun petDisplayName(petType: String, grade: String): String {
-        val tail = petType.substringAfterLast('_', "")
-        val short = tail.filter { it.isDigit() }.takeIf { it.isNotBlank() }
-        return buildString {
-            append(when (grade.uppercase()) {
-                "COMMON" -> "커먼 "
-                "RARE" -> "레어 "
-                "EPIC" -> "에픽 "
-                else -> ""
-            })
-            append(short ?: tail.takeIf { it.isNotBlank() } ?: "펫")
-        }.trim()
-    }
-
     private fun petMessage(data: HomeScreenData): String {
         if (data.equippedPet == null) return ""
         if (data.returnReward.hasReward) {
@@ -110,11 +97,6 @@ internal object HomeUiMapper {
             return "홈에서 오늘의 미션을 시작해 보세요."
         }
         return ""
-    }
-
-    private fun gachaDescription(t: com.kduniv.aimong.feature.home.data.model.TicketsDto): String {
-        if (t.normal == 0 && t.rare == 0 && t.epic == 0) return ""
-        return "일반 ${t.normal} · 레어 ${t.rare} · 에픽 ${t.epic}"
     }
 
     private fun mapQuest(q: DailyQuestItemDto, canStartMission: Boolean): QuestItemUiState {

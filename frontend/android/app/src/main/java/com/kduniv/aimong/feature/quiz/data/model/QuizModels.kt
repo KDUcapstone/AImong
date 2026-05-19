@@ -5,7 +5,7 @@ import com.google.gson.annotations.SerializedName
 import com.kduniv.aimong.feature.quiz.data.gson.AttemptIdStringAdapter
 import com.kduniv.aimong.feature.quiz.data.gson.SubmitRewardsListAdapter
 
-/** GET .../questions 응답 — v2.3 + 레거시 필드 nullable */
+/** GET .../questions 응답 — v2.11: setId는 진행·채점 단위, 문항은 missionId+difficulty 풀에서 런타임 선택 */
 data class QuizQuestionsResponse(
     /** v2.4: 서버가 문자열 setId를 줄 수 있어 String으로 수용 */
     @SerializedName("setId") val setId: String? = null,
@@ -113,8 +113,6 @@ data class QuizSubmitResponse(
 
 data class RemainingTicketsResponse(
     @SerializedName("normal") val normal: Int = 0,
-    @SerializedName("rare") val rare: Int = 0,
-    @SerializedName("epic") val epic: Int = 0
 )
 
 data class RewardResponse(

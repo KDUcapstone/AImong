@@ -13,6 +13,7 @@ data class ChatUiState(
     val petDisplayName: String = "에이몽",
     val petStage: String = "GROWTH",
     val petType: String = "",
+    val petGrade: String = "NORMAL",
     val petAvatarEmoji: String = "✨",
     val hasEquippedPet: Boolean = false,
     val isLoading: Boolean = false,

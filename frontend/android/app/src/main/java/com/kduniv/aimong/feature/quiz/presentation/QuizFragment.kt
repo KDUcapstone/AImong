@@ -40,6 +40,8 @@ import com.kduniv.aimong.feature.quiz.domain.model.QuizResult
 import com.kduniv.aimong.feature.quiz.domain.model.QuizReward
 import com.kduniv.aimong.feature.quiz.domain.model.QuizQuestions
 import com.kduniv.aimong.feature.quiz.domain.model.TermHint
+import com.kduniv.aimong.feature.gacha.EquippedPetVisual
+import com.kduniv.aimong.feature.gacha.PetArtAssets
 import androidx.appcompat.app.AlertDialog
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
@@ -228,6 +230,11 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                     }
                 }
                 launch {
+                    viewModel.equippedPetVisual.collect { visual ->
+                        bindEquippedPetSprites(visual)
+                    }
+                }
+                launch {
                     viewModel.isSolutionMode.collect { isSolution ->
                         if (isSolution) {
                             // 풀이 모드에서는 문항 30초 타이머 정지 + 잔상 제거
@@ -243,9 +250,18 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
 
     private fun handleUiState(state: QuizUiState) {
         when (state) {
-            is QuizUiState.Loading -> {
-                // 로딩 표시
-            }
+            is QuizUiState.Loading -> setQuizLoadingOverlay(
+                visible = true,
+                messageRes = R.string.quiz_loading_questions,
+            )
+            is QuizUiState.Submitting -> setQuizLoadingOverlay(
+                visible = true,
+                messageRes = R.string.quiz_submitting_result,
+            )
+            else -> setQuizLoadingOverlay(visible = false)
+        }
+        when (state) {
+            is QuizUiState.Loading, is QuizUiState.Submitting -> Unit
             is QuizUiState.QuestionLoaded -> {
                 if (isRetryingFromResult) {
                     isRetryingFromResult = false
@@ -325,9 +341,14 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         updateReportButtonVisibility()
     }
 
+    private fun setQuizLoadingOverlay(visible: Boolean, messageRes: Int? = null) {
+        binding.layoutQuizLoadingOverlay.visibility = if (visible) View.VISIBLE else View.GONE
+        messageRes?.let { binding.tvQuizLoadingOverlay.setText(it) }
+    }
+
     private fun updateReportButtonVisibility() {
         binding.btnReportQuestion.visibility = when (viewModel.uiState.value) {
-            is QuizUiState.Loading, is QuizUiState.Finished -> View.GONE
+            is QuizUiState.Loading, is QuizUiState.Submitting, is QuizUiState.Finished -> View.GONE
             else -> View.VISIBLE
         }
     }
@@ -751,13 +772,16 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             showEvolutionCelebration()
         }
 
-        binding.lavResultPet.setAnimation(R.raw.pet_idle)
-        binding.lavResultPet.playAnimation()
+        bindEquippedPetSprites(viewModel.displayPetVisual(evolved = result.petEvolved))
 
         val isReviewSubmit = result.mode == "review" || viewModel.isReviewMode.value
 
         val totalCount = result.total.takeIf { it > 0 } ?: result.results.size
-        val correctCount = result.results.count { it.isCorrect }
+        val correctCount = when {
+            result.correctCount > 0 -> result.correctCount
+            result.results.isNotEmpty() -> result.results.count { it.isCorrect }
+            else -> 0
+        }
 
         val remainingHearts = viewModel.sessionLives.value.coerceIn(0, 3)
         val heartsLost = maxOf(
@@ -791,11 +815,22 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             grade == MissionHeartGrade.SUCCESS -> getString(R.string.quiz_result_success_subtitle)
             else -> "아쉽게 탈락했어. 다시 한 번 도전해볼까?"
         }
-        binding.tvResultSub.text = if (result.isFirstClear && missionCleared && !isReviewSubmit) {
-            "${getString(R.string.quiz_first_clear_badge)}\n$baseSub"
+        val scoreHint = if (!isReviewSubmit) {
+            getString(R.string.quiz_result_score_fmt, result.score.coerceIn(0, 100))
         } else {
-            baseSub
+            null
         }
+        binding.tvResultSub.text = buildString {
+            if (result.isFirstClear && missionCleared && !isReviewSubmit) {
+                append(getString(R.string.quiz_first_clear_badge))
+                append('\n')
+            }
+            scoreHint?.let {
+                append(it)
+                append('\n')
+            }
+            append(baseSub)
+        }.trim()
 
         binding.tvResCorrectCount.text = "$correctCount / $totalCount"
         binding.tvResPassStatus.text = when {
@@ -840,26 +875,38 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
 
         // 스트릭·티켓 (remainingTickets는 서버 스냅샷)
         val streakLine = if (result.streakDays > 0) {
-            "🔥 ${result.streakDays}일 연속 스트릭 유지 중!"
+            getString(R.string.quiz_streak_days_fmt, result.streakDays)
         } else null
         val ticketLine = result.remainingTickets?.let {
-            getString(
-                R.string.quiz_remaining_tickets_line,
-                it.normal,
-                it.rare,
-                it.epic
-            )
+            getString(R.string.quiz_remaining_tickets_fmt, it.normal)
         }
         val streakBlock = listOfNotNull(streakLine, ticketLine).joinToString("\n")
         if (streakBlock.isNotEmpty()) {
             binding.tvStreakInfo.visibility = View.VISIBLE
             binding.tvStreakInfo.text = streakBlock
+            if (result.streakDays > 0) {
+                val pad = (6 * resources.displayMetrics.density).toInt()
+                binding.tvStreakInfo.setCompoundDrawablesRelativeWithIntrinsicBounds(
+                    R.drawable.ic_flame,
+                    0,
+                    0,
+                    0,
+                )
+                binding.tvStreakInfo.compoundDrawablePadding = pad
+            } else {
+                binding.tvStreakInfo.setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, 0, 0)
+            }
         } else {
             binding.tvStreakInfo.visibility = View.GONE
         }
 
+        // v2.10: gear는 일반 모드 통과·서버 isPassed일 때만 표시
         val displayRewards = result.rewards.filter { reward ->
-            if (isReviewSubmit || !missionCleared) reward.type.uppercase() != "GEAR" else true
+            val isGear = reward.type.uppercase() == "GEAR"
+            when {
+                isGear -> !isReviewSubmit && result.isPassed
+                else -> true
+            }
         }
         binding.layoutRewardsRow.visibility =
             if (missionCleared && displayRewards.isNotEmpty()) View.VISIBLE else View.GONE
@@ -1386,6 +1433,25 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         )
     }
 
+    private fun bindEquippedPetSprites(visual: EquippedPetVisual) {
+        PetArtAssets.bindEquipped(
+            image = binding.ivQuizPetSprite,
+            emojiFallback = binding.tvQuizPetEmoji,
+            petType = visual.petType,
+            stage = visual.stage,
+            grade = visual.grade,
+            lottie = binding.lavQuizPet,
+        )
+        PetArtAssets.bindEquipped(
+            image = binding.ivResultPetSprite,
+            emojiFallback = binding.tvResultPetEmoji,
+            petType = visual.petType,
+            stage = visual.stage,
+            grade = visual.grade,
+            lottie = binding.lavResultPet,
+        )
+    }
+
     private fun showEvolutionCelebration() {
         try {
             val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_evolution, null)
@@ -1394,17 +1460,22 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                 .setCancelable(true)
                 .create()
 
+            val evolved = viewModel.displayPetVisual(evolved = true)
+            PetArtAssets.bindEquipped(
+                image = dialogView.findViewById(R.id.iv_evolution_pet_sprite),
+                emojiFallback = dialogView.findViewById(R.id.tv_evolution_pet_emoji),
+                petType = evolved.petType,
+                stage = evolved.stage,
+                grade = evolved.grade,
+                lottie = dialogView.findViewById(R.id.lav_evolution_effect),
+            )
+
             val btnClose = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btn_evolution_close)
             btnClose?.setOnClickListener {
                 dialog.dismiss()
             }
 
             dialog.show()
-            
-            val lavEvolution = dialogView.findViewById<com.airbnb.lottie.LottieAnimationView>(R.id.lav_evolution_effect)
-            // 실제 진화 애니메이션이 있으면 교체, 없으면 기본 아이들링 유지
-            // lavEvolution.setAnimation("pet_evolution.json")
-            lavEvolution.playAnimation()
         } catch (e: Exception) {
             Toast.makeText(requireContext(), "축하합니다! 아이몽이 진화했습니다!", Toast.LENGTH_LONG).show()
         }
@@ -1424,10 +1495,17 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                 findNavController().popBackStack()
             }
 
+            val visual = viewModel.equippedPetVisual.value
+            PetArtAssets.bindEquipped(
+                image = dialogView.findViewById(R.id.iv_mission_not_ready_pet_sprite),
+                emojiFallback = dialogView.findViewById(R.id.tv_mission_not_ready_pet_emoji),
+                petType = visual.petType,
+                stage = visual.stage,
+                grade = visual.grade,
+                lottie = dialogView.findViewById(R.id.lav_mission_not_ready_effect),
+            )
+
             dialog.show()
-            
-            val lavEffect = dialogView.findViewById<com.airbnb.lottie.LottieAnimationView>(R.id.lav_mission_not_ready_effect)
-            lavEffect?.playAnimation()
         } catch (e: Exception) {
             Toast.makeText(requireContext(), "문제 세트를 준비하는 데 실패했습니다. 잠시 후 다시 시도해주세요.", Toast.LENGTH_LONG).show()
             findNavController().popBackStack()

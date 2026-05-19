@@ -35,7 +35,10 @@ data class QuizResult(
     val progressApplied: Boolean = false,
     val attemptState: String = AttemptStatus.SUBMITTED.name,
     val streakBonusApplied: Boolean = false,
+    /** v2.11: 100점 만점 환산 점수 */
     val score: Int,
+    /** v2.11: 정답 문항 수 (0~questionCount) */
+    val correctCount: Int = 0,
     val total: Int,
     val wrongCount: Int,
     val isPassed: Boolean,
@@ -58,8 +61,6 @@ data class QuizResult(
 
 data class RemainingTickets(
     val normal: Int,
-    val rare: Int,
-    val epic: Int
 )
 
 /** POST …/questions/{questionId}/report 응답 */

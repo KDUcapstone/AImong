@@ -3,11 +3,11 @@ package com.kduniv.aimong.feature.parent.presentation
 import androidx.lifecycle.viewModelScope
 import com.kduniv.aimong.core.network.model.ParentChildDetailData
 import com.kduniv.aimong.core.network.model.ParentChildItem
+import com.kduniv.aimong.core.network.model.ParentRegisterResponse
 import com.kduniv.aimong.core.network.model.PatchParentChildRequest
 import com.kduniv.aimong.core.ui.BaseViewModel
 import com.kduniv.aimong.feature.parent.data.ParentRepository
 import com.kduniv.aimong.feature.parent.data.model.ParentChildSummaryResponseData
-import com.kduniv.aimong.feature.parent.data.model.ParentPrivacyLogResponseData
 import com.kduniv.aimong.feature.parent.data.model.ParentWeakPointsResponseData
 import com.kduniv.aimong.feature.parent.data.model.ParentWeeklyStatsResponseData
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -29,6 +29,10 @@ class ParentDashboardViewModel @Inject constructor(
     private val _messageEvent = MutableSharedFlow<String>()
     val messageEvent = _messageEvent.asSharedFlow()
 
+    /** 둘째·셋째 자녀 추가 성공 — 등록 완료 바텀시트(코드·스타터 티켓) 표시용 */
+    private val _childRegisteredEvent = MutableSharedFlow<ParentRegisterResponse>()
+    val childRegisteredEvent = _childRegisteredEvent.asSharedFlow()
+
     private val _selectedChildId = MutableStateFlow<String?>(null)
     val selectedChildId: StateFlow<String?> = _selectedChildId
 
@@ -40,9 +44,6 @@ class ParentDashboardViewModel @Inject constructor(
 
     private val _weeklyStats = MutableStateFlow<ParentWeeklyStatsResponseData?>(null)
     val weeklyStats: StateFlow<ParentWeeklyStatsResponseData?> = _weeklyStats.asStateFlow()
-
-    private val _privacyLog = MutableStateFlow<ParentPrivacyLogResponseData?>(null)
-    val privacyLog: StateFlow<ParentPrivacyLogResponseData?> = _privacyLog.asStateFlow()
 
     private val _weakPoints = MutableStateFlow<ParentWeakPointsResponseData?>(null)
     val weakPoints: StateFlow<ParentWeakPointsResponseData?> = _weakPoints.asStateFlow()
@@ -59,7 +60,7 @@ class ParentDashboardViewModel @Inject constructor(
         viewModelScope.launch { refreshAllDashboardForChild(childId) }
     }
 
-    /** 요약·주간·개인정보·약점 API를 한 번에 갱신한다. */
+    /** 요약·주간·약점 API를 한 번에 갱신한다. */
     private suspend fun refreshAllDashboardForChild(childId: String) {
         val detailResult = parentRepository.getParentChildDetail(childId)
         detailResult.fold(
@@ -76,10 +77,6 @@ class ParentDashboardViewModel @Inject constructor(
         parentRepository.getWeeklyStats(childId).fold(
             onSuccess = { _weeklyStats.value = it },
             onFailure = { _weeklyStats.value = null }
-        )
-        parentRepository.getPrivacyLog(childId, page = 0, size = 20).fold(
-            onSuccess = { _privacyLog.value = it },
-            onFailure = { _privacyLog.value = null }
         )
         parentRepository.getWeakPoints(childId, page = 0, size = 20).fold(
             onSuccess = { _weakPoints.value = it },
@@ -160,7 +157,7 @@ class ParentDashboardViewModel @Inject constructor(
                 onSuccess = { r ->
                     _selectedChildId.value = r.childId
                     refreshAllDashboardForChild(r.childId)
-                    _messageEvent.emit("자녀 추가 완료: ${r.nickname} · 코드 ${r.code}")
+                    _childRegisteredEvent.emit(r)
                 },
                 onFailure = { e ->
                     _messageEvent.emit(e.message ?: "자녀 추가에 실패했습니다.")
@@ -221,21 +218,6 @@ class ParentDashboardViewModel @Inject constructor(
                     "주간통계: ${s.weekStart}~${s.weekEnd} XP ${s.totalWeeklyXp}, 완료 ${s.totalWeeklyMissions}"
                 },
                 onFailure = { e -> e.message ?: "주간통계 조회 실패" }
-            )
-        }
-    )
-
-    fun fetchPrivacyLog(page: Int = 0, size: Int = 20) = fetchWithSelectedChild(
-        actionName = "개인정보로그",
-        block = { id ->
-            parentRepository.getPrivacyLog(id, page = page, size = size).fold(
-                onSuccess = { s ->
-                    _privacyLog.value = s
-                    "개인정보로그: weekly ${s.weeklyCount}, total ${s.totalCount}" +
-                        (if (s.totalPages > 0) ", pages ${s.totalPages}" else "") +
-                        ", events ${s.events.size}"
-                },
-                onFailure = { e -> e.message ?: "개인정보로그 조회 실패" }
             )
         }
     )

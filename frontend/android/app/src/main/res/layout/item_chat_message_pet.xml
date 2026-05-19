@@ -14,14 +14,13 @@
         android:layout_height="52dp"
         android:background="@drawable/bg_chat_pet_avatar">
 
-        <com.airbnb.lottie.LottieAnimationView
-            android:id="@+id/lav_pet_avatar"
-            android:layout_width="44dp"
-            android:layout_height="44dp"
-            android:layout_gravity="center"
-            app:lottie_autoPlay="true"
-            app:lottie_loop="true"
-            app:lottie_rawRes="@raw/pet_idle" />
+        <ImageView
+            android:id="@+id/iv_pet_avatar_sprite"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:contentDescription="@null"
+            android:scaleType="fitCenter"
+            android:visibility="gone" />
 
         <TextView
             android:id="@+id/tv_pet_avatar_emoji"

@@ -36,18 +36,24 @@ data class QuestClaimRequest(
 
 data class QuestClaimResponseData(
     @SerializedName("rewards") val rewards: List<QuestRewardItemDto> = emptyList(),
-    @SerializedName("remainingTickets") val remainingTickets: QuestRemainingTicketsDto
+    @SerializedName("remainingTickets") val remainingTickets: QuestRemainingTicketsDto,
 )
 
+/** v2.3 티켓 단일화: `type=TICKET`이면 기본 뽑기 티켓. `ticketType`은 호환용(무시 가능). */
 data class QuestRewardItemDto(
     @SerializedName("type") val type: String,
     @SerializedName("ticketType") val ticketType: String? = null,
     @SerializedName("count") val count: Int = 0,
-    @SerializedName("reason") val reason: String? = null
-)
+    @SerializedName("reason") val reason: String? = null,
+) {
+    fun isGachaTicketReward(): Boolean =
+        type.equals("TICKET", ignoreCase = true) ||
+            type.equals("TICKET_NORMAL", ignoreCase = true)
 
+    fun gachaTicketCount(): Int = count.coerceAtLeast(0)
+}
+
+/** 미사용 기본 티켓 보유량 — `tickets.normal` / 홈 `topStatus.ticketCount`와 동일 축 */
 data class QuestRemainingTicketsDto(
     @SerializedName("normal") val normal: Int = 0,
-    @SerializedName("rare") val rare: Int = 0,
-    @SerializedName("epic") val epic: Int = 0
 )

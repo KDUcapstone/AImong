@@ -20,10 +20,10 @@ object StubPetGachaStore {
 
     private var equippedPetId: String? = "stub-pet-1"
     private var normalTickets = 5
-    private var rareTickets = 2
-    private var epicTickets = 1
     private var srMissCount = 3
     private var pullSeq = 0
+    /** 목업 확률 시트 Lv.3 구간 데모 */
+    private var gachaPullCount = 55
 
     private val ownedPets = mutableListOf(
         PetDto(
@@ -91,7 +91,13 @@ object StubPetGachaStore {
     )
 
     fun currentTickets(): RemainingTicketsDto = synchronized(lock) {
-        RemainingTicketsDto(normalTickets, rareTickets, epicTickets)
+        RemainingTicketsDto(normal = normalTickets)
+    }
+
+    fun gachaPullCount(): Int = synchronized(lock) { gachaPullCount }
+
+    fun setGachaPullCount(count: Int) {
+        synchronized(lock) { gachaPullCount = count.coerceAtLeast(0) }
     }
 
     fun getPetList(): PetListData = synchronized(lock) {
@@ -121,44 +127,34 @@ object StubPetGachaStore {
         GachaFragmentsData(fragmentRows.map { it.copy() })
     }
 
-    fun pull(ticketType: String): Result<GachaPullData> = synchronized(lock) {
-        when (ticketType) {
-            "NORMAL" -> {
-                if (normalTickets <= 0) return Result.failure(Exception("티켓이 부족해요!"))
-                normalTickets--
-            }
-            "RARE" -> {
-                if (rareTickets <= 0) return Result.failure(Exception("티켓이 부족해요!"))
-                rareTickets--
-            }
-            "EPIC" -> {
-                if (epicTickets <= 0) return Result.failure(Exception("티켓이 부족해요!"))
-                epicTickets--
-            }
-            else -> return Result.failure(Exception("티켓 종류를 선택해주세요"))
-        }
+    /** v2.2: NORMAL 티켓만 사용 */
+    fun pull(): Result<GachaPullData> = synchronized(lock) {
+        if (normalTickets <= 0) return Result.failure(Exception("티켓이 부족해요!"))
+        normalTickets--
 
         pullSeq++
         val isNew = pullSeq % 3 == 0
         val grade = if (isNew) "RARE" else "NORMAL"
-        val petType = if (isNew) "pet_rare_099" else "pet_normal_005"
-        val petName = if (isNew) "목업 레어" else "목업 노멀"
+        val petType = if (isNew) "pet_rare_003" else "pet_normal_005"
+        val petName = if (isNew) "수정사슴" else "젤리곰"
         val petId = "stub-pull-$pullSeq"
 
         if (isNew) {
-            ownedPets.add(
-                PetDto(
-                    id = petId,
-                    petType = petType,
-                    grade = grade,
-                    xp = 0,
-                    stage = "EGG",
-                    mood = "IDLE",
-                    crownUnlocked = false,
-                    crownType = null,
-                    obtainedAt = "2026-05-06T12:00:00Z"
+            if (ownedPets.none { it.petType == petType }) {
+                ownedPets.add(
+                    PetDto(
+                        id = petId,
+                        petType = petType,
+                        grade = grade,
+                        xp = 0,
+                        stage = "EGG",
+                        mood = "IDLE",
+                        crownUnlocked = false,
+                        crownType = null,
+                        obtainedAt = "2026-05-06T12:00:00Z"
+                    )
                 )
-            )
+            }
         } else {
             val row = fragmentRows.find { it.grade == "NORMAL" }
             if (row != null) {
@@ -168,7 +164,7 @@ object StubPetGachaStore {
         }
 
         val missBefore = srMissCount
-        val appliedSrBonus = if (ticketType == "NORMAL" && missBefore >= 10) {
+        val appliedSrBonus = if (missBefore >= 10) {
             min((missBefore - 9) * 0.01, 0.75)
         } else {
             0.0
@@ -179,7 +175,12 @@ object StubPetGachaStore {
             srMissCount = missBefore + 1
         }
 
+        gachaPullCount += 1
+
         val levelUp = pullSeq == 4
+        if (levelUp) {
+            normalTickets += 2
+        }
 
         val result = GachaPullResultDto(
             petId = petId,
@@ -195,7 +196,7 @@ object StubPetGachaStore {
                 srMissCount = srMissCount,
                 srBonus = appliedSrBonus,
                 levelUp = levelUp,
-                remainingTickets = RemainingTicketsDto(normalTickets, rareTickets, epicTickets)
+                remainingTickets = RemainingTicketsDto(normal = normalTickets)
             )
         )
     }

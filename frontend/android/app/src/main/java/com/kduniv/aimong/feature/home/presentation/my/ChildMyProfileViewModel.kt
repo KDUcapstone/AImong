@@ -175,7 +175,7 @@ class ChildMyProfileViewModel @Inject constructor(
     private fun AchievementItemDto.toBadgeUi() = ChildMyBadgeUi(
         achievementType = achievementType,
         label = label,
-        emoji = ChildMyAchievementEmoji.forType(achievementType),
+        iconRes = ChildMyAchievementIcons.iconFor(achievementType),
         isUnlocked = isCompleted
     )
 

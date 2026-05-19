@@ -1,11 +1,3 @@
 <?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android">
-    <item
-        android:id="@+id/parentDashboardFragment"
-        android:icon="@drawable/ic_nav_parent_dashboard"
-        android:title="@string/bottom_nav_parent_dashboard" />
-    <item
-        android:id="@+id/privacyLogFragment"
-        android:icon="@drawable/ic_nav_parent_privacy"
-        android:title="@string/bottom_nav_parent_privacy_log" />
-</menu>
+<!-- 부모는 단일 대시보드 화면 — 하단 탭 미사용 (MainActivity에서 GONE) -->
+<menu xmlns:android="http://schemas.android.com/apk/res/android" />

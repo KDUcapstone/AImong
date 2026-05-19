@@ -7,7 +7,8 @@ import com.kduniv.aimong.feature.parent.data.ParentRepository
 import javax.inject.Inject
 
 /**
- * v2.2: POST /parent/logout → FirebaseAuth.signOut() → 로컬 세션·자녀 캐시 정리.
+ * v2.3: DELETE /parent/fcm-token → POST /parent/logout → FirebaseAuth.signOut() → 로컬 정리.
+ * Firebase 로컬 세션 종료는 FE, BE는 FCM·부모 세션 메타만 처리.
  */
 class LogoutParentUseCase @Inject constructor(
     private val parentRepository: ParentRepository,
@@ -17,6 +18,7 @@ class LogoutParentUseCase @Inject constructor(
     suspend operator fun invoke() {
         runCatching {
             firebaseParentTokenProvider.getIdTokenOrNull()?.let { token ->
+                parentRepository.deleteParentFcmToken(token)
                 parentRepository.parentLogout(token)
             }
         }

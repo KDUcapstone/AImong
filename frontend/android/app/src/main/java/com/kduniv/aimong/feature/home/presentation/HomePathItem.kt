@@ -6,7 +6,7 @@ import androidx.annotation.DrawableRes
 data class HomeQuizNavigation(
     val entrySetId: String = "",
     val missionId: String = "",
-    val starLevel: Int = -1
+    val starLevel: Int = -1,
 ) {
     fun canNavigate(): Boolean =
         entrySetId.isNotBlank() || (missionId.isNotBlank() && starLevel in 1..3)
@@ -16,7 +16,7 @@ data class HomeQuizNavigation(
 sealed class HomePathItem {
     data class SectionHeader(
         val stage: Int,
-        val islandEmoji: String,
+        @DrawableRes val islandIconRes: Int,
         val islandName: String,
         val progressCompleted: Int,
         val progressTotal: Int,
@@ -29,7 +29,6 @@ sealed class HomePathItem {
         val title: String,
         val missionId: String,
         val quizNav: HomeQuizNavigation,
-        val icon: String = "⭐",
         val starsFilled: Int = 0,
     ) : HomePathItem()
 
@@ -43,16 +42,14 @@ sealed class HomePathItem {
         /** 추천 세트가 복습 전용일 때 에너지 검증 생략 */
         val skipEnergyCheck: Boolean = false,
         val unlockMode: DifficultyUnlockMode = DifficultyUnlockMode.NEW_PLAY,
-        val icon: String = "🌟",
         val starsFilled: Int = 0,
     ) : HomePathItem()
 
-    /** 일반 미션 시작 노드(오늘 추천이 아닌 경우) — C안: Start 스타일로 통일 */
+    /** 일반 미션 시작 노드(오늘 추천이 아닌 경우) */
     data class Start(
         val quizNav: HomeQuizNavigation,
         val missionTitle: String,
         val enabled: Boolean,
-        val icon: String = "▶",
         val starsFilled: Int = 0,
     ) : HomePathItem()
 

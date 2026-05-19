@@ -31,7 +31,7 @@ class ChildMyProfileBadgeAdapter :
 
         fun bind(item: ChildMyBadgeUi) {
             val ctx = binding.root.context
-            binding.tvBadgeEmoji.text = item.emoji
+            binding.ivBadgeIcon.setImageResource(item.iconRes)
             binding.tvBadgeLabel.text = item.label
             val bgRes = if (item.isUnlocked) {
                 R.drawable.bg_child_my_badge_unlocked
@@ -45,7 +45,7 @@ class ChildMyProfileBadgeAdapter :
                 R.color.child_quest_sheet_text_secondary
             }
             binding.tvBadgeLabel.setTextColor(ContextCompat.getColor(ctx, labelColor))
-            binding.tvBadgeEmoji.alpha = if (item.isUnlocked) 1f else 0.45f
+            binding.ivBadgeIcon.alpha = if (item.isUnlocked) 1f else 0.45f
         }
     }
 

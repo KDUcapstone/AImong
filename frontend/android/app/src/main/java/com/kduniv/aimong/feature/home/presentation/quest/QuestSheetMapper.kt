@@ -22,6 +22,7 @@ object QuestSheetMapper {
                 append(dto.reward)
             }
         }
+        // MISSION_*: 일반 모드 setId 통과 수 기준(복습 제외) — BE 집계
         val missionLike = dto.questType.contains("MISSION", ignoreCase = true)
         val chatLike = dto.questType.contains("CHAT", ignoreCase = true)
 

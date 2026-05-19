@@ -41,6 +41,16 @@ fun List<MissionStarLevel>.completedDifficultyCount(): Int =
 
 fun Mission.completedDifficultyCount(): Int = starLevels.completedDifficultyCount()
 
+/** v2.11: 스테이지 해금·섬 진행률은 별 1(쉬움) 세트 완료 기준 */
+fun Mission.star1Level(): MissionStarLevel? =
+    starLevels.firstOrNull { it.starLevel == 1 }
+
+fun Mission.isStar1Completed(): Boolean =
+    star1Level()?.isCompleted == true
+
+fun Mission.hasActiveStar1(): Boolean =
+    star1Level()?.totalSetCount?.let { it > 0 } == true
+
 /** API title에 붙은 missionCode·S1-M10 등 접미사 제거 */
 fun Mission.displayTitle(): String = title.toDisplayMissionTitle(missionCode)
 

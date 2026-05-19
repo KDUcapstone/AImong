@@ -38,8 +38,16 @@ class GachaPetAdapter(
 
             binding.cardPet.strokeColor = strokeColor
             binding.viewLockedOverlay.isVisible = item.isLocked
-            binding.tvLocked.isVisible = item.isLocked
-            binding.tvPetEmoji.text = item.emoji
+            binding.ivLocked.isVisible = item.isLocked
+            val artStage = item.pet?.stage ?: "EGG"
+            PetArtAssets.bindSprite(
+                image = binding.ivPetSprite,
+                emojiFallback = binding.tvPetEmoji,
+                petType = item.catalogPetType,
+                stage = artStage,
+                emoji = item.emoji,
+            )
+            binding.ivPetSprite.alpha = if (item.isLocked) 0.35f else 1f
             binding.tvPetEmoji.alpha = if (item.isLocked) 0.35f else 1f
             binding.tvPetName.text = item.displayName
             binding.tvPetName.setTextColor(
@@ -53,23 +61,14 @@ class GachaPetAdapter(
 
             val threshold = item.fragmentThreshold.coerceAtLeast(1)
             val count = item.fragmentCount.coerceAtLeast(0)
-            val progress = if (item.isLocked) {
-                0
-            } else {
-                ((count.toFloat() / threshold) * 100f).toInt().coerceIn(0, 100)
-            }
+            val progress = ((count.toFloat() / threshold) * 100f).toInt().coerceIn(0, 100)
             binding.pbFragments.progress = progress
-            binding.pbFragments.alpha = if (item.isLocked) 0.4f else 1f
-            binding.tvFragmentCount.text = if (item.isLocked) {
-                ctx.getString(R.string.gacha_fragment_locked_fmt, threshold)
-            } else {
+            binding.pbFragments.alpha = if (item.isLocked) 0.55f else 1f
+            binding.tvFragmentCount.text =
                 ctx.getString(R.string.gacha_fragment_progress_fmt, count, threshold)
-            }
 
-            binding.root.setOnClickListener {
-                if (!item.isLocked) onPetClick(item)
-            }
-            binding.root.isClickable = !item.isLocked
+            binding.root.setOnClickListener { onPetClick(item) }
+            binding.root.isClickable = true
         }
     }
 

@@ -9,12 +9,26 @@
     android:paddingTop="20dp"
     android:paddingBottom="28dp">
 
-    <TextView
-        android:id="@+id/tv_pet_emoji"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textSize="48sp"
-        tools:text="✨" />
+    <FrameLayout
+        android:layout_width="96dp"
+        android:layout_height="96dp">
+
+        <ImageView
+            android:id="@+id/iv_pet_sprite"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:contentDescription="@null"
+            android:scaleType="fitCenter"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/tv_pet_emoji"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:textSize="48sp"
+            tools:text="✨" />
+    </FrameLayout>
 
     <TextView
         android:id="@+id/tv_pet_name"

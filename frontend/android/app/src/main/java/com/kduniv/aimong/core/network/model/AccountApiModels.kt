@@ -62,6 +62,11 @@ data class ParentWithdrawData(
     @SerializedName("withdrawn") val withdrawn: Boolean = true
 )
 
+/**
+ * GET/PATCH /notification/settings.
+ * FCM gating(v2.1): [privacyAlertEnabled], [studyReminderEnabled]만 발송 제어에 사용.
+ * 가챠 레벨업 FCM은 별도 플래그 없이 부모 FCM 토큰 존재 여부만 확인.
+ */
 data class NotificationSettingsData(
     @SerializedName("privacyAlertEnabled") val privacyAlertEnabled: Boolean = true,
     @SerializedName("studyReminderEnabled") val studyReminderEnabled: Boolean = true,

@@ -11,6 +11,7 @@ import com.kduniv.aimong.databinding.ViewHomePathNodeCompletedBinding
 import com.kduniv.aimong.databinding.ViewHomePathNodeLockedBinding
 import com.kduniv.aimong.databinding.ViewHomePathNodeReviewBinding
 import com.kduniv.aimong.databinding.ViewHomePathNodeStartBinding
+import com.kduniv.aimong.feature.gacha.PetArtAssets
 import androidx.core.content.ContextCompat
 import kotlin.math.sin
 
@@ -39,14 +40,14 @@ class HomeLayoutBinder(
             tvChipTicket.text = state.topTicketCount.toString()
             tvChipStreak.text = root.context.getString(R.string.home_chip_streak_fmt, state.streakDays)
 
-            tvFloatPetEmoji.text = when (state.petStage) {
-                "EGG" -> "🥚"
-                "GROWTH" -> "🐣"
-                else -> "✨"
-            }
-            lottiePetHome.cancelAnimation()
-            lottiePetHome.isVisible = false
-            tvFloatPetEmoji.isVisible = true
+            PetArtAssets.bindEquipped(
+                image = ivFloatPetSprite,
+                emojiFallback = tvFloatPetEmoji,
+                petType = state.equippedPetType,
+                stage = state.petStage,
+                grade = state.equippedPetGrade,
+                lottie = lottiePetHome,
+            )
             val pendingQuests = state.quests.count { !it.isCompleted }
             tvQuestBadge.isVisible = pendingQuests > 0
             if (pendingQuests > 0) {
@@ -87,7 +88,7 @@ class HomeLayoutBinder(
     }
 
     private fun applyFloatingSection(section: HomePathItem.SectionHeader) {
-        binding.tvFloatingIslandEmoji.text = section.islandEmoji
+        binding.ivFloatingIslandIcon.setImageResource(section.islandIconRes)
         binding.tvFloatingSectionTitle.text = section.islandName
         binding.tvFloatingSectionSubtitle.text = binding.root.context.getString(
             R.string.home_island_progress_fmt,
@@ -145,8 +146,9 @@ class HomeLayoutBinder(
                 is HomePathItem.Completed -> {
                     val row = ViewHomePathNodeCompletedBinding.inflate(inflater, binding.layoutMissionPath, false)
                     row.root.translationX = translation
-                    row.btnNode.text = item.icon
-                    row.tvStars.text = starLine(item.starsFilled)
+                    row.btnNode.root.setBackgroundResource(R.drawable.bg_mission_node_circle)
+                    MissionPathUiHelper.bindNodeIcon(row.btnNode.root, MissionPathUiHelper.ICON_PLAY)
+                    MissionPathUiHelper.bindStarRow(row.layoutStars, item.starsFilled)
                     row.tvMissionCaption.text = item.title
                     val go = {
                         if (item.quizNav.entrySetId.isNotBlank() || item.quizNav.missionId.isNotBlank()) {
@@ -158,9 +160,9 @@ class HomeLayoutBinder(
                             )
                         }
                     }
-                    row.btnNode.setOnClickListener { go() }
+                    row.btnNode.root.setOnClickListener { go() }
                     row.tvMissionCaption.setOnClickListener { go() }
-                    row.btnNode.setOnScaleTouchListener()
+                    row.btnNode.root.setOnScaleTouchListener()
                     row.root.setTag(R.id.home_path_section_tag, sectionForRow)
                     binding.layoutMissionPath.addView(row.root, rowLp)
                     nodeIndex++
@@ -168,9 +170,10 @@ class HomeLayoutBinder(
                 is HomePathItem.TodayStart -> {
                     val row = ViewHomePathNodeStartBinding.inflate(inflater, binding.layoutMissionPath, false)
                     row.root.translationX = translation
-                    row.btnNode.text = item.icon
-                    row.btnNode.alpha = if (item.enabled) 1f else 0.55f
-                    row.tvStars.text = starLine(item.starsFilled)
+                    row.btnNode.root.setBackgroundResource(R.drawable.bg_mission_node_start)
+                    MissionPathUiHelper.bindNodeIcon(row.btnNode.root, MissionPathUiHelper.ICON_PLAY)
+                    row.btnNode.root.alpha = if (item.enabled) 1f else 0.55f
+                    MissionPathUiHelper.bindStarRow(row.layoutStars, item.starsFilled)
                     row.tvMissionCaption.text = item.missionTitle
                     val go = {
                         if (!item.enabled) {
@@ -194,20 +197,21 @@ class HomeLayoutBinder(
                             )
                         }
                     }
-                    row.btnNode.setOnClickListener { go() }
+                    row.btnNode.root.setOnClickListener { go() }
                     row.tvMissionCaption.setOnClickListener { go() }
-                    row.btnNode.setOnScaleTouchListener()
+                    row.btnNode.root.setOnScaleTouchListener()
                     row.root.setTag(R.id.home_path_section_tag, sectionForRow)
                     binding.layoutMissionPath.addView(row.root, rowLp)
                     nodeIndex++
                 }
                 is HomePathItem.Start -> {
                     val row = ViewHomePathNodeStartBinding.inflate(inflater, binding.layoutMissionPath, false)
-                    row.btnNode.translationX = translation
-                    row.btnNode.text = item.icon
-                    row.btnNode.alpha = if (item.enabled) 1f else 0.5f
+                    row.root.translationX = translation
+                    row.btnNode.root.setBackgroundResource(R.drawable.bg_mission_node_start)
+                    MissionPathUiHelper.bindNodeIcon(row.btnNode.root, MissionPathUiHelper.ICON_PLAY)
+                    row.btnNode.root.alpha = if (item.enabled) 1f else 0.5f
                     row.tvMissionCaption.text = item.missionTitle
-                    row.tvStars.text = starLine(item.starsFilled)
+                    MissionPathUiHelper.bindStarRow(row.layoutStars, item.starsFilled)
                     val go = {
                         if (!item.enabled) {
                             onShowMissionHint(binding.root.context.getString(R.string.home_today_mission_locked_hint))
@@ -220,9 +224,9 @@ class HomeLayoutBinder(
                             )
                         }
                     }
-                    row.btnNode.setOnClickListener { go() }
+                    row.btnNode.root.setOnClickListener { go() }
                     row.tvMissionCaption.setOnClickListener { go() }
-                    row.btnNode.setOnScaleTouchListener()
+                    row.btnNode.root.setOnScaleTouchListener()
                     row.root.setTag(R.id.home_path_section_tag, sectionForRow)
                     binding.layoutMissionPath.addView(row.root, rowLp)
                     nodeIndex++
@@ -230,7 +234,9 @@ class HomeLayoutBinder(
                 is HomePathItem.Review -> {
                     val row = ViewHomePathNodeReviewBinding.inflate(inflater, binding.layoutMissionPath, false)
                     row.root.translationX = translation
-                    row.tvStars.text = starLine(item.starsFilled)
+                    row.btnNode.root.setBackgroundResource(R.drawable.bg_mission_node_circle)
+                    MissionPathUiHelper.bindNodeIcon(row.btnNode.root, MissionPathUiHelper.ICON_REPLAY)
+                    MissionPathUiHelper.bindStarRow(row.layoutStars, item.starsFilled)
                     row.tvMissionCaption.text = item.subtitle
                     val go = {
                         if (item.quizNav.entrySetId.isNotBlank() || item.quizNav.missionId.isNotBlank()) {
@@ -242,9 +248,9 @@ class HomeLayoutBinder(
                             )
                         }
                     }
-                    row.btnNode.setOnClickListener { go() }
+                    row.btnNode.root.setOnClickListener { go() }
                     row.tvMissionCaption.setOnClickListener { go() }
-                    row.btnNode.setOnScaleTouchListener()
+                    row.btnNode.root.setOnScaleTouchListener()
                     row.root.setTag(R.id.home_path_section_tag, sectionForRow)
                     binding.layoutMissionPath.addView(row.root, rowLp)
                     nodeIndex++
@@ -252,22 +258,19 @@ class HomeLayoutBinder(
                 is HomePathItem.Locked -> {
                     val row = ViewHomePathNodeLockedBinding.inflate(inflater, binding.layoutMissionPath, false)
                     row.root.translationX = translation
+                    row.btnNode.root.setBackgroundResource(R.drawable.bg_mission_node_locked)
+                    val lockTint = ContextCompat.getColor(binding.root.context, R.color.child_quest_sheet_text_secondary)
+                    MissionPathUiHelper.bindNodeIcon(row.btnNode.root, MissionPathUiHelper.ICON_LOCK, lockTint)
                     row.tvMissionCaption.text = item.hint
-                    row.btnNode.setOnClickListener { onShowMissionHint(item.hint) }
+                    row.btnNode.root.setOnClickListener { onShowMissionHint(item.hint) }
                     row.tvMissionCaption.setOnClickListener { onShowMissionHint(item.hint) }
-                    row.btnNode.setOnScaleTouchListener()
+                    row.btnNode.root.setOnScaleTouchListener()
                     row.root.setTag(R.id.home_path_section_tag, sectionForRow)
                     binding.layoutMissionPath.addView(row.root, rowLp)
                     nodeIndex++
                 }
                 else -> Unit
             }
-        }
-    }
-
-    private fun starLine(filled: Int): String = buildString {
-        repeat(3) { i ->
-            append(if (i < filled) '★' else '☆')
         }
     }
 

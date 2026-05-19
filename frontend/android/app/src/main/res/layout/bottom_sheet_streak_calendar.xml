@@ -60,16 +60,40 @@
                 android:textStyle="bold" />
         </LinearLayout>
 
-        <com.airbnb.lottie.LottieAnimationView
-            android:id="@+id/lav_streak_pet"
+        <FrameLayout
+            android:id="@+id/fl_streak_pet"
             android:layout_width="112dp"
             android:layout_height="112dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:lottie_autoPlay="true"
-            app:lottie_loop="true"
-            app:lottie_rawRes="@raw/pet_idle" />
+            app:layout_constraintTop_toTopOf="parent">
+
+            <com.airbnb.lottie.LottieAnimationView
+                android:id="@+id/lav_streak_pet"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:visibility="gone"
+                app:lottie_autoPlay="true"
+                app:lottie_loop="true"
+                app:lottie_rawRes="@raw/pet_idle" />
+
+            <ImageView
+                android:id="@+id/iv_streak_pet_sprite"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:contentDescription="@null"
+                android:scaleType="fitCenter"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/tv_streak_pet_emoji"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:textSize="52sp"
+                android:visibility="gone"
+                tools:text="✨" />
+        </FrameLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <LinearLayout

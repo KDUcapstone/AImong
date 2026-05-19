@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.kduniv.aimong.R
 import com.kduniv.aimong.core.dev.UiMode
 import com.kduniv.aimong.feature.dev.mock.StubPetGachaStore
+import com.kduniv.aimong.feature.gacha.data.GachaPullCountStore
 import com.kduniv.aimong.feature.gacha.data.GachaRepository
 import com.kduniv.aimong.feature.gacha.data.model.FragmentGradeRow
 import com.kduniv.aimong.feature.gacha.data.model.GachaPullData
@@ -23,13 +24,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.util.Locale
 import javax.inject.Inject
 
 @HiltViewModel
 class GachaViewModel @Inject constructor(
     private val petRepository: PetRepository,
     private val gachaRepository: GachaRepository,
+    private val gachaPullCountStore: GachaPullCountStore,
     private val getHomeStatusUseCase: GetHomeStatusUseCase,
     private val homeRefreshBus: ChildHomeRefreshBus,
     @ApplicationContext private val appContext: Context
@@ -42,19 +43,19 @@ class GachaViewModel @Inject constructor(
         val petCards: List<GachaPetCardUi> = emptyList(),
         val fragmentRows: List<FragmentGradeRow> = emptyList(),
         val ownedCatalogCount: Int = 0,
-        val pullSummary: String? = null,
+        val pullReveal: GachaPullRevealUi? = null,
         val tickets: RemainingTicketsDto? = null,
-        val selectedTicket: String = "NORMAL",
-        val transientMessage: String? = null
+        val gachaPullCount: Int = 0,
+        val transientMessage: String? = null,
     ) {
-        val hasAnyTicket: Boolean
-            get() = tickets?.let { it.normal > 0 || it.rare > 0 || it.epic > 0 } == true
+        val normalTicketCount: Int
+            get() = tickets?.normal ?: 0
 
-        fun ticketCount(type: String): Int = when (type.uppercase(Locale.US)) {
-            "RARE" -> tickets?.rare ?: 0
-            "EPIC" -> tickets?.epic ?: 0
-            else -> tickets?.normal ?: 0
-        }
+        val hasAnyTicket: Boolean
+            get() = normalTicketCount > 0
+
+        val gachaLevel: Int
+            get() = GachaProbabilityTable.levelFromPullCount(gachaPullCount)
     }
 
     private val _state = MutableStateFlow(UiState())
@@ -68,12 +69,8 @@ class GachaViewModel @Inject constructor(
         _state.update { it.copy(transientMessage = null) }
     }
 
-    fun consumePullSummary() {
-        _state.update { it.copy(pullSummary = null) }
-    }
-
-    fun setTicketType(type: String) {
-        _state.update { it.copy(selectedTicket = type) }
+    fun consumePullReveal() {
+        _state.update { it.copy(pullReveal = null) }
     }
 
     /** 홈·퀘스트 보상 후 수집 탭 티켓 칩만 GET /home 으로 맞춤 */
@@ -97,6 +94,7 @@ class GachaViewModel @Inject constructor(
             val tickets = loadTickets().onFailure {
                 if (err == null) err = it.message
             }.getOrNull()
+            val pullCount = gachaPullCountStore.getPullCount()
             _state.update {
                 val lists = buildPetLists(petData, rows)
                 it.copy(
@@ -107,7 +105,8 @@ class GachaViewModel @Inject constructor(
                     fragmentRows = rows,
                     ownedCatalogCount = lists.ownedCount,
                     tickets = tickets ?: it.tickets,
-                    transientMessage = err
+                    gachaPullCount = pullCount,
+                    transientMessage = err,
                 )
             }
         }
@@ -115,15 +114,14 @@ class GachaViewModel @Inject constructor(
 
     fun pull() {
         viewModelScope.launch {
-            val ticket = _state.value.selectedTicket
-            if (_state.value.ticketCount(ticket) <= 0) {
+            if (_state.value.normalTicketCount <= 0) {
                 _state.update {
                     it.copy(transientMessage = appContext.getString(R.string.gacha_ticket_insufficient))
                 }
                 return@launch
             }
             _state.update { it.copy(loading = true, transientMessage = null) }
-            gachaRepository.pull(ticket).fold(
+            gachaRepository.pull().fold(
                 onSuccess = { data -> applyPullSuccess(data) },
                 onFailure = { e ->
                     _state.update { it.copy(loading = false, transientMessage = e.message) }
@@ -164,7 +162,7 @@ class GachaViewModel @Inject constructor(
     fun exchange(grade: String, petType: String) {
         viewModelScope.launch {
             _state.update { it.copy(loading = true, transientMessage = null) }
-            gachaRepository.exchange(grade.uppercase(Locale.US), petType.trim()).fold(
+            gachaRepository.exchange(grade.uppercase(), petType.trim()).fold(
                 onSuccess = {
                     var err: String? = null
                     val petData = petRepository.getPets().onFailure { err = it.message }.getOrNull()
@@ -196,17 +194,14 @@ class GachaViewModel @Inject constructor(
     }
 
     private suspend fun applyPullSuccess(data: GachaPullData) {
+        gachaPullCountStore.incrementPullCount()
+        val pullCount = gachaPullCountStore.getPullCount()
         var err: String? = null
         val petData = petRepository.getPets().onFailure { err = it.message }.getOrNull()
         val fragData = gachaRepository.getFragments().onFailure {
             if (err == null) err = it.message
         }.getOrNull()
         val rows = fragData?.fragments.orEmpty()
-        val levelMsg = if (data.levelUp) {
-            appContext.getString(R.string.gacha_level_up)
-        } else {
-            null
-        }
         _state.update {
             val lists = buildPetLists(petData, rows)
             it.copy(
@@ -216,9 +211,10 @@ class GachaViewModel @Inject constructor(
                 petCards = lists.encyclopedia,
                 fragmentRows = rows,
                 ownedCatalogCount = lists.ownedCount,
-                pullSummary = formatPullSummary(data),
+                pullReveal = buildPullReveal(data),
                 tickets = data.remainingTickets,
-                transientMessage = err ?: levelMsg
+                gachaPullCount = pullCount,
+                transientMessage = err,
             )
         }
         if (!UiMode.useStubNav) {
@@ -226,16 +222,26 @@ class GachaViewModel @Inject constructor(
         }
     }
 
+    private fun buildPullReveal(data: GachaPullData): GachaPullRevealUi {
+        val r = data.result
+        return GachaPullRevealUi(
+            displayName = GachaUiMapper.resolvePetDisplayName(r.petType, r.petName, r.grade),
+            petType = r.petType,
+            grade = r.grade,
+            emoji = GachaPetCatalog.emojiFor(r.petType, r.grade),
+            isNew = r.isNew,
+            fragmentsGot = r.fragmentsGot,
+            levelUp = data.levelUp,
+            remainingTickets = data.remainingTickets.normal,
+        )
+    }
+
     private suspend fun loadTickets(): Result<RemainingTicketsDto> {
         if (UiMode.useStubNav) {
             return Result.success(StubPetGachaStore.currentTickets())
         }
         return getHomeStatusUseCase().map { home ->
-            RemainingTicketsDto(
-                normal = home.tickets.normal,
-                rare = home.tickets.rare,
-                epic = home.tickets.epic,
-            )
+            RemainingTicketsDto(normal = home.tickets.normal)
         }
     }
 
@@ -327,24 +333,4 @@ class GachaViewModel @Inject constructor(
             }
     }
 
-    private fun formatPullSummary(data: GachaPullData): String {
-        val r = data.result
-        val t = data.remainingTickets
-        return appContext.getString(
-            R.string.gacha_pull_summary_fmt,
-            r.petName?.takeIf { it.isNotBlank() } ?: r.petType,
-            r.petType,
-            r.grade,
-            if (r.isNew) appContext.getString(R.string.gacha_new_yes) else appContext.getString(R.string.gacha_new_no),
-            r.fragmentsGot,
-            data.srMissCount,
-            data.srBonus,
-            if (data.levelUp) {
-                appContext.getString(R.string.gacha_level_up_yes)
-            } else {
-                appContext.getString(R.string.gacha_level_up_no)
-            },
-            appContext.getString(R.string.gacha_tickets_fmt, t.normal, t.rare, t.epic)
-        )
-    }
 }

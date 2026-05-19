@@ -10,6 +10,7 @@ import com.kduniv.aimong.feature.quest.data.model.QuestClaimResponseData
 import com.kduniv.aimong.feature.quest.data.model.QuestRemainingTicketsDto
 import com.kduniv.aimong.feature.quest.data.model.QuestRewardItemDto
 import com.kduniv.aimong.feature.quest.data.model.WeeklyQuestsResponseData
+import com.kduniv.aimong.feature.quest.domain.QuestPolicy
 import com.kduniv.aimong.feature.quest.domain.repository.QuestRepository
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -17,7 +18,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * [UiMode.useStubNav] 전용 — 네트워크 없이 퀘스트 시트·도전과제 UI가 동작하도록 고정 데이터를 돌려준다.
+ * [UiMode.useStubNav] 전용 — GET/POST quests·achievements 목업 (단일 기본 티켓).
  */
 @Singleton
 class QuestRepositoryStub @Inject constructor() : QuestRepository {
@@ -27,13 +28,36 @@ class QuestRepositoryStub @Inject constructor() : QuestRepository {
         return Result.success(
             DailyQuestsResponseData(
                 date = today,
-                todayXp = 120,
+                todayXp = 10,
                 quests = listOf(
-                    sampleQuest("DAILY_MISSION", "오늘 미션 1회", "AUTO", current = 0, required = 1),
-                    sampleQuest("DAILY_CHAT", "챗봇과 대화하기", "AUTO", current = 1, required = 1, completed = true),
-                    sampleQuest("DAILY_XP", "XP 50 모으기", "AUTO", current = 35, required = 50)
-                )
-            )
+                    sampleQuest(
+                        "MISSION_1",
+                        "미션 1개 완료하기",
+                        "자동 적용(별도 수령 없음)",
+                        "AUTO",
+                        current = 1,
+                        required = 1,
+                        completed = true,
+                        rewardClaimed = true,
+                    ),
+                    sampleQuest(
+                        "XP_20",
+                        "오늘 XP 20 획득하기",
+                        "기본 티켓 1장",
+                        "MANUAL",
+                        current = 10,
+                        required = 20,
+                    ),
+                    sampleQuest(
+                        "ALL_3",
+                        "데일리 3개 모두 완료",
+                        "기본 티켓 1장",
+                        "MANUAL",
+                        current = 1,
+                        required = 3,
+                    ),
+                ),
+            ),
         )
     }
 
@@ -42,23 +66,53 @@ class QuestRepositoryStub @Inject constructor() : QuestRepository {
         return Result.success(
             WeeklyQuestsResponseData(
                 weekStart = monday,
-                weeklyXp = 340,
+                weeklyXp = 30,
                 quests = listOf(
-                    sampleQuest("WEEKLY_MISSION", "이번 주 미션 5회", "AUTO", current = 2, required = 5),
-                    sampleQuest("WEEKLY_XP", "주간 XP 200", "AUTO", current = 200, required = 200, completed = true)
-                )
-            )
+                    sampleQuest(
+                        "XP_100",
+                        "이번 주 XP 100 획득하기",
+                        "기본 티켓 2장",
+                        "MANUAL",
+                        current = 30,
+                        required = 100,
+                    ),
+                    sampleQuest(
+                        "MISSION_5",
+                        "미션 5개 완료하기",
+                        "기본 티켓 2장",
+                        "MANUAL",
+                        current = 3,
+                        required = 5,
+                    ),
+                    sampleQuest(
+                        "CHAT_3",
+                        "GPT 챗봇 3번 사용하기",
+                        "기본 티켓 1장",
+                        "MANUAL",
+                        current = 1,
+                        required = 3,
+                    ),
+                ),
+            ),
         )
     }
 
     override suspend fun claimQuest(questType: String, period: String): Result<QuestClaimResponseData> {
+        if (QuestPolicy.isAutoClaimQuest(questType)) {
+            return Result.failure(Exception("자동 지급 퀘스트는 수령 API를 호출할 수 없어요"))
+        }
         return Result.success(
             QuestClaimResponseData(
                 rewards = listOf(
-                    QuestRewardItemDto(type = "EXP", ticketType = null, count = 30, reason = "MOCK_CLAIM")
+                    QuestRewardItemDto(
+                        type = "TICKET",
+                        ticketType = "NORMAL",
+                        count = 1,
+                        reason = "MOCK_QUEST_$questType",
+                    ),
                 ),
-                remainingTickets = QuestRemainingTicketsDto(normal = 3, rare = 1, epic = 0)
-            )
+                remainingTickets = QuestRemainingTicketsDto(normal = 3),
+            ),
         )
     }
 
@@ -67,39 +121,40 @@ class QuestRepositoryStub @Inject constructor() : QuestRepository {
             AchievementsResponseData(
                 achievements = listOf(
                     AchievementItemDto(
-                        achievementType = "FIRST_CLEAR",
-                        label = "첫 미션 클리어",
+                        achievementType = "MISSION_10",
+                        label = "미션 10개 완료",
                         isCompleted = true,
-                        completedAt = "2026-01-01T00:00:00Z",
-                        progress = null
+                        completedAt = "2026-03-25",
+                        progress = AchievementProgressDto(current = 10, required = 10),
                     ),
                     AchievementItemDto(
-                        achievementType = "STREAK_7",
-                        label = "7일 연속 학습",
+                        achievementType = "XP_500",
+                        label = "XP 500 달성",
                         isCompleted = false,
                         completedAt = null,
-                        progress = AchievementProgressDto(current = 3, required = 7)
-                    )
-                )
-            )
+                        progress = AchievementProgressDto(current = 240, required = 500),
+                    ),
+                ),
+            ),
         )
     }
 
     private fun sampleQuest(
         questType: String,
         label: String,
+        reward: String,
         claimType: String,
         current: Int,
         required: Int,
         completed: Boolean = false,
-        rewardClaimed: Boolean = false
+        rewardClaimed: Boolean = false,
     ) = QuestApiItemDto(
         questType = questType,
         label = label,
-        reward = "XP",
+        reward = reward,
         claimType = claimType,
         completed = completed,
         rewardClaimed = rewardClaimed,
-        progress = QuestApiProgressDto(current = current, required = required)
+        progress = QuestApiProgressDto(current = current, required = required),
     )
 }

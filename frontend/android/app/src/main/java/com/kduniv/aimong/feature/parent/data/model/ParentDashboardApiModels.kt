@@ -29,26 +29,6 @@ data class ParentDailyStatDto(
     @SerializedName("xpEarned") val xpEarned: Int = 0
 )
 
-data class ParentPrivacyLogResponseData(
-    @SerializedName("page") val page: Int = 0,
-    @SerializedName("size") val size: Int = 20,
-    /** v1.5 페이징: `totalElements` 별칭 수용 */
-    @SerializedName(value = "totalCount", alternate = ["totalElements"])
-    val totalCount: Int = 0,
-    @SerializedName("totalPages") val totalPages: Int = 0,
-    @SerializedName("hasNext") val hasNext: Boolean = false,
-    @SerializedName("weeklyCount") val weeklyCount: Int = 0,
-    /** v1.5 페이징: `items` 별칭 수용 */
-    @SerializedName(value = "events", alternate = ["items"])
-    val events: List<ParentPrivacyEventDto> = emptyList()
-)
-
-data class ParentPrivacyEventDto(
-    @SerializedName("detectedType") val detectedType: String,
-    @SerializedName("masked") val masked: Boolean = false,
-    @SerializedName("detectedAt") val detectedAt: String
-)
-
 data class ParentWeakPointsResponseData(
     @SerializedName("page") val page: Int = 0,
     @SerializedName("size") val size: Int = 20,

@@ -9,7 +9,6 @@ import com.kduniv.aimong.feature.home.data.model.StreakCalendarData
 import com.kduniv.aimong.feature.home.data.model.ReturnRewardClaimResponseData
 import com.kduniv.aimong.feature.home.data.model.ReturnRewardCheckResponseData
 import com.kduniv.aimong.feature.mission.data.model.MissionsMapResponseData
-import com.kduniv.aimong.feature.parent.data.model.ParentPrivacyLogResponseData
 import com.kduniv.aimong.feature.parent.data.model.ParentWeakPointsResponseData
 import com.kduniv.aimong.feature.parent.data.model.ParentWeeklyStatsResponseData
 import com.kduniv.aimong.feature.parent.data.model.ParentChildSummaryResponseData
@@ -92,6 +91,12 @@ interface AimongApiService {
         @Header("Authorization") authorization: String,
         @Body body: ParentFcmTokenRequest
     ): ApiResponse<ParentFcmTokenResponse>
+
+    /** 부모 FCM 해제 — 로그아웃·기기 변경 시 (PARENT) */
+    @DELETE("parent/fcm-token")
+    suspend fun deleteParentFcmToken(
+        @Header("Authorization") authorization: String,
+    ): ApiResponse<DeletedFlagData>
 
     /** 부모 등록 자녀 목록 — Firebase ID 토큰 (PARENT) */
     @GET("parent/children")
@@ -318,14 +323,6 @@ interface AimongApiService {
         @Header("Authorization") authorization: String,
         @Path("childId") childId: String
     ): ApiResponse<ParentWeeklyStatsResponseData>
-
-    @GET("parent/child/{childId}/privacy-log")
-    suspend fun getParentChildPrivacyLog(
-        @Header("Authorization") authorization: String,
-        @Path("childId") childId: String,
-        @Query("page") page: Int? = null,
-        @Query("size") size: Int? = null
-    ): ApiResponse<ParentPrivacyLogResponseData>
 
     @GET("parent/child/{childId}/weak-points")
     suspend fun getParentChildWeakPoints(

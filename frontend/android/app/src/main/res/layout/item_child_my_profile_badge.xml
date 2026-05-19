@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -13,13 +14,15 @@
         android:layout_height="64dp"
         android:background="@drawable/bg_child_my_badge_unlocked">
 
-        <TextView
-            android:id="@+id/tv_badge_emoji"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+        <ImageView
+            android:id="@+id/iv_badge_icon"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
             android:layout_gravity="center"
-            android:textSize="28sp"
-            tools:text="🔥" />
+            android:contentDescription="@null"
+            android:scaleType="fitCenter"
+            app:tint="@color/child_nav_item_selected"
+            tools:src="@drawable/ic_flame" />
     </FrameLayout>
 
     <TextView

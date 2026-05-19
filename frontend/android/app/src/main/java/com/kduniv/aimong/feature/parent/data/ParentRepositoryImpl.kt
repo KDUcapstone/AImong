@@ -16,7 +16,6 @@ import com.kduniv.aimong.core.network.model.ParentRegisterRequest
 import com.kduniv.aimong.core.network.model.ParentRegisterResponse
 import com.kduniv.aimong.core.network.model.PatchParentChildRequest
 import com.kduniv.aimong.feature.parent.data.model.ParentChildSummaryResponseData
-import com.kduniv.aimong.feature.parent.data.model.ParentPrivacyLogResponseData
 import com.kduniv.aimong.feature.parent.data.model.ParentWeakPointsResponseData
 import com.kduniv.aimong.feature.parent.data.model.ParentWeeklyStatsResponseData
 import kotlinx.coroutines.flow.Flow
@@ -152,18 +151,6 @@ class ParentRepositoryImpl @Inject constructor(
         Result.failure(e)
     }
 
-    override suspend fun getPrivacyLog(childId: String, page: Int, size: Int): Result<ParentPrivacyLogResponseData> =
-        try {
-            val idToken = requireParentIdToken()
-            apiService.getParentChildPrivacyLog("Bearer $idToken", childId, page = page, size = size).toResult()
-        } catch (e: HttpException) {
-            Result.failure(Exception(ApiErrorMapper.userMessageForHttpException(e)))
-        } catch (e: IOException) {
-            Result.failure(Exception("연결을 확인한 뒤 다시 시도해주세요."))
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-
     override suspend fun getWeakPoints(childId: String, page: Int, size: Int): Result<ParentWeakPointsResponseData> =
         try {
             val idToken = requireParentIdToken()
@@ -175,6 +162,19 @@ class ParentRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             Result.failure(e)
         }
+
+    override suspend fun deleteParentFcmToken(firebaseIdToken: String): Result<Unit> {
+        return try {
+            apiService.deleteParentFcmToken("Bearer ${firebaseIdToken.trim()}").toResult()
+            Result.success(Unit)
+        } catch (_: HttpException) {
+            Result.success(Unit)
+        } catch (_: IOException) {
+            Result.success(Unit)
+        } catch (_: Exception) {
+            Result.success(Unit)
+        }
+    }
 
     override suspend fun parentLogout(firebaseIdToken: String): Result<Unit> {
         return try {

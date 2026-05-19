@@ -7,6 +7,11 @@ import com.kduniv.aimong.feature.pet.data.model.PetDto
 
 object GachaUiMapper {
 
+    /** API `petName` 우선, 없으면 도감 표시명 */
+    fun resolvePetDisplayName(petType: String, petName: String?, grade: String): String =
+        petName?.trim()?.takeIf { it.isNotEmpty() }
+            ?: GachaPetCatalog.displayNameFor(petType, grade)
+
     fun displayName(pet: PetDto): String =
         GachaPetCatalog.displayNameFor(pet.petType, pet.grade)
 

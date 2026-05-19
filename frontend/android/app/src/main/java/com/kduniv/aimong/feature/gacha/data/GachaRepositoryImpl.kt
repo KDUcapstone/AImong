@@ -9,17 +9,18 @@ import com.kduniv.aimong.feature.gacha.data.model.GachaExchangeRequest
 import com.kduniv.aimong.feature.gacha.data.model.GachaFragmentsData
 import com.kduniv.aimong.feature.gacha.data.model.GachaPullData
 import com.kduniv.aimong.feature.gacha.data.model.GachaPullRequest
+import com.kduniv.aimong.feature.gacha.data.model.GachaTicketType
 import javax.inject.Inject
 
 class GachaRepositoryImpl @Inject constructor(
     private val apiService: AimongApiService
 ) : GachaRepository {
 
-    override suspend fun pull(ticketType: String): Result<GachaPullData> {
+    override suspend fun pull(): Result<GachaPullData> {
         if (UiMode.useStubNav) {
-            return StubPetGachaStore.pull(ticketType)
+            return StubPetGachaStore.pull()
         }
-        return runApi { apiService.gachaPull(GachaPullRequest(ticketType)) }
+        return runApi { apiService.gachaPull(GachaPullRequest(GachaTicketType.NORMAL)) }
     }
 
     override suspend fun getFragments(): Result<GachaFragmentsData> {

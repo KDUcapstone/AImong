@@ -13,4 +13,9 @@ data class GachaPetCardUi(
     val levelLabel: String,
     val fragmentCount: Int,
     val fragmentThreshold: Int,
-)
+) {
+    val canExchange: Boolean
+        get() = isLocked &&
+            fragmentThreshold > 0 &&
+            fragmentCount >= fragmentThreshold
+}

@@ -9,25 +9,19 @@
     android:orientation="vertical"
     android:paddingVertical="16dp">
 
-    <TextView
+    <include
         android:id="@+id/btn_node"
+        layout="@layout/include_mission_path_node_button"
         android:layout_width="84dp"
-        android:layout_height="84dp"
-        android:background="@drawable/bg_mission_node_start"
-        android:gravity="center"
-        android:text="▶"
-        android:textColor="@color/white"
-        android:textSize="32sp"
-        android:textStyle="bold" />
+        android:layout_height="84dp" />
 
-    <TextView
-        android:id="@+id/tv_stars"
+    <LinearLayout
+        android:id="@+id/layout_stars"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
-        android:textColor="#C4A000"
-        android:textSize="13sp"
-        tools:text="★★☆" />
+        android:gravity="center"
+        android:orientation="horizontal" />
 
     <TextView
         android:id="@+id/tv_mission_caption"

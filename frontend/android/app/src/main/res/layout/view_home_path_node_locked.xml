@@ -7,14 +7,9 @@
     android:orientation="vertical"
     android:paddingVertical="12dp">
 
-    <TextView
+    <include
         android:id="@+id/btn_node"
-        android:layout_width="68dp"
-        android:layout_height="68dp"
-        android:background="@drawable/bg_mission_node_locked"
-        android:gravity="center"
-        android:text="🔒"
-        android:textSize="26sp" />
+        layout="@layout/include_mission_path_node_button" />
 
     <TextView
         android:id="@+id/tv_mission_caption"

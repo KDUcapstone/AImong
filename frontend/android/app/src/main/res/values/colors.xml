@@ -70,4 +70,13 @@
     <color name="gacha_rarity_rare">#3B82F6</color>
     <color name="gacha_rarity_epic">#A855F7</color>
     <color name="gacha_rarity_legend">#EAB308</color>
+
+    <!-- 가챠 확률 다이얼로그 — 밝은 테마 + 따뜻한 나무 톤 -->
+    <color name="gacha_prob_frame">#92400E</color>
+    <color name="gacha_prob_header">#78350F</color>
+    <color name="gacha_prob_parchment">#FFFBEB</color>
+    <color name="gacha_prob_pill_text">#FFFFFF</color>
+    <color name="gacha_prob_trend_up">#16A34A</color>
+    <color name="gacha_prob_trend_down">#DC2626</color>
+    <color name="gacha_prob_nav_arrow">#F59E0B</color>
 </resources>

@@ -111,6 +111,8 @@
     <string name="quiz_attempt_recovered_banner">진행 중인 퀴즈를 복구했어요. 이미 답한 문항은 다시 선택할 수 없어요.</string>
     <string name="quiz_timer_recovered_label">진행 복구됨</string>
     <string name="quiz_btn_next">다음 문제 →</string>
+    <string name="quiz_loading_questions">문제를 불러오는 중…</string>
+    <string name="quiz_submitting_result">결과를 불러오는 중…</string>
     <string name="quiz_btn_view_result">결과 보기</string>
     <string name="quiz_btn_result_confirm">결과 확인하기</string>
     <string name="quiz_btn_finish_solution">결과로 돌아가기</string>
@@ -125,7 +127,12 @@
     <string name="quiz_bonus_review_xp">복습 · +%1$d EXP (50%%)</string>
     <string name="quiz_bonus_review_no_xp">복습 · EXP 없음</string>
     <string name="quiz_bonus_pet_grade">%1$s 등급 보너스 · +%2$d XP</string>
-    <string name="quiz_remaining_tickets_line">남은 티켓 · 일반 %1$d · 레어 %2$d · 에픽 %3$d</string>
+    <string name="quiz_remaining_tickets_fmt">남은 뽑기 티켓 %1$d장</string>
+    <string name="quiz_screen_title">AI 퀴즈</string>
+    <string name="quiz_streak_days_fmt">%1$d일 연속 스트릭 유지 중!</string>
+    <string name="evolution_success_title">진화 성공!</string>
+    <string name="mission_not_ready_body">아이몽이 새로운 문제들을\n열심히 고르고 있어요 몽!\n잠시 후 다시 시도해 주세요.</string>
+    <string name="quiz_result_score_fmt">점수 %1$d점</string>
 
     <!-- Question report -->
     <string name="quiz_report_question">문제 신고</string>
@@ -174,6 +181,7 @@
     <string name="auth_register_failed">등록에 실패했습니다. 잠시 후 다시 시도해 주세요.</string>
     <string name="auth_register_success_title_sheet">자녀 등록 완료!</string>
     <string name="auth_register_success_subtitle_sheet">아래 코드를 자녀에게 알려주세요</string>
+    <string name="auth_register_success_starter_tickets_fmt">뽑기 티켓 %1$d장이 지급되었어요</string>
     <string name="auth_child_login_code_label">자녀 로그인 코드</string>
     <string name="auth_register_success_message">닉네임: %1$s\n연결 코드: %2$s\n스타터 티켓: %3$d장</string>
     <string name="auth_confirm">확인</string>
@@ -198,10 +206,9 @@
     <string name="quest_action_go_chat">챗봇</string>
     <string name="quest_action_in_progress">진행 중</string>
     <string name="quest_reward_separator">, </string>
-    <string name="quest_reward_ticket_normal">일반 티켓 %1$d장</string>
-    <string name="quest_reward_ticket_rare">레어 티켓 %1$d장</string>
-    <string name="quest_reward_ticket_epic">에픽 티켓 %1$d장</string>
-    <string name="quest_reward_ticket_generic">티켓 %1$d장</string>
+    <string name="quest_reward_gacha_ticket">뽑기 티켓 %1$d장</string>
+    <string name="quest_reward_exp">XP %1$d</string>
+    <string name="quest_auto_no_claim">자동 지급 퀘스트는 수령할 수 없어요</string>
     <string name="quest_reward_generic">보상을 받았어요</string>
 
     <!-- Bottom nav -->
@@ -216,6 +223,7 @@
     <string name="chat_input_hint">메시지를 입력하세요</string>
     <string name="chat_input_hint_pet">궁금한 걸 물어보세요…</string>
     <string name="chat_send">전송</string>
+    <string name="chat_typing">답장을 준비하고 있어요…</string>
     <string name="chat_online">온라인</string>
     <string name="chat_privacy_banner">개인정보는 절대 말하지 마세요. 펫과 안전하게 대화해요!</string>
     <string name="chat_default_pet_name">에이몽</string>
@@ -256,13 +264,25 @@
     <string name="gacha_pull">✨ 뽑기</string>
     <string name="gacha_refresh">새로고침</string>
     <string name="gacha_tickets_unknown">티켓 수는 뽑기 후 표시돼요.</string>
-    <string name="gacha_tickets_fmt">티켓 · 일반 %1$d · 레어 %2$d · 에픽 %3$d</string>
+    <string name="gacha_tickets_remaining_fmt">남은 티켓 %1$d장</string>
     <string name="gacha_fragments_title">조각</string>
     <string name="gacha_exchange_title">조각 교환 (신규 펫)</string>
     <string name="gacha_exchange_grade_hint">등급 (NORMAL/RARE/EPIC/LEGEND)</string>
     <string name="gacha_exchange_pet_type_hint">petType (예: pet_normal_005)</string>
     <string name="gacha_exchange_button">교환하기</string>
     <string name="gacha_exchange_done">교환으로 새 펫을 받았어요.</string>
+    <string name="gacha_fragment_exchange_label">조각 모으기</string>
+    <string name="gacha_exchange_manual_hint">조각이 충분해도 자동으로 획득되지 않아요. 아래 「교환하기」를 눌러야 펫을 받을 수 있어요.</string>
+    <string name="gacha_exchange_need_more_fmt">조각이 %1$d개 더 필요해요 (%2$d / %3$d)</string>
+    <string name="gacha_close">닫기</string>
+    <string name="gacha_pull_reveal_title_new">새로운 친구를 만났어요!</string>
+    <string name="gacha_pull_reveal_title_duplicate">이미 있는 친구예요</string>
+    <string name="gacha_pull_reveal_badge_new">신규 획득!</string>
+    <string name="gacha_pull_reveal_badge_fragments_fmt">조각 +%1$d</string>
+    <string name="gacha_pull_reveal_badge_level_up">가챠 레벨 업!</string>
+    <string name="gacha_pull_reveal_detail_fmt">%1$s · 남은 티켓 %2$d장</string>
+    <string name="gacha_pull_reveal_detail_level_up">티켓 2장 · 쉴드 보상이 추가됐어요</string>
+    <string name="gacha_pull_reveal_confirm">확인</string>
     <string name="gacha_owned_pets">보유 펫</string>
     <string name="gacha_equip">장착</string>
     <string name="gacha_equipped_label">장착됨</string>
@@ -270,6 +290,13 @@
     <string name="gacha_probabilities">뽑기 확률</string>
     <string name="gacha_probabilities_title">뽑기 확률</string>
     <string name="gacha_probabilities_body" formatted="false">Lv.1 (0~19)\n일반 75% · 레어 21% · 영웅 3.5% · 전설 0.5%\n\nLv.2 (20~49)\n일반 66% · 레어 24% · 영웅 7.5% · 전설 2.5%\n\nLv.3 (50~99)\n일반 56% · 레어 27% · 영웅 13% · 전설 4%\n\nLv.4 (100+)\n일반 44% · 레어 29% · 영웅 22% · 전설 5%</string>
+    <string name="gacha_prob_level_fmt">Lv.%1$d</string>
+    <string name="gacha_prob_pull_range_fmt">%1$s</string>
+    <string name="gacha_prob_pull_range_current_fmt">%1$s · 현재</string>
+    <string name="gacha_prob_nav_prev">이전 레벨 확률</string>
+    <string name="gacha_prob_nav_next">다음 레벨 확률</string>
+    <string name="gacha_level_progress_fmt">%1$d/%2$d</string>
+    <string name="gacha_level_progress_max_fmt">%1$d회 · 최고 레벨</string>
     <string name="gacha_grade_normal">일반</string>
     <string name="gacha_grade_rare">레어</string>
     <string name="gacha_grade_epic">영웅</string>
@@ -397,6 +424,8 @@
     <string name="parent_child_delete_confirm">「%1$s」 프로필을 삭제할까요? 되돌릴 수 없습니다.</string>
     <string name="auth_parent_children_sync_failed">자녀 목록을 불러오지 못했습니다. 다시 시도해 주세요.</string>
     <string name="notification_settings_title">알림 설정</string>
+    <string name="notification_settings_child_readonly">알림 변경은 보호자 계정에서 할 수 있어요. 여기서는 현재 설정만 볼 수 있어요.</string>
+    <string name="notification_settings_fcm_gating_hint">개인정보·학습 리마인더 알림만 푸시 발송에 적용돼요.</string>
     <string name="child_my_stat_missions">완료한 미션</string>
     <string name="child_my_stat_xp">모은 XP</string>
     <string name="child_my_stat_pets">보유 펫</string>

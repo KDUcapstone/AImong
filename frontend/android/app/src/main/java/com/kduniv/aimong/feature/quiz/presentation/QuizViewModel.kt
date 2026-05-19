@@ -17,6 +17,8 @@ import com.kduniv.aimong.feature.home.domain.ChildHomeRefreshBus
 import com.kduniv.aimong.feature.home.domain.HomeRefreshTrigger
 import com.kduniv.aimong.feature.home.presentation.WalletBalanceDefaults
 import com.kduniv.aimong.feature.wallet.domain.repository.WalletRepository
+import com.kduniv.aimong.feature.home.data.PetRepository
+import com.kduniv.aimong.feature.gacha.EquippedPetVisual
 import com.kduniv.aimong.R
 import com.kduniv.aimong.core.network.AimongApiService
 import com.kduniv.aimong.core.network.ApiErrorMapper
@@ -47,8 +49,12 @@ class QuizViewModel @Inject constructor(
     private val homeRefreshBus: ChildHomeRefreshBus,
     private val savedStateHandle: SavedStateHandle,
     @ApplicationContext private val appContext: Context,
-    private val apiService: AimongApiService
+    private val apiService: AimongApiService,
+    private val petRepository: PetRepository,
 ) : ViewModel() {
+
+    private val _equippedPetVisual = MutableStateFlow(EquippedPetVisual())
+    val equippedPetVisual: StateFlow<EquippedPetVisual> = _equippedPetVisual.asStateFlow()
 
     private val entrySetId: String = savedStateHandle.get<String>("entrySetId").orEmpty()
     private val missionIdArg: String = savedStateHandle.get<String>("missionId").orEmpty()
@@ -97,8 +103,32 @@ class QuizViewModel @Inject constructor(
         get() = attemptId?.isNotBlank() == true && answeredQuestionIds.isNotEmpty()
 
     init {
-        viewModelScope.launch { preloadWallet() }
+        viewModelScope.launch {
+            preloadWallet()
+            loadEquippedPetVisual()
+        }
         fetchQuestions()
+    }
+
+    private suspend fun loadEquippedPetVisual() {
+        petRepository.getPets().getOrNull()?.equippedPet?.let { pet ->
+            _equippedPetVisual.value = EquippedPetVisual(
+                petType = pet.petType,
+                stage = pet.stage,
+                grade = pet.grade,
+            )
+        }
+    }
+
+    fun displayPetVisual(evolved: Boolean = false): EquippedPetVisual {
+        val base = _equippedPetVisual.value
+        if (!evolved) return base
+        val nextStage = when (base.stage.uppercase()) {
+            "EGG" -> "GROWTH"
+            "GROWTH", "HATCH", "BABY" -> "AIMONG"
+            else -> base.stage
+        }
+        return base.copy(stage = nextStage)
     }
 
     private suspend fun preloadWallet() {
@@ -455,13 +485,16 @@ class QuizViewModel @Inject constructor(
             }
         }
         // 정답 수는 전체 문항 기준으로 보이되, 오답 수는 '실제로 푼 문항' 기준으로 집계
-        val score = results.take(idx + 1).count { it.isCorrect }
-        val wrongCount = (idx + 1) - score
+        val answered = idx + 1
+        val correctCount = results.take(answered).count { it.isCorrect }
+        val wrongCount = answered - correctCount
+        val scorePercent = if (answered > 0) (correctCount * 100 / answered).coerceIn(0, 100) else 0
         quizResult = QuizResult(
             mode = "review",
             progressApplied = false,
             attemptState = AttemptStatus.IN_PROGRESS.name,
-            score = score,
+            score = scorePercent,
+            correctCount = correctCount,
             total = results.size,
             wrongCount = wrongCount,
             isPassed = false,
@@ -482,7 +515,11 @@ class QuizViewModel @Inject constructor(
     }
 
     private suspend fun awaitFinalSubmitOrPerform(quizAttemptId: String, showLoading: Boolean) {
-        finalSubmitJob?.join()
+        val job = finalSubmitJob
+        if (job?.isActive == true) {
+            _uiState.value = QuizUiState.Submitting
+            job.join()
+        }
         if (quizResult != null) {
             _uiState.value = QuizUiState.Finished(quizResult!!)
             return
@@ -504,9 +541,7 @@ class QuizViewModel @Inject constructor(
             _uiState.value = QuizUiState.Error("10개 문항에 모두 답한 뒤 제출할 수 있습니다.")
             return
         }
-        if (showLoading) {
-            _uiState.value = QuizUiState.Loading
-        }
+        _uiState.value = QuizUiState.Submitting
         val reportDeferred: Deferred<kotlin.Result<QuizResult>>? =
             if (!UiMode.useStubNav) {
                 viewModelScope.async {
@@ -532,6 +567,7 @@ class QuizViewModel @Inject constructor(
                 val enriched = QuizResultMapper.enrich(merged, qs.isReview)
                 quizResult = enriched
                 _uiState.value = QuizUiState.Finished(enriched)
+                viewModelScope.launch { loadEquippedPetVisual() }
                 if (!UiMode.useStubNav) {
                     homeRefreshBus.notify(
                         HomeRefreshTrigger.MissionCompleted(
@@ -658,6 +694,7 @@ class QuizViewModel @Inject constructor(
 
 sealed class QuizUiState {
     object Loading : QuizUiState()
+    object Submitting : QuizUiState()
     data class QuestionLoaded(val quizQuestions: QuizQuestions) : QuizUiState()
     data class AnswerChecked(
         val isCorrect: Boolean,

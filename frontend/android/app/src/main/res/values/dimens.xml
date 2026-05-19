@@ -4,4 +4,5 @@
     <dimen name="home_path_scroll_padding_top">0dp</dimen>
     <dimen name="home_mission_path_top_clearance">120dp</dimen>
     <dimen name="content_max_width">432dp</dimen>
+    <dimen name="chat_input_column_padding_bottom">12dp</dimen>
 </resources>

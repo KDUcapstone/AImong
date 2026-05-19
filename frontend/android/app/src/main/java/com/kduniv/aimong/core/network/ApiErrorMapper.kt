@@ -86,7 +86,7 @@ object ApiErrorMapper {
             "BAD_REQUEST" ->
                 "요청을 확인해 주세요. (티켓·조각 보유량 또는 입력값)"
             // 복귀 보상 409, 가챠 교환 중복 펫 등 — 서버 message 없을 때만 사용
-            "CONFLICT" -> "이미 보유한 펫이거나 처리된 요청이에요."
+            "CONFLICT" -> "이미 보유한 펫이에요"
             "CHILD_LIMIT_EXCEEDED" -> "등록 가능한 자녀 수를 초과했습니다."
             else -> null
         }

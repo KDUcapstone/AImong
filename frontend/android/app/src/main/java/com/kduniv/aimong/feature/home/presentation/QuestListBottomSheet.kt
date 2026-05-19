@@ -57,10 +57,6 @@ class QuestListBottomSheet : BottomSheetDialogFragment() {
         val canStart = arguments?.getBoolean(ARG_CAN_START_MISSION) ?: true
         viewModel.setCanStartMission(canStart)
 
-        binding.btnCheckAchievements.setOnClickListener {
-            viewModel.onCheckAchievements()
-        }
-
         adapter = QuestListAdapter { row -> onQuestRowClicked(row) }
         binding.rvQuests.layoutManager = LinearLayoutManager(requireContext())
         binding.rvQuests.adapter = adapter
@@ -124,7 +120,7 @@ class QuestListBottomSheet : BottomSheetDialogFragment() {
                             is QuestSheetEffect.Snackbar ->
                                 Snackbar.make(binding.root, effect.message, Snackbar.LENGTH_LONG).show()
                             is QuestSheetEffect.TicketsPatched ->
-                                homeViewModel.applyRemainingTickets(effect.normal, effect.rare, effect.epic)
+                                homeViewModel.applyRemainingTickets(effect.normal)
                         }
                     }
                 }
