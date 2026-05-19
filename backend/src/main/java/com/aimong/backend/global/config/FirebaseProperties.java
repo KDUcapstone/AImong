@@ -10,4 +10,5 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class FirebaseProperties {
 
     private String serviceAccountPath;
+    private String serviceAccountJson;
 }
