@@ -7,6 +7,7 @@ import com.kduniv.aimong.feature.gacha.GachaPetCatalog
 import com.kduniv.aimong.feature.home.presentation.HomeUiState
 import com.kduniv.aimong.feature.home.presentation.WalletBalanceDefaults
 import com.kduniv.aimong.feature.home.presentation.QuestItemUiState
+import com.kduniv.aimong.feature.pet.domain.PetGrowthRules
 
 object MockUiSamples {
 
@@ -26,7 +27,14 @@ object MockUiSamples {
         val petType = equipped?.petType?.takeIf { it.isNotBlank() } ?: "pet_normal_002"
         val petGrade = equipped?.grade?.takeIf { it.isNotBlank() } ?: "NORMAL"
         val petStage = equipped?.stage?.takeIf { it.isNotBlank() } ?: "GROWTH"
-        val petLevel = equipped?.let { (it.xp / 10).coerceAtLeast(1) } ?: 1
+        val petLevel = PetGrowthRules.displayStageLevel(petStage)
+        val showPetXp = PetGrowthRules.showsXpProgress(petStage)
+        val petMax = if (showPetXp) {
+            PetGrowthRules.progressMaxXp(petGrade, petStage)
+                ?: PetGrowthRules.EGG_EVOLUTION_XP
+        } else {
+            0
+        }
         return HomeUiState(
             nickname = "목업",
             totalXp = userXp,
@@ -35,7 +43,9 @@ object MockUiSamples {
             userLevel = 1 + (userXp / 80).coerceIn(0, 99),
             petName = GachaPetCatalog.displayNameFor(petType, petGrade),
             petXp = MockXpLedger.petXp,
-            petMaxXp = 10,
+            petMaxXp = petMax,
+            showPetXpProgress = showPetXp,
+            petCrownUnlocked = equipped?.crownUnlocked == true,
             hasEquippedPet = equipped != null,
             equippedPetType = petType,
             equippedPetGrade = petGrade,
@@ -57,7 +67,7 @@ object MockUiSamples {
             quests = listOf(
                 QuestItemUiState("q1", "출석하기", "+10 XP", null, isCompleted = false, canStart = true),
                 QuestItemUiState("q2", "친구와 대화", "+15 XP", null, isCompleted = true, canStart = false),
-                QuestItemUiState("q3", "복습 미션", "+20 XP", null, isCompleted = false, canStart = false)
+                QuestItemUiState("q3", "복습 미션", "EXP 없음", null, isCompleted = false, canStart = false)
             ),
             pathItems = buildList {
                 add(

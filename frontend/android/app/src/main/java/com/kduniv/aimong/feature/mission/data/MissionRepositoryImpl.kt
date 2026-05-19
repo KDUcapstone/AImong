@@ -12,6 +12,7 @@ import com.kduniv.aimong.feature.mission.domain.model.MissionStarLevel
 import com.kduniv.aimong.feature.mission.domain.model.Question
 import com.kduniv.aimong.feature.mission.domain.model.QuizResult
 import com.kduniv.aimong.feature.mission.domain.repository.MissionRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -72,6 +73,8 @@ class MissionRepositoryImpl @Inject constructor(
                     totalSetCount = p?.totalSetCount ?: 0
                 )
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Result.failure(e)
         }

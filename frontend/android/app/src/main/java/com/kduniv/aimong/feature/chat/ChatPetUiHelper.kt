@@ -17,6 +17,9 @@ object ChatPetUiHelper {
     fun resolveDisplayName(petType: String, grade: String): String =
         GachaPetCatalog.displayNameFor(petType, grade)
 
+    fun introNameForChat(petType: String, grade: String): String =
+        GachaPetCatalog.introNameForChat(petType, grade)
+
     fun displayName(petType: String, grade: String): String {
         val tail = petType.substringAfterLast('_', "")
         val short = tail.filter { it.isDigit() }.takeIf { it.isNotBlank() }

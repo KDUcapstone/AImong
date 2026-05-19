@@ -15,6 +15,7 @@ import com.kduniv.aimong.feature.quiz.domain.model.QuizQuestions
 import com.kduniv.aimong.feature.dev.mock.MockGearBalance
 import com.kduniv.aimong.feature.dev.mock.MockXpLedger
 import com.kduniv.aimong.feature.quiz.domain.model.QuizReward
+import com.kduniv.aimong.feature.quiz.domain.model.MissionXpRules
 import com.kduniv.aimong.feature.quiz.domain.model.QuizResult
 import com.kduniv.aimong.feature.quiz.domain.repository.QuizRepository
 import java.util.UUID
@@ -159,20 +160,29 @@ class QuizRepositoryStub @Inject constructor() : QuizRepository {
         } else {
             emptyList()
         }
-        val baseXp = if (passed) {
-            var xp = 10
-            if (correct == total) xp += 10
-            xp
+        val isPerfect = correct == total
+        val equippedGrade = "NORMAL"
+        val bonusXp = if (!session.isReview && passed) {
+            MissionXpRules.petBonusXp(equippedGrade, wrong)
         } else {
             0
         }
-        val xpEarned = if (session.isReview) baseXp / 2 else baseXp
+        val xpEarned = MissionXpRules.computeEarnedXp(
+            isReview = session.isReview,
+            isPassed = passed,
+            wrongCount = wrong,
+            isPerfect = isPerfect,
+            equippedPetGrade = equippedGrade,
+            streakBonusApplied = false,
+        )
         val petXpAfter = (40 + xpEarned).coerceAtLeast(xpEarned)
-        MockXpLedger.applyMissionReward(xpEarned, petXpAfter)
+        if (xpEarned > 0) {
+            MockXpLedger.applyMissionReward(xpEarned, petXpAfter)
+        }
         return Result.success(
             QuizResult(
                 mode = if (session.isReview) "review" else "normal",
-                progressApplied = true,
+                progressApplied = !session.isReview && passed,
                 attemptState = AttemptStatus.SUBMITTED.name,
                 streakBonusApplied = false,
                 score = if (total > 0) correct * 100 / total else 0,
@@ -180,12 +190,12 @@ class QuizRepositoryStub @Inject constructor() : QuizRepository {
                 total = total,
                 wrongCount = wrong,
                 isPassed = passed,
-                isPerfect = correct == total,
+                isPerfect = isPerfect,
                 isFirstClear = passed && !session.isReview,
-                equippedPetGrade = null,
+                equippedPetGrade = if (bonusXp > 0) equippedGrade else null,
                 xpEarned = xpEarned,
-                bonusXp = 0,
-                bonusReason = null,
+                bonusXp = bonusXp,
+                bonusReason = if (bonusXp > 0) "PET_RARITY_BONUS" else null,
                 petEvolved = false,
                 streakDays = 1,
                 todaySetCount = 1,
@@ -296,7 +306,7 @@ class QuizRepositoryStub @Inject constructor() : QuizRepository {
                 isPassed = true,
                 isPerfect = false,
                 equippedPetGrade = null,
-                xpEarned = 25,
+                xpEarned = 0,
                 bonusXp = 0,
                 bonusReason = null,
                 petEvolved = false,

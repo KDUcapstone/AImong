@@ -4,7 +4,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.fragment.app.activityViewModels
@@ -21,6 +20,7 @@ import com.kduniv.aimong.R
 import com.kduniv.aimong.core.navigation.ChildTopLevelNav.navigateToChildTopLevel
 import com.kduniv.aimong.databinding.DialogQuestListBinding
 import com.kduniv.aimong.feature.home.presentation.quest.QuestListViewModel
+import com.kduniv.aimong.feature.home.presentation.quest.QuestRewardCelebrationDialog
 import com.kduniv.aimong.feature.home.presentation.quest.QuestSheetEffect
 import com.kduniv.aimong.feature.home.presentation.quest.QuestSheetPeriod
 import com.kduniv.aimong.feature.home.presentation.quest.QuestSheetPrimaryAction
@@ -115,8 +115,8 @@ class QuestListBottomSheet : BottomSheetDialogFragment() {
                 launch {
                     viewModel.effects.collect { effect ->
                         when (effect) {
-                            is QuestSheetEffect.ShowToast ->
-                                Toast.makeText(requireContext(), effect.message, Toast.LENGTH_SHORT).show()
+                            is QuestSheetEffect.ShowRewardCelebration ->
+                                QuestRewardCelebrationDialog.show(this@QuestListBottomSheet, effect.ui)
                             is QuestSheetEffect.Snackbar ->
                                 Snackbar.make(binding.root, effect.message, Snackbar.LENGTH_LONG).show()
                             is QuestSheetEffect.TicketsPatched ->
@@ -138,7 +138,7 @@ class QuestListBottomSheet : BottomSheetDialogFragment() {
     private fun onQuestRowClicked(row: QuestSheetRow) {
         when (row.primaryAction) {
             QuestSheetPrimaryAction.CLAIM ->
-                viewModel.onClaim(row.questType, row.period)
+                viewModel.onClaim(row.questType, row.period, row.title)
             QuestSheetPrimaryAction.GO_LEARN -> {
                 parentFragmentManager.setFragmentResult(
                     REQUEST_OPEN_MISSION_LEARN,

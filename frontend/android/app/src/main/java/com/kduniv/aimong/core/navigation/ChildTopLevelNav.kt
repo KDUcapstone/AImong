@@ -20,7 +20,8 @@ object ChildTopLevelNav {
 
     /** 퀴즈 화면에서는 하단 탭을 숨긴다. */
     fun shouldHideBottomNav(@IdRes destinationId: Int?): Boolean =
-        destinationId == R.id.quizFragment
+        destinationId == R.id.quizFragment ||
+            destinationId == R.id.notificationSettingsFragment
 
     /** 퀴즈·알림 설정 등 — 하단 탭이 가리키는 최상위 destination */
     fun mapDestinationToTab(@IdRes destinationId: Int?): Int? = when (destinationId) {

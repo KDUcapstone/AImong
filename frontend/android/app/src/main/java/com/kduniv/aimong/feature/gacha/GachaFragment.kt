@@ -31,7 +31,7 @@ class GachaFragment : BaseFragment<FragmentGachaBinding>(FragmentGachaBinding::i
     override fun onResume() {
         super.onResume()
         viewModel.syncTicketsFromHome()
-        viewModel.reloadEquippedPet()
+        viewModel.refreshCatalogFromServer()
     }
 
     override fun initView() {
@@ -92,18 +92,20 @@ class GachaFragment : BaseFragment<FragmentGachaBinding>(FragmentGachaBinding::i
                         val bindKey = "${equipped.id}|${equipped.petType}|${equipped.stage}"
                         if (bindKey != lastEquippedBindKey) {
                             lastEquippedBindKey = bindKey
+                            val equippedStage = com.kduniv.aimong.feature.pet.domain.PetGrowthRules
+                                .resolveEffectiveStageString(equipped.stage, equipped.xp)
                             PetArtAssets.bindEquipped(
                                 image = binding.ivEquippedSprite,
                                 emojiFallback = binding.tvEquippedEmoji,
                                 petType = equipped.petType,
-                                stage = equipped.stage,
+                                stage = equippedStage,
                                 grade = equipped.grade,
                             )
                         }
                         binding.tvEquippedName.text = GachaUiMapper.displayName(equipped)
-                        val stageLabel = stageLabelFor(equipped.stage)
-                        binding.tvEquippedStage.isVisible = stageLabel != null
-                        binding.tvEquippedStage.text = stageLabel.orEmpty()
+                        val stageLabel = equippedStageSubtitle(equipped)
+                        binding.tvEquippedStage.isVisible = stageLabel.isNotBlank()
+                        binding.tvEquippedStage.text = stageLabel
                     }
 
                     binding.tvTicketNormal.text = s.normalTicketCount.toString()
@@ -121,6 +123,19 @@ class GachaFragment : BaseFragment<FragmentGachaBinding>(FragmentGachaBinding::i
                         append(s.ownedCatalogCount)
                         append('|')
                         append(s.pets?.equippedPet?.id.orEmpty())
+                        append('|')
+                        s.pets?.pets.orEmpty().forEach { p ->
+                            append(p.id)
+                            append(':')
+                            append(p.stage)
+                            append(':')
+                            append(p.xp)
+                            append(';')
+                        }
+                        s.petCards.forEach { c ->
+                            append(c.levelLabel)
+                            append('|')
+                        }
                     }
                     if (listRevisionKey != lastPetListRevisionKey) {
                         lastPetListRevisionKey = listRevisionKey
@@ -256,19 +271,18 @@ class GachaFragment : BaseFragment<FragmentGachaBinding>(FragmentGachaBinding::i
     ) {
         val pet = item.pet ?: return
 
+        val effectiveStage = com.kduniv.aimong.feature.pet.domain.PetGrowthRules
+            .resolveEffectiveStageString(pet.stage, pet.xp)
         PetArtAssets.bindSprite(
             image = dialogBinding.ivPetSprite,
             emojiFallback = dialogBinding.tvPetEmoji,
             petType = pet.petType,
-            stage = pet.stage,
+            stage = effectiveStage,
             emoji = item.emoji,
             allowStageFallback = false,
         )
         dialogBinding.tvPetName.text = item.displayName
-        dialogBinding.tvPetGrade.text = getString(
-            R.string.gacha_pet_grade_fmt,
-            GachaUiMapper.gradeLabel(item.grade)
-        )
+        dialogBinding.tvPetGrade.text = ownedPetGradeLine(pet)
 
         dialogBinding.layoutFragmentExchange.isVisible = false
         dialogBinding.btnExchange.isVisible = false
@@ -302,5 +316,22 @@ class GachaFragment : BaseFragment<FragmentGachaBinding>(FragmentGachaBinding::i
         "HATCH", "BABY", "GROWTH" -> getString(R.string.gacha_stage_growth)
         "AIMONG", "ADULT", "MATURE", "FINAL" -> getString(R.string.gacha_stage_aimong)
         else -> null
+    }
+
+    private fun equippedStageSubtitle(pet: PetDto): String {
+        if (!com.kduniv.aimong.feature.pet.domain.PetGrowthRules.showsXpProgress(pet.stage, pet.xp)) {
+            return getString(R.string.gacha_pet_crown_unlocked)
+        }
+        val effective = com.kduniv.aimong.feature.pet.domain.PetGrowthRules
+            .resolveEffectiveStageString(pet.stage, pet.xp)
+        return stageLabelFor(effective).orEmpty()
+    }
+
+    private fun ownedPetGradeLine(pet: PetDto): String {
+        val grade = getString(R.string.gacha_pet_grade_fmt, GachaUiMapper.gradeLabel(pet.grade))
+        if (!com.kduniv.aimong.feature.pet.domain.PetGrowthRules.showsXpProgress(pet.stage, pet.xp)) {
+            return "$grade · ${getString(R.string.gacha_pet_crown_unlocked)}"
+        }
+        return "$grade · ${GachaUiMapper.displayCardLevelLabel(requireContext(), pet)}"
     }
 }

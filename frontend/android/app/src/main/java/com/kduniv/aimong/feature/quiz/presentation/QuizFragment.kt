@@ -36,12 +36,14 @@ import com.kduniv.aimong.databinding.FragmentQuizBinding
 import com.kduniv.aimong.feature.quiz.domain.model.Question
 import com.kduniv.aimong.feature.quiz.domain.model.QuestionDifficulty
 import com.kduniv.aimong.feature.quiz.domain.model.QuestionType
+import com.kduniv.aimong.feature.quiz.domain.model.MissionXpRules
 import com.kduniv.aimong.feature.quiz.domain.model.QuizResult
 import com.kduniv.aimong.feature.quiz.domain.model.QuizReward
 import com.kduniv.aimong.feature.quiz.domain.model.QuizQuestions
 import com.kduniv.aimong.feature.quiz.domain.model.TermHint
 import com.kduniv.aimong.feature.gacha.EquippedPetVisual
 import com.kduniv.aimong.feature.gacha.PetArtAssets
+import com.kduniv.aimong.feature.pet.domain.PetGrowthRules
 import androidx.appcompat.app.AlertDialog
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
@@ -215,10 +217,15 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                             if (binding.layoutQuizResult.visibility == View.VISIBLE) View.GONE
                             else if (isReview) View.VISIBLE
                             else View.GONE
-                        if (isReview) {
-                            binding.tvExpInfo.text = "복습 시 EXP 50% 획득"
-                            binding.tvExpInfo.setTextColor(quizColor(R.color.quiz_hint_gold))
+                        binding.tvExpInfo.text = if (isReview) {
+                            getString(R.string.quiz_review_exp_banner)
+                        } else {
+                            getString(R.string.quiz_normal_exp_banner)
                         }
+                        binding.tvExpInfo.setTextColor(
+                            if (isReview) quizColor(R.color.quiz_hint_gold)
+                            else quizColor(R.color.quiz_text_grey)
+                        )
                         updateQuizModeBanner()
                     }
                 }
@@ -316,7 +323,9 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                     binding.btnResRetry.isEnabled = true
                     binding.btnResRetry.alpha = 1f
                 }
-                if (state.message == "세션이 만료되었습니다.") {
+                if (QuizViewModel.isInsufficientEnergyMessage(requireContext(), state.message)) {
+                    popQuizToHomeForInsufficientEnergy()
+                } else if (state.message == "세션이 만료되었습니다.") {
                     showFeedback("만료", state.message)
                 } else if (state.message.contains("문제 세트를 준비하는 데 실패했습니다")) {
                     showMissionSetNotReadyDialog()
@@ -547,11 +556,28 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             }
             if (!isAdded) return@launch
             Toast.makeText(requireContext(), R.string.quiz_hearts_exhausted_toast, Toast.LENGTH_SHORT).show()
-            val nav = findNavController()
-            val popped = runCatching { nav.popBackStack(R.id.homeFragment, false) }.getOrDefault(false)
-            if (!popped) {
-                nav.popBackStack()
-            }
+            navigateQuizBackToHome()
+        }
+    }
+
+    private fun popQuizToHomeForInsufficientEnergy() {
+        binding.layoutQuizResult.visibility = View.GONE
+        binding.layoutFeedbackPanel.visibility = View.GONE
+        setQuizLoadingOverlay(visible = false)
+        Toast.makeText(
+            requireContext(),
+            getString(R.string.quiz_insufficient_energy),
+            Toast.LENGTH_LONG,
+        ).show()
+        navigateQuizBackToHome()
+    }
+
+    private fun navigateQuizBackToHome() {
+        if (!isAdded) return
+        val nav = findNavController()
+        val popped = runCatching { nav.popBackStack(R.id.homeFragment, false) }.getOrDefault(false)
+        if (!popped) {
+            nav.popBackStack()
         }
     }
 
@@ -713,16 +739,17 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         binding.layoutFeedbackPanel.visibility = View.VISIBLE
 
         if (!isCorrect && !viewModel.isSolutionMode.value) {
-            if (serverRemainingLives != null) {
-                updateHearts(serverRemainingLives.coerceIn(0, 3), forceReset = true)
-            } else {
-                updateHearts(lives - 1)
-            }
+            val displayLives = (serverRemainingLives ?: (lives - 1)).coerceIn(0, 3)
+            updateHearts(displayLives, forceReset = true)
             shakeView(binding.layoutHearts)
             shakeScreen()
         }
 
-        val effectiveLives = serverRemainingLives ?: lives
+        val effectiveLives = if (!isCorrect && !viewModel.isSolutionMode.value) {
+            (serverRemainingLives ?: (lives - 1)).coerceIn(0, 3)
+        } else {
+            (serverRemainingLives ?: lives).coerceIn(0, 3)
+        }
         val isFailedByLives = effectiveLives <= 0
         val isLast = (viewModel.currentQuestionIndex.value >= (binding.pbQuizProgress.max - 1))
 
@@ -739,7 +766,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         }
 
         if (isCorrect) {
-            binding.tvFeedbackTitle.text = getString(R.string.quiz_feedback_correct_xp)
+            binding.tvFeedbackTitle.text = getString(R.string.quiz_feedback_correct)
             binding.tvFeedbackTitle.setTextColor(quizColor(R.color.quiz_mint))
             binding.layoutFeedbackPanel.setCardBackgroundColor(android.content.res.ColorStateList.valueOf(quizColor(R.color.quiz_feedback_panel_correct)))
         } else {
@@ -767,12 +794,12 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         binding.layoutQuizResult.visibility = View.VISIBLE
         binding.layoutQuizResult.bringToFront()
         
-        // 펫 진화 축하 연출
-        if (result.petEvolved) {
+        // 알→성장 등 중간 진화만 퀴즈 결과 화면에서 연출 (아이몽은 홈 축하 팝업)
+        if (result.petEvolved && !isAimongEvolution(result)) {
             showEvolutionCelebration()
         }
 
-        bindEquippedPetSprites(viewModel.displayPetVisual(evolved = result.petEvolved))
+        bindEquippedPetSprites(resolveResultPetVisual(result))
 
         val isReviewSubmit = result.mode == "review" || viewModel.isReviewMode.value
 
@@ -860,15 +887,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             binding.tvResPetBonus.setTextColor(quizColor(R.color.quiz_hint_gold))
         }
 
-        binding.tvResPetBonus.text = when {
-            isReviewSubmit && result.xpEarned > 0 ->
-                getString(R.string.quiz_bonus_review_xp, result.xpEarned)
-            isReviewSubmit -> getString(R.string.quiz_bonus_review_no_xp)
-            result.equippedPetGrade != null && result.bonusXp > 0 ->
-                getString(R.string.quiz_bonus_pet_grade, result.equippedPetGrade, result.bonusXp)
-            result.bonusXp > 0 -> "+${result.bonusXp} XP"
-            else -> "+0% XP"
-        }
+        binding.tvResPetBonus.text = formatMissionXpBonusLine(result, isReviewSubmit)
         
         // XP 애니메이션
         animateXpGain(result.xpEarned, result.currentXp, result.nextLevelXp, result.currentLevel)
@@ -916,6 +935,24 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         }
 
         binding.tvWrongCount.text = "오답: ${result.wrongCount}개"
+    }
+
+    private fun formatMissionXpBonusLine(result: QuizResult, isReviewSubmit: Boolean): String {
+        if (isReviewSubmit) return getString(R.string.quiz_bonus_review_no_xp)
+        if (!result.isPassed || result.xpEarned <= 0) return getString(R.string.quiz_bonus_no_xp)
+        if (result.streakBonusApplied) {
+            return getString(R.string.quiz_bonus_streak_xp, result.xpEarned)
+        }
+        val parts = mutableListOf<String>()
+        if (result.isPerfect) {
+            parts.add(getString(R.string.quiz_bonus_perfect_xp, MissionXpRules.PERFECT_BONUS_XP))
+        }
+        if (result.bonusXp > 0 && result.equippedPetGrade != null) {
+            parts.add(getString(R.string.quiz_bonus_pet_grade, result.equippedPetGrade, result.bonusXp))
+        } else if (result.bonusXp > 0) {
+            parts.add("+${result.bonusXp} XP")
+        }
+        return parts.joinToString(" · ").ifBlank { "+${result.xpEarned} XP" }
     }
 
     private fun animateXpGain(gainedXp: Int, currentXp: Int, maxXp: Int, level: Int) {
@@ -1450,6 +1487,19 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             grade = visual.grade,
             lottie = binding.lavResultPet,
         )
+    }
+
+    private fun isAimongEvolution(result: QuizResult): Boolean {
+        val stage = result.petStage?.takeIf { it.isNotBlank() }
+            ?: viewModel.displayPetVisual(evolved = true).stage
+        return PetGrowthRules.normalizeStage(stage) == PetGrowthRules.PetStage.AIMONG
+    }
+
+    private fun resolveResultPetVisual(result: QuizResult): EquippedPetVisual {
+        if (!result.petEvolved) return viewModel.displayPetVisual(evolved = false)
+        val serverStage = result.petStage?.takeIf { it.isNotBlank() } ?: return viewModel.displayPetVisual(evolved = true)
+        val base = viewModel.equippedPetVisual.value
+        return base.copy(stage = serverStage)
     }
 
     private fun showEvolutionCelebration() {

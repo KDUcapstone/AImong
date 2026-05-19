@@ -17,6 +17,7 @@
             android:id="@+id/iv_pet_sprite"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:layout_gravity="center"
             android:contentDescription="@null"
             android:scaleType="fitCenter"
             android:visibility="gone" />
@@ -25,6 +26,7 @@
             android:id="@+id/tv_pet_emoji"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:layout_gravity="center"
             android:gravity="center"
             android:textSize="58sp"
             tools:text="✨" />

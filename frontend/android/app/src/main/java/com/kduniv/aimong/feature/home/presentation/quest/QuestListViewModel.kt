@@ -20,7 +20,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 sealed interface QuestSheetEffect {
-    data class ShowToast(val message: String) : QuestSheetEffect
+    data class ShowRewardCelebration(val ui: QuestRewardCelebrationUi) : QuestSheetEffect
     data class Snackbar(val message: String) : QuestSheetEffect
     data class TicketsPatched(val normal: Int) : QuestSheetEffect
 }
@@ -114,7 +114,7 @@ class QuestListViewModel @Inject constructor(
         }
     }
 
-    fun onClaim(questType: String, period: QuestSheetPeriod) {
+    fun onClaim(questType: String, period: QuestSheetPeriod, questTitle: String) {
         if (QuestPolicy.isAutoClaimQuest(questType)) {
             viewModelScope.launch {
                 _effects.trySend(
@@ -131,8 +131,12 @@ class QuestListViewModel @Inject constructor(
             _loading.value = true
             questRepository.claimQuest(questType, periodStr).fold(
                 onSuccess = { data ->
-                    val toast = QuestRewardToastFormatter.format(appContext, data.rewards)
-                    _effects.trySend(QuestSheetEffect.ShowToast(toast))
+                    val celebration = QuestRewardCelebrationMapper.from(
+                        appContext,
+                        questTitle,
+                        data.rewards,
+                    )
+                    _effects.trySend(QuestSheetEffect.ShowRewardCelebration(celebration))
                     _effects.trySend(
                         QuestSheetEffect.TicketsPatched(data.remainingTickets.normal),
                     )

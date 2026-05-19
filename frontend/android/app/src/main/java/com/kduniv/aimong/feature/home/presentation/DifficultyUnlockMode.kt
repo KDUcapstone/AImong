@@ -12,4 +12,8 @@ enum class DifficultyUnlockMode {
 
 /** 난이도 선택 시 퀴즈 진입 검증 모드 — 미완료 세트 우선 신규, 없으면 복습 */
 fun MissionStarLevel.resolveUnlockModeForPick(): DifficultyUnlockMode =
-    if (isPlayable) DifficultyUnlockMode.NEW_PLAY else DifficultyUnlockMode.REVIEW
+    when {
+        isPlayable -> DifficultyUnlockMode.NEW_PLAY
+        isReviewOnly -> DifficultyUnlockMode.REVIEW
+        else -> DifficultyUnlockMode.NEW_PLAY
+    }

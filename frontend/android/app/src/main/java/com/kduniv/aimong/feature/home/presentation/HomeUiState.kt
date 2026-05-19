@@ -1,6 +1,7 @@
 package com.kduniv.aimong.feature.home.presentation
 
 import com.kduniv.aimong.feature.mission.domain.model.MissionStarLevel
+import com.kduniv.aimong.feature.pet.domain.PetGrowthRules
 
 /** 홈 화면 UI 상태 (API 연동 전 기본값은 비어 있음) */
 data class HomeUiState(
@@ -13,9 +14,12 @@ data class HomeUiState(
     // 펫 정보 및 상태
     val petName: String = "",
     val petXp: Int = 0,
-    val petMaxXp: Int = 10,
+    val petMaxXp: Int = PetGrowthRules.EGG_EVOLUTION_XP,
     val petLevel: Int = 1,
     val petStage: String = "EGG",
+    /** 아이몽(Lv.3) 등 성장 종료 단계 — XP 바 미표시 */
+    val showPetXpProgress: Boolean = true,
+    val petCrownUnlocked: Boolean = false,
     /** 장착 펫 PNG — `pet_normal_001` 형식 */
     val equippedPetType: String = "",
     val equippedPetGrade: String = "NORMAL",
@@ -87,7 +91,7 @@ data class HomeUiState(
             DifficultyUnlockMode.REVIEW -> true
             DifficultyUnlockMode.NEW_PLAY -> hasEnoughEnergyForMissionStart()
             DifficultyUnlockMode.PER_STAR ->
-                hasEnoughEnergyForMissionStart() || starLevels.any { it.isReviewable }
+                hasEnoughEnergyForMissionStart() || starLevels.any { it.isReviewOnly }
         }
     }
 

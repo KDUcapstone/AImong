@@ -49,6 +49,9 @@ data class QuizResult(
     val bonusXp: Int = 0,
     val bonusReason: String? = null,
     val petEvolved: Boolean,
+    /** 제출 직후 장착 펫 단계 — 아이몽 달성 연출 분기용 */
+    val petStage: String? = null,
+    val equippedPetType: String? = null,
     val streakDays: Int,
     val todaySetCount: Int = 0,
     val rewards: List<QuizReward> = emptyList(),

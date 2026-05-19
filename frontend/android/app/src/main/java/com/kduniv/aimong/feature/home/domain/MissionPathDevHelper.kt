@@ -5,14 +5,19 @@ import com.kduniv.aimong.feature.mission.domain.model.Mission
 import com.kduniv.aimong.feature.mission.domain.model.MissionStarLevel
 
 /**
- * 목업/개발 시 스테이지마다 탭 가능한 미션이 없으면 홈 경로가 전부 「잠김·준비 중」이 됩니다.
- * [UiMode.useStubNav] 일 때 스테이지별 첫 미션에 쉬움(★1) 플레이를 보장합니다.
+ * 홈 미션 경로에 탭 가능한 노드가 없을 때 보정.
+ * - 목업: 스테이지마다 첫 미션에 ★1 플레이 보장
+ * - 실서버: 1스테이지 첫 해금 미션에 ★1 플레이 보장 (GET /missions·status 불일치 대비)
  */
 object MissionPathDevHelper {
 
-    fun ensureOnePlayablePerStage(missions: List<Mission>): List<Mission> {
-        if (!UiMode.useStubNav || missions.isEmpty()) return missions
+    fun applyPathUnlockGuarantees(missions: List<Mission>): List<Mission> {
+        if (missions.isEmpty()) return missions
+        val afterStub = if (UiMode.useStubNav) ensureOnePlayablePerStage(missions) else missions
+        return ensureStageOneEntryMissionPlayable(afterStub)
+    }
 
+    private fun ensureOnePlayablePerStage(missions: List<Mission>): List<Mission> {
         val updated = missions.toMutableList()
         val indexById = updated.mapIndexed { index, m -> m.missionId to index }.toMap()
 
@@ -28,25 +33,45 @@ object MissionPathDevHelper {
                 ?: stageMissions.firstOrNull()
                 ?: continue
             val idx = indexById[candidate.missionId] ?: continue
-            updated[idx] = candidate.withGuaranteedEasyPlayable()
+            updated[idx] = withGuaranteedEasyPlayable(candidate)
         }
         return updated
+    }
+
+    /** 실서버: 1스테이지에 플레이 가능한 미션이 하나도 없으면 첫 해금 미션 ★1 오픈 */
+    private fun ensureStageOneEntryMissionPlayable(missions: List<Mission>): List<Mission> {
+        if (UiMode.useStubNav) return missions
+        val stage1 = missions
+            .filter { it.stage == 1 && it.isUnlocked }
+            .sortedBy { missionOrderKey(it.missionCode, it.title) }
+        if (stage1.isEmpty()) return missions
+        if (stage1.any { it.starLevels.any { s -> s.isPlayable || s.isReviewable } }) {
+            return missions
+        }
+        val target = stage1.first()
+        val idx = missions.indexOfFirst { it.missionId == target.missionId }
+        if (idx < 0) return missions
+        return missions.toMutableList().apply {
+            this[idx] = withGuaranteedEasyPlayable(target)
+        }
     }
 
     private fun Mission.hasPlayablePathNode(): Boolean =
         isUnlocked && starLevels.any { it.isPlayable || it.isReviewable || it.isCompleted }
 
-    private fun Mission.withGuaranteedEasyPlayable(): Mission {
-        val baseStars = starLevels.ifEmpty { defaultStarLevels() }
+    fun withGuaranteedEasyPlayable(mission: Mission): Mission {
+        val baseStars = mission.starLevels.ifEmpty { defaultStarLevels() }
         val patched = baseStars.map { level ->
             if (level.starLevel == 1) level.copy(isPlayable = true) else level
         }
         val withEasy = if (patched.any { it.starLevel == 1 }) {
             patched
         } else {
-            listOf(MissionStarLevel(1, "쉬움", 2, 0, isPlayable = true, isReviewable = false)) + patched
+            listOf(
+                MissionStarLevel(1, "쉬움", 2, 0, isPlayable = true, isReviewable = false),
+            ) + patched
         }
-        return copy(isUnlocked = true, starLevels = withEasy)
+        return mission.copy(isUnlocked = true, starLevels = withEasy)
     }
 
     private fun defaultStarLevels(): List<MissionStarLevel> = listOf(

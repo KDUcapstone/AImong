@@ -1,6 +1,7 @@
 package com.kduniv.aimong.feature.gacha
 
 import android.content.Context
+import android.view.Gravity
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
@@ -115,6 +116,16 @@ object PetArtAssets {
         image.setTag(R.id.pet_art_bind_key, null)
     }
 
+    /** 모든 펫 스프라이트 ImageView 공통 */
+    fun configureSpriteImageView(image: ImageView) {
+        image.scaleType = ImageView.ScaleType.FIT_CENTER
+        val lp = image.layoutParams
+        if (lp is android.widget.FrameLayout.LayoutParams) {
+            lp.gravity = Gravity.CENTER
+            image.layoutParams = lp
+        }
+    }
+
     private fun spriteTargetPx(image: ImageView): Int {
         val density = image.resources.displayMetrics.density
         val layoutH = image.layoutParams?.height?.takeIf { it > 0 }
@@ -136,9 +147,10 @@ object PetArtAssets {
         allowStageFallback: Boolean = true,
     ) {
         val artType = resolveArtPetType(petType)
-        val bindKey = "$artType|${stageSuffix(stage)}|fallback=$allowStageFallback"
+        val bindKey = "$artType|${stageSuffix(stage)}|fallback=$allowStageFallback|norm=v1"
         image.setTag(R.id.pet_art_bind_key, bindKey)
         clearSprite(image)
+        configureSpriteImageView(image)
 
         val resId = drawableRes(image.context, petType, stage, allowStageFallback)
         if (resId != null) {
@@ -149,6 +161,7 @@ object PetArtAssets {
                 .load(resId)
                 .signature(ObjectKey(bindKey))
                 .override(px, px)
+                .transform(PetSpriteNormalizeTransformation.INSTANCE)
                 .fitCenter()
                 .diskCacheStrategy(DiskCacheStrategy.RESOURCE)
                 .into(image)

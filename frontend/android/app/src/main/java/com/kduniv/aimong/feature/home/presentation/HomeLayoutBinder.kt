@@ -48,6 +48,7 @@ class HomeLayoutBinder(
                 grade = state.equippedPetGrade,
                 lottie = lottiePetHome,
             )
+            HomePetMoodVisual.apply(ivFloatPetSprite, tvFloatPetEmoji, state.homeState)
             val pendingQuests = state.quests.count { !it.isCompleted }
             tvQuestBadge.isVisible = pendingQuests > 0
             if (pendingQuests > 0) {

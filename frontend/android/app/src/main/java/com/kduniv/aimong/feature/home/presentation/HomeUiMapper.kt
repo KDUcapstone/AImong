@@ -7,6 +7,7 @@ import com.kduniv.aimong.feature.home.data.model.TopStatusDto
 import com.kduniv.aimong.feature.home.domain.TicketTotals
 import com.kduniv.aimong.feature.gacha.GachaPetCatalog
 import com.kduniv.aimong.feature.pet.domain.PetGrowthRules
+import com.kduniv.aimong.feature.pet.domain.PetMoodRules
 
 internal object HomeUiMapper {
 
@@ -22,21 +23,28 @@ internal object HomeUiMapper {
 
         val userTotalXp = resolveUserTotalXp(profile, top)
         val userLevel = userLevelFromXp(userTotalXp)
-        val petStage = pet?.stage ?: "EGG"
-        val petLv = if (pet != null) PetGrowthRules.displayStageLevel(petStage) else 1
-        val petMax = if (pet != null) {
-            PetGrowthRules.progressMaxXp(pet.grade, petStage, pet.xp)
-        } else {
-            1
-        }
         val petXp = pet?.xp?.coerceAtLeast(0) ?: 0
+        val petStage = pet?.let {
+            PetGrowthRules.resolveEffectiveStageString(it.stage, petXp)
+        } ?: "EGG"
+        val petLv = if (pet != null) PetGrowthRules.displayStageLevel(petStage, petXp) else 1
+        val showPetXpProgress = pet != null && PetGrowthRules.showsXpProgress(pet.stage, petXp)
+        val petMax = if (showPetXpProgress) {
+            PetGrowthRules.progressMaxXp(pet.grade, petStage, petXp)
+                ?: PetGrowthRules.EGG_EVOLUTION_XP
+        } else {
+            0
+        }
 
         val todayDone = "${quests.completedCount}/${quests.totalCount}"
 
-        val homeState = when {
-            mission.todayCompletedCount > 0 || streak.todaySetCount > 0 -> HomeState.HAPPY
-            else -> HomeState.IDLE
-        }
+        val homeState = PetMoodRules.resolveHomeState(
+            mood = pet?.mood,
+            todaySetCount = streak.todaySetCount,
+            todayCompletedCount = mission.todayCompletedCount,
+            lastCompletedDate = streak.lastCompletedDate,
+            serverDate = data.serverDate,
+        )
 
         return HomeUiState(
             nickname = profile.nickname,
@@ -48,6 +56,8 @@ internal object HomeUiMapper {
             petName = pet?.let { GachaPetCatalog.displayNameFor(it.petType, it.grade) } ?: "",
             petXp = petXp,
             petMaxXp = petMax,
+            showPetXpProgress = showPetXpProgress,
+            petCrownUnlocked = pet?.crownUnlocked == true,
             petLevel = petLv,
             petStage = petStage,
             equippedPetType = pet?.petType.orEmpty(),

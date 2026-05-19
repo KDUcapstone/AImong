@@ -10,6 +10,7 @@ import com.kduniv.aimong.feature.mission.domain.model.Mission
 import com.kduniv.aimong.feature.mission.domain.model.hasActiveStar1
 import com.kduniv.aimong.feature.mission.domain.model.isStar1Completed
 import com.kduniv.aimong.feature.mission.domain.model.openDifficultyCount
+import com.kduniv.aimong.feature.mission.domain.model.showsReviewPathNode
 import com.kduniv.aimong.feature.mission.domain.model.displayTitle
 import com.kduniv.aimong.feature.mission.domain.model.toDisplayMissionTitle
 
@@ -111,22 +112,18 @@ object HomePathBuilder {
                             starsFilled = stars
                         )
                     )
-                } else if (m.starLevels.any { it.isCompleted }) {
-                    val sl = m.starLevels.firstOrNull { it.isPlayable }
-                        ?: m.starLevels.firstOrNull { it.isReviewable }
-                        ?: m.starLevels.firstOrNull()
-                    val star = sl?.starLevel?.takeIf { it in 1..3 } ?: 1
+                } else if (m.starLevels.any { it.isPlayable }) {
+                    val star = m.starLevels.firstOrNull { it.isPlayable }?.starLevel?.takeIf { it in 1..3 } ?: 1
                     items.add(
-                        HomePathItem.Completed(
-                            order = index + 1,
-                            title = displayTitle,
-                            missionId = m.missionId,
+                        HomePathItem.Start(
                             quizNav = HomeQuizNavigation("", m.missionId, star),
+                            missionTitle = displayTitle,
+                            enabled = true,
                             starsFilled = stars,
                         )
                     )
-                } else if (m.starLevels.any { it.isReviewable }) {
-                    val sl = m.starLevels.first { it.isReviewable }
+                } else if (m.showsReviewPathNode()) {
+                    val sl = m.starLevels.first { it.isReviewOnly }
                     val star = sl.starLevel.takeIf { it in 1..3 } ?: 1
                     items.add(
                         HomePathItem.Review(
@@ -135,13 +132,17 @@ object HomePathBuilder {
                             starsFilled = stars
                         )
                     )
-                } else if (m.starLevels.any { it.isPlayable }) {
-                    val star = m.starLevels.firstOrNull { it.isPlayable }?.starLevel?.takeIf { it in 1..3 } ?: 1
+                } else if (m.starLevels.any { it.isCompleted }) {
+                    val sl = m.starLevels.firstOrNull { it.isPlayable }
+                        ?: m.starLevels.firstOrNull { it.isReviewOnly }
+                        ?: m.starLevels.firstOrNull()
+                    val star = sl?.starLevel?.takeIf { it in 1..3 } ?: 1
                     items.add(
-                        HomePathItem.Start(
+                        HomePathItem.Completed(
+                            order = index + 1,
+                            title = displayTitle,
+                            missionId = m.missionId,
                             quizNav = HomeQuizNavigation("", m.missionId, star),
-                            missionTitle = displayTitle,
-                            enabled = true,
                             starsFilled = stars,
                         )
                     )

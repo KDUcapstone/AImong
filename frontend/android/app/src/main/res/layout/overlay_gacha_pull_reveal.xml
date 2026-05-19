@@ -54,6 +54,7 @@
                     android:id="@+id/iv_reveal_sprite"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
+                    android:layout_gravity="center"
                     android:contentDescription="@null"
                     android:scaleType="fitCenter"
                     android:visibility="gone" />
@@ -62,6 +63,7 @@
                     android:id="@+id/tv_reveal_emoji"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
+                    android:layout_gravity="center"
                     android:gravity="center"
                     android:textSize="80sp"
                     tools:text="🐧" />

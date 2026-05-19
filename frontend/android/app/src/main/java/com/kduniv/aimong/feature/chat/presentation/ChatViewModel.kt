@@ -86,7 +86,8 @@ class ChatViewModel @Inject constructor(
     ) {
         _uiState.update { state ->
             val welcomeText = if (hasEquippedPet) {
-                appContext.getString(R.string.chat_welcome_pet_fmt, petDisplayName)
+                val introName = GachaPetCatalog.introNameForChat(petType, petGrade)
+                appContext.getString(R.string.chat_welcome_pet_fmt, introName)
             } else {
                 appContext.getString(R.string.pet_equip_required_for_xp)
             }

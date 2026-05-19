@@ -31,4 +31,11 @@ sealed interface HomeRefreshTrigger {
         val xpEarned: Int = 0,
         val equippedPetXp: Int = 0,
     ) : HomeRefreshTrigger
+
+    /** 아이몽(Lv.3) 달성 — 홈 복귀 시 축하 팝업·Lottie */
+    data class PetAimongAchieved(
+        val petName: String,
+        val petType: String,
+        val grade: String,
+    ) : HomeRefreshTrigger
 }

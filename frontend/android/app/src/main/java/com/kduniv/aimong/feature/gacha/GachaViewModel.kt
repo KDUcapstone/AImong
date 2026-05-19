@@ -105,6 +105,22 @@ class GachaViewModel @Inject constructor(
         }
     }
 
+    /** 미션·진화 후 수집 탭 복귀 — GET /pet 으로 도감 Lv·스프라이트 갱신 */
+    fun refreshCatalogFromServer() {
+        viewModelScope.launch {
+            val petData = withContext(Dispatchers.IO) { petRepository.getPets().getOrNull() }
+                ?: return@launch
+            _state.update { s ->
+                val lists = buildPetLists(petData, s.fragmentRows)
+                s.copy(
+                    pets = petData,
+                    petCards = lists.encyclopedia,
+                    ownedCatalogCount = lists.ownedCount,
+                )
+            }
+        }
+    }
+
     /** 장착 변경 시 도감 전체를 다시 그리지 않고 장착 배지만 갱신 */
     private fun applyEquippedPetChange(petData: PetListData?, message: String?) {
         _state.update { s ->
@@ -316,10 +332,12 @@ class GachaViewModel @Inject constructor(
                 pet = owned,
                 isLocked = isLocked,
                 isEquipped = owned != null && owned.id == equippedId,
-                displayName = entry.displayName,
+                displayName = GachaUiMapper.displayNameForPetType(entry.petType, entry.grade),
                 emoji = entry.emoji,
                 grade = entry.grade,
-                levelLabel = owned?.let { GachaUiMapper.displayLevel(it) }.orEmpty(),
+                levelLabel = owned?.let { pet ->
+                    GachaUiMapper.displayCardLevelLabel(appContext, pet)
+                }.orEmpty(),
                 fragmentCount = count,
                 fragmentThreshold = threshold,
             )

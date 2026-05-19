@@ -45,6 +45,12 @@
     <string name="home_pet_sheet_title">내 펫</string>
     <string name="home_pet_level_fmt">Lv.%1$d</string>
     <string name="home_pet_xp_fmt">%1$d / %2$d XP</string>
+    <string name="home_pet_aimong_crown_hint">아이몽 달성 · 왕관 영구 해금</string>
+    <string name="gacha_pet_crown_unlocked">왕관 해금</string>
+    <string name="gacha_pet_level_xp_fmt">Lv.%1$d · %2$d/%3$d XP</string>
+    <string name="aimong_celebration_title_fmt">%1$s이(가) 아이몽이 됐어요!</string>
+    <string name="aimong_celebration_message">왕관이 영구 해금됐어요. 도감에서도 확인할 수 있어요!</string>
+    <string name="aimong_celebration_confirm">확인</string>
     <string name="home_island_progress_fmt">%1$d / %2$d 완료</string>
     <string name="home_chip_streak_fmt">%d일</string>
     <string name="home_today_mission_locked_hint">지금은 이 미션을 시작할 수 없어요.</string>
@@ -103,7 +109,6 @@
     <!-- Quiz Feedback -->
     <string name="quiz_feedback_correct">🎉 정답이에요!</string>
     <string name="quiz_feedback_wrong">😥 아쉬워요!</string>
-    <string name="quiz_feedback_correct_xp">🎉 정답이에요! +15 EXP</string>
     <string name="quiz_feedback_wrong_hint">다시 생각해볼까?</string>
     <string name="quiz_feedback_answer_saved_title">답변이 저장됐어요</string>
     <string name="quiz_answer_saved_hint">정답 여부는 모든 문제를 푼 뒤 제출하면 확인할 수 있어요.</string>
@@ -122,10 +127,14 @@
 
     <string name="quiz_mode_retry_challenge">다시 도전하기</string>
     <string name="quiz_mode_review_and_retry">복습 · 다시 도전하기</string>
-    <string name="quiz_result_review_subtitle_pass">복습 완료! EXP는 정상의 50%%만 쌓여요. (스트릭·티켓·기어 보상 없음)</string>
-    <string name="quiz_result_review_subtitle_fail">복습이에요. 통과하면 EXP 50%%를 받을 수 있어요.</string>
-    <string name="quiz_bonus_review_xp">복습 · +%1$d EXP (50%%)</string>
+    <string name="quiz_result_review_subtitle_pass">복습 완료! (EXP·스트릭·기어 보상 없음)</string>
+    <string name="quiz_result_review_subtitle_fail">복습이에요. 통과해도 EXP는 쌓이지 않아요.</string>
+    <string name="quiz_review_exp_banner">복습 · EXP 없음</string>
+    <string name="quiz_normal_exp_banner">통과 +10 XP · 퍼펙트 +10 · 스트릭 ×1.5</string>
     <string name="quiz_bonus_review_no_xp">복습 · EXP 없음</string>
+    <string name="quiz_bonus_no_xp">EXP 없음</string>
+    <string name="quiz_bonus_streak_xp">공동 스트릭 ×1.5 · 총 %1$d XP</string>
+    <string name="quiz_bonus_perfect_xp">퍼펙트 보너스 · +%1$d XP</string>
     <string name="quiz_bonus_pet_grade">%1$s 등급 보너스 · +%2$d XP</string>
     <string name="quiz_remaining_tickets_fmt">남은 뽑기 티켓 %1$d장</string>
     <string name="quiz_screen_title">AI 퀴즈</string>
@@ -210,6 +219,12 @@
     <string name="quest_reward_exp">XP %1$d</string>
     <string name="quest_auto_no_claim">자동 지급 퀘스트는 수령할 수 없어요</string>
     <string name="quest_reward_generic">보상을 받았어요</string>
+    <string name="quest_reward_celebration_title">보상을 받았어요!</string>
+    <string name="quest_reward_celebration_subtitle">「%1$s」 퀘스트</string>
+    <string name="quest_reward_celebration_confirm">확인</string>
+    <string name="quest_reward_line_ticket">뽑기 티켓</string>
+    <string name="quest_reward_line_exp">경험치</string>
+    <string name="quest_reward_line_gear">기어</string>
 
     <!-- Bottom nav -->
     <string name="bottom_nav_home">홈</string>
@@ -227,7 +242,7 @@
     <string name="chat_online">온라인</string>
     <string name="chat_privacy_banner">개인정보는 절대 말하지 마세요. 펫과 안전하게 대화해요!</string>
     <string name="chat_default_pet_name">에이몽</string>
-    <string name="chat_welcome_pet_fmt">안녕! 나는 %1$s이야. 궁금한 걸 편하게 물어봐!</string>
+    <string name="chat_welcome_pet_fmt">안녕! 나는 %1$s. 궁금한 걸 편하게 물어봐!</string>
     <string name="chat_remaining_calls_fmt">오늘 AI 친구와 %1$d번 더 이야기할 수 있어요</string>
     <string name="chat_remaining_calls_zero">오늘은 AI 친구와 이야기할 횟수를 다 썼어요. 내일 또 만나요!</string>
     <string name="chat_remaining_calls_unknown">AI 친구와 대화해 보세요.</string>

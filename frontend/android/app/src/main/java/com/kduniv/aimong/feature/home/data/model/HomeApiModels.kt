@@ -48,6 +48,7 @@ data class EquippedPetDto(
     @SerializedName("grade") val grade: String,
     @SerializedName("xp") val xp: Int = 0,
     @SerializedName("stage") val stage: String,
+    @SerializedName("mood") val mood: String? = null,
     @SerializedName("crownUnlocked") val crownUnlocked: Boolean = false,
     @SerializedName("crownType") val crownType: String? = null
 )

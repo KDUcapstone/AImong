@@ -3,14 +3,17 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/settings_screen_bg"
     android:padding="20dp">
 
     <ImageView
         android:id="@+id/btn_back"
         android:layout_width="48dp"
         android:layout_height="48dp"
+        android:contentDescription="@string/parent_settings_back"
         android:padding="12dp"
         android:src="@drawable/ic_back"
+        app:tint="@color/parent_mock_text_primary"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -19,7 +22,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/notification_settings_title"
-        android:textColor="#111827"
+        android:textColor="@color/parent_mock_text_primary"
         android:textSize="20sp"
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="@id/btn_back"
@@ -32,7 +35,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
         android:text="@string/notification_settings_child_readonly"
-        android:textColor="#6B7280"
+        android:textColor="@color/parent_mock_text_secondary"
         android:textSize="13sp"
         android:visibility="gone"
         app:layout_constraintEnd_toEndOf="parent"
@@ -45,7 +48,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:text="@string/notification_settings_fcm_gating_hint"
-        android:textColor="#9CA3AF"
+        android:textColor="@color/parent_mock_text_muted"
         android:textSize="12sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -77,35 +80,35 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="개인정보 알림"
-            android:textColor="#111827" />
+            android:textColor="@color/parent_mock_text_primary" />
 
         <com.google.android.material.switchmaterial.SwitchMaterial
             android:id="@+id/switch_study"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="학습 리마인더"
-            android:textColor="#111827" />
+            android:textColor="@color/parent_mock_text_primary" />
 
         <com.google.android.material.switchmaterial.SwitchMaterial
             android:id="@+id/switch_return_reward"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="복귀 보상 알림"
-            android:textColor="#111827" />
+            android:textColor="@color/parent_mock_text_primary" />
 
         <com.google.android.material.switchmaterial.SwitchMaterial
             android:id="@+id/switch_quest_reward"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="퀘스트 보상 알림"
-            android:textColor="#111827" />
+            android:textColor="@color/parent_mock_text_primary" />
 
         <com.google.android.material.switchmaterial.SwitchMaterial
             android:id="@+id/switch_marketing"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="마케팅 수신"
-            android:textColor="#111827" />
+            android:textColor="@color/parent_mock_text_primary" />
     </LinearLayout>
 
     <com.google.android.material.button.MaterialButton
@@ -114,10 +117,11 @@
         android:layout_height="56dp"
         android:layout_marginBottom="20dp"
         android:text="저장"
+        android:textColor="@color/white"
+        app:backgroundTint="@color/parent_mock_blue"
         app:cornerRadius="16dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
-

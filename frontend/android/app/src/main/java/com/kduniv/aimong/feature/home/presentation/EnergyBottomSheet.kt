@@ -23,6 +23,7 @@ import com.kduniv.aimong.feature.home.domain.ChildHomeRefreshBus
 import com.kduniv.aimong.feature.home.domain.HomeRefreshTrigger
 import com.kduniv.aimong.feature.home.domain.repository.HomeRepository
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -79,9 +80,11 @@ class EnergyBottomSheet : BottomSheetDialogFragment() {
                 dismissAllowingStateLoss()
                 return@setOnClickListener
             }
-            viewLifecycleOwner.lifecycleScope.launch {
+            lifecycleScope.launch {
                 btnAdd.isEnabled = false
-                homeRepository.addEnergy(ADD_AMOUNT).fold(
+                val result = homeRepository.addEnergy(ADD_AMOUNT)
+                if (!isAdded) return@launch
+                result.fold(
                     onSuccess = {
                         homeRefreshBus.notify(HomeRefreshTrigger.Full)
                         parentFragmentManager.setFragmentResult(
@@ -91,9 +94,15 @@ class EnergyBottomSheet : BottomSheetDialogFragment() {
                         dismissAllowingStateLoss()
                     },
                     onFailure = { e ->
-                        Snackbar.make(view, e.message ?: getString(R.string.energy_add_failed), Snackbar.LENGTH_LONG).show()
+                        if (e is CancellationException) return@fold
+                        if (!isAdded) return@fold
+                        Snackbar.make(
+                            requireView(),
+                            e.message ?: getString(R.string.energy_add_failed),
+                            Snackbar.LENGTH_LONG,
+                        ).show()
                         btnAdd.isEnabled = true
-                    }
+                    },
                 )
             }
         }
@@ -149,6 +158,7 @@ class EnergyBottomSheet : BottomSheetDialogFragment() {
                     btnAdd.alpha = if (full) 0.45f else 1f
                 },
                 onFailure = { e ->
+                    if (e is CancellationException) return@fold
                     tvValue.text = "—"
                     tvNext.text = e.message ?: getString(R.string.energy_load_failed)
                     tvCost.visibility = View.GONE

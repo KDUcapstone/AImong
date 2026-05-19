@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.kduniv.aimong.R
 import com.kduniv.aimong.databinding.ItemMissionBinding
 import com.kduniv.aimong.feature.mission.domain.model.Mission
+import com.kduniv.aimong.feature.mission.domain.model.showsReviewPathNode
 
 class MissionListAdapter(
     private val onMissionClick: (Mission) -> Unit
@@ -32,9 +33,9 @@ class MissionListAdapter(
             binding.tvTitle.text = mission.title
             binding.tvDescription.text = mission.description
 
-            val anyReviewable = mission.starLevels.any { it.isReviewable }
+            val reviewOnlyMission = mission.showsReviewPathNode()
             binding.tvReviewBadge.visibility =
-                if (mission.isUnlocked && anyReviewable) View.VISIBLE else View.GONE
+                if (mission.isUnlocked && reviewOnlyMission) View.VISIBLE else View.GONE
 
             val anyCompleted = mission.starLevels.any { it.isCompleted }
             val anyPlayable = mission.starLevels.any { it.isPlayable }
@@ -74,7 +75,7 @@ class MissionListAdapter(
                 }
 
                 binding.root.setOnClickListener {
-                    if (anyPlayable || anyReviewable) onMissionClick(mission)
+                    if (anyPlayable || mission.starLevels.any { it.isReviewOnly }) onMissionClick(mission)
                 }
             }
         }

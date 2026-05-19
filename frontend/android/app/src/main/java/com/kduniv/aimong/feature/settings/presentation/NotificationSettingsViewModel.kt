@@ -30,9 +30,14 @@ class NotificationSettingsViewModel @Inject constructor(
     private val _canEdit = MutableStateFlow(false)
     val canEdit = _canEdit.asStateFlow()
 
+    private val _isParentRole = MutableStateFlow(false)
+    val isParentRole = _isParentRole.asStateFlow()
+
     fun load() {
         viewModelScope.launch {
-            _canEdit.value = sessionManager.userRole.first() == "PARENT"
+            val isParent = sessionManager.userRole.first() == "PARENT"
+            _isParentRole.value = isParent
+            _canEdit.value = isParent
             repo.getSettings().fold(
                 onSuccess = { _settings.value = it },
                 onFailure = { _messageEvent.emit(it.message ?: "알림 설정을 불러오지 못했습니다.") }

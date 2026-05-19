@@ -288,26 +288,39 @@ class QuizRepositoryImpl @Inject constructor(
         val xpFromRewardList = data.rewards.orEmpty()
             .filter { normalizeRewardType(it.type) == "EXP" }
             .sumOf { it.count }
-        val xpEarnedResolved = data.xpEarned ?: data.exp ?: xpFromRewardList
         val isReview = data.mode == "review" || data.isReview == true
+        val isPassed = data.isPassed == true
+        val xpEarnedResolved = when {
+            isReview || !isPassed -> 0
+            else -> (data.xpEarned ?: data.exp ?: xpFromRewardList).coerceAtLeast(0)
+        }
+        val bonusXpResolved = when {
+            isReview || !isPassed -> 0
+            else -> data.bonusXp ?: 0
+        }
         val progressXp = data.currentXp ?: data.equippedPetXp ?: 0
         return QuizResult(
             mode = if (isReview) "review" else (data.mode ?: "normal"),
-            progressApplied = data.progressApplied ?: true,
+            progressApplied = when {
+                isReview -> false
+                else -> data.progressApplied ?: isPassed
+            },
             attemptState = normalizeAttemptStatus(data.attemptState),
             streakBonusApplied = data.streakBonusApplied ?: false,
             score = scorePercent,
             correctCount = correct,
             total = total,
             wrongCount = wrong,
-            isPassed = data.isPassed == true,
+            isPassed = isPassed,
             isPerfect = data.isPerfect ?: (correct == total && wrong == 0),
             isFirstClear = data.isFirstClear == true,
             equippedPetGrade = data.equippedPetGrade,
             xpEarned = xpEarnedResolved,
-            bonusXp = data.bonusXp ?: 0,
+            bonusXp = bonusXpResolved,
             bonusReason = data.bonusReason,
             petEvolved = data.petEvolved ?: false,
+            petStage = data.petStage,
+            equippedPetType = null,
             streakDays = data.streakDays ?: 0,
             todaySetCount = data.todaySetCount ?: 0,
             rewards = mapRewardsToDomain(data.rewards),
@@ -349,20 +362,26 @@ class QuizRepositoryImpl @Inject constructor(
         val xpFromRewards = data.rewards.orEmpty()
             .filter { normalizeRewardType(it.type) == "EXP" }
             .sumOf { it.count }
+        val isReview = data.isReview
+        val isPassed = data.isPassed == true
+        val xpEarnedResolved = when {
+            isReview || !isPassed -> 0
+            else -> xpFromRewards.coerceAtLeast(0)
+        }
         return QuizResult(
-            mode = if (data.isReview) "review" else "normal",
-            progressApplied = true,
+            mode = if (isReview) "review" else "normal",
+            progressApplied = !isReview && isPassed,
             attemptState = AttemptStatus.SUBMITTED.name,
             streakBonusApplied = false,
             score = scorePercent,
             correctCount = correct,
             total = total,
             wrongCount = wrong,
-            isPassed = data.isPassed == true,
+            isPassed = isPassed,
             isPerfect = data.isPerfect ?: (correct == total && wrong == 0),
             isFirstClear = data.isFirstClear == true,
             equippedPetGrade = null,
-            xpEarned = xpFromRewards,
+            xpEarned = xpEarnedResolved,
             bonusXp = 0,
             bonusReason = null,
             petEvolved = false,

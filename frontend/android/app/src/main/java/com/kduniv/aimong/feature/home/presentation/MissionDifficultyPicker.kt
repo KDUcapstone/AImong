@@ -14,6 +14,7 @@ import android.widget.Toast
 import androidx.core.widget.NestedScrollView
 import com.google.android.material.card.MaterialCardView
 import com.kduniv.aimong.feature.mission.domain.model.MissionStarLevel
+import com.kduniv.aimong.feature.mission.domain.model.normalizeToThreeLevels
 import androidx.interpolator.view.animation.FastOutSlowInInterpolator
 import com.kduniv.aimong.R
 import com.kduniv.aimong.databinding.FragmentHomeBinding
@@ -229,19 +230,11 @@ class MissionDifficultyPicker(
         onPick: (Int) -> Unit,
     ) {
         val materialCard = card as? MaterialCardView ?: return
+        val levels = starLevels.normalizeToThreeLevels()
         val unlocked = if (!useMissionStars) {
             true
         } else {
-            val sl = starLevels.firstOrNull { it.starLevel == starLevel }
-            when {
-                starLevels.isEmpty() -> false
-                sl != null -> when (unlockMode) {
-                    DifficultyUnlockMode.NEW_PLAY -> sl.isPlayable
-                    DifficultyUnlockMode.REVIEW -> sl.isReviewable
-                    DifficultyUnlockMode.PER_STAR -> sl.isPlayable || sl.isReviewable
-                }
-                else -> false
-            }
+            levels.isNotEmpty() && levels.isPickerUnlocked(starLevel, unlockMode)
         }
         materialCard.alpha = if (unlocked) 1f else 0.42f
         materialCard.isClickable = true

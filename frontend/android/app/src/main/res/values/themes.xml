@@ -12,6 +12,9 @@
         <!-- Edge-to-edge: 실제 색은 Window/인셋으로 처리 -->
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:textViewStyle">@style/Widget.AImong.TextView</item>
+        <item name="materialButtonStyle">@style/Widget.AImong.MaterialButton</item>
+        <item name="materialButtonOutlinedStyle">@style/Widget.AImong.MaterialButton.Outlined</item>
     </style>
 
     <style name="TransparentDialog" parent="Theme.MaterialComponents.Dialog">

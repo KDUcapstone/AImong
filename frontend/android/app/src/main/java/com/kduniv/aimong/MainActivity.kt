@@ -28,6 +28,7 @@ import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.NavOptions
 import com.kduniv.aimong.core.navigation.ChildTopLevelNav
+import com.kduniv.aimong.core.navigation.ChildTopLevelNav.navigateToChildTopLevel
 import com.kduniv.aimong.core.navigation.ChildTopLevelNav.onChildBottomNavTap
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.ui.AppBarConfiguration
@@ -279,7 +280,14 @@ class MainActivity : AppCompatActivity() {
 
                 binding.bottomNav.setOnItemSelectedListener { item ->
                     if (suppressChildBottomNavItemSelected) return@setOnItemSelectedListener true
-                    runCatching { navController.onChildBottomNavTap(item.itemId) }
+                    val currentId = navController.currentDestination?.id
+                    // MY 하위(알림 설정 등)에서 탭만 맞추는 경우 pop/navigate 하지 않음 — 잠깐 열렸다 닫힘 방지
+                    if (currentId == item.itemId ||
+                        ChildTopLevelNav.mapDestinationToTab(currentId) == item.itemId
+                    ) {
+                        return@setOnItemSelectedListener true
+                    }
+                    runCatching { navController.navigateToChildTopLevel(item.itemId) }
                     binding.bottomNav.post {
                         ChildTopLevelNav.mapDestinationToTab(navController.currentDestination?.id)?.let { tabId ->
                             syncChildBottomNavTabSelection(binding.bottomNav, tabId)
@@ -289,6 +297,7 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 binding.bottomNav.setOnItemReselectedListener { item ->
+                    if (suppressChildBottomNavItemSelected) return@setOnItemReselectedListener
                     navController.onChildBottomNavTap(item.itemId)
                 }
             } else if (userRole == "PARENT") {
@@ -392,7 +401,8 @@ class MainActivity : AppCompatActivity() {
                 }
                 bottomNav.invalidate()
             } finally {
-                suppressChildBottomNavItemSelected = false
+                // selectedItemId 변경 리스너는 finally 직후에 올 수 있어 한 프레임 뒤에 해제
+                bottomNav.post { suppressChildBottomNavItemSelected = false }
             }
         }
     }

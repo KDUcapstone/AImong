@@ -13,7 +13,11 @@ object GachaPetCatalog {
         val displayName: String,
         val grade: String,
         val emoji: String,
-    )
+        /** 챗봇 「나는 {displayName}{copulaYa}」 — 예: 폭풍매야, 밤송이햄이야 */
+        val copulaYa: String,
+    ) {
+        fun introNameForChat(): String = displayName + copulaYa
+    }
 
     /** GET /pet 의 petType 과 도감 행 매칭 (대소문자·공백 무시) */
     fun entryFor(petType: String?): Entry? {
@@ -24,6 +28,14 @@ object GachaPetCatalog {
 
     fun displayNameFor(petType: String, grade: String = "NORMAL"): String =
         entryFor(petType)?.displayName ?: fallbackDisplayName(petType, grade)
+
+    /** 챗봇 환영 인사 「나는 폭풍매야!」 등 */
+    fun introNameForChat(petType: String, grade: String = "NORMAL"): String {
+        val entry = entryFor(petType)
+        if (entry != null) return entry.introNameForChat()
+        val fallback = fallbackDisplayName(petType, grade)
+        return com.kduniv.aimong.feature.chat.PetNameCopula.introName(fallback)
+    }
 
     fun emojiFor(petType: String, grade: String = "NORMAL"): String =
         entryFor(petType)?.emoji ?: fallbackEmoji(grade)
@@ -50,27 +62,27 @@ object GachaPetCatalog {
     }
 
     val entries: List<Entry> = listOf(
-        Entry("pet_normal_001", "몽실토끼", "NORMAL", "🐰"),
-        Entry("pet_normal_002", "방울펭귄", "NORMAL", "🐧"),
-        Entry("pet_normal_003", "잎새여우", "NORMAL", "🦊"),
-        Entry("pet_normal_004", "젤리곰", "NORMAL", "🐻"),
-        Entry("pet_normal_005", "별콩새", "NORMAL", "🐤"),
-        Entry("pet_normal_006", "조개물개", "NORMAL", "🦭"),
-        Entry("pet_normal_007", "밤송이햄", "NORMAL", "🐹"),
-        Entry("pet_normal_008", "바람다람", "NORMAL", "🐿️"),
-        Entry("pet_normal_009", "달빛냥", "NORMAL", "🐱"),
-        Entry("pet_normal_010", "꽃사슴", "NORMAL", "🦌"),
-        Entry("pet_rare_001", "번개람쥐", "RARE", "⚡"),
-        Entry("pet_rare_002", "눈꽃여우", "RARE", "❄️"),
-        Entry("pet_rare_003", "수정사슴", "RARE", "💎"),
-        Entry("pet_rare_004", "구름양", "RARE", "☁️"),
-        Entry("pet_rare_005", "해초용", "RARE", "🐉"),
-        Entry("pet_rare_006", "그림자냥", "RARE", "🌙"),
-        Entry("pet_epic_001", "화염늑대", "EPIC", "🔥"),
-        Entry("pet_epic_002", "폭풍매", "EPIC", "🦅"),
-        Entry("pet_epic_003", "흑요호랑", "EPIC", "🐯"),
-        Entry("pet_epic_004", "루미드래곤", "EPIC", "✨"),
-        Entry("pet_legend_001", "태양봉황", "LEGEND", "☀️"),
-        Entry("pet_legend_002", "월광기린", "LEGEND", "🌙"),
+        Entry("pet_normal_001", "몽실토끼", "NORMAL", "🐰", "야"),
+        Entry("pet_normal_002", "방울펭귄", "NORMAL", "🐧", "이야"),
+        Entry("pet_normal_003", "잎새여우", "NORMAL", "🦊", "야"),
+        Entry("pet_normal_004", "젤리곰", "NORMAL", "🐻", "이야"),
+        Entry("pet_normal_005", "별콩새", "NORMAL", "🐤", "야"),
+        Entry("pet_normal_006", "조개물개", "NORMAL", "🦭", "야"),
+        Entry("pet_normal_007", "밤송이햄", "NORMAL", "🐹", "이야"),
+        Entry("pet_normal_008", "바람다람", "NORMAL", "🐿️", "이야"),
+        Entry("pet_normal_009", "달빛냥", "NORMAL", "🐱", "이야"),
+        Entry("pet_normal_010", "꽃사슴", "NORMAL", "🦌", "이야"),
+        Entry("pet_rare_001", "번개람쥐", "RARE", "⚡", "야"),
+        Entry("pet_rare_002", "눈꽃여우", "RARE", "❄️", "야"),
+        Entry("pet_rare_003", "수정사슴", "RARE", "💎", "이야"),
+        Entry("pet_rare_004", "구름양", "RARE", "☁️", "이야"),
+        Entry("pet_rare_005", "해초용", "RARE", "🐉", "이야"),
+        Entry("pet_rare_006", "그림자냥", "RARE", "🌙", "이야"),
+        Entry("pet_epic_001", "화염늑대", "EPIC", "🔥", "야"),
+        Entry("pet_epic_002", "폭풍매", "EPIC", "🦅", "야"),
+        Entry("pet_epic_003", "흑요호랑", "EPIC", "🐯", "이야"),
+        Entry("pet_epic_004", "루미드래곤", "EPIC", "✨", "이야"),
+        Entry("pet_legend_001", "태양봉황", "LEGEND", "☀️", "이야"),
+        Entry("pet_legend_002", "월광기린", "LEGEND", "🌙", "이야"),
     )
 }

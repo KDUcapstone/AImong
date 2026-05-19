@@ -1,8 +1,6 @@
 package com.kduniv.aimong.feature.home.presentation
 
 import android.view.View
-import android.widget.ProgressBar
-import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -18,7 +16,6 @@ import com.kduniv.aimong.R
 import com.kduniv.aimong.core.navigation.ChildTopLevelNav.onChildBottomNavTap
 import com.kduniv.aimong.core.ui.BaseFragment
 import com.kduniv.aimong.databinding.FragmentHomeBinding
-import com.kduniv.aimong.feature.gacha.PetArtAssets
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -33,6 +30,13 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
     override fun onResume() {
         super.onResume()
         viewModel.onHomeResumed()
+        viewModel.pendingAimongCelebration.value?.let { pending ->
+            binding.root.post {
+                if (!isAdded) return@post
+                AimongCelebrationDialog.show(this, pending)
+                viewModel.consumeAimongCelebration()
+            }
+        }
     }
 
     override fun initView() {
@@ -216,22 +220,11 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
         }
         val dialog = BottomSheetDialog(requireContext())
         val v = layoutInflater.inflate(R.layout.bottomsheet_pet_stats, null, false)
-        PetArtAssets.bindEquipped(
-            image = v.findViewById(R.id.iv_pet_sprite),
-            emojiFallback = v.findViewById(R.id.tv_pet_emoji),
-            petType = s.equippedPetType,
-            stage = s.petStage,
-            grade = s.equippedPetGrade,
+        PetStatsSheetUi.bind(
+            root = v,
+            state = s,
+            petNameFallback = getString(R.string.home_pet_name_default),
         )
-        v.findViewById<TextView>(R.id.tv_pet_name).text =
-            s.petName.ifBlank { getString(R.string.home_pet_name_default) }
-        v.findViewById<TextView>(R.id.tv_pet_level).text =
-            getString(R.string.home_pet_level_fmt, s.petLevel)
-        val maxXp = s.petMaxXp.coerceAtLeast(1)
-        val pct = ((s.petXp.toFloat() / maxXp) * 100f).toInt().coerceIn(0, 100)
-        v.findViewById<ProgressBar>(R.id.progress_pet_xp).progress = pct
-        v.findViewById<TextView>(R.id.tv_pet_xp_label).text =
-            getString(R.string.home_pet_xp_fmt, s.petXp, s.petMaxXp)
         dialog.setContentView(v)
         dialog.show()
     }
@@ -242,6 +235,18 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
     }
 
     override fun initObserver() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.pendingAimongCelebration.collect { pending ->
+                    if (pending == null || !isAdded) return@collect
+                    binding.root.post {
+                        if (!isAdded) return@post
+                        AimongCelebrationDialog.show(this@HomeFragment, pending)
+                        viewModel.consumeAimongCelebration()
+                    }
+                }
+            }
+        }
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->

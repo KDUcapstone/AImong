@@ -21,6 +21,7 @@ import com.kduniv.aimong.databinding.FragmentHomeBinding
 import com.kduniv.aimong.feature.home.presentation.EnergyBottomSheet
 import com.kduniv.aimong.feature.home.presentation.GearBottomSheet
 import com.kduniv.aimong.feature.home.presentation.HomeLayoutBinder
+import com.kduniv.aimong.feature.home.presentation.PetStatsSheetUi
 import com.kduniv.aimong.feature.home.presentation.DifficultyUnlockMode
 import com.kduniv.aimong.feature.home.presentation.MissionDifficultyPicker
 import com.kduniv.aimong.feature.home.presentation.QuestListBottomSheet
@@ -189,22 +190,11 @@ class MockHomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::
         val s = sampleState
         val dialog = BottomSheetDialog(requireContext())
         val v = layoutInflater.inflate(R.layout.bottomsheet_pet_stats, null, false)
-        PetArtAssets.bindEquipped(
-            image = v.findViewById(R.id.iv_pet_sprite),
-            emojiFallback = v.findViewById(R.id.tv_pet_emoji),
-            petType = s.equippedPetType,
-            stage = s.petStage,
-            grade = s.equippedPetGrade,
+        PetStatsSheetUi.bind(
+            root = v,
+            state = s,
+            petNameFallback = getString(R.string.home_pet_name_default),
         )
-        v.findViewById<TextView>(R.id.tv_pet_name).text =
-            s.petName.ifBlank { getString(R.string.home_pet_name_default) }
-        v.findViewById<TextView>(R.id.tv_pet_level).text =
-            getString(R.string.home_pet_level_fmt, s.petLevel)
-        val maxXp = s.petMaxXp.coerceAtLeast(1)
-        val pct = ((s.petXp.toFloat() / maxXp) * 100f).toInt().coerceIn(0, 100)
-        v.findViewById<ProgressBar>(R.id.progress_pet_xp).progress = pct
-        v.findViewById<TextView>(R.id.tv_pet_xp_label).text =
-            getString(R.string.home_pet_xp_fmt, s.petXp, s.petMaxXp)
         dialog.setContentView(v)
         dialog.show()
     }

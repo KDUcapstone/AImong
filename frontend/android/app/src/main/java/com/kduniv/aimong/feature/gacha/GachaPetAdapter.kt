@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.kduniv.aimong.R
 import com.kduniv.aimong.databinding.ItemGachaPetCardBinding
+import com.kduniv.aimong.feature.pet.domain.PetGrowthRules
 
 class GachaPetAdapter(
     private val onPetClick: (GachaPetCardUi) -> Unit
@@ -53,7 +54,11 @@ class GachaPetAdapter(
             binding.ivLocked.isVisible = item.isLocked
             val artStage = when {
                 item.isLocked -> "GROWTH"
-                else -> item.pet?.stage ?: "EGG"
+                item.pet != null -> PetGrowthRules.resolveEffectiveStageString(
+                    item.pet.stage,
+                    item.pet.xp,
+                )
+                else -> "EGG"
             }
             val allowStageFallback = item.isLocked
             PetArtAssets.bindSprite(

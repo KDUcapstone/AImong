@@ -2,6 +2,8 @@
 <resources>
     <!-- Aimongmockup 부모 플로우 (Tailwind gray/green/blue 계열) -->
     <color name="parent_mock_bg">#F9FAFB</color>
+    <!-- 부모·자녀 알림 설정 등 공통 밝은 설정 화면 -->
+    <color name="settings_screen_bg">#F9FAFB</color>
     <color name="parent_mock_surface">#FFFFFF</color>
     <color name="parent_mock_border">#E5E7EB</color>
     <color name="parent_mock_border_strong">#D1D5DB</color>
