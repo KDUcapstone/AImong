@@ -23,6 +23,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -65,6 +66,20 @@ class GachaViewModel @Inject constructor(
     init {
         refresh()
         prewarmPetArtCache()
+        viewModelScope.launch {
+            homeRefreshBus.events
+                .debounce(80)
+                .collect { trigger ->
+                    when (trigger) {
+                        is HomeRefreshTrigger.TicketsUpdated ->
+                            applyTickets(trigger.normal)
+                        HomeRefreshTrigger.Full,
+                        is HomeRefreshTrigger.MissionCompleted,
+                        is HomeRefreshTrigger.PetAimongAchieved,
+                        -> syncTicketsFromHome()
+                    }
+                }
+        }
     }
 
     private fun prewarmPetArtCache() {
@@ -90,10 +105,16 @@ class GachaViewModel @Inject constructor(
     /** 홈·퀘스트 보상 후 수집 탭 티켓 칩만 GET /home 으로 맞춤 */
     fun syncTicketsFromHome() {
         viewModelScope.launch {
-            loadTickets().getOrNull()?.let { tickets ->
-                _state.update { it.copy(tickets = tickets) }
-            }
+            loadTickets().getOrNull()?.let { tickets -> applyTickets(tickets.normal) }
         }
+    }
+
+    private fun applyTickets(normal: Int) {
+        val count = normal.coerceAtLeast(0)
+        if (UiMode.useStubNav) {
+            StubPetGachaStore.setNormalTickets(count)
+        }
+        _state.update { it.copy(tickets = RemainingTicketsDto(normal = count)) }
     }
 
     /** 홈·다른 탭에서 장착이 바뀐 뒤 수집 상단 장착 영역 동기화 */
@@ -262,6 +283,8 @@ class GachaViewModel @Inject constructor(
                 transientMessage = err,
             )
         }
+        val remaining = data.remainingTickets.normal.coerceAtLeast(0)
+        homeRefreshBus.notify(HomeRefreshTrigger.TicketsUpdated(remaining))
         if (!UiMode.useStubNav) {
             homeRefreshBus.notify(HomeRefreshTrigger.Full)
         }

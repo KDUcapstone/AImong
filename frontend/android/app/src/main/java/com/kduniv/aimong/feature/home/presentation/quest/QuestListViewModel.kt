@@ -131,15 +131,14 @@ class QuestListViewModel @Inject constructor(
             _loading.value = true
             questRepository.claimQuest(questType, periodStr).fold(
                 onSuccess = { data ->
+                    val ticketCount = data.remainingTickets.normal.coerceAtLeast(0)
                     val celebration = QuestRewardCelebrationMapper.from(
                         appContext,
                         questTitle,
                         data.rewards,
                     )
                     _effects.trySend(QuestSheetEffect.ShowRewardCelebration(celebration))
-                    _effects.trySend(
-                        QuestSheetEffect.TicketsPatched(data.remainingTickets.normal),
-                    )
+                    _effects.trySend(QuestSheetEffect.TicketsPatched(ticketCount))
                     if (!UiMode.useStubNav) {
                         homeRefreshBus.notify(HomeRefreshTrigger.Full)
                     }

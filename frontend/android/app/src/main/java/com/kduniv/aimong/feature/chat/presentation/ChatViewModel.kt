@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.lifecycle.viewModelScope
 import com.kduniv.aimong.R
 import com.kduniv.aimong.core.network.ChatMessageResponse
+import com.kduniv.aimong.feature.chat.toDataUri
 import com.kduniv.aimong.core.privacy.PrivacyRadar
 import com.kduniv.aimong.core.ui.BaseViewModel
 import com.kduniv.aimong.feature.chat.ChatForegroundTracker
@@ -131,14 +132,25 @@ class ChatViewModel @Inject constructor(
         }
     }
 
+    fun setImageRequestMode(enabled: Boolean) {
+        _uiState.update { it.copy(imageRequestMode = enabled) }
+    }
+
     fun sendMessage(text: String) {
         if (text.isBlank()) return
         val state = _uiState.value
         if (!state.sendEnabled) return
 
         viewModelScope.launch {
-            appendOutgoingAndTyping(text.trim())
-            when (val result = sendChatMessageUseCase(text)) {
+            val imageRequested = state.imageRequestMode
+            appendOutgoingAndTyping(text.trim(), imageRequested)
+            when (
+                val result = sendChatMessageUseCase(
+                    text,
+                    imageRequested = imageRequested,
+                    sessionId = state.sessionId,
+                )
+            ) {
                 is SendChatMessageUseCase.Result.PrivacyBlocked -> {
                     val detectedType = privacyRadar.detectedPrivacyApiType(text)
                     _uiState.update {
@@ -196,8 +208,15 @@ class ChatViewModel @Inject constructor(
                 }
                 return@launch
             }
-            appendOutgoingAndTyping(displayOutgoing)
-            when (val result = sendChatMessageUseCase.sendMasked(text)) {
+            val imageRequested = _uiState.value.imageRequestMode
+            appendOutgoingAndTyping(displayOutgoing, imageRequested)
+            when (
+                val result = sendChatMessageUseCase.sendMasked(
+                    text,
+                    imageRequested = imageRequested,
+                    sessionId = _uiState.value.sessionId,
+                )
+            ) {
                 is SendChatMessageUseCase.Result.Success -> {
                     applyAssistantReply(result.response, result.sentMessage)
                 }
@@ -225,7 +244,7 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    private fun appendOutgoingAndTyping(outgoingText: String) {
+    private fun appendOutgoingAndTyping(outgoingText: String, imageRequested: Boolean) {
         val user = ChatMessage(
             id = messageSeq.incrementAndGet(),
             text = outgoingText,
@@ -236,6 +255,7 @@ class ChatViewModel @Inject constructor(
             text = "",
             isMine = false,
             isTyping = true,
+            isImageTyping = imageRequested,
         )
         _uiState.update {
             it.copy(
@@ -265,15 +285,24 @@ class ChatViewModel @Inject constructor(
                     isMine = true,
                 )
             }
+            val imageUri = r.image?.toDataUri()
+            val replyText = when {
+                imageUri != null && isGenericImageReply(r.reply) -> ""
+                else -> r.reply
+            }
             state.copy(
                 messages = withUser + ChatMessage(
                     id = messageSeq.incrementAndGet(),
-                    text = r.reply,
+                    text = replyText,
                     isMine = false,
+                    imageDataUri = imageUri,
                 ),
                 isLoading = false,
                 remainingCalls = r.remainingCalls,
+                remainingImageCalls = r.remainingImageCalls ?: state.remainingImageCalls,
+                sessionId = r.sessionId?.takeIf { it.isNotBlank() } ?: state.sessionId,
                 pendingInputClear = true,
+                imageRequestMode = if (imageUri != null) false else state.imageRequestMode,
             )
         }
         val hint = r.hintSuggestion?.trim().orEmpty()
@@ -284,6 +313,12 @@ class ChatViewModel @Inject constructor(
 
     private fun removeTypingPlaceholder(messages: List<ChatMessage>): List<ChatMessage> =
         messages.filterNot { it.isTyping }
+
+    private fun isGenericImageReply(reply: String): Boolean {
+        val t = reply.trim()
+        return t.equals("Image generated.", ignoreCase = true) ||
+            t.equals("이미지가 생성되었습니다.", ignoreCase = true)
+    }
 
     fun clearError() {
         _uiState.update { it.copy(errorMessage = null) }
@@ -299,5 +334,8 @@ data class ChatMessage(
     val text: String,
     val isMine: Boolean,
     val isTyping: Boolean = false,
+    val isImageTyping: Boolean = false,
+    /** `data:{mime};base64,...` */
+    val imageDataUri: String? = null,
     val timestamp: Long = System.currentTimeMillis(),
 )

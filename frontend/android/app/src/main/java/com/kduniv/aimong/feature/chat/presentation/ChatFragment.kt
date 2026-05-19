@@ -41,6 +41,8 @@ class ChatFragment : BaseFragment<FragmentChatBinding>(FragmentChatBinding::infl
 
     private var suppressInputCallback = false
 
+    private var suppressImageModeCallback = false
+
     private var privacyDialog: AlertDialog? = null
 
     override fun shouldApplySystemBarInsets(): Boolean = false
@@ -73,6 +75,11 @@ class ChatFragment : BaseFragment<FragmentChatBinding>(FragmentChatBinding::infl
 
         binding.btnSend.setOnClickListener {
             viewModel.sendMessage(binding.etMessage.text?.toString().orEmpty())
+        }
+
+        binding.btnImageMode.addOnCheckedChangeListener { _, isChecked ->
+            if (suppressImageModeCallback) return@addOnCheckedChangeListener
+            viewModel.setImageRequestMode(isChecked)
         }
     }
 
@@ -121,6 +128,25 @@ class ChatFragment : BaseFragment<FragmentChatBinding>(FragmentChatBinding::infl
                         rc == 0 -> getString(R.string.chat_remaining_calls_zero)
                         else -> getString(R.string.chat_remaining_calls_fmt, rc)
                     }
+
+                    val ric = state.remainingImageCalls
+                    binding.tvRemainingImageCalls.isVisible = ric != null
+                    if (ric != null) {
+                        binding.tvRemainingImageCalls.text = when {
+                            ric == 0 -> getString(R.string.chat_remaining_image_calls_zero)
+                            else -> getString(R.string.chat_remaining_image_calls_fmt, ric)
+                        }
+                    }
+
+                    if (binding.btnImageMode.isChecked != state.imageRequestMode) {
+                        suppressImageModeCallback = true
+                        binding.btnImageMode.isChecked = state.imageRequestMode
+                        suppressImageModeCallback = false
+                    }
+                    binding.btnImageMode.isEnabled = !state.isLoading &&
+                        (ric == null || ric > 0) &&
+                        (rc == null || rc > 0)
+                    binding.tvImageModeHint.isVisible = state.imageRequestMode
 
                     state.errorMessage?.let { msg ->
                         Snackbar.make(binding.root, msg, Snackbar.LENGTH_LONG).show()

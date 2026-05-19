@@ -52,5 +52,20 @@
             android:textColor="@color/quiz_text_primary"
             android:textSize="15sp"
             tools:text="안녕! 궁금한 걸 편하게 물어봐!" />
+
+        <ImageView
+            android:id="@+id/iv_generated_image"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:adjustViewBounds="true"
+            android:background="@drawable/bg_chat_bubble_pet"
+            android:contentDescription="@string/chat_image_mode_toggle"
+            android:maxWidth="280dp"
+            android:padding="6dp"
+            android:scaleType="fitCenter"
+            android:visibility="gone"
+            tools:src="@drawable/ic_pet_placeholder"
+            tools:visibility="visible" />
     </LinearLayout>
 </LinearLayout>

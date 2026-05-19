@@ -25,7 +25,11 @@ class SendChatMessageUseCase @Inject constructor(
         data class PrivacyBlocked(val sensitiveRanges: List<IntRange>) : Result()
     }
 
-    suspend operator fun invoke(message: String): Result {
+    suspend operator fun invoke(
+        message: String,
+        imageRequested: Boolean = false,
+        sessionId: String? = null,
+    ): Result {
         val trimmed = message.trim()
         if (trimmed.isEmpty()) {
             return Result.Error("메시지를 입력해주세요.")
@@ -40,22 +44,21 @@ class SendChatMessageUseCase @Inject constructor(
             return Result.PrivacyBlocked(sensitiveRanges)
         }
 
-        return try {
-            val data = chatRepository.sendChatMessage(
-                ChatMessageRequest(message = trimmed, masked = false)
-            ).toResult().getOrThrow()
-            Result.Success(data, trimmed)
-        } catch (e: HttpException) {
-            Result.Error(ApiErrorMapper.userMessageForHttpException(e))
-        } catch (_: IOException) {
-            Result.Error("네트워크 연결을 확인해주세요.")
-        } catch (e: Exception) {
-            Result.Error(e.message?.takeIf { it.isNotBlank() } ?: "요청을 처리하지 못했습니다.")
-        }
+        return sendRequest(
+            message = trimmed,
+            masked = false,
+            imageRequested = imageRequested,
+            sessionId = sessionId,
+            displayMessage = trimmed,
+        )
     }
 
     /** 사용자가 '가리고 보내기'를 선택한 뒤 — [maskForChatSend] 후 `masked=true` 전송. */
-    suspend fun sendMasked(message: String): Result {
+    suspend fun sendMasked(
+        message: String,
+        imageRequested: Boolean = false,
+        sessionId: String? = null,
+    ): Result {
         val trimmedFull = message.trim()
         if (trimmedFull.isEmpty()) {
             return Result.Error("메시지를 입력해주세요.")
@@ -70,13 +73,34 @@ class SendChatMessageUseCase @Inject constructor(
             return Result.Error("보낼 내용이 없어요. 문장을 조금 더 적어 주세요.")
         }
 
+        return sendRequest(
+            message = toSend,
+            masked = true,
+            imageRequested = imageRequested,
+            sessionId = sessionId,
+            displayMessage = toSend,
+        )
+    }
+
+    private suspend fun sendRequest(
+        message: String,
+        masked: Boolean,
+        imageRequested: Boolean,
+        sessionId: String?,
+        displayMessage: String,
+    ): Result {
         return try {
             val data = chatRepository.sendChatMessage(
-                ChatMessageRequest(message = toSend, masked = true)
+                ChatMessageRequest(
+                    message = message,
+                    masked = masked,
+                    sessionId = sessionId?.takeIf { it.isNotBlank() },
+                    imageRequested = if (imageRequested) true else null,
+                )
             ).toResult().getOrThrow()
-            Result.Success(data, toSend)
+            Result.Success(data, displayMessage)
         } catch (e: HttpException) {
-            Result.Error(ApiErrorMapper.userMessageForHttpException(e))
+            Result.Error(ApiErrorMapper.userMessageForChatHttpException(e, imageRequested))
         } catch (_: IOException) {
             Result.Error("네트워크 연결을 확인해주세요.")
         } catch (e: Exception) {

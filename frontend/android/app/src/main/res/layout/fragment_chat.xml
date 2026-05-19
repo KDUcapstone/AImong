@@ -123,11 +123,33 @@
             android:id="@+id/tv_remaining_calls"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingBottom="6dp"
+            android:paddingBottom="2dp"
             android:textColor="@color/quiz_text_grey"
             android:textSize="12sp"
             android:visibility="gone"
             tools:text="오늘 5번 더 이야기할 수 있어요"
+            tools:visibility="visible" />
+
+        <TextView
+            android:id="@+id/tv_remaining_image_calls"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingBottom="6dp"
+            android:textColor="@color/quiz_text_grey"
+            android:textSize="12sp"
+            android:visibility="gone"
+            tools:text="오늘 그림은 4번 더 그릴 수 있어요"
+            tools:visibility="visible" />
+
+        <TextView
+            android:id="@+id/tv_image_mode_hint"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingBottom="6dp"
+            android:text="@string/chat_image_mode_on_hint"
+            android:textColor="@color/child_nav_item_selected"
+            android:textSize="12sp"
+            android:visibility="gone"
             tools:visibility="visible" />
 
         <TextView
@@ -161,6 +183,24 @@
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
             android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_image_mode"
+                style="@style/Widget.Material3.Button.Icon"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginEnd="8dp"
+                android:checkable="true"
+                android:contentDescription="@string/chat_image_mode_toggle"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:padding="0dp"
+                app:background="@drawable/bg_chat_image_toggle"
+                app:icon="@drawable/ic_chat_image"
+                app:iconGravity="textStart"
+                app:iconPadding="0dp"
+                app:iconSize="22dp"
+                app:iconTint="@color/chat_image_toggle_icon" />
 
             <EditText
                 android:id="@+id/et_message"

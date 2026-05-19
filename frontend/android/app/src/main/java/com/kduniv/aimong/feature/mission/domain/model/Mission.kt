@@ -36,6 +36,13 @@ fun Mission.showsReviewPathNode(): Boolean {
     return !stars.hasNewPlayable() && stars.any { it.isReviewOnly }
 }
 
+/** GET /missions 에 playable/review/completed 힌트가 없을 때만 status 보강 대상 */
+fun Mission.needsStatusStarSupplement(): Boolean {
+    if (starLevels.isEmpty()) return true
+    val stars = starLevels.normalizeToThreeLevels()
+    return stars.none { it.isPlayable || it.isReviewable || it.isCompleted }
+}
+
 /**
  * 홈 미션 노드 아래 ★ 채움(0~3): [isPlayable]인 최고 난이도 번호까지 채움.
  * 예) ★2 playable → 2개 → `★★☆` (보통까지 해금·피커에서도 1~2 동일 기준)

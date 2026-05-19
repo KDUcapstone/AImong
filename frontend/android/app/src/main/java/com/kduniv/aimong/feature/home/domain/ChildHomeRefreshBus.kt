@@ -26,6 +26,9 @@ sealed interface HomeRefreshTrigger {
     /** XP·미션 경로·스트릭·에너지·티켓 등 전체 동기화 */
     data object Full : HomeRefreshTrigger
 
+    /** `tickets.normal` 즉시 반영 — 홈 칩·수집 탭 동기화 */
+    data class TicketsUpdated(val normal: Int) : HomeRefreshTrigger
+
     /** 미션 제출 직후 — 서버 응답 전 칩·펫 바 선반영용 */
     data class MissionCompleted(
         val xpEarned: Int = 0,

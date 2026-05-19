@@ -252,6 +252,14 @@
     <string name="chat_privacy_dialog_message">민감해 보이는 부분은 [***]로 가려서 보낼 수 있어요. 그래도 직접 지우고 다시 쓰는 것이 가장 안전해요.</string>
     <string name="chat_privacy_action_cancel">취소</string>
     <string name="chat_privacy_action_mask">가리고 보내기</string>
+    <string name="chat_image_mode_toggle">그림 그리기</string>
+    <string name="chat_image_mode_on_hint">그림 그리기 모드 — 설명을 적고내면 AI가 그려줘요</string>
+    <string name="chat_typing_image">그림을 그리고 있어요…</string>
+    <string name="chat_remaining_image_calls_fmt">오늘 그림은 %1$d번 더 그릴 수 있어요</string>
+    <string name="chat_remaining_image_calls_zero">오늘 그림 그리기 횟수를 다 썼어요. 내일 또 만나요!</string>
+    <string name="chat_image_limit_reached">오늘 그림 그리기 횟수를 다 썼어요. 내일 또 만나요!</string>
+    <string name="chat_image_timeout">그림을 만드는 데 시간이 너무 걸렸어요. 다시 시도해 주세요.</string>
+    <string name="chat_image_failed">그림을 만들지 못했어요. 잠시 후 다시 시도해 주세요.</string>
     <string name="home_mission_tooltip_review">복습하기</string>
     <string name="quest_retry">다시 시도</string>
     <string name="quest_load_failed">퀘스트를 불러오지 못했습니다.</string>

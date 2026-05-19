@@ -26,9 +26,15 @@ import com.kduniv.aimong.feature.mission.domain.repository.MissionRepository
 import com.kduniv.aimong.feature.wallet.domain.repository.WalletRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import com.kduniv.aimong.feature.mission.domain.model.needsStatusStarSupplement
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.supervisorScope
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
@@ -78,6 +84,7 @@ class HomeViewModel @Inject constructor(
 
     private fun handleRefreshTrigger(trigger: HomeRefreshTrigger) {
         when (trigger) {
+            is HomeRefreshTrigger.TicketsUpdated -> patchTicketCount(trigger.normal)
             is HomeRefreshTrigger.MissionCompleted -> {
                 applyMissionXpHint(trigger.xpEarned, trigger.equippedPetXp)
                 loadHome(showLoading = false)
@@ -124,8 +131,14 @@ class HomeViewModel @Inject constructor(
         _uiState.update { it.copy(subtleNotice = null) }
     }
 
-    /** 퀘스트·복귀 보상 등으로 서버가 준 기본 티켓 보유량만 반영 */
+    /** 퀘스트·복귀 등 — 홈 칩 즉시 반영 + 수집 탭 알림 */
     fun applyRemainingTickets(normal: Int) {
+        val count = normal.coerceAtLeast(0)
+        patchTicketCount(count)
+        homeRefreshBus.notify(HomeRefreshTrigger.TicketsUpdated(count))
+    }
+
+    private fun patchTicketCount(normal: Int) {
         val count = normal.coerceAtLeast(0)
         _uiState.update { s ->
             s.copy(
@@ -257,6 +270,7 @@ class HomeViewModel @Inject constructor(
                         )
                     }
                     _uiState.value = ui
+                    homeRefreshBus.notify(HomeRefreshTrigger.TicketsUpdated(ui.normalTickets))
                 },
                 onFailure = { e ->
                     if (e is CancellationException) return@launch
@@ -332,29 +346,21 @@ class HomeViewModel @Inject constructor(
     fun isMissionUnlocked(missionId: String): Boolean =
         _uiState.value.isMissionUnlocked(missionId)
 
-    /** GET /missions 에 starLevels가 비어 있으면 status로 채운 뒤 경로를 구성한다. */
-    private suspend fun supplementMissionsStarLevels(missions: List<Mission>): List<Mission> {
+    /**
+     * GET /missions 의 starLevels 로 경로를 먼저 구성한다.
+     * status 는 화면에 보이는 미션만 [supplementEmptyMissionStarLevels] 에서 지연·병렬 보강.
+     */
+    private fun supplementMissionsStarLevels(missions: List<Mission>): List<Mission> {
         if (UiMode.useStubNav) return missions
         return missions.map { mission ->
-            val base = mission.copy(
-                starLevels = mission.starLevels.normalizeToThreeLevels(),
-            )
-            val snapshot = fetchMissionStatusSnapshot(mission.missionId)
-            val merged = snapshot?.stars?.let { statusStars ->
-                base.starLevels.mergePreservingHigherUnlock(statusStars)
-            } ?: base.starLevels
-
-            val resolved = when {
-                merged.openDifficultyCount() > 0 -> merged
+            val base = mission.copy(starLevels = mission.starLevels.normalizeToThreeLevels())
+            val stars = when {
+                !base.needsStatusStarSupplement() -> base.starLevels
                 base.isUnlocked && base.stage == 1 ->
                     MissionPathDevHelper.withGuaranteedEasyPlayable(base).starLevels.normalizeToThreeLevels()
-                else -> merged
+                else -> base.starLevels
             }
-
-            base.copy(
-                starLevels = resolved,
-                isUnlocked = snapshot?.isUnlocked ?: base.isUnlocked,
-            )
+            base.copy(starLevels = stars)
         }
     }
 
@@ -411,18 +417,22 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    /** GET /missions 에 starLevels가 비어 있는 미션(2·3스테이지 등)을 status로 보강 */
+    /** 경로에 노출된 미션 중 목록 API 만으로 부족한 것만 status 로 보강(비동기·병렬) */
     private fun supplementEmptyMissionStarLevels(path: List<HomePathItem>) {
         if (UiMode.useStubNav) return
-        val ids = path.missionIdsNeedingStarSupplement()
+        val ids = path.missionIdsNeedingStarSupplement().filter { missionId ->
+            val mission = _uiState.value.missionStarLevelsById[missionId]
+            mission == null || mission.none { it.isPlayable || it.isReviewable || it.isCompleted }
+        }
         if (ids.isEmpty()) return
         viewModelScope.launch {
-            ids.forEach { missionId ->
-                val cached = missionStarLevels(missionId)
-                if (cached.isNotEmpty() && cached.any { it.isPlayable || it.isReviewable }) {
-                    return@forEach
-                }
-                ensureMissionStarLevels(missionId)
+            val limiter = Semaphore(MAX_PARALLEL_MISSION_STATUS)
+            supervisorScope {
+                ids.map { missionId ->
+                    async {
+                        limiter.withPermit { ensureMissionStarLevels(missionId) }
+                    }
+                }.awaitAll()
             }
         }
     }
@@ -490,7 +500,7 @@ class HomeViewModel @Inject constructor(
         unlockMode: DifficultyUnlockMode,
     ): Result<HomeQuizNavigation> {
         if (nav.entrySetId.isNotBlank()) {
-            return validateEntrySetQuizNav(nav)
+            return validateEntrySetQuizNav(nav, unlockMode)
         }
         if (nav.missionId.isBlank()) {
             return Result.failure(Exception(appContext.getString(R.string.mission_no_playable_star_level)))
@@ -509,9 +519,11 @@ class HomeViewModel @Inject constructor(
             if (!status.isUnlocked) {
                 return Result.failure(Exception(appContext.getString(R.string.quiz_mission_locked)))
             }
-            val energy = status.energy
-            if (energy != null && energy.current < energy.required) {
-                return Result.failure(Exception(appContext.getString(R.string.quiz_insufficient_energy)))
+            if (unlockMode != DifficultyUnlockMode.REVIEW) {
+                val energy = status.energy
+                if (energy != null && energy.current < energy.required) {
+                    return Result.failure(Exception(appContext.getString(R.string.quiz_insufficient_energy)))
+                }
             }
             val sl = stars.firstOrNull { it.starLevel == nav.starLevel }
             val allowed = when (unlockMode) {
@@ -530,7 +542,10 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    private suspend fun validateEntrySetQuizNav(nav: HomeQuizNavigation): Result<HomeQuizNavigation> {
+    private suspend fun validateEntrySetQuizNav(
+        nav: HomeQuizNavigation,
+        unlockMode: DifficultyUnlockMode,
+    ): Result<HomeQuizNavigation> {
         if (UiMode.useStubNav) return Result.success(nav)
         if (nav.missionId.isBlank()) return Result.success(nav)
         return try {
@@ -539,9 +554,11 @@ class HomeViewModel @Inject constructor(
             if (!status.isUnlocked) {
                 return Result.failure(Exception(appContext.getString(R.string.quiz_mission_locked)))
             }
-            val energy = status.energy
-            if (energy != null && energy.current < energy.required) {
-                return Result.failure(Exception(appContext.getString(R.string.quiz_insufficient_energy)))
+            if (unlockMode != DifficultyUnlockMode.REVIEW) {
+                val energy = status.energy
+                if (energy != null && energy.current < energy.required) {
+                    return Result.failure(Exception(appContext.getString(R.string.quiz_insufficient_energy)))
+                }
             }
             Result.success(nav)
         } catch (e: HttpException) {
@@ -583,5 +600,7 @@ class HomeViewModel @Inject constructor(
     companion object {
         private const val PREFS_HOME = "aimong_home"
         private const val KEY_LAST_SERVER_DATE = "last_server_date_kst"
+        /** 홈 진입 시 status fan-out 상한 — 미션 수 × p50 지연 방지 */
+        private const val MAX_PARALLEL_MISSION_STATUS = 3
     }
 }

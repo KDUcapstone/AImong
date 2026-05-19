@@ -25,6 +25,7 @@ import com.kduniv.aimong.R
 import com.kduniv.aimong.core.network.AimongApiService
 import com.kduniv.aimong.core.network.ApiErrorMapper
 import com.kduniv.aimong.core.network.toResult
+import com.kduniv.aimong.feature.mission.data.model.MissionStatusResponseData
 import com.kduniv.aimong.feature.quiz.data.model.MissionAttemptReviveResponseData
 import retrofit2.HttpException
 import com.kduniv.aimong.feature.quiz.domain.model.AttemptStatus
@@ -203,7 +204,7 @@ class QuizViewModel @Inject constructor(
         return quizRepository.getQuestionsBySetId(setId)
     }
 
-    /** v2.4: missions/{missionId}/status로 진행중 attempt가 있으면 복구, 없으면 새 출제 */
+    /** v2.4: status 1회 조회 — 진행 중 attempt 복구 또는 신규 출제 */
     private suspend fun loadByMissionWithStatus(
         missionId: String,
         starLevel: Int,
@@ -215,20 +216,19 @@ class QuizViewModel @Inject constructor(
                 answeredQuestionIds = emptySet()
                 return quizRepository.getQuestionsByMission(missionId, starLevel)
             }
+            val status = apiService.getMissionStatus(missionId).toResult().getOrThrow()
+            val skipEnergy = _isReviewMode.value
+
             if (requireFreshStart) {
-                validateMissionStatus(
-                    missionId,
-                    starLevel,
-                    allowInProgress = false,
-                    skipEnergyCheck = _isReviewMode.value,
-                ).getOrElse { return kotlin.Result.failure(it) }
+                validateStatusOrThrow(status, starLevel, allowInProgress = false, skipEnergyCheck = skipEnergy)
                 attemptId = null
                 answeredQuestionIds = emptySet()
                 return quizRepository.getQuestionsByMission(missionId, starLevel)
             }
-            val statusData = apiService.getMissionStatus(missionId).toResult().getOrThrow()
-            val inProgress = statusData.inProgressAttempt
+
+            val inProgress = status.inProgressAttempt
             if (inProgress != null) {
+                validateStatusOrThrow(status, starLevel, allowInProgress = true, skipEnergyCheck = skipEnergy)
                 attemptId = inProgress.attemptId
                 quizRepository.getAttempt(inProgress.attemptId)
                     .onSuccess { attempt ->
@@ -236,15 +236,13 @@ class QuizViewModel @Inject constructor(
                         attempt.remainingLives?.let { _sessionLives.value = it.coerceIn(0, 3) }
                         _isReviewMode.value = attempt.isReview
                     }
-                quizRepository.getQuestionsBySetId(inProgress.setId)
-            } else {
-                validateMissionStatus(missionId, starLevel, allowInProgress = false).getOrElse {
-                    return kotlin.Result.failure(it)
-                }
-                attemptId = null
-                answeredQuestionIds = emptySet()
-                quizRepository.getQuestionsByMission(missionId, starLevel)
+                return quizRepository.getQuestionsBySetId(inProgress.setId)
             }
+
+            validateStatusOrThrow(status, starLevel, allowInProgress = false, skipEnergyCheck = skipEnergy)
+            attemptId = null
+            answeredQuestionIds = emptySet()
+            quizRepository.getQuestionsByMission(missionId, starLevel)
         } catch (e: HttpException) {
             kotlin.Result.failure(Exception(ApiErrorMapper.userMessageForHttpException(e)))
         } catch (e: Throwable) {
@@ -252,7 +250,7 @@ class QuizViewModel @Inject constructor(
         }
     }
 
-    /** v2.4 status: 잠금·에너지·별 난이도 플레이 가능 여부 */
+    /** v2.4 status: 잠금·에너지·별 난이도 — status 는 호출부에서 1회만 조회 */
     private suspend fun validateMissionStatus(
         missionId: String,
         starLevel: Int,
@@ -262,26 +260,33 @@ class QuizViewModel @Inject constructor(
         if (UiMode.useStubNav) return kotlin.Result.success(Unit)
         return try {
             val status = apiService.getMissionStatus(missionId).toResult().getOrThrow()
-            if (!status.isUnlocked) {
-                return kotlin.Result.failure(Exception(appContext.getString(R.string.quiz_mission_locked)))
-            }
-            if (!skipEnergyCheck && (!allowInProgress || status.inProgressAttempt == null)) {
-                val energy = status.energy
-                if (energy != null && energy.current < energy.required) {
-                    return kotlin.Result.failure(
-                        Exception(appContext.getString(R.string.quiz_insufficient_energy))
-                    )
-                }
-            }
-            val sl = status.starLevels.firstOrNull { it.starLevel == starLevel }
-            if (sl != null && !sl.isPlayable && !sl.isReviewable) {
-                return kotlin.Result.failure(Exception(appContext.getString(R.string.quiz_star_not_playable)))
-            }
+            validateStatusOrThrow(status, starLevel, allowInProgress, skipEnergyCheck)
             kotlin.Result.success(Unit)
         } catch (e: HttpException) {
             kotlin.Result.failure(Exception(ApiErrorMapper.userMessageForHttpException(e)))
         } catch (e: Throwable) {
             kotlin.Result.failure(e)
+        }
+    }
+
+    private fun validateStatusOrThrow(
+        status: MissionStatusResponseData,
+        starLevel: Int,
+        allowInProgress: Boolean,
+        skipEnergyCheck: Boolean,
+    ) {
+        if (!status.isUnlocked) {
+            throw Exception(appContext.getString(R.string.quiz_mission_locked))
+        }
+        if (!skipEnergyCheck && (!allowInProgress || status.inProgressAttempt == null)) {
+            val energy = status.energy
+            if (energy != null && energy.current < energy.required) {
+                throw Exception(appContext.getString(R.string.quiz_insufficient_energy))
+            }
+        }
+        val sl = status.starLevels.firstOrNull { it.starLevel == starLevel }
+        if (sl != null && !sl.isPlayable && !sl.isReviewable) {
+            throw Exception(appContext.getString(R.string.quiz_star_not_playable))
         }
     }
 

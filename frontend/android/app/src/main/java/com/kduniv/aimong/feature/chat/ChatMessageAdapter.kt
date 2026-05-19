@@ -8,6 +8,9 @@ import androidx.recyclerview.widget.RecyclerView
 import com.kduniv.aimong.databinding.ItemChatMessagePetBinding
 import com.kduniv.aimong.databinding.ItemChatMessageTypingBinding
 import com.kduniv.aimong.databinding.ItemChatMessageUserBinding
+import androidx.core.view.isVisible
+import com.bumptech.glide.Glide
+import com.kduniv.aimong.R
 import com.kduniv.aimong.feature.chat.presentation.ChatMessage
 import com.kduniv.aimong.feature.gacha.PetArtAssets
 
@@ -42,7 +45,7 @@ class ChatMessageAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(Dif
         val item = getItem(position)
         when (holder) {
             is PetVh -> holder.bind(item, petType, petStage, petAvatarEmoji)
-            is TypingVh -> holder.bind(petType, petStage, petAvatarEmoji)
+            is TypingVh -> holder.bind(item, petType, petStage, petAvatarEmoji)
             is UserVh -> holder.bind(item)
         }
     }
@@ -52,7 +55,20 @@ class ChatMessageAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(Dif
     ) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(item: ChatMessage, petType: String, petStage: String, avatarEmoji: String) {
-            binding.tvMessage.text = item.text
+            val imageUri = item.imageDataUri
+            if (imageUri != null) {
+                binding.ivGeneratedImage.isVisible = true
+                binding.tvMessage.isVisible = item.text.isNotBlank()
+                binding.tvMessage.text = item.text
+                Glide.with(binding.ivGeneratedImage)
+                    .load(imageUri)
+                    .into(binding.ivGeneratedImage)
+            } else {
+                binding.ivGeneratedImage.isVisible = false
+                Glide.with(binding.ivGeneratedImage).clear(binding.ivGeneratedImage)
+                binding.tvMessage.isVisible = true
+                binding.tvMessage.text = item.text
+            }
             PetArtAssets.bindSprite(
                 image = binding.ivPetAvatarSprite,
                 emojiFallback = binding.tvPetAvatarEmoji,
@@ -67,7 +83,10 @@ class ChatMessageAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(Dif
         private val binding: ItemChatMessageTypingBinding,
     ) : RecyclerView.ViewHolder(binding.root) {
 
-        fun bind(petType: String, petStage: String, avatarEmoji: String) {
+        fun bind(item: ChatMessage, petType: String, petStage: String, avatarEmoji: String) {
+            binding.tvTypingLabel.text = binding.root.context.getString(
+                if (item.isImageTyping) R.string.chat_typing_image else R.string.chat_typing
+            )
             PetArtAssets.bindSprite(
                 image = binding.ivPetAvatarSprite,
                 emojiFallback = binding.tvPetAvatarEmoji,

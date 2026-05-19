@@ -94,6 +94,10 @@ object StubPetGachaStore {
         RemainingTicketsDto(normal = normalTickets)
     }
 
+    fun setNormalTickets(count: Int) {
+        synchronized(lock) { normalTickets = count.coerceAtLeast(0) }
+    }
+
     fun gachaPullCount(): Int = synchronized(lock) { gachaPullCount }
 
     fun setGachaPullCount(count: Int) {

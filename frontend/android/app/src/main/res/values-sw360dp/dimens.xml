@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 좁은 폭(멀티윈도·Z Flip 등) — 상단 칩 5개가 가로 스크롤 없이 들어가도록 축소 -->
+<resources>
+    <dimen name="home_top_chip_min_height">32dp</dimen>
+    <dimen name="home_top_chip_pad_h">7dp</dimen>
+    <dimen name="home_top_chip_pad_v">5dp</dimen>
+    <dimen name="home_top_chip_gap_h">3dp</dimen>
+    <dimen name="home_top_chip_icon">15dp</dimen>
+    <dimen name="home_top_chip_text_gap">4dp</dimen>
+    <dimen name="home_top_chip_text_size">11sp</dimen>
+    <dimen name="home_top_chips_scroll_pad_h">8dp</dimen>
+    <dimen name="home_top_chips_scroll_pad_v">4dp</dimen>
+</resources>

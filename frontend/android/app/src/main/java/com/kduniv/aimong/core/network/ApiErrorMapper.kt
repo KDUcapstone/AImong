@@ -21,6 +21,48 @@ object ApiErrorMapper {
         return userMessageForCode(error.code, error.message)
     }
 
+    fun userMessageForChatHttpException(e: HttpException, imageRequested: Boolean): String {
+        val base = userMessageForHttpException(e)
+        if (!imageRequested) return base
+        val body = try {
+            e.response()?.errorBody()?.string()
+        } catch (_: Exception) {
+            null
+        }
+        val parsed = body?.let { parseErrorEnvelope(it) }?.error
+        val code = parsed?.code
+        val serverMsg = parsed?.message?.trim().orEmpty()
+        return when {
+            e.code() == 429 && isImageLimitMessage(serverMsg) ->
+                chatImageLimitMessage()
+            e.code() == 504 && imageRequested ->
+                chatImageTimeoutMessage()
+            e.code() in 500..599 && imageRequested && isImageFailureMessage(serverMsg) ->
+                chatImageFailedMessage()
+            code == "GATEWAY_TIMEOUT" && imageRequested -> chatImageTimeoutMessage()
+            code == "INTERNAL_ERROR" && imageRequested && isImageFailureMessage(serverMsg) ->
+                chatImageFailedMessage()
+            else -> base
+        }
+    }
+
+    private fun isImageLimitMessage(message: String): Boolean =
+        message.contains("image", ignoreCase = true) &&
+            (message.contains("limit", ignoreCase = true) || message.contains("generation", ignoreCase = true))
+
+    private fun isImageFailureMessage(message: String): Boolean =
+        message.contains("image", ignoreCase = true) &&
+            (message.contains("generation", ignoreCase = true) || message.contains("failed", ignoreCase = true))
+
+    private fun chatImageLimitMessage(): String =
+        "오늘 그림 그리기 횟수를 다 썼어요. 내일 또 만나요!"
+
+    private fun chatImageTimeoutMessage(): String =
+        "그림을 만드는 데 시간이 너무 걸렸어요. 다시 시도해 주세요."
+
+    private fun chatImageFailedMessage(): String =
+        "그림을 만들지 못했어요. 잠시 후 다시 시도해 주세요."
+
     fun userMessageForHttpException(e: HttpException): String {
         val code = e.code()
         val body = try {

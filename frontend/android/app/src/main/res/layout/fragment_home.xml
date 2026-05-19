@@ -220,32 +220,33 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:fillViewport="true"
-            android:paddingHorizontal="12dp"
-            android:paddingTop="6dp"
-            android:paddingBottom="8dp"
+            android:paddingHorizontal="@dimen/home_top_chips_scroll_pad_h"
+            android:paddingTop="@dimen/home_top_chips_scroll_pad_v"
+            android:paddingBottom="@dimen/home_top_chips_scroll_pad_v"
             android:scrollbars="none">
 
         <LinearLayout
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:gravity="center"
+            android:layout_gravity="center_horizontal"
+            android:gravity="center_vertical"
             android:orientation="horizontal">
 
             <LinearLayout
                 android:id="@+id/layout_chip_energy"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="4dp"
+                android:layout_marginHorizontal="@dimen/home_top_chip_gap_h"
                 android:background="@drawable/bg_child_chip_energy"
                 android:gravity="center_vertical"
-                android:minHeight="40dp"
+                android:minHeight="@dimen/home_top_chip_min_height"
                 android:orientation="horizontal"
-                android:paddingHorizontal="10dp"
-                android:paddingVertical="8dp">
+                android:paddingHorizontal="@dimen/home_top_chip_pad_h"
+                android:paddingVertical="@dimen/home_top_chip_pad_v">
 
                 <ImageView
-                    android:layout_width="18dp"
-                    android:layout_height="18dp"
+                    android:layout_width="@dimen/home_top_chip_icon"
+                    android:layout_height="@dimen/home_top_chip_icon"
                     android:contentDescription="@null"
                     android:src="@drawable/ic_chip_lightning"
                     app:tint="@color/white" />
@@ -254,9 +255,11 @@
                     android:id="@+id/tv_chip_energy"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="6dp"
+                    android:layout_marginStart="@dimen/home_top_chip_text_gap"
+                    android:ellipsize="end"
+                    android:maxLines="1"
                     android:textColor="@color/text_white"
-                    android:textSize="13sp"
+                    android:textSize="@dimen/home_top_chip_text_size"
                     android:textStyle="bold"
                     tools:text="3" />
             </LinearLayout>
@@ -265,17 +268,17 @@
                 android:id="@+id/layout_chip_gear"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="4dp"
+                android:layout_marginHorizontal="@dimen/home_top_chip_gap_h"
                 android:background="@drawable/bg_child_chip_gear"
                 android:gravity="center_vertical"
-                android:minHeight="40dp"
+                android:minHeight="@dimen/home_top_chip_min_height"
                 android:orientation="horizontal"
-                android:paddingHorizontal="10dp"
-                android:paddingVertical="8dp">
+                android:paddingHorizontal="@dimen/home_top_chip_pad_h"
+                android:paddingVertical="@dimen/home_top_chip_pad_v">
 
                 <ImageView
-                    android:layout_width="18dp"
-                    android:layout_height="18dp"
+                    android:layout_width="@dimen/home_top_chip_icon"
+                    android:layout_height="@dimen/home_top_chip_icon"
                     android:contentDescription="@null"
                     android:src="@drawable/ic_chip_gear"
                     app:tint="@color/white" />
@@ -284,9 +287,11 @@
                     android:id="@+id/tv_chip_gear"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="6dp"
+                    android:layout_marginStart="@dimen/home_top_chip_text_gap"
+                    android:ellipsize="end"
+                    android:maxLines="1"
                     android:textColor="@color/text_white"
-                    android:textSize="13sp"
+                    android:textSize="@dimen/home_top_chip_text_size"
                     android:textStyle="bold"
                     tools:text="40" />
             </LinearLayout>
@@ -295,17 +300,17 @@
                 android:id="@+id/layout_chip_xp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="4dp"
+                android:layout_marginHorizontal="@dimen/home_top_chip_gap_h"
                 android:background="@drawable/bg_child_chip_xp"
                 android:gravity="center_vertical"
-                android:minHeight="40dp"
+                android:minHeight="@dimen/home_top_chip_min_height"
                 android:orientation="horizontal"
-                android:paddingHorizontal="10dp"
-                android:paddingVertical="8dp">
+                android:paddingHorizontal="@dimen/home_top_chip_pad_h"
+                android:paddingVertical="@dimen/home_top_chip_pad_v">
 
                 <ImageView
-                    android:layout_width="18dp"
-                    android:layout_height="18dp"
+                    android:layout_width="@dimen/home_top_chip_icon"
+                    android:layout_height="@dimen/home_top_chip_icon"
                     android:contentDescription="@null"
                     android:src="@drawable/ic_chip_trophy"
                     app:tint="@color/white" />
@@ -314,9 +319,11 @@
                     android:id="@+id/tv_chip_xp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="6dp"
+                    android:layout_marginStart="@dimen/home_top_chip_text_gap"
+                    android:ellipsize="end"
+                    android:maxLines="1"
                     android:textColor="@color/text_white"
-                    android:textSize="13sp"
+                    android:textSize="@dimen/home_top_chip_text_size"
                     android:textStyle="bold"
                     tools:text="1520" />
             </LinearLayout>
@@ -325,17 +332,17 @@
                 android:id="@+id/layout_chip_ticket"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="4dp"
+                android:layout_marginHorizontal="@dimen/home_top_chip_gap_h"
                 android:background="@drawable/bg_child_chip_ticket"
                 android:gravity="center_vertical"
-                android:minHeight="40dp"
+                android:minHeight="@dimen/home_top_chip_min_height"
                 android:orientation="horizontal"
-                android:paddingHorizontal="10dp"
-                android:paddingVertical="8dp">
+                android:paddingHorizontal="@dimen/home_top_chip_pad_h"
+                android:paddingVertical="@dimen/home_top_chip_pad_v">
 
                 <ImageView
-                    android:layout_width="18dp"
-                    android:layout_height="18dp"
+                    android:layout_width="@dimen/home_top_chip_icon"
+                    android:layout_height="@dimen/home_top_chip_icon"
                     android:contentDescription="@null"
                     android:src="@drawable/ic_chip_ticket"
                     app:tint="@color/white" />
@@ -344,9 +351,11 @@
                     android:id="@+id/tv_chip_ticket"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="6dp"
+                    android:layout_marginStart="@dimen/home_top_chip_text_gap"
+                    android:ellipsize="end"
+                    android:maxLines="1"
                     android:textColor="@color/text_white"
-                    android:textSize="13sp"
+                    android:textSize="@dimen/home_top_chip_text_size"
                     android:textStyle="bold"
                     tools:text="4" />
             </LinearLayout>
@@ -355,17 +364,17 @@
                 android:id="@+id/layout_chip_streak"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginHorizontal="4dp"
+                android:layout_marginHorizontal="@dimen/home_top_chip_gap_h"
                 android:background="@drawable/bg_child_chip_streak"
                 android:gravity="center_vertical"
-                android:minHeight="40dp"
+                android:minHeight="@dimen/home_top_chip_min_height"
                 android:orientation="horizontal"
-                android:paddingHorizontal="10dp"
-                android:paddingVertical="8dp">
+                android:paddingHorizontal="@dimen/home_top_chip_pad_h"
+                android:paddingVertical="@dimen/home_top_chip_pad_v">
 
                 <ImageView
-                    android:layout_width="18dp"
-                    android:layout_height="18dp"
+                    android:layout_width="@dimen/home_top_chip_icon"
+                    android:layout_height="@dimen/home_top_chip_icon"
                     android:contentDescription="@null"
                     android:src="@drawable/ic_flame"
                     app:tint="@color/white" />
@@ -374,9 +383,11 @@
                     android:id="@+id/tv_chip_streak"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="6dp"
+                    android:layout_marginStart="@dimen/home_top_chip_text_gap"
+                    android:ellipsize="end"
+                    android:maxLines="1"
                     android:textColor="@color/text_white"
-                    android:textSize="13sp"
+                    android:textSize="@dimen/home_top_chip_text_size"
                     android:textStyle="bold"
                     tools:text="5일" />
             </LinearLayout>

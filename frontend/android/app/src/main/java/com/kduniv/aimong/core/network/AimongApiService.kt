@@ -378,11 +378,25 @@ interface AimongApiService {
 
 data class ChatMessageRequest(
     val message: String,
-    val masked: Boolean
+    val masked: Boolean,
+    val sessionId: String? = null,
+    val imageRequested: Boolean? = null,
+)
+
+data class ChatGeneratedImageDto(
+    val b64Json: String,
+    val mimeType: String = "image/png",
+    val outputFormat: String? = null,
+    val size: String? = null,
+    val quality: String? = null,
 )
 
 data class ChatMessageResponse(
     val reply: String,
     val remainingCalls: Int,
-    val hintSuggestion: String? = null
+    val hintSuggestion: String? = null,
+    val sessionId: String? = null,
+    val sessionExpiresAt: String? = null,
+    val image: ChatGeneratedImageDto? = null,
+    val remainingImageCalls: Int? = null,
 )
