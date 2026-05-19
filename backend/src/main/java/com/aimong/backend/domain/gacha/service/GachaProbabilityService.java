@@ -75,13 +75,6 @@ public class GachaProbabilityService {
         double appliedSrBonus = appliedSrBonus(ticketType, nextPullCount, srMissCount);
         probabilities[0] -= appliedSrBonus;
         probabilities[2] += appliedSrBonus;
-
-        if (ticketType == TicketType.RARE || probabilities[0] <= 0d) {
-            return renormalize(probabilities, PetGrade.RARE);
-        }
-        if (ticketType == TicketType.EPIC) {
-            return renormalize(probabilities, PetGrade.EPIC);
-        }
         return probabilities;
     }
 
@@ -97,24 +90,6 @@ public class GachaProbabilityService {
     private double[] baseNormalProbabilities(int nextPullCount) {
         int level = nextPullCount < 20 ? 0 : nextPullCount < 50 ? 1 : nextPullCount < 100 ? 2 : 3;
         return NORMAL_TICKET_PROBABILITIES[level].clone();
-    }
-
-    private double[] renormalize(double[] probabilities, PetGrade minimumGrade) {
-        double sum = 0d;
-        for (int index = 0; index < GRADES.length; index++) {
-            if (GRADES[index].ordinal() >= minimumGrade.ordinal()) {
-                sum += probabilities[index];
-            } else {
-                probabilities[index] = 0d;
-            }
-        }
-        if (sum <= 0d) {
-            throw new IllegalStateException("Invalid gacha probability table");
-        }
-        for (int index = 0; index < probabilities.length; index++) {
-            probabilities[index] = probabilities[index] / sum;
-        }
-        return probabilities;
     }
 
     private PetGrade weightedRandom(double[] probabilities) {

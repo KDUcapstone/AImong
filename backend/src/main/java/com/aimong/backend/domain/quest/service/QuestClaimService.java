@@ -115,7 +115,7 @@ public class QuestClaimService {
 
     private TicketReward weeklyReward(WeeklyQuestType questType) {
         return switch (questType) {
-            case XP_100 -> new TicketReward(TicketType.RARE, 1);
+            case XP_100 -> new TicketReward(TicketType.NORMAL, 2);
             case MISSION_5 -> new TicketReward(TicketType.NORMAL, 2);
             case CHAT_3 -> new TicketReward(TicketType.NORMAL, 1);
         };
@@ -129,9 +129,7 @@ public class QuestClaimService {
 
     private ClaimResponse.RemainingTicketsResponse remainingTickets(UUID childId) {
         return new ClaimResponse.RemainingTicketsResponse(
-                Math.toIntExact(ticketRepository.countByChildIdAndTicketTypeAndUsedAtIsNull(childId, TicketType.NORMAL)),
-                Math.toIntExact(ticketRepository.countByChildIdAndTicketTypeAndUsedAtIsNull(childId, TicketType.RARE)),
-                Math.toIntExact(ticketRepository.countByChildIdAndTicketTypeAndUsedAtIsNull(childId, TicketType.EPIC))
+                Math.toIntExact(ticketRepository.countByChildIdAndTicketTypeAndUsedAtIsNull(childId, TicketType.NORMAL))
         );
     }
 

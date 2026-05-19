@@ -23,6 +23,49 @@ public class OpenAiClient {
     private final OpenAiProperties properties;
     private final ObjectMapper objectMapper;
 
+    public GeneratedImage createImage(String model, String prompt, String size, String quality) {
+        if (!properties.isChatConfigured()) {
+            throw new AimongException(ErrorCode.INTERNAL_SERVER_ERROR, "OPENAI_API_CHAT_KEY is not configured");
+        }
+
+        Map<String, Object> payload = Map.of(
+                "model", model,
+                "prompt", prompt,
+                "n", 1,
+                "size", size,
+                "quality", quality,
+                "output_format", "png"
+        );
+
+        try {
+            JsonNode response = openAiRestClient.post()
+                    .uri("/images/generations")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + properties.resolvedChatApiKey())
+                    .body(payload)
+                    .retrieve()
+                    .body(JsonNode.class);
+
+            JsonNode image = response == null ? null : response.path("data").path(0);
+            if (image == null || !image.path("b64_json").isTextual() || image.path("b64_json").asText().isBlank()) {
+                throw new AimongException(ErrorCode.INTERNAL_SERVER_ERROR, "OpenAI image output is missing");
+            }
+            String outputFormat = firstText(response.path("output_format"), image.path("output_format"), "png");
+            String responseSize = firstText(response.path("size"), image.path("size"), size);
+            String responseQuality = firstText(response.path("quality"), image.path("quality"), quality);
+            return new GeneratedImage(image.path("b64_json").asText(), outputFormat, responseSize, responseQuality);
+        } catch (AimongException exception) {
+            throw exception;
+        } catch (RestClientResponseException exception) {
+            throw new AimongException(
+                    ErrorCode.INTERNAL_SERVER_ERROR,
+                    "OpenAI image generation request failed: HTTP " + exception.getStatusCode().value()
+            );
+        } catch (RestClientException exception) {
+            throw new AimongException(ErrorCode.INTERNAL_SERVER_ERROR, "OpenAI image generation request failed");
+        }
+    }
+
     public String createChatReply(String model, String developerPrompt, String userPrompt) {
         if (!properties.isChatConfigured()) {
             throw new AimongException(ErrorCode.INTERNAL_SERVER_ERROR, "OPENAI_API_CHAT_KEY is not configured");
@@ -144,11 +187,29 @@ public class OpenAiClient {
         return null;
     }
 
+    private String firstText(JsonNode first, JsonNode second, String fallback) {
+        if (first != null && first.isTextual() && !first.asText().isBlank()) {
+            return first.asText();
+        }
+        if (second != null && second.isTextual() && !second.asText().isBlank()) {
+            return second.asText();
+        }
+        return fallback;
+    }
+
     private JsonNode readJson(String json) {
         try {
             return objectMapper.readTree(json);
         } catch (Exception exception) {
             throw new AimongException(ErrorCode.INTERNAL_SERVER_ERROR, exception);
         }
+    }
+
+    public record GeneratedImage(
+            String b64Json,
+            String outputFormat,
+            String size,
+            String quality
+    ) {
     }
 }

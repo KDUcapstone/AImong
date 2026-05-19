@@ -29,7 +29,8 @@ public class ChatController {
                 UUID.fromString(authentication.getName()),
                 request.message(),
                 request.masked(),
-                request.sessionId()
+                request.sessionId(),
+                Boolean.TRUE.equals(request.imageRequested())
         ));
     }
 }

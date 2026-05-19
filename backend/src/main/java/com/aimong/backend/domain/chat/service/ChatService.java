@@ -40,10 +40,15 @@ import org.springframework.transaction.annotation.Transactional;
 public class ChatService {
 
     private static final int DAILY_LIMIT = 20;
+    private static final int DAILY_IMAGE_LIMIT = 5;
     private static final int FIRST_CHAT_XP = 5;
     private static final int GPT_TIMEOUT_SECONDS = 15;
+    private static final int IMAGE_TIMEOUT_SECONDS = 60;
     private static final Duration SESSION_TTL = Duration.ofHours(1);
     private static final String CHAT_MODEL = "gpt-5-mini";
+    private static final String IMAGE_MODEL = "gpt-image-1-mini";
+    private static final String IMAGE_SIZE = "1024x1024";
+    private static final String IMAGE_QUALITY = "low";
     private static final String HINT_SUGGESTION = "스스로 생각해보는 건 어때요? 힌트만 받아보세요!";
     private static final List<String> HINT_TRIGGER_WORDS = List.of("숙제", "해줘", "대신", "써줘");
     private static final String DEVELOPER_PROMPT = """
@@ -74,6 +79,11 @@ public class ChatService {
 
     @Transactional
     public ChatResponse send(UUID childId, String message, boolean masked, UUID sessionId) {
+        return send(childId, message, masked, sessionId, false);
+    }
+
+    @Transactional
+    public ChatResponse send(UUID childId, String message, boolean masked, UUID sessionId, boolean imageRequested) {
         childActivityService.touchLastActiveAt(childId);
         ChildProfile childProfile = childProfileRepository.findWithLockById(childId)
                 .orElseThrow(() -> new AimongException(ErrorCode.CHILD_NOT_FOUND));
@@ -85,6 +95,10 @@ public class ChatService {
             throw new AimongException(ErrorCode.TOO_MANY_REQUESTS, "오늘은 충분히 이야기했어요! 내일 또 만나요");
         }
 
+        if (imageRequested && usage.getImageCount() >= DAILY_IMAGE_LIMIT) {
+            throw new AimongException(ErrorCode.TOO_MANY_REQUESTS, "Today's image generation limit has been reached.");
+        }
+
         PrivacyMaskingService.MaskingResult maskingResult = privacyMaskingService.mask(message);
         savePrivacyEvents(childId, maskingResult, masked);
         boolean hintTriggered = isHintTriggered(maskingResult.sanitizedMessage());
@@ -92,11 +106,18 @@ public class ChatService {
         chatSessionRepository.deleteByExpiresAtBefore(now);
         ChatSession chatSession = resolveSession(childId, sessionId, now);
         List<ChatMessage> previousMessages = recentMessages(chatSession);
-        String reply = requestGptReply(
-                maskingResult.sanitizedMessage(),
-                contextualPrompt(previousMessages, maskingResult.sanitizedMessage())
-        );
-        String safeReply = privacyMaskingService.mask(reply).sanitizedMessage();
+        ChatResponse.GeneratedImageResponse generatedImage = null;
+        String safeReply;
+        if (imageRequested) {
+            generatedImage = requestGeneratedImage(maskingResult.sanitizedMessage());
+            safeReply = "Image generated.";
+        } else {
+            String reply = requestGptReply(
+                    maskingResult.sanitizedMessage(),
+                    contextualPrompt(previousMessages, maskingResult.sanitizedMessage())
+            );
+            safeReply = privacyMaskingService.mask(reply).sanitizedMessage();
+        }
 
         chatSession.refresh(now, SESSION_TTL);
         chatSessionRepository.save(chatSession);
@@ -105,6 +126,9 @@ public class ChatService {
 
         boolean firstSuccessToday = usage.getCount() == 0;
         usage.increment();
+        if (imageRequested) {
+            usage.incrementImage();
+        }
 
         if (firstSuccessToday) {
             childProfile.applyMissionXp(FIRST_CHAT_XP, KstDateUtils.today(), KstDateUtils.currentWeekStart());
@@ -121,7 +145,9 @@ public class ChatService {
                 DAILY_LIMIT - usage.getCount(),
                 hintTriggered ? HINT_SUGGESTION : null,
                 chatSession.getId(),
-                chatSession.getExpiresAt()
+                chatSession.getExpiresAt(),
+                generatedImage,
+                imageRequested ? DAILY_IMAGE_LIMIT - usage.getImageCount() : null
         );
     }
 
@@ -185,6 +211,50 @@ public class ChatService {
             return "테스트 응답이에요. 대신 완성해주기보다는 먼저 네 생각을 한 문장으로 적고, 그다음 필요한 힌트를 물어보면 좋아요.";
         }
         return "테스트 응답이에요. 실제 OpenAI 호출 없이 챗봇 흐름, 사용량, 퀘스트 진행도만 확인하고 있어요.";
+    }
+
+    private ChatResponse.GeneratedImageResponse requestGeneratedImage(String sanitizedPrompt) {
+        if (openAiProperties.mockEnabled()) {
+            return new ChatResponse.GeneratedImageResponse(
+                    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=",
+                    "image/png",
+                    "png",
+                    IMAGE_SIZE,
+                    IMAGE_QUALITY
+            );
+        }
+
+        try {
+            OpenAiClient.GeneratedImage image = CompletableFuture
+                    .supplyAsync(() -> openAiClient.createImage(IMAGE_MODEL, sanitizedPrompt, IMAGE_SIZE, IMAGE_QUALITY))
+                    .get(IMAGE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            return new ChatResponse.GeneratedImageResponse(
+                    image.b64Json(),
+                    mimeType(image.outputFormat()),
+                    image.outputFormat(),
+                    image.size(),
+                    image.quality()
+            );
+        } catch (TimeoutException exception) {
+            throw new AimongException(ErrorCode.GATEWAY_TIMEOUT, "Image generation timed out. Please try again.");
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new AimongException(ErrorCode.GATEWAY_TIMEOUT, "Image generation timed out. Please try again.");
+        } catch (ExecutionException exception) {
+            Throwable cause = exception.getCause();
+            if (cause instanceof AimongException aimongException) {
+                throw aimongException;
+            }
+            throw new AimongException(ErrorCode.INTERNAL_SERVER_ERROR, "Image generation failed. Please try again.");
+        }
+    }
+
+    private String mimeType(String outputFormat) {
+        return switch (outputFormat) {
+            case "jpeg", "jpg" -> "image/jpeg";
+            case "webp" -> "image/webp";
+            default -> "image/png";
+        };
     }
 
     private void savePrivacyEvents(UUID childId, PrivacyMaskingService.MaskingResult maskingResult, boolean requestMasked) {

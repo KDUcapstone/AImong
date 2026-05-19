@@ -346,8 +346,6 @@ class SubmitServiceTest {
         when(childProfileRepository.findById(childId)).thenReturn(Optional.of(childProfile));
         when(childProfile.getProfileImageType()).thenReturn(ProfileImageType.DEFAULT);
         when(ticketRepository.countByChildIdAndTicketTypeAndUsedAtIsNull(childId, TicketType.NORMAL)).thenReturn(2L);
-        when(ticketRepository.countByChildIdAndTicketTypeAndUsedAtIsNull(childId, TicketType.RARE)).thenReturn(0L);
-        when(ticketRepository.countByChildIdAndTicketTypeAndUsedAtIsNull(childId, TicketType.EPIC)).thenReturn(0L);
         when(streakRecordRepository.findWithLockByChildId(childId)).thenReturn(Optional.of(streakRecord));
         if (!reviewMode && selected.equals("Yes")) {
             return new Fixture(childId, missionId, request);

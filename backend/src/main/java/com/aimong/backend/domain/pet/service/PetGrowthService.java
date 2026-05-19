@@ -75,20 +75,20 @@ public class PetGrowthService {
         List<PetReward> rewards = new ArrayList<>();
         switch (grade) {
             case NORMAL -> {
-                grantTickets(childId, TicketType.RARE, 1);
-                rewards.add(new PetReward("TICKET", "RARE", 1, "AIMONG_REWARD_NORMAL"));
+                grantTickets(childId, TicketType.NORMAL, 2);
+                rewards.add(new PetReward("TICKET", "NORMAL", 2, "AIMONG_REWARD_NORMAL"));
             }
             case RARE -> {
-                grantTickets(childId, TicketType.EPIC, 1);
-                rewards.add(new PetReward("TICKET", "EPIC", 1, "AIMONG_REWARD_RARE"));
+                grantTickets(childId, TicketType.NORMAL, 3);
+                rewards.add(new PetReward("TICKET", "NORMAL", 3, "AIMONG_REWARD_RARE"));
             }
             case EPIC -> {
-                grantTickets(childId, TicketType.EPIC, 2);
-                rewards.add(new PetReward("TICKET", "EPIC", 2, "AIMONG_REWARD_EPIC"));
+                grantTickets(childId, TicketType.NORMAL, 6);
+                rewards.add(new PetReward("TICKET", "NORMAL", 6, "AIMONG_REWARD_EPIC"));
             }
             case LEGEND -> {
-                grantTickets(childId, TicketType.EPIC, 3);
-                rewards.add(new PetReward("TICKET", "EPIC", 3, "AIMONG_REWARD_LEGEND"));
+                grantTickets(childId, TicketType.NORMAL, 9);
+                rewards.add(new PetReward("TICKET", "NORMAL", 9, "AIMONG_REWARD_LEGEND"));
             }
         }
         return rewards;

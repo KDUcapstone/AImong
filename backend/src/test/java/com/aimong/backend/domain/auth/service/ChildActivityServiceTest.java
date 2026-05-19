@@ -43,6 +43,22 @@ class ChildActivityServiceTest {
     }
 
     @Test
+    void touchLastActiveAtSkipsRecentActivityWrite() {
+        ChildProfile childProfile = ChildProfile.create(
+                ParentAccount.create("firebase-uid", "parent@example.com"),
+                "child",
+                "482917"
+        );
+        when(childProfileRepository.findById(childProfile.getId())).thenReturn(Optional.of(childProfile));
+
+        childActivityService.touchLastActiveAt(childProfile.getId());
+        Instant firstTouchedAt = childProfile.getLastActiveAt();
+        childActivityService.touchLastActiveAt(childProfile.getId());
+
+        assertThat(childProfile.getLastActiveAt()).isEqualTo(firstTouchedAt);
+    }
+
+    @Test
     void touchLastActiveAtThrowsWhenChildDoesNotExist() {
         UUID childId = UUID.randomUUID();
         when(childProfileRepository.findById(childId)).thenReturn(Optional.empty());

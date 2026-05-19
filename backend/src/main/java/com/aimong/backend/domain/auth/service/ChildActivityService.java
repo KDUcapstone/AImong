@@ -4,6 +4,7 @@ import com.aimong.backend.domain.auth.entity.ChildProfile;
 import com.aimong.backend.domain.auth.repository.ChildProfileRepository;
 import com.aimong.backend.global.exception.AimongException;
 import com.aimong.backend.global.exception.ErrorCode;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class ChildActivityService {
 
+    private static final Duration TOUCH_THROTTLE = Duration.ofMinutes(5);
+
     private final ChildProfileRepository childProfileRepository;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -24,6 +27,10 @@ public class ChildActivityService {
         if (childProfile.getDeletedAt() != null) {
             throw new AimongException(ErrorCode.CHILD_NOT_FOUND);
         }
-        childProfile.touchLastActiveAt(Instant.now());
+        Instant now = Instant.now();
+        Instant lastActiveAt = childProfile.getLastActiveAt();
+        if (lastActiveAt == null || lastActiveAt.isBefore(now.minus(TOUCH_THROTTLE))) {
+            childProfile.touchLastActiveAt(now);
+        }
     }
 }

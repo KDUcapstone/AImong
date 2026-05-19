@@ -161,6 +161,48 @@ class ChatServiceTest {
         verify(openAiClient, never()).createChatReply(anyString(), anyString(), anyString());
     }
 
+    @Test
+    void sendGeneratesImageAndAppliesDailyImageLimit() {
+        UUID childId = UUID.randomUUID();
+        LocalDate today = KstDateUtils.today();
+        when(childProfileRepository.findWithLockById(childId)).thenReturn(Optional.of(childProfile));
+        when(chatUsageRepository.findWithLockByChildIdAndUsageDate(childId, today))
+                .thenReturn(Optional.of(ChatUsage.create(childId, today)));
+        stubNewChatSession(childId);
+        when(openAiClient.createImage(anyString(), anyString(), anyString(), anyString()))
+                .thenReturn(new OpenAiClient.GeneratedImage("base64-image", "png", "1024x1024", "low"));
+
+        var response = service().send(childId, "draw a friendly robot", false, null, true);
+
+        assertThat(response.reply()).isEqualTo("Image generated.");
+        assertThat(response.image()).isNotNull();
+        assertThat(response.image().b64Json()).isEqualTo("base64-image");
+        assertThat(response.remainingImageCalls()).isEqualTo(4);
+        assertThat(response.remainingCalls()).isEqualTo(19);
+        verify(openAiClient).createImage("gpt-image-1-mini", "draw a friendly robot", "1024x1024", "low");
+        verify(openAiClient, never()).createChatReply(anyString(), anyString(), anyString());
+    }
+
+    @Test
+    void sendRejectsImageWhenDailyImageLimitReachedWithoutCallingOpenAi() {
+        UUID childId = UUID.randomUUID();
+        LocalDate today = KstDateUtils.today();
+        ChatUsage usage = ChatUsage.create(childId, today);
+        for (int i = 0; i < 5; i++) {
+            usage.incrementImage();
+        }
+        when(childProfileRepository.findWithLockById(childId)).thenReturn(Optional.of(childProfile));
+        when(chatUsageRepository.findWithLockByChildIdAndUsageDate(childId, today)).thenReturn(Optional.of(usage));
+
+        assertThatThrownBy(() -> service().send(childId, "draw this", false, null, true))
+                .isInstanceOf(AimongException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.TOO_MANY_REQUESTS);
+
+        verify(openAiClient, never()).createImage(anyString(), anyString(), anyString(), anyString());
+        verify(openAiClient, never()).createChatReply(anyString(), anyString(), anyString());
+    }
+
     private ChatService service() {
         return service(false);
     }

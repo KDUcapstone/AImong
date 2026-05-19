@@ -16,9 +16,7 @@ public record ReturnRewardClaimResponse(
     }
 
     public record RemainingTickets(
-            int normal,
-            int rare,
-            int epic
+            int normal
     ) {
     }
 }

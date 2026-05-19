@@ -31,6 +31,9 @@ public class ChatUsage {
     @Column(name = "count", nullable = false)
     private int count;
 
+    @Column(name = "image_count", nullable = false)
+    private int imageCount;
+
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
@@ -39,6 +42,7 @@ public class ChatUsage {
         chatUsage.childId = childId;
         chatUsage.usageDate = usageDate;
         chatUsage.count = 0;
+        chatUsage.imageCount = 0;
         chatUsage.updatedAt = Instant.now();
         return chatUsage;
     }
@@ -48,6 +52,14 @@ public class ChatUsage {
             return;
         }
         count += 1;
+        updatedAt = Instant.now();
+    }
+
+    public void incrementImage() {
+        if (imageCount >= 5) {
+            return;
+        }
+        imageCount += 1;
         updatedAt = Instant.now();
     }
 

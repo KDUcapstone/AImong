@@ -1,0 +1,3 @@
+ALTER TABLE public.chat_usage
+    ADD COLUMN IF NOT EXISTS image_count INTEGER NOT NULL DEFAULT 0;
+

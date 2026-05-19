@@ -73,9 +73,7 @@ public record SubmitResponse(
     }
 
     public record RemainingTicketsResponse(
-            int normal,
-            int rare,
-            int epic
+            int normal
     ) {
     }
 }

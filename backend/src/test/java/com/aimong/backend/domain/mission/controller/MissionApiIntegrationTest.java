@@ -170,7 +170,7 @@ class MissionApiIntegrationTest {
                 1,
                 false,
                 new SubmitResponse.RewardsResponse(30, 10, List.of()),
-                new SubmitResponse.RemainingTicketsResponse(2, 0, 1),
+                new SubmitResponse.RemainingTicketsResponse(2),
                 "SPROUT",
                 false,
                 false,

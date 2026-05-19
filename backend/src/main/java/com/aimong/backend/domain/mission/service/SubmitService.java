@@ -868,9 +868,7 @@ public class SubmitService {
 
     private SubmitResponse.RemainingTicketsResponse toRemainingTickets(UUID childId) {
         return new SubmitResponse.RemainingTicketsResponse(
-                Math.toIntExact(ticketRepository.countByChildIdAndTicketTypeAndUsedAtIsNull(childId, TicketType.NORMAL)),
-                Math.toIntExact(ticketRepository.countByChildIdAndTicketTypeAndUsedAtIsNull(childId, TicketType.RARE)),
-                Math.toIntExact(ticketRepository.countByChildIdAndTicketTypeAndUsedAtIsNull(childId, TicketType.EPIC))
+                Math.toIntExact(ticketRepository.countByChildIdAndTicketTypeAndUsedAtIsNull(childId, TicketType.NORMAL))
         );
     }
 }

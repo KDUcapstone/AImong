@@ -124,12 +124,10 @@ public record HomeResponse(
     }
 
     public record TicketSummaryResponse(
-            int normal,
-            int rare,
-            int epic
+            int normal
     ) {
         public int totalCount() {
-            return normal + rare + epic;
+            return normal;
         }
     }
 }
