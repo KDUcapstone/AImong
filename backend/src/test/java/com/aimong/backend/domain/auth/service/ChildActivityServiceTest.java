@@ -1,7 +1,10 @@
 package com.aimong.backend.domain.auth.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.aimong.backend.domain.auth.entity.ChildProfile;
@@ -9,8 +12,6 @@ import com.aimong.backend.domain.auth.entity.ParentAccount;
 import com.aimong.backend.domain.auth.repository.ChildProfileRepository;
 import com.aimong.backend.global.exception.AimongException;
 import com.aimong.backend.global.exception.ErrorCode;
-import java.time.Instant;
-import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,15 +32,14 @@ class ChildActivityServiceTest {
     void touchLastActiveAtUpdatesTimestamp() {
         ChildProfile childProfile = ChildProfile.create(
                 ParentAccount.create("firebase-uid", "parent@example.com"),
-                "민수",
+                "child",
                 "482917"
         );
-        when(childProfileRepository.findById(childProfile.getId())).thenReturn(Optional.of(childProfile));
+        when(childProfileRepository.touchLastActiveAtIfDue(eq(childProfile.getId()), any(), any())).thenReturn(1);
 
         childActivityService.touchLastActiveAt(childProfile.getId());
 
-        assertThat(childProfile.getLastActiveAt()).isNotNull();
-        assertThat(childProfile.getLastActiveAt()).isBeforeOrEqualTo(Instant.now());
+        verify(childProfileRepository).touchLastActiveAtIfDue(eq(childProfile.getId()), any(), any());
     }
 
     @Test
@@ -49,19 +49,19 @@ class ChildActivityServiceTest {
                 "child",
                 "482917"
         );
-        when(childProfileRepository.findById(childProfile.getId())).thenReturn(Optional.of(childProfile));
+        when(childProfileRepository.touchLastActiveAtIfDue(eq(childProfile.getId()), any(), any())).thenReturn(1);
 
         childActivityService.touchLastActiveAt(childProfile.getId());
-        Instant firstTouchedAt = childProfile.getLastActiveAt();
         childActivityService.touchLastActiveAt(childProfile.getId());
 
-        assertThat(childProfile.getLastActiveAt()).isEqualTo(firstTouchedAt);
+        verify(childProfileRepository, times(1)).touchLastActiveAtIfDue(eq(childProfile.getId()), any(), any());
     }
 
     @Test
     void touchLastActiveAtThrowsWhenChildDoesNotExist() {
         UUID childId = UUID.randomUUID();
-        when(childProfileRepository.findById(childId)).thenReturn(Optional.empty());
+        when(childProfileRepository.touchLastActiveAtIfDue(eq(childId), any(), any())).thenReturn(0);
+        when(childProfileRepository.existsByIdAndDeletedAtIsNull(childId)).thenReturn(false);
 
         assertThatThrownBy(() -> childActivityService.touchLastActiveAt(childId))
                 .isInstanceOf(AimongException.class)

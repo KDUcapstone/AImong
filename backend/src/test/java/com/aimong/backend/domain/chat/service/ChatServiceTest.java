@@ -39,6 +39,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.SimpleTransactionStatus;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @ExtendWith(MockitoExtension.class)
 class ChatServiceTest {
@@ -60,6 +65,8 @@ class ChatServiceTest {
     void sendIncrementsUsageAndGrantsFirstChatXp() {
         UUID childId = UUID.randomUUID();
         LocalDate today = KstDateUtils.today();
+        when(childProfileRepository.findByIdAndDeletedAtIsNull(childId)).thenReturn(Optional.of(childProfile));
+        when(chatUsageRepository.findByChildIdAndUsageDate(childId, today)).thenReturn(Optional.empty());
         when(childProfileRepository.findWithLockById(childId)).thenReturn(Optional.of(childProfile));
         when(chatUsageRepository.findWithLockByChildIdAndUsageDate(childId, today)).thenReturn(Optional.empty());
         when(chatUsageRepository.save(any(ChatUsage.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -88,8 +95,8 @@ class ChatServiceTest {
         for (int i = 0; i < 20; i++) {
             usage.increment();
         }
-        when(childProfileRepository.findWithLockById(childId)).thenReturn(Optional.of(childProfile));
-        when(chatUsageRepository.findWithLockByChildIdAndUsageDate(childId, today)).thenReturn(Optional.of(usage));
+        when(childProfileRepository.findByIdAndDeletedAtIsNull(childId)).thenReturn(Optional.of(childProfile));
+        when(chatUsageRepository.findByChildIdAndUsageDate(childId, today)).thenReturn(Optional.of(usage));
 
         assertThatThrownBy(() -> service().send(childId, "안녕", false))
                 .isInstanceOf(AimongException.class)
@@ -104,9 +111,12 @@ class ChatServiceTest {
     void sendMasksPrivacyBeforeOpenAiAndStoresDetectedTypeOnly() {
         UUID childId = UUID.randomUUID();
         LocalDate today = KstDateUtils.today();
+        ChatUsage usage = ChatUsage.create(childId, today);
+        when(childProfileRepository.findByIdAndDeletedAtIsNull(childId)).thenReturn(Optional.of(childProfile));
+        when(chatUsageRepository.findByChildIdAndUsageDate(childId, today)).thenReturn(Optional.of(usage));
         when(childProfileRepository.findWithLockById(childId)).thenReturn(Optional.of(childProfile));
         when(chatUsageRepository.findWithLockByChildIdAndUsageDate(childId, today))
-                .thenReturn(Optional.of(ChatUsage.create(childId, today)));
+                .thenReturn(Optional.of(usage));
         stubNewChatSession(childId);
         when(openAiClient.createChatReply(anyString(), anyString(), anyString())).thenReturn("좋아요");
 
@@ -121,9 +131,12 @@ class ChatServiceTest {
         UUID childId = UUID.randomUUID();
         LocalDate today = KstDateUtils.today();
         ChatSession session = ChatSession.create(childId, Instant.now(), Duration.ofHours(1));
+        ChatUsage usage = ChatUsage.create(childId, today);
+        when(childProfileRepository.findByIdAndDeletedAtIsNull(childId)).thenReturn(Optional.of(childProfile));
+        when(chatUsageRepository.findByChildIdAndUsageDate(childId, today)).thenReturn(Optional.of(usage));
         when(childProfileRepository.findWithLockById(childId)).thenReturn(Optional.of(childProfile));
         when(chatUsageRepository.findWithLockByChildIdAndUsageDate(childId, today))
-                .thenReturn(Optional.of(ChatUsage.create(childId, today)));
+                .thenReturn(Optional.of(usage));
         when(chatSessionRepository.findByIdAndChildIdAndExpiresAtAfter(eq(session.getId()), eq(childId), any()))
                 .thenReturn(Optional.of(session));
         when(chatMessageRepository.findTop10BySession_IdOrderByCreatedAtDesc(session.getId()))
@@ -148,9 +161,12 @@ class ChatServiceTest {
     void sendUsesMockReplyWhenOpenAiMockEnabled() {
         UUID childId = UUID.randomUUID();
         LocalDate today = KstDateUtils.today();
+        ChatUsage usage = ChatUsage.create(childId, today);
+        when(childProfileRepository.findByIdAndDeletedAtIsNull(childId)).thenReturn(Optional.of(childProfile));
+        when(chatUsageRepository.findByChildIdAndUsageDate(childId, today)).thenReturn(Optional.of(usage));
         when(childProfileRepository.findWithLockById(childId)).thenReturn(Optional.of(childProfile));
         when(chatUsageRepository.findWithLockByChildIdAndUsageDate(childId, today))
-                .thenReturn(Optional.of(ChatUsage.create(childId, today)));
+                .thenReturn(Optional.of(usage));
         stubNewChatSession(childId);
 
         var response = service(true).send(childId, "광합성이 뭐야?", false);
@@ -165,9 +181,12 @@ class ChatServiceTest {
     void sendGeneratesImageAndAppliesDailyImageLimit() {
         UUID childId = UUID.randomUUID();
         LocalDate today = KstDateUtils.today();
+        ChatUsage usage = ChatUsage.create(childId, today);
+        when(childProfileRepository.findByIdAndDeletedAtIsNull(childId)).thenReturn(Optional.of(childProfile));
+        when(chatUsageRepository.findByChildIdAndUsageDate(childId, today)).thenReturn(Optional.of(usage));
         when(childProfileRepository.findWithLockById(childId)).thenReturn(Optional.of(childProfile));
         when(chatUsageRepository.findWithLockByChildIdAndUsageDate(childId, today))
-                .thenReturn(Optional.of(ChatUsage.create(childId, today)));
+                .thenReturn(Optional.of(usage));
         stubNewChatSession(childId);
         when(openAiClient.createImage(anyString(), anyString(), anyString(), anyString()))
                 .thenReturn(new OpenAiClient.GeneratedImage("base64-image", "png", "1024x1024", "low"));
@@ -191,8 +210,8 @@ class ChatServiceTest {
         for (int i = 0; i < 5; i++) {
             usage.incrementImage();
         }
-        when(childProfileRepository.findWithLockById(childId)).thenReturn(Optional.of(childProfile));
-        when(chatUsageRepository.findWithLockByChildIdAndUsageDate(childId, today)).thenReturn(Optional.of(usage));
+        when(childProfileRepository.findByIdAndDeletedAtIsNull(childId)).thenReturn(Optional.of(childProfile));
+        when(chatUsageRepository.findByChildIdAndUsageDate(childId, today)).thenReturn(Optional.of(usage));
 
         assertThatThrownBy(() -> service().send(childId, "draw this", false, null, true))
                 .isInstanceOf(AimongException.class)
@@ -221,8 +240,26 @@ class ChatServiceTest {
                 petGrowthService,
                 dailyQuestService,
                 weeklyQuestService,
-                achievementService
+                achievementService,
+                transactionTemplate()
         );
+    }
+
+    private TransactionTemplate transactionTemplate() {
+        return new TransactionTemplate(new PlatformTransactionManager() {
+            @Override
+            public TransactionStatus getTransaction(TransactionDefinition definition) {
+                return new SimpleTransactionStatus();
+            }
+
+            @Override
+            public void commit(TransactionStatus status) {
+            }
+
+            @Override
+            public void rollback(TransactionStatus status) {
+            }
+        });
     }
 
     private void stubNewChatSession(UUID childId) {
@@ -230,6 +267,5 @@ class ChatServiceTest {
                 .thenReturn(Optional.empty());
         when(chatSessionRepository.save(any(ChatSession.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(chatMessageRepository.save(any(ChatMessage.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(chatMessageRepository.findTop10BySession_IdOrderByCreatedAtDesc(any())).thenReturn(List.of());
     }
 }

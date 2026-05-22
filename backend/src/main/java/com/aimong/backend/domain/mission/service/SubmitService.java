@@ -832,15 +832,7 @@ public class SubmitService {
         if (missionSetRepository == null || missionSetProgressRepository == null) {
             return 0;
         }
-        List<String> setIds = missionSetRepository.findAllByActiveTrueOrderByStageAscDisplayOrderAscStarLevelAscVariantNoAscSetIdAsc()
-                .stream()
-                .filter(set -> set.getStarLevel() == starLevel)
-                .map(MissionSet::getSetId)
-                .toList();
-        if (setIds.isEmpty()) {
-            return 0;
-        }
-        return missionSetProgressRepository.countByChildIdAndSetIdIn(childId, setIds);
+        return missionSetProgressRepository.countByChildIdAndStarLevelAndCompletedTrue(childId, starLevel);
     }
 
     private Set<String> unlockedIncompleteSetIds(UUID childId) {

@@ -12,6 +12,8 @@ import com.aimong.backend.domain.mission.repository.MissionSetProgressRepository
 import com.aimong.backend.domain.mission.repository.MissionSetRepository;
 import com.aimong.backend.global.exception.AimongException;
 import com.aimong.backend.global.exception.ErrorCode;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -29,12 +31,15 @@ public class MissionService {
 
     private static final long STAGE_2_REQUIRED_STAGE_1_STAR1_CLEARS = 5L;
     private static final long STAGE_3_REQUIRED_STAGE_2_STAR1_CLEARS = 6L;
+    private static final Duration ACTIVE_MISSION_SET_CACHE_TTL = Duration.ofSeconds(30);
 
     private final MissionSetRepository missionSetRepository;
     private final MissionSetProgressRepository missionSetProgressRepository;
     private final MissionRepository legacyMissionRepository;
     private final MissionAttemptRepository legacyMissionAttemptRepository;
     private final ChildActivityService childActivityService;
+    private volatile ActiveMissionSetCache activeMissionSetCache =
+            new ActiveMissionSetCache(List.of(), Instant.EPOCH);
 
     @Autowired
     public MissionService(
@@ -68,8 +73,7 @@ public class MissionService {
             return getLegacyMissions(childId);
         }
 
-        List<MissionSet> missionSets = missionSetRepository
-                .findAllByActiveTrueOrderByStageAscDisplayOrderAscStarLevelAscVariantNoAscSetIdAsc();
+        List<MissionSet> missionSets = activeMissionSets();
         Map<String, MissionSetProgress> progressBySetId = progressBySetId(childId, missionSets);
         StageProgressResponse stageProgress = stageProgress(missionSets, progressBySetId);
 
@@ -115,14 +119,12 @@ public class MissionService {
                     legacyMissionAttemptRepository.countCompletedMissionByStage(childId, (short) 3)
             );
         }
-        List<MissionSet> missionSets = missionSetRepository
-                .findAllByActiveTrueOrderByStageAscDisplayOrderAscStarLevelAscVariantNoAscSetIdAsc();
+        List<MissionSet> missionSets = activeMissionSets();
         return stageProgress(missionSets, progressBySetId(childId, missionSets));
     }
 
     public boolean isUnlocked(UUID childId, MissionSet missionSet) {
-        List<MissionSet> missionSets = missionSetRepository
-                .findAllByActiveTrueOrderByStageAscDisplayOrderAscStarLevelAscVariantNoAscSetIdAsc();
+        List<MissionSet> missionSets = activeMissionSets();
         StageProgressResponse stageProgress = stageProgress(missionSets, progressBySetId(childId, missionSets));
         return isStageUnlocked(missionSet.getStage(), stageProgress);
     }
@@ -174,8 +176,7 @@ public class MissionService {
     }
 
     public MissionSetAvailability missionSetAvailability(UUID childId) {
-        List<MissionSet> missionSets = missionSetRepository
-                .findAllByActiveTrueOrderByStageAscDisplayOrderAscStarLevelAscVariantNoAscSetIdAsc();
+        List<MissionSet> missionSets = activeMissionSets();
         Map<String, MissionSetProgress> progressBySetId = progressBySetId(childId, missionSets);
         StageProgressResponse stageProgress = stageProgress(missionSets, progressBySetId);
         Map<UUID, Map<Integer, List<MissionSet>>> setsByStarLevelByMissionId = missionSets.stream()
@@ -200,6 +201,27 @@ public class MissionService {
             List<MissionSet> playableSets,
             Map<String, MissionSetProgress> progressBySetId
     ) {
+    }
+
+    private record ActiveMissionSetCache(List<MissionSet> missionSets, Instant expiresAt) {
+    }
+
+    private List<MissionSet> activeMissionSets() {
+        Instant now = Instant.now();
+        ActiveMissionSetCache cache = activeMissionSetCache;
+        if (cache.expiresAt().isAfter(now)) {
+            return cache.missionSets();
+        }
+        synchronized (this) {
+            cache = activeMissionSetCache;
+            if (cache.expiresAt().isAfter(now)) {
+                return cache.missionSets();
+            }
+            List<MissionSet> loaded = List.copyOf(missionSetRepository
+                    .findAllByActiveTrueOrderByStageAscDisplayOrderAscStarLevelAscVariantNoAscSetIdAsc());
+            activeMissionSetCache = new ActiveMissionSetCache(loaded, now.plus(ACTIVE_MISSION_SET_CACHE_TTL));
+            return loaded;
+        }
     }
 
     private MissionListResponse.StageResponse toStageResponse(
