@@ -2,7 +2,7 @@
   "$schema": "https://railway.com/railway.schema.json",
   "build": {
     "builder": "RAILPACK",
-    "buildCommand": "./gradlew bootJar -x test"
+    "buildCommand": "chmod +x gradlew && ./gradlew bootJar -x test"
   },
   "deploy": {
     "startCommand": "java -Dserver.port=$PORT -jar build/libs/backend-0.0.1-SNAPSHOT.jar",
