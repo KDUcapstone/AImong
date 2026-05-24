@@ -30,11 +30,15 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.IntStream;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class QuizService {
+
+    private static final Logger log = LoggerFactory.getLogger(QuizService.class);
 
     private final MissionRepository missionRepository;
     private final MissionSetRepository missionSetRepository;
@@ -114,18 +118,44 @@ public class QuizService {
 
     @Transactional
     public MissionQuestionsResponse getQuestions(UUID childId, UUID missionId, int starLevel) {
+        long startedAt = System.nanoTime();
         childActivityService.touchLastActiveAt(childId);
+        long activityTouchedAt = System.nanoTime();
         if (starLevel < 1 || starLevel > 3) {
             throw new AimongException(ErrorCode.INVALID_STAR_LEVEL);
         }
         Mission mission = missionRepository.findById(missionId)
                 .filter(Mission::isActive)
                 .orElseThrow(() -> new AimongException(ErrorCode.MISSION_NOT_FOUND));
+        long missionLoadedAt = System.nanoTime();
         if (missionSetRepository == null || missionSetProgressRepository == null) {
-            return getLegacyQuestions(childId, mission);
+            MissionQuestionsResponse response = getLegacyQuestions(childId, mission);
+            log.info(
+                    "mission-questions served mode=legacy childId={} missionId={} starLevel={} touchMs={} missionLoadMs={} totalMs={}",
+                    childId,
+                    missionId,
+                    starLevel,
+                    elapsedMillis(startedAt, activityTouchedAt),
+                    elapsedMillis(activityTouchedAt, missionLoadedAt),
+                    elapsedMillis(startedAt, System.nanoTime())
+            );
+            return response;
         }
         MissionSet missionSet = missionService.resolvePlayableSet(childId, mission.getId(), starLevel);
-        return getQuestionsForSet(childId, missionSet);
+        long setResolvedAt = System.nanoTime();
+        MissionQuestionsResponse response = getQuestionsForSet(childId, missionSet);
+        log.info(
+                "mission-questions served mode=mission-set childId={} missionId={} setId={} starLevel={} touchMs={} missionLoadMs={} setResolveMs={} totalMs={}",
+                childId,
+                missionId,
+                missionSet.getSetId(),
+                starLevel,
+                elapsedMillis(startedAt, activityTouchedAt),
+                elapsedMillis(activityTouchedAt, missionLoadedAt),
+                elapsedMillis(missionLoadedAt, setResolvedAt),
+                elapsedMillis(startedAt, System.nanoTime())
+        );
+        return response;
     }
 
     @Transactional
@@ -140,11 +170,15 @@ public class QuizService {
     }
 
     private MissionQuestionsResponse getQuestionsForSet(UUID childId, MissionSet missionSet) {
+        long startedAt = System.nanoTime();
         Mission mission = missionRepository.findById(missionSet.getMissionId())
                 .filter(Mission::isActive)
                 .orElseThrow(() -> new AimongException(ErrorCode.MISSION_NOT_FOUND));
+        long missionLoadedAt = System.nanoTime();
         boolean isReview = missionSetProgressRepository.existsByChildIdAndSetId(childId, missionSet.getSetId());
+        long progressCheckedAt = System.nanoTime();
         List<QuestionBank> selectedQuestions = createServingReadyQuestionSet(missionSet, mission, childId, isReview);
+        long questionsSelectedAt = System.nanoTime();
         if (selectedQuestions.size() != missionQuestionProperties.setSize()) {
             throw new AimongException(ErrorCode.MISSION_SET_NOT_READY);
         }
@@ -162,6 +196,7 @@ public class QuizService {
             }
             energyAfter = childProfile.getEnergy();
         }
+        long energyCheckedAt = System.nanoTime();
 
         List<UUID> selectedQuestionIds = selectedQuestions.stream()
                 .map(QuestionBank::getId)
@@ -177,8 +212,9 @@ public class QuizService {
                 isReview
         );
         quizAttemptRepository.save(quizAttempt);
+        long attemptSavedAt = System.nanoTime();
 
-        return new MissionQuestionsResponse(
+        MissionQuestionsResponse response = new MissionQuestionsResponse(
                 missionSet.getSetId(),
                 mission.getId(),
                 missionSet.getMissionCode(),
@@ -193,6 +229,23 @@ public class QuizService {
                 missionQuestionProperties.setSize(),
                 toQuestionResponses(selectedQuestions)
         );
+        log.info(
+                "mission-question-set served childId={} missionId={} setId={} starLevel={} review={} selected={} missionLoadMs={} progressMs={} selectMs={} energyMs={} attemptSaveMs={} responseMapMs={} totalMs={}",
+                childId,
+                mission.getId(),
+                missionSet.getSetId(),
+                missionSet.getStarLevel(),
+                isReview,
+                selectedQuestions.size(),
+                elapsedMillis(startedAt, missionLoadedAt),
+                elapsedMillis(missionLoadedAt, progressCheckedAt),
+                elapsedMillis(progressCheckedAt, questionsSelectedAt),
+                elapsedMillis(questionsSelectedAt, energyCheckedAt),
+                elapsedMillis(energyCheckedAt, attemptSavedAt),
+                elapsedMillis(attemptSavedAt, System.nanoTime()),
+                elapsedMillis(startedAt, System.nanoTime())
+        );
+        return response;
     }
 
     private MissionQuestionsResponse getLegacyQuestions(UUID childId, Mission mission) {
@@ -247,6 +300,7 @@ public class QuizService {
         }
 
         for (int attempt = 0; attempt < 2; attempt++) {
+            long startedAt = System.nanoTime();
             List<QuestionBank> selectedQuestions = missionQuestionSetFactory.create(
                     missionSet.getSetId(),
                     mission.getId(),
@@ -257,10 +311,35 @@ public class QuizService {
             QuestionServingQualityGuard.ServingValidationResult validationResult =
                     questionServingQualityGuard.validateForServing(mission, selectedQuestions);
             if (validationResult.validQuestions().size() == missionQuestionProperties.setSize()) {
+                log.info(
+                        "mission-question-selection validated missionId={} setId={} starLevel={} attempt={} candidateCount={} validationRejected={} totalMs={}",
+                        mission.getId(),
+                        missionSet.getSetId(),
+                        missionSet.getStarLevel(),
+                        attempt + 1,
+                        selectedQuestions.size(),
+                        validationResult.invalidQuestionIds().size(),
+                        elapsedMillis(startedAt, System.nanoTime())
+                );
                 return validationResult.validQuestions();
             }
+            log.warn(
+                    "mission-question-selection rejected missionId={} setId={} starLevel={} attempt={} candidateCount={} validCount={} invalidQuestionIds={} totalMs={}",
+                    mission.getId(),
+                    missionSet.getSetId(),
+                    missionSet.getStarLevel(),
+                    attempt + 1,
+                    selectedQuestions.size(),
+                    validationResult.validQuestions().size(),
+                    validationResult.invalidQuestionIds(),
+                    elapsedMillis(startedAt, System.nanoTime())
+            );
         }
         throw new AimongException(ErrorCode.MISSION_SET_NOT_READY);
+    }
+
+    private long elapsedMillis(long fromNanos, long toNanos) {
+        return (toNanos - fromNanos) / 1_000_000;
     }
 
     public List<UUID> parseQuestionIds(String questionIdsJson) {

@@ -1,7 +1,5 @@
 package com.aimong.backend.global.enums;
 
 public enum TicketType {
-    NORMAL,
-    RARE,
-    EPIC
+    NORMAL
 }

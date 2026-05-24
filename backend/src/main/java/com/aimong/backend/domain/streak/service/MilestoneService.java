@@ -36,14 +36,14 @@ public class MilestoneService {
     private List<SubmitResponse.RewardResponse> applyFixedStreakRewards(UUID childId, int continuousDays) {
         List<SubmitResponse.RewardResponse> rewards = new ArrayList<>();
         if (continuousDays == 7 && !milestoneRewardRepository.existsByChildIdAndMilestoneDays(childId, (short) 7)) {
-            grantTickets(childId, TicketType.RARE, 1);
+            grantTickets(childId, TicketType.NORMAL, 2);
             milestoneRewardRepository.save(MilestoneReward.create(childId, (short) 7));
-            rewards.add(ticketReward("RARE", 1, "STREAK_MILESTONE_DAY7"));
+            rewards.add(ticketReward(2, "STREAK_MILESTONE_DAY7"));
         }
         if (continuousDays == 30 && !milestoneRewardRepository.existsByChildIdAndMilestoneDays(childId, (short) 30)) {
-            grantTickets(childId, TicketType.EPIC, 1);
+            grantTickets(childId, TicketType.NORMAL, 3);
             milestoneRewardRepository.save(MilestoneReward.create(childId, (short) 30));
-            rewards.add(ticketReward("EPIC", 1, "STREAK_MILESTONE_DAY30"));
+            rewards.add(ticketReward(3, "STREAK_MILESTONE_DAY30"));
         }
         return rewards;
     }
@@ -61,7 +61,6 @@ public class MilestoneService {
             grantTickets(childId, grant.ticketType(), grant.count());
             milestone.achieveAndClaim();
             rewards.add(ticketReward(
-                    grant.ticketType().name(),
                     grant.count(),
                     "STREAK_GOAL_TIER" + milestone.getTier() + "_DAY" + milestone.getTargetDays()
             ));
@@ -72,16 +71,16 @@ public class MilestoneService {
     private TicketGrant grantForTier(short tier) {
         return switch (tier) {
             case 1 -> new TicketGrant(TicketType.NORMAL, 1);
-            case 2 -> new TicketGrant(TicketType.RARE, 1);
-            case 3 -> new TicketGrant(TicketType.RARE, 3);
+            case 2 -> new TicketGrant(TicketType.NORMAL, 2);
+            case 3 -> new TicketGrant(TicketType.NORMAL, 6);
             default -> throw new IllegalStateException("Unsupported streak milestone tier: " + tier);
         };
     }
 
-    private SubmitResponse.RewardResponse ticketReward(String ticketType, int count, String reason) {
+    private SubmitResponse.RewardResponse ticketReward(int count, String reason) {
         return new SubmitResponse.RewardResponse(
                 "TICKET",
-                ticketType,
+                TicketType.NORMAL.name(),
                 count,
                 null,
                 reason

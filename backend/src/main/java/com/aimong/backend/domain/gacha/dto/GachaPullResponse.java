@@ -20,9 +20,7 @@ public record GachaPullResponse(
     }
 
     public record RemainingTickets(
-            int normal,
-            int rare,
-            int epic
+            int normal
     ) {
     }
 }

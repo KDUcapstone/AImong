@@ -832,15 +832,7 @@ public class SubmitService {
         if (missionSetRepository == null || missionSetProgressRepository == null) {
             return 0;
         }
-        List<String> setIds = missionSetRepository.findAllByActiveTrueOrderByStageAscDisplayOrderAscStarLevelAscVariantNoAscSetIdAsc()
-                .stream()
-                .filter(set -> set.getStarLevel() == starLevel)
-                .map(MissionSet::getSetId)
-                .toList();
-        if (setIds.isEmpty()) {
-            return 0;
-        }
-        return missionSetProgressRepository.countByChildIdAndSetIdIn(childId, setIds);
+        return missionSetProgressRepository.countByChildIdAndStarLevelAndCompletedTrue(childId, starLevel);
     }
 
     private Set<String> unlockedIncompleteSetIds(UUID childId) {
@@ -868,9 +860,7 @@ public class SubmitService {
 
     private SubmitResponse.RemainingTicketsResponse toRemainingTickets(UUID childId) {
         return new SubmitResponse.RemainingTicketsResponse(
-                Math.toIntExact(ticketRepository.countByChildIdAndTicketTypeAndUsedAtIsNull(childId, TicketType.NORMAL)),
-                Math.toIntExact(ticketRepository.countByChildIdAndTicketTypeAndUsedAtIsNull(childId, TicketType.RARE)),
-                Math.toIntExact(ticketRepository.countByChildIdAndTicketTypeAndUsedAtIsNull(childId, TicketType.EPIC))
+                Math.toIntExact(ticketRepository.countByChildIdAndTicketTypeAndUsedAtIsNull(childId, TicketType.NORMAL))
         );
     }
 }

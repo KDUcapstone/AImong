@@ -50,7 +50,7 @@ class DevGachaApiIntegrationTest {
     void grantReturnsTicketsAndFragmentsForSmokeTesting() throws Exception {
         given(devGachaGrantService.grant(any(UUID.class), any(DevGachaGrantRequest.class)))
                 .willReturn(new DevGachaGrantResponse(
-                        new GachaPullResponse.RemainingTickets(3, 1, 0),
+                        new GachaPullResponse.RemainingTickets(3),
                         new FragmentListResponse(List.of(
                                 new FragmentListResponse.FragmentSummary("NORMAL", 10, 10),
                                 new FragmentListResponse.FragmentSummary("RARE", 30, 30)
@@ -61,12 +61,11 @@ class DevGachaApiIntegrationTest {
                         .principal(new UsernamePasswordAuthenticationToken(UUID.randomUUID().toString(), null))
                         .contentType(APPLICATION_JSON)
                         .content(objectMapper.writeValueAsBytes(new DevGachaGrantRequest(
-                                3, 1, 0, 10, 30, 0, 0
+                                3, 10, 30, 0, 0
                         ))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.remainingTickets.normal").value(3))
-                .andExpect(jsonPath("$.data.remainingTickets.rare").value(1))
                 .andExpect(jsonPath("$.data.fragments.fragments[0].grade").value("NORMAL"))
                 .andExpect(jsonPath("$.data.fragments.fragments[0].count").value(10));
     }

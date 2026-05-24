@@ -1,6 +1,7 @@
 package com.aimong.backend.domain.auth.repository;
 
 import com.aimong.backend.domain.auth.entity.ChildProfile;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.List;
 import java.util.UUID;
@@ -9,6 +10,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface ChildProfileRepository extends JpaRepository<ChildProfile, UUID> {
 
@@ -40,10 +42,26 @@ public interface ChildProfileRepository extends JpaRepository<ChildProfile, UUID
 
     Optional<ChildProfile> findByIdAndDeletedAtIsNull(UUID id);
 
+    boolean existsByIdAndDeletedAtIsNull(UUID id);
+
     List<ChildProfile> findAllByParentAccountParentId(String parentId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<ChildProfile> findWithLockById(UUID id);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+            update ChildProfile c
+            set c.lastActiveAt = :now
+            where c.id = :childId
+              and c.deletedAt is null
+              and (c.lastActiveAt is null or c.lastActiveAt < :cutoff)
+            """)
+    int touchLastActiveAtIfDue(
+            @Param("childId") UUID childId,
+            @Param("now") Instant now,
+            @Param("cutoff") Instant cutoff
+    );
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("""

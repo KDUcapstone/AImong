@@ -31,21 +31,6 @@ class GachaProbabilityServiceTest {
         assertThat(result.appliedSrBonus()).isEqualTo(0.75d);
     }
 
-    @Test
-    void rareTicketDoesNotExposeSrBonusInResponseValue() {
-        GachaProbabilityService.DrawResult result = service.draw(TicketType.RARE, 1, 100);
-
-        assertThat(result.appliedSrBonus()).isZero();
-    }
-
-    @Test
-    void rareAndEpicTicketProbabilitiesIgnoreSrBonus() throws Exception {
-        assertThat(probabilitiesFor(TicketType.RARE, 1, 0))
-                .containsExactly(probabilitiesFor(TicketType.RARE, 1, 100));
-        assertThat(probabilitiesFor(TicketType.EPIC, 1, 0))
-                .containsExactly(probabilitiesFor(TicketType.EPIC, 1, 100));
-    }
-
     private double[] probabilitiesFor(TicketType ticketType, int nextPullCount, int srMissCount) throws Exception {
         Method method = GachaProbabilityService.class.getDeclaredMethod(
                 "probabilitiesFor",

@@ -111,9 +111,7 @@ public class ReturnRewardService {
 
     private ReturnRewardClaimResponse.RemainingTickets remainingTickets(UUID childId) {
         return new ReturnRewardClaimResponse.RemainingTickets(
-                Math.toIntExact(ticketRepository.countByChildIdAndTicketTypeAndUsedAtIsNull(childId, TicketType.NORMAL)),
-                Math.toIntExact(ticketRepository.countByChildIdAndTicketTypeAndUsedAtIsNull(childId, TicketType.RARE)),
-                Math.toIntExact(ticketRepository.countByChildIdAndTicketTypeAndUsedAtIsNull(childId, TicketType.EPIC))
+                Math.toIntExact(ticketRepository.countByChildIdAndTicketTypeAndUsedAtIsNull(childId, TicketType.NORMAL))
         );
     }
 

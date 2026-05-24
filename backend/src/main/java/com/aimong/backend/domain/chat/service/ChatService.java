@@ -16,9 +16,9 @@ import com.aimong.backend.domain.privacy.repository.PrivacyEventRepository;
 import com.aimong.backend.domain.quest.service.AchievementService;
 import com.aimong.backend.domain.quest.service.DailyQuestService;
 import com.aimong.backend.domain.quest.service.WeeklyQuestService;
+import com.aimong.backend.global.config.OpenAiProperties;
 import com.aimong.backend.global.exception.AimongException;
 import com.aimong.backend.global.exception.ErrorCode;
-import com.aimong.backend.global.config.OpenAiProperties;
 import com.aimong.backend.global.util.KstDateUtils;
 import com.aimong.backend.infra.openai.OpenAiClient;
 import java.time.Duration;
@@ -26,6 +26,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -33,19 +34,27 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @Service
 @RequiredArgsConstructor
 public class ChatService {
 
     private static final int DAILY_LIMIT = 20;
+    private static final int DAILY_IMAGE_LIMIT = 5;
     private static final int FIRST_CHAT_XP = 5;
     private static final int GPT_TIMEOUT_SECONDS = 15;
+    private static final int IMAGE_TIMEOUT_SECONDS = 60;
     private static final Duration SESSION_TTL = Duration.ofHours(1);
     private static final String CHAT_MODEL = "gpt-5-mini";
+    private static final String IMAGE_MODEL = "gpt-image-1-mini";
+    private static final String IMAGE_SIZE = "1024x1024";
+    private static final String IMAGE_QUALITY = "low";
     private static final String HINT_SUGGESTION = "스스로 생각해보는 건 어때요? 힌트만 받아보세요!";
-    private static final List<String> HINT_TRIGGER_WORDS = List.of("숙제", "해줘", "대신", "써줘");
+    private static final List<String> HINT_TRIGGER_WORDS = List.of(
+            "숙제", "해줘", "대신", "써줘",
+            "homework", "help", "answer", "solve"
+    );
     private static final String DEVELOPER_PROMPT = """
             너는 초등학생이 AI를 안전하고 비판적으로 연습하도록 돕는 AImong의 AI 친구다.
             한국어로 2~4문장 안에서 쉽고 친절하게 답한다.
@@ -66,38 +75,89 @@ public class ChatService {
     private final DailyQuestService dailyQuestService;
     private final WeeklyQuestService weeklyQuestService;
     private final AchievementService achievementService;
+    private final TransactionTemplate transactionTemplate;
 
-    @Transactional
     public ChatResponse send(UUID childId, String message, boolean masked) {
         return send(childId, message, masked, null);
     }
 
-    @Transactional
     public ChatResponse send(UUID childId, String message, boolean masked, UUID sessionId) {
+        return send(childId, message, masked, sessionId, false);
+    }
+
+    public ChatResponse send(UUID childId, String message, boolean masked, UUID sessionId, boolean imageRequested) {
         childActivityService.touchLastActiveAt(childId);
-        ChildProfile childProfile = childProfileRepository.findWithLockById(childId)
-                .orElseThrow(() -> new AimongException(ErrorCode.CHILD_NOT_FOUND));
+        PrivacyMaskingService.MaskingResult maskingResult = privacyMaskingService.mask(message);
+        ChatPreflight preflight = transactionTemplate.execute(status ->
+                prepareChat(childId, sessionId, imageRequested));
+        boolean hintTriggered = isHintTriggered(maskingResult.sanitizedMessage());
 
-        ChatUsage usage = chatUsageRepository.findWithLockByChildIdAndUsageDate(childId, KstDateUtils.today())
-                .orElseGet(() -> chatUsageRepository.save(ChatUsage.create(childId, KstDateUtils.today())));
-
-        if (usage.getCount() >= DAILY_LIMIT) {
-            throw new AimongException(ErrorCode.TOO_MANY_REQUESTS, "오늘은 충분히 이야기했어요! 내일 또 만나요");
+        ChatResponse.GeneratedImageResponse generatedImage = null;
+        String safeReply;
+        if (imageRequested) {
+            generatedImage = requestGeneratedImage(maskingResult.sanitizedMessage());
+            safeReply = "Image generated.";
+        } else {
+            String reply = requestGptReply(
+                    maskingResult.sanitizedMessage(),
+                    contextualPrompt(preflight.previousMessages(), maskingResult.sanitizedMessage())
+            );
+            safeReply = privacyMaskingService.mask(reply).sanitizedMessage();
         }
 
-        PrivacyMaskingService.MaskingResult maskingResult = privacyMaskingService.mask(message);
-        savePrivacyEvents(childId, maskingResult, masked);
-        boolean hintTriggered = isHintTriggered(maskingResult.sanitizedMessage());
-        Instant now = Instant.now();
-        chatSessionRepository.deleteByExpiresAtBefore(now);
-        ChatSession chatSession = resolveSession(childId, sessionId, now);
-        List<ChatMessage> previousMessages = recentMessages(chatSession);
-        String reply = requestGptReply(
-                maskingResult.sanitizedMessage(),
-                contextualPrompt(previousMessages, maskingResult.sanitizedMessage())
-        );
-        String safeReply = privacyMaskingService.mask(reply).sanitizedMessage();
+        ChatCommit commit = transactionTemplate.execute(status -> commitChat(
+                childId,
+                maskingResult,
+                masked,
+                preflight.sessionId(),
+                safeReply,
+                imageRequested
+        ));
 
+        return new ChatResponse(
+                safeReply,
+                commit.remainingCalls(),
+                hintTriggered ? HINT_SUGGESTION : null,
+                commit.sessionId(),
+                commit.sessionExpiresAt(),
+                generatedImage,
+                imageRequested ? commit.remainingImageCalls() : null
+        );
+    }
+
+    private ChatPreflight prepareChat(UUID childId, UUID sessionId, boolean imageRequested) {
+        childProfileRepository.findByIdAndDeletedAtIsNull(childId)
+                .orElseThrow(() -> new AimongException(ErrorCode.CHILD_NOT_FOUND));
+        ChatUsage usage = chatUsageRepository.findByChildIdAndUsageDate(childId, KstDateUtils.today())
+                .orElse(null);
+        validateUsageLimit(usage, imageRequested);
+
+        Instant now = Instant.now();
+        UUID resolvedSessionId = resolveExistingSessionId(childId, sessionId, now);
+        List<ConversationMessage> previousMessages = resolvedSessionId == null
+                ? List.of()
+                : recentMessages(resolvedSessionId);
+        return new ChatPreflight(resolvedSessionId, previousMessages);
+    }
+
+    private ChatCommit commitChat(
+            UUID childId,
+            PrivacyMaskingService.MaskingResult maskingResult,
+            boolean masked,
+            UUID requestedSessionId,
+            String safeReply,
+            boolean imageRequested
+    ) {
+        ChildProfile childProfile = childProfileRepository.findWithLockById(childId)
+                .filter(profile -> profile.getDeletedAt() == null)
+                .orElseThrow(() -> new AimongException(ErrorCode.CHILD_NOT_FOUND));
+        ChatUsage usage = chatUsageRepository.findWithLockByChildIdAndUsageDate(childId, KstDateUtils.today())
+                .orElseGet(() -> chatUsageRepository.save(ChatUsage.create(childId, KstDateUtils.today())));
+        validateUsageLimit(usage, imageRequested);
+        savePrivacyEvents(childId, maskingResult, masked);
+
+        Instant now = Instant.now();
+        ChatSession chatSession = resolveWritableSession(childId, requestedSessionId, now);
         chatSession.refresh(now, SESSION_TTL);
         chatSessionRepository.save(chatSession);
         chatMessageRepository.save(ChatMessage.user(chatSession, maskingResult.sanitizedMessage(), now));
@@ -105,6 +165,9 @@ public class ChatService {
 
         boolean firstSuccessToday = usage.getCount() == 0;
         usage.increment();
+        if (imageRequested) {
+            usage.incrementImage();
+        }
 
         if (firstSuccessToday) {
             childProfile.applyMissionXp(FIRST_CHAT_XP, KstDateUtils.today(), KstDateUtils.currentWeekStart());
@@ -116,16 +179,38 @@ public class ChatService {
         weeklyQuestService.updateForChatSuccess(childId);
         achievementService.unlockByTotalXp(childId, childProfile);
 
-        return new ChatResponse(
-                safeReply,
-                DAILY_LIMIT - usage.getCount(),
-                hintTriggered ? HINT_SUGGESTION : null,
+        return new ChatCommit(
                 chatSession.getId(),
-                chatSession.getExpiresAt()
+                chatSession.getExpiresAt(),
+                DAILY_LIMIT - usage.getCount(),
+                DAILY_IMAGE_LIMIT - usage.getImageCount()
         );
     }
 
-    private ChatSession resolveSession(UUID childId, UUID sessionId, Instant now) {
+    private void validateUsageLimit(ChatUsage usage, boolean imageRequested) {
+        if (usage == null) {
+            return;
+        }
+        if (usage.getCount() >= DAILY_LIMIT) {
+            throw new AimongException(ErrorCode.TOO_MANY_REQUESTS, "오늘은 충분히 이야기했어요! 내일 또 만나요");
+        }
+        if (imageRequested && usage.getImageCount() >= DAILY_IMAGE_LIMIT) {
+            throw new AimongException(ErrorCode.TOO_MANY_REQUESTS, "Today's image generation limit has been reached.");
+        }
+    }
+
+    private UUID resolveExistingSessionId(UUID childId, UUID sessionId, Instant now) {
+        if (sessionId != null) {
+            return chatSessionRepository.findByIdAndChildIdAndExpiresAtAfter(sessionId, childId, now)
+                    .map(ChatSession::getId)
+                    .orElse(null);
+        }
+        return chatSessionRepository.findFirstByChildIdAndExpiresAtAfterOrderByUpdatedAtDesc(childId, now)
+                .map(ChatSession::getId)
+                .orElse(null);
+    }
+
+    private ChatSession resolveWritableSession(UUID childId, UUID sessionId, Instant now) {
         if (sessionId != null) {
             return chatSessionRepository.findByIdAndChildIdAndExpiresAtAfter(sessionId, childId, now)
                     .orElseGet(() -> chatSessionRepository.save(ChatSession.create(childId, now, SESSION_TTL)));
@@ -134,23 +219,25 @@ public class ChatService {
                 .orElseGet(() -> chatSessionRepository.save(ChatSession.create(childId, now, SESSION_TTL)));
     }
 
-    private List<ChatMessage> recentMessages(ChatSession chatSession) {
+    private List<ConversationMessage> recentMessages(UUID sessionId) {
         List<ChatMessage> messages = new ArrayList<>(
-                chatMessageRepository.findTop10BySession_IdOrderByCreatedAtDesc(chatSession.getId())
+                chatMessageRepository.findTop10BySession_IdOrderByCreatedAtDesc(sessionId)
         );
         messages.sort(Comparator.comparing(ChatMessage::getCreatedAt));
-        return messages;
+        return messages.stream()
+                .map(message -> new ConversationMessage(message.getRole(), message.getContentMasked()))
+                .toList();
     }
 
-    private String contextualPrompt(List<ChatMessage> previousMessages, String currentMessage) {
+    private String contextualPrompt(List<ConversationMessage> previousMessages, String currentMessage) {
         if (previousMessages.isEmpty()) {
             return currentMessage;
         }
 
         StringBuilder prompt = new StringBuilder();
         prompt.append("[같은 채팅 세션의 최근 대화입니다. 개인정보는 마스킹된 내용만 포함합니다.]\n");
-        for (ChatMessage message : previousMessages) {
-            prompt.append(message.getRole()).append(": ").append(message.getContentMasked()).append('\n');
+        for (ConversationMessage message : previousMessages) {
+            prompt.append(message.role()).append(": ").append(message.contentMasked()).append('\n');
         }
         prompt.append("\n[현재 사용자 메시지]\n");
         prompt.append(currentMessage);
@@ -187,6 +274,50 @@ public class ChatService {
         return "테스트 응답이에요. 실제 OpenAI 호출 없이 챗봇 흐름, 사용량, 퀘스트 진행도만 확인하고 있어요.";
     }
 
+    private ChatResponse.GeneratedImageResponse requestGeneratedImage(String sanitizedPrompt) {
+        if (openAiProperties.mockEnabled()) {
+            return new ChatResponse.GeneratedImageResponse(
+                    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=",
+                    "image/png",
+                    "png",
+                    IMAGE_SIZE,
+                    IMAGE_QUALITY
+            );
+        }
+
+        try {
+            OpenAiClient.GeneratedImage image = CompletableFuture
+                    .supplyAsync(() -> openAiClient.createImage(IMAGE_MODEL, sanitizedPrompt, IMAGE_SIZE, IMAGE_QUALITY))
+                    .get(IMAGE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            return new ChatResponse.GeneratedImageResponse(
+                    image.b64Json(),
+                    mimeType(image.outputFormat()),
+                    image.outputFormat(),
+                    image.size(),
+                    image.quality()
+            );
+        } catch (TimeoutException exception) {
+            throw new AimongException(ErrorCode.GATEWAY_TIMEOUT, "Image generation timed out. Please try again.");
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new AimongException(ErrorCode.GATEWAY_TIMEOUT, "Image generation timed out. Please try again.");
+        } catch (ExecutionException exception) {
+            Throwable cause = exception.getCause();
+            if (cause instanceof AimongException aimongException) {
+                throw aimongException;
+            }
+            throw new AimongException(ErrorCode.INTERNAL_SERVER_ERROR, "Image generation failed. Please try again.");
+        }
+    }
+
+    private String mimeType(String outputFormat) {
+        return switch (outputFormat) {
+            case "jpeg", "jpg" -> "image/jpeg";
+            case "webp" -> "image/webp";
+            default -> "image/png";
+        };
+    }
+
     private void savePrivacyEvents(UUID childId, PrivacyMaskingService.MaskingResult maskingResult, boolean requestMasked) {
         if (maskingResult.detectedTypes().isEmpty()) {
             return;
@@ -199,6 +330,16 @@ public class ChatService {
     }
 
     private boolean isHintTriggered(String sanitizedMessage) {
-        return HINT_TRIGGER_WORDS.stream().anyMatch(sanitizedMessage::contains);
+        String lowerCaseMessage = sanitizedMessage.toLowerCase(Locale.ROOT);
+        return HINT_TRIGGER_WORDS.stream().anyMatch(lowerCaseMessage::contains);
+    }
+
+    private record ChatPreflight(UUID sessionId, List<ConversationMessage> previousMessages) {
+    }
+
+    private record ChatCommit(UUID sessionId, Instant sessionExpiresAt, int remainingCalls, int remainingImageCalls) {
+    }
+
+    private record ConversationMessage(String role, String contentMasked) {
     }
 }

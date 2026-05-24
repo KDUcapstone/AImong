@@ -78,6 +78,15 @@ public class ValidatedDynamicQuestionGenerationPort implements DynamicQuestionGe
             QuestionGenerationRetryFeedback feedback = QuestionGenerationRetryFeedback.empty();
             int attemptLimit = Math.max(1, generationProperties.miniMaxRetry());
             for (int attempt = 0; attempt < attemptLimit; attempt++) {
+                log.info(
+                        "dynamic-question-generation request missionCode={} missionId={} difficultyBand={} count={} attempt={}/{}",
+                        missionCode,
+                        missionId,
+                        request.difficultyBand(),
+                        request.candidateCount(),
+                        attempt + 1,
+                        attemptLimit
+                );
                 QuestionGenerationService.GenerationBatchResult batchResult =
                         questionGenerationService.generateValidatedCandidates(request.toGenerationRequest(attempt, feedback));
                 rejectedCount += batchResult.rejected().size();

@@ -56,7 +56,7 @@ class GachaApiIntegrationTest {
                 2,
                 0.0d,
                 false,
-                new GachaPullResponse.RemainingTickets(2, 0, 1)
+                new GachaPullResponse.RemainingTickets(2)
         ));
 
         mockMvc.perform(post("/gacha/pull")

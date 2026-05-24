@@ -12,11 +12,9 @@ import com.aimong.backend.domain.mission.dto.ReviveAttemptRequest;
 import com.aimong.backend.domain.mission.dto.ReviveAttemptResponse;
 import com.aimong.backend.domain.mission.entity.Mission;
 import com.aimong.backend.domain.mission.entity.MissionSet;
-import com.aimong.backend.domain.mission.entity.MissionSetProgress;
 import com.aimong.backend.domain.mission.entity.QuizAttempt;
 import com.aimong.backend.domain.mission.entity.QuizAttemptStatus;
 import com.aimong.backend.domain.mission.repository.MissionRepository;
-import com.aimong.backend.domain.mission.repository.MissionSetProgressRepository;
 import com.aimong.backend.domain.mission.repository.MissionSetRepository;
 import com.aimong.backend.domain.mission.repository.QuizAttemptRepository;
 import com.aimong.backend.domain.reward.entity.CurrencyTransactionReason;
@@ -30,6 +28,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -42,7 +41,6 @@ public class QuizAttemptService {
 
     private final MissionRepository missionRepository;
     private final MissionSetRepository missionSetRepository;
-    private final MissionSetProgressRepository missionSetProgressRepository;
     private final QuizAttemptRepository quizAttemptRepository;
     private final ChildProfileRepository childProfileRepository;
     private final ChildActivityService childActivityService;
@@ -58,8 +56,13 @@ public class QuizAttemptService {
                 .filter(Mission::isActive)
                 .orElseThrow(() -> new AimongException(ErrorCode.MISSION_NOT_FOUND));
         List<MissionSet> sets = missionSetRepository.findAllByMissionIdAndActiveTrueOrderByStarLevelAscVariantNoAscSetIdAsc(missionId);
+        MissionService.MissionSetAvailability availability = missionService.missionSetAvailability(childId);
+        Set<String> playableSetIds = availability.playableSets()
+                .stream()
+                .map(MissionSet::getSetId)
+                .collect(Collectors.toSet());
         boolean unlocked = sets.stream().findFirst()
-                .map(set -> missionService.isUnlocked(childId, set))
+                .map(set -> playableSetIds.contains(set.getSetId()))
                 .orElse(true);
 
         ChildProfile childProfile = childProfileRepository.findWithLockById(childId)
@@ -69,7 +72,7 @@ public class QuizAttemptService {
                 .collect(Collectors.groupingBy(MissionSet::getStarLevel));
         List<MissionStatusResponse.StarLevelStatus> starLevels = setsByStar.entrySet().stream()
                 .sorted(Map.Entry.comparingByKey())
-                .map(entry -> toStarStatus(childId, entry.getKey(), entry.getValue()))
+                .map(entry -> toStarStatus(entry.getKey(), entry.getValue(), availability, playableSetIds))
                 .toList();
         MissionStatusResponse.InProgressAttempt inProgressAttempt = quizAttemptRepository
                 .findFirstByChildIdAndMissionIdAndStatusAndExpiresAtAfterOrderByCreatedAtDesc(
@@ -186,24 +189,24 @@ public class QuizAttemptService {
     }
 
     private MissionStatusResponse.StarLevelStatus toStarStatus(
-            UUID childId,
             int starLevel,
-            List<MissionSet> sets
+            List<MissionSet> sets,
+            MissionService.MissionSetAvailability availability,
+            Set<String> playableSetIds
     ) {
         List<String> setIds = sets.stream().map(MissionSet::getSetId).toList();
         long completed = setIds.isEmpty()
                 ? 0
-                : missionSetProgressRepository.findAllByChildIdAndSetIdIn(childId, setIds)
-                .stream()
-                .map(MissionSetProgress::getSetId)
-                .distinct()
-                .count();
+                : setIds.stream()
+                        .filter(availability.progressBySetId()::containsKey)
+                        .distinct()
+                        .count();
         return new MissionStatusResponse.StarLevelStatus(
                 starLevel,
                 MissionListResponse.labelForStar(starLevel),
                 sets.size(),
                 completed,
-                !sets.isEmpty() && missionService.isStarLevelPlayable(childId, sets.getFirst().getMissionId(), starLevel),
+                sets.stream().anyMatch(set -> playableSetIds.contains(set.getSetId())),
                 completed > 0
         );
     }

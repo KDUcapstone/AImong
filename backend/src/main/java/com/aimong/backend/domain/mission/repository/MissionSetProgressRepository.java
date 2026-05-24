@@ -43,6 +43,8 @@ public interface MissionSetProgressRepository extends JpaRepository<MissionSetPr
         return countByChildIdAndSetIdInAndCompletedTrue(childId, setIds);
     }
 
+    long countByChildIdAndStarLevelAndCompletedTrue(UUID childId, int starLevel);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<MissionSetProgress> findWithLockByChildIdAndSetIdAndCompletedTrue(UUID childId, String setId);
 

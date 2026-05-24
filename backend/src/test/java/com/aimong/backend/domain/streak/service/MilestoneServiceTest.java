@@ -27,7 +27,7 @@ class MilestoneServiceTest {
     @Mock private StreakMilestoneRepository streakMilestoneRepository;
 
     @Test
-    void applyStreakRewardsGrantsRareTicketOnceAtDay7() {
+    void applyStreakRewardsGrantsNormalTicketsOnceAtDay7() {
         UUID childId = UUID.randomUUID();
         StreakRecord streakRecord = StreakRecord.create(childId);
         LocalDate startDate = LocalDate.of(2026, 4, 24);
@@ -42,8 +42,8 @@ class MilestoneServiceTest {
 
         assertThat(rewards).singleElement().satisfies(reward -> {
             assertThat(reward.type()).isEqualTo("TICKET");
-            assertThat(reward.ticketType()).isEqualTo("RARE");
-            assertThat(reward.count()).isEqualTo(1);
+            assertThat(reward.ticketType()).isEqualTo("NORMAL");
+            assertThat(reward.count()).isEqualTo(2);
             assertThat(reward.reason()).isEqualTo("STREAK_MILESTONE_DAY7");
         });
         verify(milestoneRewardRepository).save(any());
@@ -68,8 +68,8 @@ class MilestoneServiceTest {
         assertThat(milestone.isAchieved()).isTrue();
         assertThat(milestone.isRewardClaimed()).isTrue();
         assertThat(rewards).singleElement().satisfies(reward -> {
-            assertThat(reward.ticketType()).isEqualTo("RARE");
-            assertThat(reward.count()).isEqualTo(1);
+            assertThat(reward.ticketType()).isEqualTo("NORMAL");
+            assertThat(reward.count()).isEqualTo(2);
             assertThat(reward.reason()).isEqualTo("STREAK_GOAL_TIER2_DAY55");
         });
         verify(ticketRepository).saveAll(any(Iterable.class));

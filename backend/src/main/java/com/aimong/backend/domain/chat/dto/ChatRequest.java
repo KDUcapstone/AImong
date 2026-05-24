@@ -13,6 +13,8 @@ public record ChatRequest(
         @NotNull(message = "마스킹 여부를 입력해주세요")
         Boolean masked,
 
-        UUID sessionId
+        UUID sessionId,
+
+        Boolean imageRequested
 ) {
 }

@@ -36,8 +36,6 @@ public class DevGachaGrantService {
                 .orElseThrow(() -> new AimongException(ErrorCode.CHILD_NOT_FOUND));
 
         grantTickets(childId, TicketType.NORMAL, request.normalTickets());
-        grantTickets(childId, TicketType.RARE, request.rareTickets());
-        grantTickets(childId, TicketType.EPIC, request.epicTickets());
 
         grantFragments(childId, PetGrade.NORMAL, request.normalFragments());
         grantFragments(childId, PetGrade.RARE, request.rareFragments());
@@ -68,9 +66,7 @@ public class DevGachaGrantService {
 
     private GachaPullResponse.RemainingTickets remainingTickets(UUID childId) {
         return new GachaPullResponse.RemainingTickets(
-                Math.toIntExact(ticketRepository.countByChildIdAndTicketTypeAndUsedAtIsNull(childId, TicketType.NORMAL)),
-                Math.toIntExact(ticketRepository.countByChildIdAndTicketTypeAndUsedAtIsNull(childId, TicketType.RARE)),
-                Math.toIntExact(ticketRepository.countByChildIdAndTicketTypeAndUsedAtIsNull(childId, TicketType.EPIC))
+                Math.toIntExact(ticketRepository.countByChildIdAndTicketTypeAndUsedAtIsNull(childId, TicketType.NORMAL))
         );
     }
 
