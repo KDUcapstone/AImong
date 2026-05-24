@@ -1,7 +1,9 @@
 package com.kduniv.aimong.feature.chat
 
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
+import androidx.appcompat.widget.PopupMenu
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -19,6 +21,7 @@ class ChatMessageAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(Dif
     var petAvatarEmoji: String = "✨"
     var petType: String = ""
     var petStage: String = "EGG"
+    var onSaveImage: ((String) -> Unit)? = null
 
     override fun getItemViewType(position: Int): Int = when {
         getItem(position).isTyping -> VIEW_TYPE_TYPING
@@ -44,7 +47,7 @@ class ChatMessageAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(Dif
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         val item = getItem(position)
         when (holder) {
-            is PetVh -> holder.bind(item, petType, petStage, petAvatarEmoji)
+            is PetVh -> holder.bind(item, petType, petStage, petAvatarEmoji, onSaveImage)
             is TypingVh -> holder.bind(item, petType, petStage, petAvatarEmoji)
             is UserVh -> holder.bind(item)
         }
@@ -54,17 +57,31 @@ class ChatMessageAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(Dif
         private val binding: ItemChatMessagePetBinding,
     ) : RecyclerView.ViewHolder(binding.root) {
 
-        fun bind(item: ChatMessage, petType: String, petStage: String, avatarEmoji: String) {
+        fun bind(
+            item: ChatMessage,
+            petType: String,
+            petStage: String,
+            avatarEmoji: String,
+            onSave: ((String) -> Unit)?,
+        ) {
             val imageUri = item.imageDataUri
             if (imageUri != null) {
-                binding.ivGeneratedImage.isVisible = true
+                binding.layoutGeneratedImage.isVisible = true
                 binding.tvMessage.isVisible = item.text.isNotBlank()
                 binding.tvMessage.text = item.text
                 Glide.with(binding.ivGeneratedImage)
                     .load(imageUri)
                     .into(binding.ivGeneratedImage)
+                val longClickListener = View.OnLongClickListener { anchor ->
+                    showImageSaveMenu(anchor, imageUri, onSave)
+                    true
+                }
+                binding.layoutGeneratedImage.setOnLongClickListener(longClickListener)
+                binding.ivGeneratedImage.setOnLongClickListener(longClickListener)
             } else {
-                binding.ivGeneratedImage.isVisible = false
+                binding.layoutGeneratedImage.isVisible = false
+                binding.layoutGeneratedImage.setOnLongClickListener(null)
+                binding.ivGeneratedImage.setOnLongClickListener(null)
                 Glide.with(binding.ivGeneratedImage).clear(binding.ivGeneratedImage)
                 binding.tvMessage.isVisible = true
                 binding.tvMessage.text = item.text
@@ -107,6 +124,25 @@ class ChatMessageAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(Dif
     }
 
     companion object {
+        private fun showImageSaveMenu(
+            anchor: View,
+            imageUri: String,
+            onSave: ((String) -> Unit)?,
+        ) {
+            PopupMenu(anchor.context, anchor).apply {
+                menu.add(0, MENU_SAVE_IMAGE, 0, anchor.context.getString(R.string.chat_image_download))
+                setOnMenuItemClickListener { item ->
+                    if (item.itemId == MENU_SAVE_IMAGE) {
+                        onSave?.invoke(imageUri)
+                        true
+                    } else {
+                        false
+                    }
+                }
+            }.show()
+        }
+
+        private const val MENU_SAVE_IMAGE = 1
         private const val VIEW_TYPE_PET = 0
         private const val VIEW_TYPE_USER = 1
         private const val VIEW_TYPE_TYPING = 2

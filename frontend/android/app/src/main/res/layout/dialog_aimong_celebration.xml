@@ -9,7 +9,7 @@
 
     <com.airbnb.lottie.LottieAnimationView
         android:id="@+id/lav_aimong_celebration"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="200dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -20,7 +20,7 @@
 
     <FrameLayout
         android:id="@+id/fl_aimong_pet"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="@dimen/pet_sprite_evolution"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -46,7 +46,7 @@
 
     <TextView
         android:id="@+id/tv_aimong_title"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
         android:gravity="center"
@@ -60,7 +60,7 @@
 
     <TextView
         android:id="@+id/tv_aimong_message"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:gravity="center"
@@ -73,7 +73,7 @@
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btn_aimong_close"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="56dp"
         android:layout_marginTop="20dp"
         android:backgroundTint="#00FFB2"
@@ -81,6 +81,7 @@
         android:textColor="#0A1633"
         android:textStyle="bold"
         app:cornerRadius="16dp"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tv_aimong_message" />

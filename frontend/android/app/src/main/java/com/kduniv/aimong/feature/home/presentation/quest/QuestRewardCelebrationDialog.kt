@@ -12,6 +12,7 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.airbnb.lottie.LottieDrawable
 import com.kduniv.aimong.R
+import com.kduniv.aimong.core.ui.CelebrationDialogWindow
 
 object QuestRewardCelebrationDialog {
 
@@ -62,8 +63,8 @@ object QuestRewardCelebrationDialog {
             dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btn_quest_reward_close)
                 .setOnClickListener { dialog.dismiss() }
 
-            dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
             dialog.show()
+            CelebrationDialogWindow.apply(dialog, ctx)
         } catch (_: Exception) {
             val fallback = ui.lines.joinToString(" · ") { "${it.amountText} ${it.labelText}" }
                 .ifBlank { ctx.getString(R.string.quest_reward_generic) }

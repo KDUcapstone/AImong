@@ -21,10 +21,13 @@ import com.kduniv.aimong.R
 import com.kduniv.aimong.core.ui.BaseFragment
 import com.kduniv.aimong.databinding.FragmentChatBinding
 import com.kduniv.aimong.feature.chat.ChatForegroundTracker
+import com.kduniv.aimong.feature.chat.ChatImageSaver
 import com.kduniv.aimong.feature.chat.ChatMessageAdapter
 import com.kduniv.aimong.feature.gacha.PetArtAssets
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 private class ChatPrivacyHighlightSpan(color: Int) : BackgroundColorSpan(color)
@@ -52,6 +55,7 @@ class ChatFragment : BaseFragment<FragmentChatBinding>(FragmentChatBinding::infl
             stackFromEnd = true
         }
         binding.rvChat.adapter = chatAdapter
+        chatAdapter.onSaveImage = { dataUri -> saveChatImage(dataUri) }
         applyChatImeInsets()
 
         binding.etMessage.setOnFocusChangeListener { _, hasFocus ->
@@ -270,6 +274,19 @@ class ChatFragment : BaseFragment<FragmentChatBinding>(FragmentChatBinding::infl
             }
         } finally {
             suppressInputCallback = false
+        }
+    }
+
+    private fun saveChatImage(dataUri: String) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val result = withContext(Dispatchers.IO) {
+                ChatImageSaver.saveDataUriImage(requireContext().applicationContext, dataUri)
+            }
+            val message = result.fold(
+                onSuccess = { getString(R.string.chat_image_save_success) },
+                onFailure = { it.message ?: getString(R.string.chat_image_save_failed) },
+            )
+            Snackbar.make(binding.root, message, Snackbar.LENGTH_LONG).show()
         }
     }
 }

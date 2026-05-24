@@ -11,7 +11,7 @@
 
     <com.airbnb.lottie.LottieAnimationView
         android:id="@+id/lav_quest_reward"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="156dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -35,7 +35,7 @@
 
     <TextView
         android:id="@+id/tv_quest_reward_title"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
         android:gravity="center"
@@ -49,7 +49,7 @@
 
     <TextView
         android:id="@+id/tv_quest_reward_subtitle"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
         android:gravity="center"
@@ -62,7 +62,7 @@
 
     <LinearLayout
         android:id="@+id/card_quest_rewards"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
         android:background="@drawable/bg_child_quest_row"
@@ -82,7 +82,7 @@
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btn_quest_reward_close"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="56dp"
         android:layout_marginTop="20dp"
         android:backgroundTint="#00FFB2"
@@ -90,6 +90,7 @@
         android:textColor="#0A1633"
         android:textStyle="bold"
         app:cornerRadius="16dp"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/card_quest_rewards" />

@@ -28,21 +28,37 @@ class MissionDifficultyPicker(
     private val layoutInflater: LayoutInflater,
 ) {
 
+    companion object {
+        /** 경로에 남은 난이도 팝업을 모두 제거(인스턴스 분실·빠른 연타 대비) */
+        fun dismissAllPopupsInPath(missionPath: ViewGroup) {
+            for (i in missionPath.childCount - 1 downTo 0) {
+                val child = missionPath.getChildAt(i)
+                if (child.findViewById<View>(R.id.mission_diff_popup_root) != null) {
+                    missionPath.removeViewAt(i)
+                }
+            }
+        }
+    }
+
     private var popupView: View? = null
+    private var openMissionKey: String? = null
     private var heightAnimator: ValueAnimator? = null
+    private var onPickedCallback: ((HomeQuizNavigation, DifficultyUnlockMode) -> Unit)? = null
 
     fun isShowing(): Boolean = popupView != null
+
+    /** 같은 미션 노드를 다시 눌렀을 때 토글 닫기용 */
+    fun isShowingForMission(missionKey: String): Boolean =
+        popupView != null && !missionKey.isBlank() && openMissionKey == missionKey
 
     fun dismissImmediate() {
         heightAnimator?.cancel()
         heightAnimator = null
-        val v = popupView
         popupView = null
+        openMissionKey = null
+        onPickedCallback = null
         clearOutsideDismiss()
-        v?.let { child ->
-            val parent = child.parent as? ViewGroup ?: return@let
-            parent.removeView(child)
-        }
+        dismissAllPopupsInPath(binding.layoutMissionPath)
     }
 
     fun dismissAnimated() {
@@ -77,19 +93,61 @@ class MissionDifficultyPicker(
         starLevels: List<MissionStarLevel>,
         unlockMode: DifficultyUnlockMode,
         anchorRow: View,
+        missionKey: String,
         onPicked: (HomeQuizNavigation, DifficultyUnlockMode) -> Unit,
     ) {
-        dismissImmediate()
+        heightAnimator?.cancel()
+        heightAnimator = null
+        popupView = null
+        openMissionKey = null
+        onPickedCallback = null
+        clearOutsideDismiss()
+        dismissAllPopupsInPath(binding.layoutMissionPath)
         val parent = binding.layoutMissionPath
         val scroll = binding.scrollPath
         val idx = parent.indexOfChild(anchorRow)
         if (idx < 0) return
 
+        openMissionKey = missionKey.takeIf { it.isNotBlank() }
+
         val popup = layoutInflater.inflate(R.layout.mission_difficulty_popup, parent, false)
         popup.findViewById<TextView>(R.id.tv_mission_title).text = missionTitle
+        onPickedCallback = onPicked
+        bindDifficultyCards(popup, base, starLevels, unlockMode)
 
-        // entrySetId가 있어도 미션별 잠금 상태는 starLevels 기준으로 표시 (오늘 추천만 전부 열리던 문제 방지)
+        val lp = LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.WRAP_CONTENT,
+        )
+        parent.addView(popup, idx + 1, lp)
+        popupView = popup
+        installOutsideDismiss()
+
+        popup.post {
+            val popupHeight = popup.height.coerceAtLeast(popup.measuredHeight)
+            if (popupHeight > 0) {
+                scrollToShowPopup(scroll, anchorRow, popupHeight)
+            }
+        }
+    }
+
+    fun updateStarLevels(
+        starLevels: List<MissionStarLevel>,
+        unlockMode: DifficultyUnlockMode,
+        base: HomeQuizNavigation,
+    ) {
+        val popup = popupView ?: return
+        bindDifficultyCards(popup, base, starLevels, unlockMode)
+    }
+
+    private fun bindDifficultyCards(
+        popup: View,
+        base: HomeQuizNavigation,
+        starLevels: List<MissionStarLevel>,
+        unlockMode: DifficultyUnlockMode,
+    ) {
         val useMissionStars = base.missionId.isNotBlank()
+        val onPicked = onPickedCallback ?: return
         val pick: (Int) -> Unit = { starLevel ->
             val nav = base.copy(starLevel = starLevel)
             val resolvedMode = if (unlockMode == DifficultyUnlockMode.PER_STAR && useMissionStars) {
@@ -125,51 +183,6 @@ class MissionDifficultyPicker(
             unlockMode = unlockMode,
             onPick = pick,
         )
-
-        val lp = LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            0,
-        )
-        parent.addView(popup, idx + 1, lp)
-        popupView = popup
-
-        val inner = popup.findViewById<View>(R.id.popup_difficulty_inner)
-
-        popup.post {
-            val w = parent.width
-            popup.measure(
-                MeasureSpec.makeMeasureSpec(w, MeasureSpec.EXACTLY),
-                MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED),
-            )
-            val targetH = popup.measuredHeight.coerceAtLeast(1)
-
-            inner.pivotX = popup.width / 2f
-            inner.pivotY = 0f
-            inner.scaleX = 0.94f
-            inner.scaleY = 0.94f
-
-            scroll.post { scrollToShowPopup(scroll, anchorRow, targetH) }
-
-            heightAnimator?.cancel()
-            heightAnimator = ValueAnimator.ofInt(0, targetH).apply {
-                duration = 260
-                interpolator = FastOutSlowInInterpolator()
-                addUpdateListener { a ->
-                    lp.height = a.animatedValue as Int
-                    popup.layoutParams = lp
-                    parent.requestLayout()
-                }
-                start()
-            }
-            inner.animate()
-                .scaleX(1f)
-                .scaleY(1f)
-                .setDuration(260)
-                .setInterpolator(FastOutSlowInInterpolator())
-                .start()
-
-            installOutsideDismiss()
-        }
     }
 
     private fun installOutsideDismiss() {

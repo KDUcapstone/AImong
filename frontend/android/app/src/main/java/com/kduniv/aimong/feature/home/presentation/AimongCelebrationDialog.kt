@@ -6,6 +6,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import com.airbnb.lottie.LottieDrawable
 import com.kduniv.aimong.R
+import com.kduniv.aimong.core.ui.CelebrationDialogWindow
 import com.kduniv.aimong.feature.gacha.PetArtAssets
 
 object AimongCelebrationDialog {
@@ -40,6 +41,7 @@ object AimongCelebrationDialog {
                 .setOnClickListener { dialog.dismiss() }
 
             dialog.show()
+            CelebrationDialogWindow.apply(dialog, ctx)
         } catch (_: Exception) {
             Toast.makeText(
                 ctx,

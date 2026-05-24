@@ -32,6 +32,7 @@ import androidx.core.os.bundleOf
 import androidx.navigation.fragment.findNavController
 import com.kduniv.aimong.R
 import com.kduniv.aimong.core.ui.BaseFragment
+import com.kduniv.aimong.core.ui.CelebrationDialogWindow
 import com.kduniv.aimong.databinding.FragmentQuizBinding
 import com.kduniv.aimong.feature.quiz.domain.model.Question
 import com.kduniv.aimong.feature.quiz.domain.model.QuestionDifficulty
@@ -878,9 +879,9 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
 
         // v2.10: gear는 일반 모드 통과·서버 isPassed일 때만 표시
         val displayRewards = result.rewards.filter { reward ->
-            val isGear = reward.type.uppercase() == "GEAR"
-            when {
-                isGear -> !isReviewSubmit && result.isPassed
+            when (reward.type.uppercase()) {
+                "GEM", "JEWEL", "DIAMOND" -> false
+                "GEAR" -> !isReviewSubmit && result.isPassed
                 else -> true
             }
         }
@@ -973,37 +974,59 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
     }
 
     private fun addRewardIcon(reward: QuizReward) {
-        val density = resources.displayMetrics.density
         when (reward.type.uppercase()) {
-            "GEAR" -> {
-                val tv = TextView(requireContext()).apply {
-                    layoutParams = LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.WRAP_CONTENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT
-                    ).apply {
-                        setMargins((4 * density).toInt(), 0, (4 * density).toInt(), 0)
-                    }
-                    text = getString(R.string.quiz_reward_gear_fmt, reward.count)
-                    setTextColor(quizColor(R.color.quiz_hint_gold))
-                    textSize = 14f
-                }
-                binding.layoutRewardsContainer.addView(tv)
-            }
-            else -> {
-                val imageView = ImageView(requireContext()).apply {
-                    layoutParams = LinearLayout.LayoutParams((40 * density).toInt(), (40 * density).toInt()).apply {
-                        setMargins((4 * density).toInt(), 0, (4 * density).toInt(), 0)
-                    }
-                    val resId = when (reward.ticketType) {
-                        "RARE" -> R.drawable.ic_star_filled
-                        "EPIC" -> R.drawable.ic_star_filled
-                        else -> R.drawable.ic_star_filled
-                    }
-                    setImageResource(resId)
-                }
-                binding.layoutRewardsContainer.addView(imageView)
+            "GEAR" -> addResultRewardChip(
+                iconRes = R.drawable.ic_chip_gear,
+                amountText = getString(R.string.quiz_reward_amount_fmt, reward.count),
+                tintRes = R.color.quiz_hint_gold,
+            )
+            else -> addResultRewardChip(
+                iconRes = R.drawable.ic_star_filled,
+                amountText = getString(R.string.quiz_reward_amount_fmt, reward.count),
+                tintRes = R.color.quiz_hint_gold,
+            )
+        }
+    }
+
+    private fun addResultRewardChip(
+        iconRes: Int,
+        amountText: String,
+        @ColorRes tintRes: Int,
+    ) {
+        val density = resources.displayMetrics.density
+        val marginH = (8 * density).toInt()
+        val iconSize = (24 * density).toInt()
+        val chip = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            ).apply {
+                setMargins(marginH, 0, marginH, 0)
             }
         }
+        val icon = ImageView(requireContext()).apply {
+            layoutParams = LinearLayout.LayoutParams(iconSize, iconSize)
+            setImageResource(iconRes)
+            imageTintList = ColorStateList.valueOf(quizColor(tintRes))
+            contentDescription = amountText
+        }
+        val amount = TextView(requireContext()).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            ).apply {
+                marginStart = (6 * density).toInt()
+            }
+            text = amountText
+            setTextColor(quizColor(R.color.quiz_text_primary))
+            textSize = 14f
+            setTypeface(typeface, Typeface.BOLD)
+        }
+        chip.addView(icon)
+        chip.addView(amount)
+        binding.layoutRewardsContainer.addView(chip)
     }
 
     private fun updateQuestion(index: Int) {
@@ -1481,6 +1504,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             }
 
             dialog.show()
+            CelebrationDialogWindow.apply(dialog, requireContext())
         } catch (e: Exception) {
             Toast.makeText(requireContext(), "축하합니다! 아이몽이 진화했습니다!", Toast.LENGTH_LONG).show()
         }
@@ -1511,6 +1535,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             )
 
             dialog.show()
+            CelebrationDialogWindow.apply(dialog, requireContext(), dimAmount = 0.5f)
         } catch (e: Exception) {
             Toast.makeText(requireContext(), "문제 세트를 준비하는 데 실패했습니다. 잠시 후 다시 시도해주세요.", Toast.LENGTH_LONG).show()
             findNavController().popBackStack()

@@ -83,6 +83,7 @@
     <string name="quiz_star_not_playable">이 난이도는 아직 플레이할 수 없어요.</string>
     <string name="quiz_term_hint_title">용어 설명</string>
     <string name="quiz_reward_gear_fmt">톱니바퀴 +%1$d</string>
+    <string name="quiz_reward_amount_fmt">+%1$d</string>
 
     <string name="gear_sheet_title">톱니바퀴</string>
     <string name="gear_value_fmt">보유 %1$d개</string>
@@ -259,7 +260,11 @@
     <string name="chat_remaining_image_calls_zero">오늘 그림 그리기 횟수를 다 썼어요. 내일 또 만나요!</string>
     <string name="chat_image_limit_reached">오늘 그림 그리기 횟수를 다 썼어요. 내일 또 만나요!</string>
     <string name="chat_image_timeout">그림을 만드는 데 시간이 너무 걸렸어요. 다시 시도해 주세요.</string>
-    <string name="chat_image_failed">그림을 만들지 못했어요. 잠시 후 다시 시도해 주세요.</string>
+    <string name="chat_image_save_failed">그림을 저장하지 못했어요. 잠시 후 다시 시도해 주세요.</string>
+    <string name="chat_image_generated">생성된 그림</string>
+    <string name="chat_image_generated_long_press">생성된 그림, 길게 눌러 갤러리에 저장</string>
+    <string name="chat_image_download">그림 저장</string>
+    <string name="chat_image_save_success">갤러리 사진에 저장했어요</string>
     <string name="home_mission_tooltip_review">복습하기</string>
     <string name="quest_retry">다시 시도</string>
     <string name="quest_load_failed">퀘스트를 불러오지 못했습니다.</string>

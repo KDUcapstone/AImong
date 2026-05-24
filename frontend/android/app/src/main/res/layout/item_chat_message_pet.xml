@@ -53,19 +53,26 @@
             android:textSize="15sp"
             tools:text="안녕! 궁금한 걸 편하게 물어봐!" />
 
-        <ImageView
-            android:id="@+id/iv_generated_image"
+        <FrameLayout
+            android:id="@+id/layout_generated_image"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
-            android:adjustViewBounds="true"
-            android:background="@drawable/bg_chat_bubble_pet"
-            android:contentDescription="@string/chat_image_mode_toggle"
-            android:maxWidth="280dp"
-            android:padding="6dp"
-            android:scaleType="fitCenter"
             android:visibility="gone"
-            tools:src="@drawable/ic_pet_placeholder"
-            tools:visibility="visible" />
+            tools:visibility="visible">
+
+            <ImageView
+                android:id="@+id/iv_generated_image"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:adjustViewBounds="true"
+                android:background="@drawable/bg_chat_bubble_pet"
+                android:contentDescription="@string/chat_image_generated_long_press"
+                android:longClickable="true"
+                android:maxWidth="280dp"
+                android:padding="6dp"
+                android:scaleType="fitCenter"
+                tools:src="@drawable/ic_pet_placeholder" />
+        </FrameLayout>
     </LinearLayout>
 </LinearLayout>

@@ -25,6 +25,7 @@ import com.kduniv.aimong.R
 import com.kduniv.aimong.core.network.AimongApiService
 import com.kduniv.aimong.core.network.ApiErrorMapper
 import com.kduniv.aimong.core.network.toResult
+import com.kduniv.aimong.feature.mission.data.MissionStatusCache
 import com.kduniv.aimong.feature.mission.data.model.MissionStatusResponseData
 import com.kduniv.aimong.feature.quiz.data.model.MissionAttemptReviveResponseData
 import retrofit2.HttpException
@@ -54,6 +55,7 @@ class QuizViewModel @Inject constructor(
     @ApplicationContext private val appContext: Context,
     private val apiService: AimongApiService,
     private val petRepository: PetRepository,
+    private val missionStatusCache: MissionStatusCache,
 ) : ViewModel() {
 
     private val _equippedPetVisual = MutableStateFlow(EquippedPetVisual())
@@ -216,7 +218,7 @@ class QuizViewModel @Inject constructor(
                 answeredQuestionIds = emptySet()
                 return quizRepository.getQuestionsByMission(missionId, starLevel)
             }
-            val status = apiService.getMissionStatus(missionId).toResult().getOrThrow()
+            val status = loadMissionStatus(missionId)
             val skipEnergy = _isReviewMode.value
 
             if (requireFreshStart) {
@@ -259,7 +261,7 @@ class QuizViewModel @Inject constructor(
     ): kotlin.Result<Unit> {
         if (UiMode.useStubNav) return kotlin.Result.success(Unit)
         return try {
-            val status = apiService.getMissionStatus(missionId).toResult().getOrThrow()
+            val status = loadMissionStatus(missionId)
             validateStatusOrThrow(status, starLevel, allowInProgress, skipEnergyCheck)
             kotlin.Result.success(Unit)
         } catch (e: HttpException) {
@@ -267,6 +269,13 @@ class QuizViewModel @Inject constructor(
         } catch (e: Throwable) {
             kotlin.Result.failure(e)
         }
+    }
+
+    private suspend fun loadMissionStatus(missionId: String): MissionStatusResponseData {
+        missionStatusCache.get(missionId)?.let { return it }
+        val status = apiService.getMissionStatus(missionId).toResult().getOrThrow()
+        missionStatusCache.put(missionId, status)
+        return status
     }
 
     private fun validateStatusOrThrow(

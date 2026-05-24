@@ -24,6 +24,7 @@ import com.kduniv.aimong.feature.home.presentation.HomeLayoutBinder
 import com.kduniv.aimong.feature.home.presentation.PetStatsSheetUi
 import com.kduniv.aimong.feature.home.presentation.DifficultyUnlockMode
 import com.kduniv.aimong.feature.home.presentation.MissionDifficultyPicker
+import com.kduniv.aimong.feature.home.presentation.difficultyPickerMissionKey
 import com.kduniv.aimong.feature.home.presentation.QuestListBottomSheet
 import com.kduniv.aimong.feature.home.presentation.StreakCalendarBottomSheet
 import com.kduniv.aimong.feature.gacha.PetArtAssets
@@ -36,7 +37,9 @@ class MockHomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::
 
     private lateinit var homeLayoutBinder: HomeLayoutBinder
     private val sampleState get() = MockUiSamples.homeUiState()
-    private var missionDifficultyPicker: MissionDifficultyPicker? = null
+    private val missionDifficultyPicker: MissionDifficultyPicker by lazy {
+        MissionDifficultyPicker(binding, layoutInflater)
+    }
 
     override fun initView() {
         childFragmentManager.setFragmentResultListener(
@@ -81,10 +84,19 @@ class MockHomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::
                         }
                         .show()
                 } else {
-                    missionDifficultyPicker?.dismissImmediate()
-                    val picker = MissionDifficultyPicker(binding, layoutInflater)
-                    missionDifficultyPicker = picker
-                    picker.show(title, nav, emptyList(), unlockMode, anchor) { picked, _ ->
+                    val missionKey = nav.difficultyPickerMissionKey()
+                    if (missionDifficultyPicker.isShowingForMission(missionKey)) {
+                        missionDifficultyPicker.dismissAnimated()
+                    } else {
+                    missionDifficultyPicker.dismissImmediate()
+                    missionDifficultyPicker.show(
+                        title,
+                        nav,
+                        emptyList(),
+                        unlockMode,
+                        anchor,
+                        missionKey,
+                    ) { picked, _ ->
                         findNavController().navigate(
                             MockHomeFragmentDirections.actionHomeFragmentToQuizFragment(
                                 picked.entrySetId,
@@ -92,7 +104,7 @@ class MockHomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::
                                 picked.starLevel,
                             ),
                         )
-                        missionDifficultyPicker = null
+                    }
                     }
                 }
             },
@@ -177,12 +189,14 @@ class MockHomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::
     }
 
     private fun bindHome() {
+        missionDifficultyPicker.dismissImmediate()
         homeLayoutBinder.bind(MockUiSamples.homeUiState())
     }
 
     override fun onDestroyView() {
-        missionDifficultyPicker?.dismissImmediate()
-        missionDifficultyPicker = null
+        if (::homeLayoutBinder.isInitialized) {
+            missionDifficultyPicker.dismissImmediate()
+        }
         super.onDestroyView()
     }
 

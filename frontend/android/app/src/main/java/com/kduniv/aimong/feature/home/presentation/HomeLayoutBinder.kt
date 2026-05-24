@@ -30,6 +30,7 @@ class HomeLayoutBinder(
 
     private var scrollHooked = false
     private var pathItemsForScroll: List<HomePathItem> = emptyList()
+    private var lastPathStructureKey: String? = null
 
     fun bind(state: HomeUiState) {
         pathItemsForScroll = state.pathItems
@@ -54,7 +55,13 @@ class HomeLayoutBinder(
             if (pendingQuests > 0) {
                 tvQuestBadge.text = pendingQuests.coerceAtMost(9).toString()
             }
-            renderMissionPath(state)
+            val structureKey = state.pathItems.pathStructureKey()
+            if (structureKey == lastPathStructureKey && binding.layoutMissionPath.childCount > 0) {
+                patchPathStarLevels(state.pathItems)
+            } else {
+                renderMissionPath(state)
+                lastPathStructureKey = structureKey
+            }
             firstSectionFromPath(state.pathItems)?.let { applyFloatingSection(it) }
             binding.root.post { updateFloatingSectionForScroll(binding.scrollPath.scrollY) }
             if (!scrollHooked) {
@@ -100,8 +107,43 @@ class HomeLayoutBinder(
         binding.layoutFloatingBannerInner.setBackgroundResource(section.bannerDrawableRes)
     }
 
+    private fun patchPathStarLevels(items: List<HomePathItem>) {
+        val starsByMission = mutableMapOf<String, Int>()
+        items.forEach { item ->
+            val missionId = item.missionIdForPath() ?: return@forEach
+            when (item) {
+                is HomePathItem.Completed -> starsByMission[missionId] = item.starsFilled
+                is HomePathItem.TodayStart -> starsByMission[missionId] = item.starsFilled
+                is HomePathItem.Start -> starsByMission[missionId] = item.starsFilled
+                is HomePathItem.Review -> starsByMission[missionId] = item.starsFilled
+                else -> Unit
+            }
+        }
+        val parent = binding.layoutMissionPath
+        for (i in 0 until parent.childCount) {
+            val child = parent.getChildAt(i)
+            val missionId = child.getTag(R.id.home_path_mission_id_tag) as? String ?: continue
+            val newStars = starsByMission[missionId] ?: continue
+            val oldStars = child.getTag(R.id.home_path_stars_tag) as? Int
+            if (oldStars == newStars) continue
+            child.setTag(R.id.home_path_stars_tag, newStars)
+            child.findViewById<LinearLayout>(R.id.layout_stars)?.let { starsRow ->
+                MissionPathUiHelper.bindStarRow(starsRow, newStars)
+            }
+        }
+    }
+
+    private fun tagMissionPathRow(row: View, missionId: String, starsFilled: Int) {
+        if (missionId.isNotBlank()) {
+            row.setTag(R.id.home_path_mission_id_tag, missionId)
+            row.setTag(R.id.home_path_stars_tag, starsFilled)
+        }
+    }
+
     private fun renderMissionPath(state: HomeUiState) {
+        MissionDifficultyPicker.dismissAllPopupsInPath(binding.layoutMissionPath)
         binding.layoutMissionPath.removeAllViews()
+        lastPathStructureKey = state.pathItems.pathStructureKey()
         val inflater = layoutInflater
         val items = state.pathItems
 
@@ -165,6 +207,7 @@ class HomeLayoutBinder(
                     row.tvMissionCaption.setOnClickListener { go() }
                     row.btnNode.root.setOnScaleTouchListener()
                     row.root.setTag(R.id.home_path_section_tag, sectionForRow)
+                    tagMissionPathRow(row.root, item.missionId, item.starsFilled)
                     binding.layoutMissionPath.addView(row.root, rowLp)
                     nodeIndex++
                 }
@@ -202,6 +245,7 @@ class HomeLayoutBinder(
                     row.tvMissionCaption.setOnClickListener { go() }
                     row.btnNode.root.setOnScaleTouchListener()
                     row.root.setTag(R.id.home_path_section_tag, sectionForRow)
+                    tagMissionPathRow(row.root, item.quizNav.missionId, item.starsFilled)
                     binding.layoutMissionPath.addView(row.root, rowLp)
                     nodeIndex++
                 }
@@ -229,6 +273,7 @@ class HomeLayoutBinder(
                     row.tvMissionCaption.setOnClickListener { go() }
                     row.btnNode.root.setOnScaleTouchListener()
                     row.root.setTag(R.id.home_path_section_tag, sectionForRow)
+                    tagMissionPathRow(row.root, item.quizNav.missionId, item.starsFilled)
                     binding.layoutMissionPath.addView(row.root, rowLp)
                     nodeIndex++
                 }
@@ -253,6 +298,7 @@ class HomeLayoutBinder(
                     row.tvMissionCaption.setOnClickListener { go() }
                     row.btnNode.root.setOnScaleTouchListener()
                     row.root.setTag(R.id.home_path_section_tag, sectionForRow)
+                    tagMissionPathRow(row.root, item.quizNav.missionId, item.starsFilled)
                     binding.layoutMissionPath.addView(row.root, rowLp)
                     nodeIndex++
                 }

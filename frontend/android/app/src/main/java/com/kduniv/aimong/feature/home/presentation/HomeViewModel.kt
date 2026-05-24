@@ -16,7 +16,9 @@ import com.kduniv.aimong.feature.home.domain.repository.HomeRepository
 import com.kduniv.aimong.feature.home.domain.HomePathBuilder
 import com.kduniv.aimong.feature.home.domain.MissionPathDevHelper
 import com.kduniv.aimong.feature.home.presentation.resolveUnlockModeForPick
+import com.kduniv.aimong.feature.mission.data.MissionStatusCache
 import com.kduniv.aimong.feature.mission.data.model.MissionStarLevelDto
+import com.kduniv.aimong.feature.mission.data.model.MissionStatusResponseData
 import com.kduniv.aimong.feature.mission.domain.model.Mission
 import com.kduniv.aimong.feature.mission.domain.model.MissionStarLevel
 import com.kduniv.aimong.feature.mission.domain.model.mergePreservingHigherUnlock
@@ -31,6 +33,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.sync.Semaphore
@@ -52,6 +55,7 @@ class HomeViewModel @Inject constructor(
     private val walletRepository: WalletRepository,
     private val appBootstrapRepository: AppBootstrapRepository,
     private val apiService: AimongApiService,
+    private val missionStatusCache: MissionStatusCache,
     private val homeRefreshBus: ChildHomeRefreshBus,
     @ApplicationContext private val appContext: Context
 ) : ViewModel() {
@@ -86,6 +90,7 @@ class HomeViewModel @Inject constructor(
         when (trigger) {
             is HomeRefreshTrigger.TicketsUpdated -> patchTicketCount(trigger.normal)
             is HomeRefreshTrigger.MissionCompleted -> {
+                missionStatusCache.clear()
                 applyMissionXpHint(trigger.xpEarned, trigger.equippedPetXp)
                 loadHome(showLoading = false)
             }
@@ -97,7 +102,10 @@ class HomeViewModel @Inject constructor(
                 )
                 loadHome(showLoading = false)
             }
-            HomeRefreshTrigger.Full -> loadHome(showLoading = false)
+            HomeRefreshTrigger.Full -> {
+                missionStatusCache.clear()
+                loadHome(showLoading = false)
+            }
         }
     }
 
@@ -252,22 +260,26 @@ class HomeViewModel @Inject constructor(
                         subtleNotice = notice
                     )
                     supplementEmptyMissionStarLevels(path)
-                    homeRepository.getEnergy().getOrNull()?.let { energy ->
-                        ui = ui.copy(
-                            missionStartCost = energy.missionStartCost
-                                ?: HomeUiState.DEFAULT_MISSION_START_COST,
-                            energyCurrent = energy.energy,
-                            energyMax = energy.maxEnergy,
-                            nextEnergyRecoverAt = energy.nextEnergyRecoverAt
-                                ?: ui.nextEnergyRecoverAt
-                        )
-                    }
-                    walletRepository.getWallet().getOrNull()?.let { wallet ->
-                        ui = ui.copy(
-                            gearBalance = wallet.gear,
-                            heartReviveCost = wallet.heartReviveCost,
-                            streakShieldCost = wallet.streakShieldCost
-                        )
+                    coroutineScope {
+                        val energyDeferred = async { homeRepository.getEnergy() }
+                        val walletDeferred = async { walletRepository.getWallet() }
+                        energyDeferred.await().getOrNull()?.let { energy ->
+                            ui = ui.copy(
+                                missionStartCost = energy.missionStartCost
+                                    ?: HomeUiState.DEFAULT_MISSION_START_COST,
+                                energyCurrent = energy.energy,
+                                energyMax = energy.maxEnergy,
+                                nextEnergyRecoverAt = energy.nextEnergyRecoverAt
+                                    ?: ui.nextEnergyRecoverAt,
+                            )
+                        }
+                        walletDeferred.await().getOrNull()?.let { wallet ->
+                            ui = ui.copy(
+                                gearBalance = wallet.gear,
+                                heartReviveCost = wallet.heartReviveCost,
+                                streakShieldCost = wallet.streakShieldCost,
+                            )
+                        }
                     }
                     _uiState.value = ui
                     homeRefreshBus.notify(HomeRefreshTrigger.TicketsUpdated(ui.normalTickets))
@@ -403,18 +415,31 @@ class HomeViewModel @Inject constructor(
         val isUnlocked: Boolean,
     )
 
-    private suspend fun fetchMissionStatusSnapshot(missionId: String): MissionStatusSnapshot? {
+    private suspend fun getMissionStatus(
+        missionId: String,
+        forceNetwork: Boolean = false,
+    ): MissionStatusResponseData? {
+        if (missionId.isBlank()) return null
+        if (!forceNetwork) {
+            missionStatusCache.get(missionId)?.let { return it }
+        }
         return try {
             val status = apiService.getMissionStatus(missionId).toResult().getOrThrow()
-            MissionStatusSnapshot(
-                stars = mapStarLevelDtos(status.starLevels),
-                isUnlocked = status.isUnlocked,
-            )
+            missionStatusCache.put(missionId, status)
+            status
         } catch (_: HttpException) {
             null
         } catch (_: Throwable) {
             null
         }
+    }
+
+    private suspend fun fetchMissionStatusSnapshot(missionId: String): MissionStatusSnapshot? {
+        val status = getMissionStatus(missionId) ?: return null
+        return MissionStatusSnapshot(
+            stars = mapStarLevelDtos(status.starLevels),
+            isUnlocked = status.isUnlocked,
+        )
     }
 
     /** 경로에 노출된 미션 중 목록 API 만으로 부족한 것만 status 로 보강(비동기·병렬) */
@@ -512,7 +537,8 @@ class HomeViewModel @Inject constructor(
             return validateMissionQuizNavLocal(nav, unlockMode)
         }
         return try {
-            val status = apiService.getMissionStatus(nav.missionId).toResult().getOrThrow()
+            val status = getMissionStatus(nav.missionId)
+                ?: return Result.failure(Exception(appContext.getString(R.string.home_missions_refresh_failed)))
             val stars = missionStarLevels(nav.missionId)
                 .mergePreservingHigherUnlock(mapStarLevelDtos(status.starLevels))
             cacheMissionStatus(nav.missionId, stars, status.isUnlocked)
@@ -549,7 +575,8 @@ class HomeViewModel @Inject constructor(
         if (UiMode.useStubNav) return Result.success(nav)
         if (nav.missionId.isBlank()) return Result.success(nav)
         return try {
-            val status = apiService.getMissionStatus(nav.missionId).toResult().getOrThrow()
+            val status = getMissionStatus(nav.missionId)
+                ?: return Result.failure(Exception(appContext.getString(R.string.home_missions_refresh_failed)))
             cacheMissionStatus(nav.missionId, mapStarLevelDtos(status.starLevels), status.isUnlocked)
             if (!status.isUnlocked) {
                 return Result.failure(Exception(appContext.getString(R.string.quiz_mission_locked)))

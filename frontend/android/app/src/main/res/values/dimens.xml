@@ -39,4 +39,8 @@
     <dimen name="pet_sprite_gacha_reveal">200dp</dimen>
     <dimen name="pet_sprite_evolution">200dp</dimen>
     <dimen name="pet_sprite_mission_dialog">180dp</dimen>
+
+    <!-- 축하·보상·진화 등 카드형 다이얼로그 -->
+    <dimen name="dialog_celebration_width">320dp</dimen>
+    <dimen name="dialog_celebration_horizontal_margin">24dp</dimen>
 </resources>
