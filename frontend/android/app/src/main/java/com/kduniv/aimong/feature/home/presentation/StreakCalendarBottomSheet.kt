@@ -14,8 +14,13 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
+import androidx.core.widget.NestedScrollView
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.R as MaterialR
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import androidx.appcompat.widget.AppCompatButton
@@ -66,8 +71,15 @@ class StreakCalendarBottomSheet : BottomSheetDialogFragment() {
         val dialog = super.onCreateDialog(savedInstanceState) as BottomSheetDialog
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
         dialog.setOnShowListener {
-            dialog.findViewById<FrameLayout>(MaterialR.id.design_bottom_sheet)?.apply {
+            val bottomSheet = dialog.findViewById<FrameLayout>(MaterialR.id.design_bottom_sheet)
+            bottomSheet?.apply {
                 background = ContextCompat.getDrawable(context, R.drawable.bg_energy_bottom_sheet)
+                layoutParams = layoutParams?.apply {
+                    height = ViewGroup.LayoutParams.MATCH_PARENT
+                }
+                BottomSheetBehavior.from(this).apply {
+                    isFitToContents = true
+                }
             }
         }
         return dialog
@@ -81,6 +93,7 @@ class StreakCalendarBottomSheet : BottomSheetDialogFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        applySheetInsets(view)
         val fallbackStreak = requireArguments().getInt(ARG_FALLBACK_STREAK, 0)
 
         view.findViewById<TextView>(R.id.btn_prev_month).setOnClickListener {
@@ -124,6 +137,18 @@ class StreakCalendarBottomSheet : BottomSheetDialogFragment() {
                 )
             }
         }
+    }
+
+    private fun applySheetInsets(root: View) {
+        val scroll = root.findViewById<NestedScrollView>(R.id.scroll_streak_sheet)
+        val content = scroll.getChildAt(0) ?: return
+        val baseBottom = content.paddingBottom
+        ViewCompat.setOnApplyWindowInsetsListener(scroll) { _, insets ->
+            val nav = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
+            content.updatePadding(bottom = baseBottom + nav.bottom)
+            insets
+        }
+        ViewCompat.requestApplyInsets(scroll)
     }
 
     private suspend fun refreshStreakSnapshot() {

@@ -217,15 +217,6 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                             if (binding.layoutQuizResult.visibility == View.VISIBLE) View.GONE
                             else if (isReview) View.VISIBLE
                             else View.GONE
-                        binding.tvExpInfo.text = if (isReview) {
-                            getString(R.string.quiz_review_exp_banner)
-                        } else {
-                            getString(R.string.quiz_normal_exp_banner)
-                        }
-                        binding.tvExpInfo.setTextColor(
-                            if (isReview) quizColor(R.color.quiz_hint_gold)
-                            else quizColor(R.color.quiz_text_grey)
-                        )
                         updateQuizModeBanner()
                     }
                 }
@@ -803,13 +794,6 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
 
         val isReviewSubmit = result.mode == "review" || viewModel.isReviewMode.value
 
-        val totalCount = result.total.takeIf { it > 0 } ?: result.results.size
-        val correctCount = when {
-            result.correctCount > 0 -> result.correctCount
-            result.results.isNotEmpty() -> result.results.count { it.isCorrect }
-            else -> 0
-        }
-
         val remainingHearts = viewModel.sessionLives.value.coerceIn(0, 3)
         val heartsLost = maxOf(
             totalHeartsLost,
@@ -842,41 +826,14 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             grade == MissionHeartGrade.SUCCESS -> getString(R.string.quiz_result_success_subtitle)
             else -> "아쉽게 탈락했어. 다시 한 번 도전해볼까?"
         }
-        val scoreHint = if (!isReviewSubmit) {
-            getString(R.string.quiz_result_score_fmt, result.score.coerceIn(0, 100))
-        } else {
-            null
-        }
         binding.tvResultSub.text = buildString {
             if (result.isFirstClear && missionCleared && !isReviewSubmit) {
                 append(getString(R.string.quiz_first_clear_badge))
                 append('\n')
             }
-            scoreHint?.let {
-                append(it)
-                append('\n')
-            }
             append(baseSub)
         }.trim()
 
-        binding.tvResCorrectCount.text = "$correctCount / $totalCount"
-        binding.tvResPassStatus.text = when {
-            isReviewSubmit -> getString(R.string.quiz_grade_success)
-            grade == MissionHeartGrade.PERFECT -> getString(R.string.quiz_grade_perfect)
-            grade == MissionHeartGrade.SUCCESS -> getString(R.string.quiz_grade_success)
-            else -> getString(R.string.quiz_grade_fail)
-        }
-        binding.tvResPassStatus.setTextColor(
-            when (grade) {
-                MissionHeartGrade.PERFECT, MissionHeartGrade.SUCCESS ->
-                    quizColor(R.color.quiz_mint)
-                MissionHeartGrade.FAIL -> quizColor(R.color.quiz_red)
-                null -> quizColor(R.color.quiz_mint)
-            }
-        )
-
-        binding.layoutWrongStat.visibility = View.GONE
-        binding.layoutStatsContainer.weightSum = 3f
         if (!missionCleared && !isReviewSubmit) {
             binding.btnResRetry.visibility = View.VISIBLE
             binding.btnResFinish.text = "다음에 하기"
@@ -933,8 +890,6 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         displayRewards.forEach { reward ->
             addRewardIcon(reward)
         }
-
-        binding.tvWrongCount.text = "오답: ${result.wrongCount}개"
     }
 
     private fun formatMissionXpBonusLine(result: QuizResult, isReviewSubmit: Boolean): String {

@@ -39,7 +39,7 @@ class PetSpriteNormalizeTransformation : BitmapTransformation() {
     }
 
     companion object {
-        private const val ID = "com.kduniv.aimong.feature.gacha.PetSpriteNormalizeTransformation.v1"
+        private const val ID = "com.kduniv.aimong.feature.gacha.PetSpriteNormalizeTransformation.v2"
         val INSTANCE = PetSpriteNormalizeTransformation()
     }
 }

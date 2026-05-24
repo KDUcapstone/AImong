@@ -423,17 +423,6 @@ class DummyQuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding:
         }
         binding.tvResultSub.setTextColor(Color.parseColor("#8A96AD"))
 
-        binding.tvResCorrectCount.text = "$correctCount / ${questions.size}"
-        binding.tvResPassStatus.text = when (grade) {
-            MissionHeartGrade.PERFECT -> getString(R.string.quiz_grade_perfect)
-            MissionHeartGrade.SUCCESS -> getString(R.string.quiz_grade_success)
-            MissionHeartGrade.FAIL -> getString(R.string.quiz_grade_fail)
-        }
-        binding.tvResPassStatus.setTextColor(
-            if (missionCleared) Color.parseColor("#00FFB2") else Color.parseColor("#FF4B4B")
-        )
-
-        binding.layoutWrongStat.visibility = View.GONE
         binding.btnResRetry.visibility = if (missionCleared) View.GONE else View.VISIBLE
     }
 

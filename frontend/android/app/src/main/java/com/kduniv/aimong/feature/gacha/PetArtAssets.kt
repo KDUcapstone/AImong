@@ -116,13 +116,18 @@ object PetArtAssets {
         image.setTag(R.id.pet_art_bind_key, null)
     }
 
-    /** 모든 펫 스프라이트 ImageView 공통 */
+    /** 모든 펫 스프라이트 ImageView 공통 — 프레임·리니어 부모 모두 중앙 정렬 */
     fun configureSpriteImageView(image: ImageView) {
         image.scaleType = ImageView.ScaleType.FIT_CENTER
-        val lp = image.layoutParams
-        if (lp is android.widget.FrameLayout.LayoutParams) {
-            lp.gravity = Gravity.CENTER
-            image.layoutParams = lp
+        when (val lp = image.layoutParams) {
+            is android.widget.FrameLayout.LayoutParams -> {
+                lp.gravity = Gravity.CENTER
+                image.layoutParams = lp
+            }
+            is android.widget.LinearLayout.LayoutParams -> {
+                lp.gravity = Gravity.CENTER
+                image.layoutParams = lp
+            }
         }
     }
 
@@ -147,7 +152,7 @@ object PetArtAssets {
         allowStageFallback: Boolean = true,
     ) {
         val artType = resolveArtPetType(petType)
-        val bindKey = "$artType|${stageSuffix(stage)}|fallback=$allowStageFallback|norm=v1"
+        val bindKey = "$artType|${stageSuffix(stage)}|fallback=$allowStageFallback|norm=v2"
         image.setTag(R.id.pet_art_bind_key, bindKey)
         clearSprite(image)
         configureSpriteImageView(image)

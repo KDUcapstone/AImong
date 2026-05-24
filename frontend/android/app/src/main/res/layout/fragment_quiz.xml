@@ -112,17 +112,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tv_quiz_mode_banner" />
 
-    <TextView
-        android:id="@+id/tv_exp_info"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="20dp"
-        android:text="@string/quiz_normal_exp_banner"
-        android:textColor="@color/quiz_text_grey"
-        android:textSize="11sp"
-        app:layout_constraintBottom_toBottomOf="@id/tv_question_count"
-        app:layout_constraintEnd_toEndOf="parent" />
-
     <ProgressBar
         android:id="@+id/pb_quiz_progress"
         style="?android:attr/progressBarStyleHorizontal"
@@ -774,7 +763,7 @@
                         tools:text="✨" />
                 </FrameLayout>
 
-                <!-- 통계 카드 -->
+                <!-- XP 보너스 요약 -->
                 <androidx.cardview.widget.CardView
                     android:id="@+id/card_score"
                     android:layout_width="match_parent"
@@ -787,102 +776,30 @@
                     app:layout_constraintTop_toBottomOf="@id/fl_result_pet">
 
                     <LinearLayout
-                        android:id="@+id/layout_stats_container"
+                        android:id="@+id/layout_pet_bonus_stat"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
+                        android:gravity="center"
+                        android:orientation="vertical"
                         android:padding="20dp">
 
-                        <LinearLayout
-                            android:layout_width="0dp"
+                        <TextView
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:gravity="center"
-                            android:orientation="vertical">
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="정답 수"
-                                android:textColor="@color/quiz_text_grey"
-                                android:textSize="12sp" />
-                            <TextView
-                                android:id="@+id/tv_res_correct_count"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="9 / 10"
-                                android:textColor="@color/quiz_text_primary"
-                                android:textSize="18sp"
-                                android:textStyle="bold" />
-                        </LinearLayout>
+                            android:text="획득 XP"
+                            android:textColor="@color/quiz_text_grey"
+                            android:textSize="12sp" />
 
-                        <LinearLayout
-                            android:id="@+id/layout_wrong_stat"
-                            android:layout_width="0dp"
+                        <TextView
+                            android:id="@+id/tv_res_pet_bonus"
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_weight="1"
+                            android:layout_marginTop="4dp"
                             android:gravity="center"
-                            android:orientation="vertical"
-                            android:visibility="gone">
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="오답 수"
-                                android:textColor="@color/quiz_text_grey"
-                                android:textSize="12sp" />
-                            <TextView
-                                android:id="@+id/tv_res_wrong_count"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="3개"
-                                android:textColor="@color/quiz_text_primary"
-                                android:textSize="18sp"
-                                android:textStyle="bold" />
-                        </LinearLayout>
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:gravity="center"
-                            android:orientation="vertical">
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/quiz_grade_label"
-                                android:textColor="@color/quiz_text_grey"
-                                android:textSize="12sp" />
-                            <TextView
-                                android:id="@+id/tv_res_pass_status"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="PASS"
-                                android:textColor="@color/quiz_mint"
-                                android:textSize="18sp"
-                                android:textStyle="bold" />
-                        </LinearLayout>
-
-                        <LinearLayout
-                            android:id="@+id/layout_pet_bonus_stat"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:gravity="center"
-                            android:orientation="vertical">
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="펫 보너스"
-                                android:textColor="@color/quiz_text_grey"
-                                android:textSize="12sp" />
-                            <TextView
-                                android:id="@+id/tv_res_pet_bonus"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="+15% XP"
-                                android:textColor="@color/quiz_hint_gold"
-                                android:textSize="18sp"
-                                android:textStyle="bold" />
-                        </LinearLayout>
+                            android:text="+15% XP"
+                            android:textColor="@color/quiz_hint_gold"
+                            android:textSize="18sp"
+                            android:textStyle="bold" />
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>
 
@@ -1025,18 +942,6 @@
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toBottomOf="@id/layout_rewards_row"
                     tools:text="🔥 7일 연속 스트릭 유지 중!" />
-
-                <TextView
-                    android:id="@+id/tv_wrong_count"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:textColor="@color/quiz_text_grey"
-                    android:textSize="14sp"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@id/tv_streak_info"
-                    tools:text="틀린 문제: 2개" />
 
 
             </androidx.constraintlayout.widget.ConstraintLayout>

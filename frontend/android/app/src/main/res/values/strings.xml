@@ -438,6 +438,9 @@
     <string name="parent_settings_back">뒤로</string>
     <string name="parent_settings_account_loading">계정 정보를 불러오는 중…</string>
     <string name="parent_settings_account_fmt">%1$s\n등록 자녀 %2$d명</string>
+    <string name="parent_settings_account_role">보호자 계정</string>
+    <string name="parent_settings_children_fmt">등록 자녀 %1$d명</string>
+    <string name="parent_settings_menu_section">계정 관리</string>
     <string name="parent_logout">로그아웃</string>
     <string name="parent_logout_confirm">로그아웃할까요?</string>
     <string name="parent_delete_account">회원탈퇴</string>
@@ -464,7 +467,7 @@
     <string name="child_my_badges_empty">아직 획득한 배지가 없어요. 미션과 퀘스트를 진행해 보세요!</string>
     <string name="child_my_menu_pet_collection">펫 · 가챠</string>
     <string name="child_logout">로그아웃</string>
-    <string name="child_logout_confirm">로그아웃할까요? 이 기기의 자녀 세션이 서버에서 만료돼요.</string>
+    <string name="child_logout_confirm">로그아웃할까요?</string>
 
     <string name="mock_home_energy_refreshed">에너지가 반영됐어요.</string>
     <string name="mock_energy_next_recover_hint">목업: 다음 1회 회복은 예시로 10분 간격이에요.</string>

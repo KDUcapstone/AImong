@@ -154,7 +154,7 @@ open class ChildMyProfileFragment :
                     )
                 }
             }
-            .setNegativeButton(android.R.string.cancel, null)
+            .setNegativeButton(R.string.chat_privacy_action_cancel, null)
             .show()
     }
 }
