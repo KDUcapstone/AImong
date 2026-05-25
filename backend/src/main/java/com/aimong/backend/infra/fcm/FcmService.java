@@ -29,7 +29,7 @@ public class FcmService {
                         .setBody(payload.body())
                         .build());
 
-        payload.data().forEach(messageBuilder::putData);
+        payload.dataWithDisplayFields().forEach(messageBuilder::putData);
 
         try {
             FirebaseMessaging.getInstance().send(messageBuilder.build());

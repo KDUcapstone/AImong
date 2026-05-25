@@ -182,7 +182,8 @@ class MissionApiIntegrationTest {
                 1,
                 1,
                 List.of(),
-                1
+                1,
+                null
         );
 
         given(submitService.submit(eq(childId), eq("S0101-L1"), any(SubmitRequest.class))).willReturn(response);

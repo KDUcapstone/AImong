@@ -5,6 +5,15 @@ import org.springframework.http.HttpStatus;
 
 @Getter
 public enum ErrorCode {
+    QUEST_NOT_FOUND(HttpStatus.NOT_FOUND, "QUEST_NOT_FOUND", "Custom quest not found."),
+    MAX_QUEST_LIMIT(HttpStatus.CONFLICT, "MAX_QUEST_LIMIT", "Complete or cancel an existing custom quest first."),
+    QUEST_EXPIRED(HttpStatus.CONFLICT, "QUEST_EXPIRED", "This custom quest has expired."),
+    QUEST_NOT_ACTIVE(HttpStatus.CONFLICT, "QUEST_NOT_ACTIVE", "This custom quest is not active."),
+    QUEST_NOT_PENDING(HttpStatus.CONFLICT, "QUEST_NOT_PENDING", "This custom quest is not pending confirmation."),
+    QUEST_NOT_CANCELLABLE(HttpStatus.CONFLICT, "QUEST_NOT_CANCELLABLE", "This custom quest cannot be cancelled."),
+    STAGE_REWARD_ALREADY_SET(HttpStatus.CONFLICT, "STAGE_REWARD_ALREADY_SET", "This stage reward is already set."),
+    ALREADY_TRIGGERED(HttpStatus.CONFLICT, "ALREADY_TRIGGERED", "This stage reward has already been triggered."),
+    INVALID_STAGE_NUMBER(HttpStatus.BAD_REQUEST, "INVALID_STAGE_NUMBER", "stageNumber must be 1, 2, or 3."),
     BAD_REQUEST(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "잘못된 요청입니다."),
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "인증에 실패했습니다."),
     FORBIDDEN(HttpStatus.FORBIDDEN, "FORBIDDEN", "접근 권한이 없습니다."),

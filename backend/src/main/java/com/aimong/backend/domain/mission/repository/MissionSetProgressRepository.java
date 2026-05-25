@@ -8,6 +8,8 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import jakarta.persistence.LockModeType;
 
@@ -44,6 +46,19 @@ public interface MissionSetProgressRepository extends JpaRepository<MissionSetPr
     }
 
     long countByChildIdAndStarLevelAndCompletedTrue(UUID childId, int starLevel);
+
+    @Query("""
+            select count(distinct p.missionId)
+            from MissionSetProgress p
+            where p.childId = :childId
+              and p.stage = :stage
+              and p.starLevel = 1
+              and p.completed = true
+            """)
+    long countCompletedStageStarOneMissionIds(
+            @Param("childId") UUID childId,
+            @Param("stage") int stage
+    );
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<MissionSetProgress> findWithLockByChildIdAndSetIdAndCompletedTrue(UUID childId, String setId);

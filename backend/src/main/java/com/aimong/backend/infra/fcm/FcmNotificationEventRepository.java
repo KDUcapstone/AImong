@@ -27,4 +27,10 @@ public interface FcmNotificationEventRepository extends JpaRepository<FcmNotific
             Collection<FcmNotificationType> notificationTypes,
             FcmNotificationStatus status
     );
+
+    boolean existsByParentIdAndNotificationTypeAndRefId(
+            String parentId,
+            FcmNotificationType notificationType,
+            String refId
+    );
 }
