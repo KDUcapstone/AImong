@@ -108,6 +108,33 @@ internal object QuizSessionRules {
      *
      * 서버가 `correctAnswer`를 **보기 텍스트**로 주므로, 선택지가 있는 유형은 항상 그 문구로 맞춘다.
      */
+    /**
+     * 문항 타이머 초과 시 서버 check/submit에 빈 문자열을 내면 "must not be blank"가 내려온다.
+     * UI는 빈 답(시간 초과)으로 보여 주고, 저장·API용으로만 비어 있지 않은 오답 placeholder를 쓴다.
+     */
+    fun timeoutPlaceholderAnswer(question: Question): String {
+        return when (question.type) {
+            QuestionType.OX -> "O"
+            else -> {
+                val opts = question.options
+                if (!opts.isNullOrEmpty()) {
+                    normalizeAnswerForCheckPayload(question, "1")
+                } else {
+                    "TIMEOUT"
+                }
+            }
+        }
+    }
+
+    /** 최종 제출용: 빈 저장값은 타임아웃 placeholder로 치환 */
+    fun answerForSubmit(question: Question, stored: String): String {
+        val trimmed = stored.trim()
+        if (trimmed.isNotEmpty()) {
+            return normalizeAnswerForCheckPayload(question, trimmed)
+        }
+        return timeoutPlaceholderAnswer(question)
+    }
+
     fun normalizeAnswerForCheckPayload(question: Question, rawFromUi: String): String {
         val t = rawFromUi.trim()
         if (t.isEmpty()) return t

@@ -26,4 +26,6 @@ data class QuestSheetRow(
     val primaryAction: QuestSheetPrimaryAction,
     val actionEnabled: Boolean,
     val isCustomQuest: Boolean = false,
+    /** 수령·완료 요청 등 사용자 조치가 필요할 때 행 옆 빨간 점 */
+    val showNotificationDot: Boolean = false,
 )

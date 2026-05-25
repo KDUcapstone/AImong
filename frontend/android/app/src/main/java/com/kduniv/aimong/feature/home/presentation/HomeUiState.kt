@@ -62,7 +62,15 @@ data class HomeUiState(
     val topTicketCount: Int = 0,
     val canStartMission: Boolean = false,
     val returnRewardPending: Boolean = false,
+    /** GET /home `dailyQuestSummary.claimableCount` — 수령 가능한 일일 퀘스트 */
     val dailyQuestClaimableCount: Int = 0,
+    /** GET /quests/child/custom `hasPendingConfirm` — 부모 확인 대기 커스텀 퀘스트 */
+    val hasPendingCustomQuest: Boolean = false,
+    /**
+     * 퀘스트 시트를 한 번 열어 확인했으면 true.
+     * 알림 개수가 0이 되기 전까지 홈 FAB·시트 탭 배지를 다시 띄우지 않습니다.
+     */
+    val questNotificationsAcknowledged: Boolean = false,
 
     /** PM 시안 학습 경로 노드 */
     val pathItems: List<HomePathItem> = emptyList(),
@@ -94,6 +102,17 @@ data class HomeUiState(
                 hasEnoughEnergyForMissionStart() || starLevels.any { it.isReviewOnly }
         }
     }
+
+    /** 홈 퀘스트 FAB에 표시할 알림 개수 (미완료 퀘스트 수가 아님) */
+    fun questNotificationCount(): Int =
+        dailyQuestClaimableCount + if (hasPendingCustomQuest) 1 else 0
+
+    fun shouldShowQuestFabBadge(): Boolean =
+        questNotificationCount() > 0 && !questNotificationsAcknowledged
+
+    /** 확인 후에도 미처리 알림이 남아 있을 때 시트 탭 배지를 숨깁니다. */
+    fun shouldSuppressQuestSheetTabBadges(): Boolean =
+        questNotificationsAcknowledged && questNotificationCount() > 0
 
     companion object {
         const val DEFAULT_MISSION_START_COST = 5

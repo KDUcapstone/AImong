@@ -45,6 +45,8 @@ object QuestSheetMapper {
             else -> QuestSheetPrimaryAction.IN_PROGRESS to false
         }
 
+        val showDot = action.first == QuestSheetPrimaryAction.CLAIM && action.second
+
         return QuestSheetRow(
             questType = dto.questType,
             title = dto.label,
@@ -52,6 +54,7 @@ object QuestSheetMapper {
             period = period,
             primaryAction = action.first,
             actionEnabled = action.second,
+            showNotificationDot = showDot,
         )
     }
 
@@ -73,6 +76,8 @@ object QuestSheetMapper {
             "COMPLETED", "AUTO_CONFIRMED" -> QuestSheetPrimaryAction.COMPLETED to false
             else -> QuestSheetPrimaryAction.IN_PROGRESS to false
         }
+        val showDot = action == QuestSheetPrimaryAction.COMPLETE_CUSTOM && enabled
+
         return QuestSheetRow(
             questType = dto.questId,
             title = dto.title,
@@ -81,6 +86,7 @@ object QuestSheetMapper {
             primaryAction = action,
             actionEnabled = enabled,
             isCustomQuest = true,
+            showNotificationDot = showDot,
         )
     }
 

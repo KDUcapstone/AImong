@@ -1,12 +1,16 @@
 package com.kduniv.aimong.feature.parent.presentation
 
 import androidx.lifecycle.viewModelScope
+import android.content.Context
+import com.kduniv.aimong.R
 import com.kduniv.aimong.core.network.model.ParentChildDetailData
 import com.kduniv.aimong.core.network.model.ParentChildItem
 import com.kduniv.aimong.core.network.model.ParentRegisterResponse
 import com.kduniv.aimong.core.network.model.PatchParentChildRequest
 import com.kduniv.aimong.core.ui.BaseViewModel
 import com.kduniv.aimong.feature.parent.data.ParentRepository
+import com.kduniv.aimong.feature.parent.domain.ParentDashboardRefreshBus
+import com.kduniv.aimong.feature.parent.domain.ParentDashboardRefreshTrigger
 import com.kduniv.aimong.feature.parent.data.model.CreateParentCustomQuestRequest
 import com.kduniv.aimong.feature.parent.data.model.ParentChildSummaryResponseData
 import com.kduniv.aimong.feature.parent.data.model.ParentCustomQuestDto
@@ -14,6 +18,7 @@ import com.kduniv.aimong.feature.parent.data.model.ParentStageRewardDto
 import com.kduniv.aimong.feature.parent.data.model.ParentWeakPointsResponseData
 import com.kduniv.aimong.feature.parent.data.model.ParentWeeklyStatsResponseData
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import java.time.Instant
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,8 +32,21 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ParentDashboardViewModel @Inject constructor(
-    private val parentRepository: ParentRepository
+    @ApplicationContext private val appContext: Context,
+    private val parentRepository: ParentRepository,
+    private val parentDashboardRefreshBus: ParentDashboardRefreshBus,
 ) : BaseViewModel() {
+
+    init {
+        viewModelScope.launch {
+            parentDashboardRefreshBus.events.collect { trigger ->
+                when (trigger) {
+                    is ParentDashboardRefreshTrigger.CustomQuestsChanged ->
+                        onCustomQuestsChangedExternally(trigger)
+                }
+            }
+        }
+    }
 
     companion object {
         private const val PAST_QUEST_PAGE_SIZE = 10
@@ -85,6 +103,43 @@ class ParentDashboardViewModel @Inject constructor(
     fun selectChild(childId: String) {
         _selectedChildId.value = childId
         viewModelScope.launch { refreshAllDashboardForChild(childId) }
+    }
+
+    /** 화면 재개 시 실세계 미션(승인 대기 포함) 목록만 갱신 */
+    fun refreshCustomQuestsOnResume() {
+        val childId = _selectedChildId.value ?: return
+        if (_childDetail.value?.lastActiveAt.isNullOrBlank()) return
+        viewModelScope.launch { refreshCustomQuests(childId) }
+    }
+
+    private suspend fun onCustomQuestsChangedExternally(
+        trigger: ParentDashboardRefreshTrigger.CustomQuestsChanged,
+    ) {
+        val eventChildId = trigger.childId?.trim()?.takeIf { it.isNotEmpty() }
+        val targetChildId = when {
+            eventChildId == null -> _selectedChildId.value
+            eventChildId == _selectedChildId.value -> eventChildId
+            else -> {
+                _selectedChildId.value = eventChildId
+                refreshAllDashboardForChild(eventChildId)
+                if (trigger.showPendingNotice) {
+                    _messageEvent.emit(
+                        appContext.getString(R.string.parent_custom_quest_pending_notice),
+                    )
+                }
+                return
+            }
+        } ?: return
+        if (_childDetail.value?.lastActiveAt.isNullOrBlank()) {
+            refreshAllDashboardForChild(targetChildId)
+            return
+        }
+        refreshCustomQuests(targetChildId)
+        if (trigger.showPendingNotice) {
+            _messageEvent.emit(
+                appContext.getString(R.string.parent_custom_quest_pending_notice),
+            )
+        }
     }
 
     private suspend fun refreshAllDashboardForChild(childId: String) {

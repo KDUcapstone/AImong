@@ -66,6 +66,16 @@ class QuestRepositoryStub @Inject constructor() : QuestRepository {
                         rewardClaimed = true,
                     ),
                     sampleQuest(
+                        "MISSION_2",
+                        "미션 2개 완료 보상",
+                        "기본 티켓 1장",
+                        "MANUAL",
+                        current = 2,
+                        required = 2,
+                        completed = true,
+                        rewardClaimed = false,
+                    ),
+                    sampleQuest(
                         "XP_20",
                         "오늘 XP 20 획득하기",
                         "기본 티켓 1장",

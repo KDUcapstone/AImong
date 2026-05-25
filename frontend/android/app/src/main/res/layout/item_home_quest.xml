@@ -7,18 +7,32 @@
     android:background="@drawable/bg_child_quest_row"
     android:padding="16dp">
 
-    <ImageView
-        android:id="@+id/iv_quest_row_icon"
+    <FrameLayout
+        android:id="@+id/quest_icon_container"
         android:layout_width="48dp"
         android:layout_height="48dp"
-        android:background="@drawable/bg_child_quest_icon_circle"
-        android:contentDescription="@null"
-        android:padding="10dp"
-        android:src="@drawable/ic_star_filled"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:tint="@color/child_nav_item_selected" />
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:id="@+id/iv_quest_row_icon"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/bg_child_quest_icon_circle"
+            android:contentDescription="@null"
+            android:padding="10dp"
+            android:src="@drawable/ic_star_filled"
+            app:tint="@color/child_nav_item_selected" />
+
+        <View
+            android:id="@+id/view_quest_row_notification"
+            android:layout_width="10dp"
+            android:layout_height="10dp"
+            android:layout_gravity="top|end"
+            android:background="@drawable/bg_quest_badge"
+            android:visibility="gone" />
+    </FrameLayout>
 
     <LinearLayout
         android:layout_width="0dp"
@@ -28,7 +42,7 @@
         android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/btn_action_container"
-        app:layout_constraintStart_toEndOf="@+id/iv_quest_row_icon"
+        app:layout_constraintStart_toEndOf="@+id/quest_icon_container"
         app:layout_constraintTop_toTopOf="parent">
 
         <TextView

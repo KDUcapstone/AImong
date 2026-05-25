@@ -485,6 +485,9 @@
     <string name="fcm_gacha_level_up_title_default">아이몽 가챠 레벨 업</string>
     <string name="fcm_gacha_level_up_body_default">자녀의 아이몽이 더 강해졌어요. 함께 축하해 주세요.</string>
     <string name="fcm_gacha_level_up_pull_count_fmt">누적 뽑기 %1$s회 구간</string>
+    <string name="fcm_quest_complete_request_title_default">실세계 미션 승인 요청</string>
+    <string name="fcm_quest_complete_request_body_default">자녀가 미션 완료를 요청했어요. 대시보드에서 확인해 주세요.</string>
+    <string name="parent_custom_quest_pending_notice">자녀가 실세계 미션 완료를 요청했어요. 승인해 주세요.</string>
 
     <!-- Energy (v2.7) -->
     <string name="energy_sheet_title">에너지</string>

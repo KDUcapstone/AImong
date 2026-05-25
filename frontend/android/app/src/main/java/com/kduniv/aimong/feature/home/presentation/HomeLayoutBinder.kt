@@ -50,10 +50,10 @@ class HomeLayoutBinder(
                 lottie = lottiePetHome,
             )
             HomePetMoodVisual.apply(ivFloatPetSprite, tvFloatPetEmoji, state.homeState)
-            val pendingQuests = state.quests.count { !it.isCompleted }
-            tvQuestBadge.isVisible = pendingQuests > 0
-            if (pendingQuests > 0) {
-                tvQuestBadge.text = pendingQuests.coerceAtMost(9).toString()
+            val showQuestBadge = state.shouldShowQuestFabBadge()
+            tvQuestBadge.isVisible = showQuestBadge
+            if (showQuestBadge) {
+                tvQuestBadge.text = state.questNotificationCount().coerceAtMost(99).toString()
             }
             val structureKey = state.pathItems.pathStructureKey()
             if (structureKey == lastPathStructureKey && binding.layoutMissionPath.childCount > 0) {

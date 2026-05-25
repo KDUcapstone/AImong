@@ -7,8 +7,12 @@ import com.kduniv.aimong.R
 import com.kduniv.aimong.core.dev.UiMode
 import com.kduniv.aimong.feature.home.domain.ChildHomeRefreshBus
 import com.kduniv.aimong.feature.home.domain.HomeRefreshTrigger
+import com.kduniv.aimong.feature.quest.data.model.ChildCustomQuestDto
+import com.kduniv.aimong.feature.quest.domain.QuestNotificationHelper
 import com.kduniv.aimong.feature.quest.domain.QuestPolicy
 import com.kduniv.aimong.feature.quest.domain.repository.QuestRepository
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.Channel
@@ -50,13 +54,51 @@ class QuestListViewModel @Inject constructor(
     private val _hasPendingCustomQuest = MutableStateFlow(false)
     val hasPendingCustomQuest: StateFlow<Boolean> = _hasPendingCustomQuest.asStateFlow()
 
+    private val _dailyTabBadgeCount = MutableStateFlow(0)
+    val dailyTabBadgeCount: StateFlow<Int> = _dailyTabBadgeCount.asStateFlow()
+
+    private val _weeklyTabBadgeCount = MutableStateFlow(0)
+    val weeklyTabBadgeCount: StateFlow<Int> = _weeklyTabBadgeCount.asStateFlow()
+
+    private val _parentTabBadgeCount = MutableStateFlow(0)
+    val parentTabBadgeCount: StateFlow<Int> = _parentTabBadgeCount.asStateFlow()
+
     private val _effects = Channel<QuestSheetEffect>(capacity = Channel.BUFFERED)
     val effects = _effects.receiveAsFlow()
 
     private var canStartMission: Boolean = true
+    private var suppressTabBadges: Boolean = false
 
     init {
+        refreshTabBadges()
         loadDaily()
+    }
+
+    /** 이미 퀘스트를 확인한 뒤에는 탭 숫자 배지를 숨깁니다. */
+    fun setTabBadgesSuppressed(suppressed: Boolean) {
+        suppressTabBadges = suppressed
+        if (suppressed) clearTabBadges()
+    }
+
+    /** 시트가 열릴 때 일·주·부모 탭 배지를 미리 갱신합니다. */
+    fun onSheetOpened() {
+        refreshTabBadges()
+    }
+
+    private fun clearTabBadges() {
+        _dailyTabBadgeCount.value = 0
+        _weeklyTabBadgeCount.value = 0
+        _parentTabBadgeCount.value = 0
+    }
+
+    private fun publishTabBadges(daily: Int, weekly: Int, parent: Int) {
+        if (suppressTabBadges) {
+            clearTabBadges()
+        } else {
+            _dailyTabBadgeCount.value = daily
+            _weeklyTabBadgeCount.value = weekly
+            _parentTabBadgeCount.value = parent
+        }
     }
 
     fun setCanStartMission(value: Boolean) {
@@ -80,12 +122,47 @@ class QuestListViewModel @Inject constructor(
         }
     }
 
+    private fun refreshTabBadges() {
+        viewModelScope.launch {
+            coroutineScope {
+                val dailyDeferred = async { questRepository.getDailyQuests() }
+                val weeklyDeferred = async { questRepository.getWeeklyQuests() }
+                val parentDeferred = async { questRepository.getChildCustomQuests() }
+                val daily = dailyDeferred.await().getOrNull()?.quests
+                    ?.let { QuestNotificationHelper.countClaimable(it) } ?: _dailyTabBadgeCount.value
+                val weekly = weeklyDeferred.await().getOrNull()?.quests
+                    ?.let { QuestNotificationHelper.countClaimable(it) } ?: _weeklyTabBadgeCount.value
+                val parentData = parentDeferred.await().getOrNull()
+                if (parentData != null) {
+                    _hasPendingCustomQuest.value = parentData.hasPendingConfirm
+                }
+                val parent = parentData?.let {
+                    countParentTabNotifications(it.quests, it.hasPendingConfirm)
+                } ?: _parentTabBadgeCount.value
+                publishTabBadges(daily, weekly, parent)
+            }
+        }
+    }
+
+    private fun countParentTabNotifications(
+        quests: List<ChildCustomQuestDto>,
+        hasPendingConfirm: Boolean,
+    ): Int {
+        val active = quests.count { it.status.equals("ACTIVE", ignoreCase = true) }
+        return active + if (hasPendingConfirm) 1 else 0
+    }
+
     fun loadDaily() {
         viewModelScope.launch {
             _loading.value = true
             _loadError.value = null
             questRepository.getDailyQuests().fold(
                 onSuccess = { data ->
+                    publishTabBadges(
+                        QuestNotificationHelper.countClaimable(data.quests),
+                        _weeklyTabBadgeCount.value,
+                        _parentTabBadgeCount.value,
+                    )
                     _rows.value = data.quests.map {
                         QuestSheetMapper.mapItem(it, QuestSheetPeriod.DAILY, canStartMission)
                     }
@@ -108,6 +185,11 @@ class QuestListViewModel @Inject constructor(
             _loadError.value = null
             questRepository.getWeeklyQuests().fold(
                 onSuccess = { data ->
+                    publishTabBadges(
+                        _dailyTabBadgeCount.value,
+                        QuestNotificationHelper.countClaimable(data.quests),
+                        _parentTabBadgeCount.value,
+                    )
                     _rows.value = data.quests.map {
                         QuestSheetMapper.mapItem(it, QuestSheetPeriod.WEEKLY, canStartMission)
                     }
@@ -158,6 +240,7 @@ class QuestListViewModel @Inject constructor(
                         QuestSheetPeriod.WEEKLY -> loadWeekly()
                         QuestSheetPeriod.PARENT -> Unit
                     }
+                    refreshTabBadges()
                 },
                 onFailure = { e ->
                     _loading.value = false
@@ -175,6 +258,11 @@ class QuestListViewModel @Inject constructor(
             questRepository.getChildCustomQuests().fold(
                 onSuccess = { data ->
                     _hasPendingCustomQuest.value = data.hasPendingConfirm
+                    publishTabBadges(
+                        _dailyTabBadgeCount.value,
+                        _weeklyTabBadgeCount.value,
+                        countParentTabNotifications(data.quests, data.hasPendingConfirm),
+                    )
                     _rows.value = data.quests.map {
                         QuestSheetMapper.mapCustomQuest(it, appContext)
                     }

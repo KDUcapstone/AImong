@@ -413,25 +413,18 @@ class QuizViewModel @Inject constructor(
                 return@launch
             }
 
-            // v2.4: 단건 check API로 즉시 정오·해설 반영
-            if (payload.isBlank()) {
-                val remaining = resolveRemainingLivesAfterCheck(isCorrect = false, serverLives = null)
-                _sessionLives.value = remaining
-                _uiState.value = QuizUiState.AnswerChecked(
-                    isCorrect = false,
-                    explanation = appContext.getString(R.string.quiz_timeout_explanation),
-                    userAnswer = "",
-                    correctAnswer = null,
-                    deferImmediateCorrectness = false,
-                    remainingLives = remaining,
-                    canRevive = remaining == 0 && !_isReviewMode.value,
-                    reviveCost = walletReviveCost,
-                    gearBalance = walletGearBalance,
-                )
-                return@launch
-            }
             val setId = qs.setId
-            quizRepository.checkAnswer(setId, questionId, payload)
+            val apiPayload = if (payload.isBlank()) {
+                QuizSessionRules.timeoutPlaceholderAnswer(q).also { placeholder ->
+                    userAnswers[questionId] = placeholder
+                    savedStateHandle["userAnswers"] = userAnswers
+                }
+            } else {
+                payload
+            }
+
+            // v2.4: 단건 check API로 즉시 정오·해설 반영 (타임아웃도 placeholder로 서버에 기록)
+            quizRepository.checkAnswer(setId, questionId, apiPayload)
                 .onSuccess { checked ->
                     val exp = checked.explanation ?: appContext.getString(R.string.quiz_answer_saved_hint)
                     val livesBeforeCheck = _sessionLives.value.coerceIn(0, 3)
@@ -449,10 +442,17 @@ class QuizViewModel @Inject constructor(
                     val canRevive = remaining == 0 &&
                         !_isReviewMode.value &&
                         (checked.canRevive == true || serverDidNotDeductOnWrong)
+                    val displayUserAnswer = if (payload.isBlank()) "" else payload
+                    val explanation = if (payload.isBlank() && !checked.isCorrect) {
+                        checked.explanation?.takeIf { it.isNotBlank() }
+                            ?: appContext.getString(R.string.quiz_timeout_explanation)
+                    } else {
+                        exp
+                    }
                     _uiState.value = QuizUiState.AnswerChecked(
                         isCorrect = checked.isCorrect,
-                        explanation = exp,
-                        userAnswer = payload,
+                        explanation = explanation,
+                        userAnswer = displayUserAnswer,
                         correctAnswer = checked.correctAnswer,
                         deferImmediateCorrectness = false,
                         remainingLives = remaining,
@@ -463,7 +463,24 @@ class QuizViewModel @Inject constructor(
                     maybePrefetchFinalSubmit()
                 }
                 .onFailure { e ->
-                    _uiState.value = QuizUiState.Error(e.message ?: "채점에 실패했습니다.")
+                    if (payload.isBlank()) {
+                        val remaining = resolveRemainingLivesAfterCheck(isCorrect = false, serverLives = null)
+                        _sessionLives.value = remaining
+                        _uiState.value = QuizUiState.AnswerChecked(
+                            isCorrect = false,
+                            explanation = appContext.getString(R.string.quiz_timeout_explanation),
+                            userAnswer = "",
+                            correctAnswer = null,
+                            deferImmediateCorrectness = false,
+                            remainingLives = remaining,
+                            canRevive = remaining == 0 && !_isReviewMode.value,
+                            reviveCost = walletReviveCost,
+                            gearBalance = walletGearBalance,
+                        )
+                        maybePrefetchFinalSubmit()
+                    } else {
+                        _uiState.value = QuizUiState.Error(e.message ?: "채점에 실패했습니다.")
+                    }
                 }
         }
     }
@@ -628,11 +645,14 @@ class QuizViewModel @Inject constructor(
             } else {
                 null
             }
+        val submitAnswers = qs.questions.associate { q ->
+            q.id to QuizSessionRules.answerForSubmit(q, userAnswers[q.id].orEmpty())
+        }
         quizRepository.submitQuiz(
             setId = qs.setId,
             missionId = qs.missionId.ifBlank { missionIdArg },
             quizAttemptId = quizAttemptId,
-            answers = userAnswers.toMap(),
+            answers = submitAnswers,
         )
             .onSuccess { result ->
                 solutionAnswerSnapshot = userAnswers.toMap()
@@ -695,7 +715,10 @@ class QuizViewModel @Inject constructor(
         if (userAnswers.size != QuizSessionRules.EXPECTED_QUESTION_COUNT) return false
         if (qs.questions.size != QuizSessionRules.EXPECTED_QUESTION_COUNT) return false
         val expected = qs.questions.map { it.id }.toSet()
-        return userAnswers.keys == expected
+        if (userAnswers.keys != expected) return false
+        return qs.questions.all { q ->
+            userAnswers[q.id]?.trim()?.isNotEmpty() == true
+        }
     }
 
     fun startSolutionMode() {

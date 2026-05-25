@@ -436,29 +436,10 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             binding.tvQuizQuestion.setTextColor(quizColor(R.color.quiz_text_primary))
         }
 
-        // OX 유형
+        // OX 유형 — 내가 고른 보기만 강조(오답 시 반대쪽 테두리 X)
         if (question.type == QuestionType.OX) {
-            // 이전 문항/모드의 스트로크 잔상 제거 후 정오 표시
-            resetOxButtons()
-            val correctLabel = if (isCorrect) userAnswer else (if (userAnswer == "O") "X" else "O")
-            if (correctLabel == "O") {
-                binding.btnOxO.setStrokeColor(android.content.res.ColorStateList.valueOf(quizColor(R.color.quiz_mint)))
-                binding.btnOxO.setStrokeWidth((8 * density).toInt())
-            } else {
-                binding.btnOxX.setStrokeColor(android.content.res.ColorStateList.valueOf(quizColor(R.color.quiz_mint)))
-                binding.btnOxX.setStrokeWidth((8 * density).toInt())
-            }
-            
-            if (!isCorrect) {
-                if (userAnswer == "O") {
-                    binding.btnOxO.setStrokeColor(android.content.res.ColorStateList.valueOf(quizColor(R.color.quiz_red)))
-                    binding.btnOxO.setStrokeWidth((8 * density).toInt())
-                } else {
-                    binding.btnOxX.setStrokeColor(android.content.res.ColorStateList.valueOf(quizColor(R.color.quiz_red)))
-                    binding.btnOxX.setStrokeWidth((8 * density).toInt())
-                }
-            }
-        } 
+            applyOxAnswerFeedback(userAnswer, isCorrect)
+        }
         // 객관식·단어채우기·상황판단: 동일 카드 UI
         else {
             val idx = choiceIndexFromUserAnswer(question, userAnswer) ?: return
@@ -1309,11 +1290,9 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         binding.tvOxXText.setTextColor(quizColor(R.color.quiz_red))
     }
 
-    /** OX 탭 직후(채점 전) '내 선택'을 바로 표시 */
+    /** OX 탭 직후(채점 전) '내 선택'만 강조 — 반대쪽은 기본 O(민트)/X(빨강) 유지 */
     private fun applyOxPendingSelection(choice: String) {
         val density = resources.displayMetrics.density
-
-        // 기본값으로 리셋 후, '내가 고른 보기'는 전면 민트로 통일 (체크 아이콘/스트로크 강조 대신)
         resetOxButtons()
 
         val mint = ContextCompat.getColor(requireContext(), R.color.quiz_mint)
@@ -1322,24 +1301,39 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         selected.setStrokeColor(android.content.res.ColorStateList.valueOf(mint))
         selected.setStrokeWidth((2 * density).toInt())
 
-        // 텍스트 가독성 보강
-        val oIcon = binding.tvOxOIcon
-        val oText = binding.tvOxOText
-        val xIcon = binding.tvOxXIcon
-        val xText = binding.tvOxXText
-
-        val selectedTextColor = Color.WHITE
-        val defaultTextColor = ContextCompat.getColor(requireContext(), R.color.quiz_mint)
         if (choice == "O") {
-            oIcon.setTextColor(selectedTextColor)
-            oText.setTextColor(selectedTextColor)
-            xIcon.setTextColor(defaultTextColor)
-            xText.setTextColor(defaultTextColor)
+            binding.tvOxOIcon.setTextColor(Color.WHITE)
+            binding.tvOxOText.setTextColor(Color.WHITE)
         } else {
-            xIcon.setTextColor(selectedTextColor)
-            xText.setTextColor(selectedTextColor)
-            oIcon.setTextColor(defaultTextColor)
-            oText.setTextColor(defaultTextColor)
+            binding.tvOxXIcon.setTextColor(Color.WHITE)
+            binding.tvOxXText.setTextColor(Color.WHITE)
+        }
+    }
+
+    /** OX 채점 후 — 선택한 보기만 정오 색으로 표시 */
+    private fun applyOxAnswerFeedback(userAnswer: String, isCorrect: Boolean) {
+        val density = resources.displayMetrics.density
+        resetOxButtons()
+
+        val mint = ContextCompat.getColor(requireContext(), R.color.quiz_mint)
+        val red = quizColor(R.color.quiz_red)
+        val cardBg = ContextCompat.getColor(requireContext(), R.color.quiz_card_bg)
+        val userBtn = if (userAnswer == "O") binding.btnOxO else binding.btnOxX
+        val userIcon = if (userAnswer == "O") binding.tvOxOIcon else binding.tvOxXIcon
+        val userLabel = if (userAnswer == "O") binding.tvOxOText else binding.tvOxXText
+
+        if (isCorrect) {
+            userBtn.setCardBackgroundColor(mint)
+            userBtn.setStrokeColor(android.content.res.ColorStateList.valueOf(mint))
+            userBtn.setStrokeWidth((2 * density).toInt())
+            userIcon.setTextColor(Color.WHITE)
+            userLabel.setTextColor(Color.WHITE)
+        } else {
+            userBtn.setCardBackgroundColor(cardBg)
+            userBtn.setStrokeColor(android.content.res.ColorStateList.valueOf(red))
+            userBtn.setStrokeWidth((8 * density).toInt())
+            userIcon.setTextColor(red)
+            userLabel.setTextColor(red)
         }
     }
 

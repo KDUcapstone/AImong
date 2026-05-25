@@ -64,6 +64,8 @@ object MockUiSamples {
             topTicketCount = 4,
             canStartMission = true,
             todayQuestProgress = "2/3",
+            dailyQuestClaimableCount = 1,
+            hasPendingCustomQuest = true,
             quests = listOf(
                 QuestItemUiState("q1", "출석하기", "+10 XP", null, isCompleted = false, canStart = true),
                 QuestItemUiState("q2", "친구와 대화", "+15 XP", null, isCompleted = true, canStart = false),

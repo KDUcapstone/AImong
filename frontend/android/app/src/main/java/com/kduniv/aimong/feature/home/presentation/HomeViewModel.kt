@@ -25,6 +25,7 @@ import com.kduniv.aimong.feature.mission.domain.model.mergePreservingHigherUnloc
 import com.kduniv.aimong.feature.mission.domain.model.normalizeToThreeLevels
 import com.kduniv.aimong.feature.mission.domain.model.openDifficultyCount
 import com.kduniv.aimong.feature.mission.domain.repository.MissionRepository
+import com.kduniv.aimong.feature.quest.domain.repository.QuestRepository
 import com.kduniv.aimong.feature.wallet.domain.repository.WalletRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -53,6 +54,7 @@ class HomeViewModel @Inject constructor(
     private val missionRepository: MissionRepository,
     private val homeRepository: HomeRepository,
     private val walletRepository: WalletRepository,
+    private val questRepository: QuestRepository,
     private val appBootstrapRepository: AppBootstrapRepository,
     private val apiService: AimongApiService,
     private val missionStatusCache: MissionStatusCache,
@@ -179,6 +181,11 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    /** 퀘스트 바텀시트를 열면 현재 알림을 확인한 것으로 처리합니다. */
+    fun acknowledgeQuestNotifications() {
+        _uiState.update { it.copy(questNotificationsAcknowledged = true) }
+    }
+
     fun onClaimReturnReward() {
         viewModelScope.launch {
             _uiState.update { it.copy(subtleNotice = null, errorMessage = null) }
@@ -280,6 +287,12 @@ class HomeViewModel @Inject constructor(
                                 streakShieldCost = wallet.streakShieldCost,
                             )
                         }
+                    }
+                    questRepository.getChildCustomQuests().getOrNull()?.let { custom ->
+                        ui = ui.copy(hasPendingCustomQuest = custom.hasPendingConfirm)
+                    }
+                    if (ui.questNotificationCount() == 0) {
+                        ui = ui.copy(questNotificationsAcknowledged = false)
                     }
                     _uiState.value = ui
                     homeRefreshBus.notify(HomeRefreshTrigger.TicketsUpdated(ui.normalTickets))

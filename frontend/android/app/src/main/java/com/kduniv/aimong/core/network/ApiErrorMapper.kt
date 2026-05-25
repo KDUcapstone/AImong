@@ -98,7 +98,12 @@ object ApiErrorMapper {
 
     fun userMessageForCode(code: String, fallbackMessage: String?): String {
         val trimmed = fallbackMessage?.trim()?.takeIf { it.isNotEmpty() }
-        if (trimmed != null) return trimmed
+        if (trimmed != null) {
+            if (trimmed.contains("must not be blank", ignoreCase = true)) {
+                return "일부 문항 답안이 비어 있어요. 시간이 지난 문제는 다시 풀거나 학습을 처음부터 시작해 주세요."
+            }
+            return trimmed
+        }
 
         val base = when (code) {
             // 미션·자녀 로그인 등 공통 — 구체 문구는 서버 message 우선

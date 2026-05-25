@@ -172,6 +172,11 @@ class ParentDashboardFragment :
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        viewModel.refreshCustomQuestsOnResume()
+    }
+
     override fun onDestroyView() {
         dismissQuestExpiresPickers()
         super.onDestroyView()

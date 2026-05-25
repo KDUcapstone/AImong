@@ -43,6 +43,8 @@ import com.kduniv.aimong.feature.home.domain.repository.AppBootstrapRepository
 import com.kduniv.aimong.feature.auth.domain.ChildSessionValidateUseCase
 import com.kduniv.aimong.feature.auth.domain.RegisterChildFcmTokenUseCase
 import com.kduniv.aimong.feature.auth.domain.RegisterParentFcmTokenUseCase
+import com.kduniv.aimong.feature.parent.domain.ParentDashboardRefreshBus
+import com.kduniv.aimong.feature.parent.domain.ParentDashboardRefreshTrigger
 import com.kduniv.aimong.feature.parent.domain.SyncParentChildrenUseCase
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.snackbar.Snackbar
@@ -61,6 +63,9 @@ class MainActivity : AppCompatActivity() {
     companion object {
         /** 로그인·세션 저장 직후 `MainActivity`를 다시 띄울 때 넣는 플래그(백스택·그래프 초기화). */
         const val EXTRA_IS_RESTART = "IS_RESTART"
+        /** FCM 실세계 미션 승인 요청 탭 시 부모 대시보드·퀘스트 갱신 */
+        const val EXTRA_OPEN_PARENT_CUSTOM_QUESTS = "open_parent_custom_quests"
+        const val EXTRA_QUEST_COMPLETE_CHILD_ID = "quest_complete_child_id"
     }
 
     @Inject
@@ -74,6 +79,9 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var syncParentChildrenUseCase: SyncParentChildrenUseCase
+
+    @Inject
+    lateinit var parentDashboardRefreshBus: ParentDashboardRefreshBus
 
     @Inject
     lateinit var chatHintNotifier: ChatHintNotifier
@@ -127,6 +135,28 @@ class MainActivity : AppCompatActivity() {
         if (!UiMode.useStubNav) {
             lifecycleScope.launch { runBootstrapIfNeeded() }
         }
+        handleQuestCompleteNotificationIntent(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleQuestCompleteNotificationIntent(intent)
+    }
+
+    private fun handleQuestCompleteNotificationIntent(intent: Intent?) {
+        if (intent?.getBooleanExtra(EXTRA_OPEN_PARENT_CUSTOM_QUESTS, false) != true) return
+        val childId = intent.getStringExtra(EXTRA_QUEST_COMPLETE_CHILD_ID)
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+        parentDashboardRefreshBus.notify(
+            ParentDashboardRefreshTrigger.CustomQuestsChanged(
+                childId = childId,
+                showPendingNotice = false,
+            ),
+        )
+        intent.removeExtra(EXTRA_OPEN_PARENT_CUSTOM_QUESTS)
+        intent.removeExtra(EXTRA_QUEST_COMPLETE_CHILD_ID)
     }
 
     private suspend fun runBootstrapIfNeeded() {

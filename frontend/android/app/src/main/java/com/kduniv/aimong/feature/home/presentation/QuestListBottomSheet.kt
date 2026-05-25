@@ -94,6 +94,11 @@ class QuestListBottomSheet : BottomSheetDialogFragment() {
             binding.tabQuestPeriod.getTabAt(0)?.select()
         }
 
+        // 이전에 이미 확인한 경우에만 탭 배지 숨김 — 첫 열기에서는 API 직후 빨간 점 표시
+        viewModel.setTabBadgesSuppressed(homeViewModel.uiState.value.shouldSuppressQuestSheetTabBadges())
+        viewModel.onSheetOpened()
+        homeViewModel.acknowledgeQuestNotifications()
+
         binding.btnQuestRetry.setOnClickListener { viewModel.retry() }
 
         viewLifecycleOwner.lifecycleScope.launch {
@@ -128,11 +133,18 @@ class QuestListBottomSheet : BottomSheetDialogFragment() {
                     }
                 }
                 launch {
-                    viewModel.hasPendingCustomQuest.collect { pending ->
-                        binding.tabQuestPeriod.getTabAt(2)?.let { tab ->
-                            val badge = tab.orCreateBadge
-                            badge.isVisible = pending
-                        }
+                    viewModel.dailyTabBadgeCount.collect { count ->
+                        bindQuestTabBadge(binding.tabQuestPeriod.getTabAt(0), count)
+                    }
+                }
+                launch {
+                    viewModel.weeklyTabBadgeCount.collect { count ->
+                        bindQuestTabBadge(binding.tabQuestPeriod.getTabAt(1), count)
+                    }
+                }
+                launch {
+                    viewModel.parentTabBadgeCount.collect { count ->
+                        bindQuestTabBadge(binding.tabQuestPeriod.getTabAt(2), count)
                     }
                 }
                 launch {
@@ -148,6 +160,18 @@ class QuestListBottomSheet : BottomSheetDialogFragment() {
                     }
                 }
             }
+        }
+    }
+
+    private fun bindQuestTabBadge(tab: TabLayout.Tab?, count: Int) {
+        if (tab == null) return
+        val badge = tab.orCreateBadge
+        if (count <= 0) {
+            badge.isVisible = false
+            badge.clearNumber()
+        } else {
+            badge.isVisible = true
+            badge.clearNumber()
         }
     }
 

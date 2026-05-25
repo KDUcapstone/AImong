@@ -4,6 +4,7 @@ import android.content.res.ColorStateList
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
+import androidx.core.view.isVisible
 import androidx.core.widget.ImageViewCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -59,6 +60,7 @@ class QuestListAdapter(
             }
             binding.ivQuestRowIcon.setImageResource(iconRes)
             ImageViewCompat.setImageTintList(binding.ivQuestRowIcon, ColorStateList.valueOf(iconTint))
+            binding.viewQuestRowNotification.isVisible = row.showNotificationDot
 
             val label: String
             val bgRes: Int

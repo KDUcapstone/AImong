@@ -5,6 +5,7 @@ import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.kduniv.aimong.feature.auth.domain.RegisterChildFcmTokenUseCase
 import com.kduniv.aimong.feature.auth.domain.RegisterParentFcmTokenUseCase
+import com.kduniv.aimong.feature.parent.domain.ParentDashboardRefreshBus
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -21,10 +22,21 @@ class AimongFcmService : FirebaseMessagingService() {
     @Inject
     lateinit var registerChildFcmTokenUseCase: RegisterChildFcmTokenUseCase
 
+    @Inject
+    lateinit var parentDashboardRefreshBus: ParentDashboardRefreshBus
+
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         if (GachaLevelUpNotificationHelper.showIfApplicable(this, remoteMessage)) {
+            return
+        }
+        if (QuestCompleteRequestNotificationHelper.handleIfApplicable(
+                this,
+                remoteMessage,
+                parentDashboardRefreshBus,
+            )
+        ) {
             return
         }
         // 그 외 타입(PRIVACY_ALERT, 미학습 알림 등)은 추후 확장
