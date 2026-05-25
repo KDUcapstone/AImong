@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface MissionSetRepository extends JpaRepository<MissionSet, String> {
 
@@ -17,4 +19,13 @@ public interface MissionSetRepository extends JpaRepository<MissionSet, String> 
     Optional<MissionSet> findBySetIdAndActiveTrue(String setId);
 
     long countByActiveTrue();
+
+    @Query("""
+            select count(distinct s.missionId)
+            from MissionSet s
+            where s.active = true
+              and s.stage = :stage
+              and s.starLevel = 1
+            """)
+    long countActiveStageStarOneMissionIds(@Param("stage") short stage);
 }

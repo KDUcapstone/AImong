@@ -7,5 +7,6 @@ public enum CurrencyTransactionReason {
     QUEST_REWARD,
     ACHIEVEMENT_REWARD,
     RETURN_REWARD,
+    STAGE_REWARD_GEAR,
     ADMIN_ADJUST
 }

@@ -39,6 +39,9 @@ public class FcmNotificationEvent {
     @Column(name = "detected_type", length = 32)
     private String detectedType;
 
+    @Column(name = "ref_id", length = 64)
+    private String refId;
+
     @Column(name = "aggregate_count", nullable = false)
     private int aggregateCount;
 
@@ -62,6 +65,18 @@ public class FcmNotificationEvent {
             int aggregateCount
     ) {
         FcmNotificationEvent event = create(parentId, childId, notificationType, detectedType, aggregateCount);
+        event.markSent();
+        return event;
+    }
+
+    public static FcmNotificationEvent sentWithRef(
+            String parentId,
+            UUID childId,
+            FcmNotificationType notificationType,
+            String refId
+    ) {
+        FcmNotificationEvent event = create(parentId, childId, notificationType, null, 1);
+        event.refId = refId;
         event.markSent();
         return event;
     }

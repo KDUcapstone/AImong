@@ -9,6 +9,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -103,6 +104,41 @@ public class FcmNotificationService {
     }
 
     @Transactional
+    public void sendQuestCompleteRequest(ChildProfile childProfile, UUID questId, String questTitle) {
+        ParentAccount parentAccount = childProfile.getParentAccount();
+        if (!StringUtils.hasText(parentAccount.getFcmToken())) {
+            return;
+        }
+        if (!questRewardEnabled(parentAccount)) {
+            return;
+        }
+        String refId = questId.toString();
+        if (fcmNotificationEventRepository.existsByParentIdAndNotificationTypeAndRefId(
+                parentAccount.getParentId(),
+                FcmNotificationType.QUEST_COMPLETE_REQUEST,
+                refId
+        )) {
+            return;
+        }
+
+        sendAfterCommit(parentAccount.getFcmToken(), new FcmPayload(
+                "Custom quest completed",
+                childProfile.getNickname() + " requested confirmation for " + questTitle,
+                Map.of(
+                        "type", FcmNotificationType.QUEST_COMPLETE_REQUEST.name(),
+                        "childId", childProfile.getId().toString(),
+                        "questId", refId
+                )
+        ));
+        fcmNotificationEventRepository.save(FcmNotificationEvent.sentWithRef(
+                parentAccount.getParentId(),
+                childProfile.getId(),
+                FcmNotificationType.QUEST_COMPLETE_REQUEST,
+                refId
+        ));
+    }
+
+    @Transactional
     public void flushQueuedPrivacyAlerts(ParentAccount parentAccount) {
         if (!StringUtils.hasText(parentAccount.getFcmToken())) {
             return;
@@ -178,6 +214,12 @@ public class FcmNotificationService {
     private boolean studyReminderEnabled(ParentAccount parentAccount) {
         return notificationSettingsRepository.findById(parentAccount.getParentId())
                 .map(settings -> settings.isStudyReminderEnabled())
+                .orElse(true);
+    }
+
+    private boolean questRewardEnabled(ParentAccount parentAccount) {
+        return notificationSettingsRepository.findById(parentAccount.getParentId())
+                .map(settings -> settings.isQuestRewardEnabled())
                 .orElse(true);
     }
 

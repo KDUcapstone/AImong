@@ -1,5 +1,6 @@
 package com.aimong.backend.domain.mission.dto;
 
+import com.aimong.backend.domain.stagereward.dto.StageCompletionRewardResponse;
 import java.util.List;
 import java.util.UUID;
 
@@ -41,7 +42,8 @@ public record SubmitResponse(
         long completedSetCount,
         long starLevelCompletedSetCount,
         List<String> nextUnlockedSetIds,
-        int todaySetCount
+        int todaySetCount,
+        StageCompletionRewardResponse stageCompletionReward
 ) {
     public record RewardsResponse(
             int gear,

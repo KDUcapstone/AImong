@@ -36,6 +36,8 @@ import com.aimong.backend.domain.quest.service.DailyQuestService;
 import com.aimong.backend.domain.quest.service.WeeklyQuestService;
 import com.aimong.backend.domain.reward.entity.CurrencyTransactionReason;
 import com.aimong.backend.domain.reward.service.CurrencyService;
+import com.aimong.backend.domain.stagereward.dto.StageCompletionRewardResponse;
+import com.aimong.backend.domain.stagereward.service.StageCompletionRewardService;
 import com.aimong.backend.domain.streak.entity.StreakRecord;
 import com.aimong.backend.domain.streak.repository.FriendStreakRepository;
 import com.aimong.backend.domain.streak.repository.StreakRecordRepository;
@@ -89,6 +91,7 @@ public class SubmitService {
     private final AchievementService achievementService;
     private final PetGrowthService petGrowthService;
     private final CurrencyService currencyService;
+    private final StageCompletionRewardService stageCompletionRewardService;
     private final QuizService quizService;
     private final MissionService missionService;
     private final QuestionAnswerMatcher questionAnswerMatcher;
@@ -116,6 +119,7 @@ public class SubmitService {
             AchievementService achievementService,
             PetGrowthService petGrowthService,
             CurrencyService currencyService,
+            StageCompletionRewardService stageCompletionRewardService,
             QuizService quizService,
             MissionService missionService,
             QuestionAnswerMatcher questionAnswerMatcher,
@@ -141,6 +145,7 @@ public class SubmitService {
         this.achievementService = achievementService;
         this.petGrowthService = petGrowthService;
         this.currencyService = currencyService;
+        this.stageCompletionRewardService = stageCompletionRewardService;
         this.quizService = quizService;
         this.missionService = missionService;
         this.questionAnswerMatcher = questionAnswerMatcher;
@@ -189,6 +194,7 @@ public class SubmitService {
         this.achievementService = achievementService;
         this.petGrowthService = petGrowthService;
         this.currencyService = null;
+        this.stageCompletionRewardService = null;
         this.quizService = quizService;
         this.missionService = missionService;
         this.questionAnswerMatcher = new QuestionAnswerMatcher(objectMapper);
@@ -481,6 +487,12 @@ public class SubmitService {
             throw new AimongException(ErrorCode.SUBMIT_SAVE_FAILED, exception);
         }
         grantMissionClearGear(childProfile, passedAttempt.getId());
+        StageCompletionRewardResponse stageCompletionReward = triggerStageCompletionReward(
+                childProfile,
+                missionSet,
+                firstSetCompletion,
+                passedAttempt.getId()
+        );
 
         int currentLevel = childProfile.getLevel();
         List<SubmitResponse.RewardResponse> levelRewards = applyLevelRewards(childId, previousLevel, currentLevel, childProfile);
@@ -537,7 +549,8 @@ public class SubmitService {
                 completedSetCount(childId),
                 missionSet == null ? 0 : starLevelCompletedSetCount(childId, missionSet.getStarLevel()),
                 unlockedAfterCompletion.stream().toList(),
-                todayProgress == null ? streakRecord.getTodayMissionCount() : todayProgress.getCompletedSetCount()
+                todayProgress == null ? streakRecord.getTodayMissionCount() : todayProgress.getCompletedSetCount(),
+                stageCompletionReward
         );
     }
 
@@ -595,7 +608,8 @@ public class SubmitService {
                 completedSetCount(childId),
                 missionSet == null ? 0 : starLevelCompletedSetCount(childId, missionSet.getStarLevel()),
                 List.of(),
-                todaySetCount(childId, streakRecord)
+                todaySetCount(childId, streakRecord),
+                null
         );
     }
 
@@ -649,7 +663,27 @@ public class SubmitService {
                 completedSetCount(childId),
                 missionSet == null ? 0 : starLevelCompletedSetCount(childId, missionSet.getStarLevel()),
                 List.of(),
-                todaySetCount(childId, streakRecord)
+                todaySetCount(childId, streakRecord),
+                null
+        );
+    }
+
+    private StageCompletionRewardResponse triggerStageCompletionReward(
+            ChildProfile childProfile,
+            MissionSet missionSet,
+            boolean firstSetCompletion,
+            UUID attemptId
+    ) {
+        if (stageCompletionRewardService == null
+                || missionSet == null
+                || !firstSetCompletion
+                || missionSet.getStarLevel() != 1) {
+            return null;
+        }
+        return stageCompletionRewardService.triggerIfStageCompleted(
+                childProfile,
+                missionSet.getStage(),
+                attemptId
         );
     }
 
