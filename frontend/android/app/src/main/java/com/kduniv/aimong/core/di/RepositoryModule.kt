@@ -8,8 +8,6 @@ import com.kduniv.aimong.feature.home.domain.repository.AppBootstrapRepository
 import com.kduniv.aimong.feature.home.domain.repository.HomeRepository
 import com.kduniv.aimong.feature.mission.data.MissionRepositoryImpl
 import com.kduniv.aimong.feature.mission.domain.repository.MissionRepository
-import com.kduniv.aimong.feature.parent.data.ParentRepository
-import com.kduniv.aimong.feature.parent.data.ParentRepositoryImpl
 import com.kduniv.aimong.feature.streak.data.StreakRepository
 import com.kduniv.aimong.feature.streak.data.StreakRepositoryImpl
 import com.kduniv.aimong.feature.settings.data.NotificationSettingsRepository
@@ -47,12 +45,6 @@ abstract class RepositoryModule {
     abstract fun bindMissionRepository(
         missionRepositoryImpl: MissionRepositoryImpl
     ): MissionRepository
-
-    @Binds
-    @Singleton
-    abstract fun bindParentRepository(
-        parentRepositoryImpl: ParentRepositoryImpl
-    ): ParentRepository
 
     @Binds
     @Singleton

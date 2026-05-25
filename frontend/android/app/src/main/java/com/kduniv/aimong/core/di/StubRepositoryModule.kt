@@ -8,8 +8,11 @@ import com.kduniv.aimong.feature.chat.data.ChatRepositoryImpl
 import com.kduniv.aimong.feature.chat.domain.repository.ChatRepository
 import com.kduniv.aimong.feature.dev.mock.repository.ChatRepositoryStub
 import com.kduniv.aimong.feature.dev.mock.repository.GachaRepositoryStub
+import com.kduniv.aimong.feature.dev.mock.repository.ParentRepositoryStub
 import com.kduniv.aimong.feature.dev.mock.repository.QuestRepositoryStub
 import com.kduniv.aimong.feature.dev.mock.repository.QuizRepositoryStub
+import com.kduniv.aimong.feature.parent.data.ParentRepository
+import com.kduniv.aimong.feature.parent.data.ParentRepositoryImpl
 import com.kduniv.aimong.feature.dev.mock.repository.WalletRepositoryStub
 import com.kduniv.aimong.feature.wallet.domain.repository.WalletRepository
 import com.kduniv.aimong.feature.wallet.data.WalletRepositoryImpl
@@ -79,4 +82,11 @@ object StubRepositoryModule {
         impl: WalletRepositoryImpl,
         stub: WalletRepositoryStub
     ): WalletRepository = if (UiMode.useStubNav) stub else impl
+
+    @Provides
+    @Singleton
+    fun provideParentRepository(
+        impl: ParentRepositoryImpl,
+        stub: ParentRepositoryStub
+    ): ParentRepository = if (UiMode.useStubNav) stub else impl
 }

@@ -130,6 +130,12 @@ object ApiErrorMapper {
             // 복귀 보상 409, 가챠 교환 중복 펫 등 — 서버 message 없을 때만 사용
             "CONFLICT" -> "이미 보유한 펫이에요"
             "CHILD_LIMIT_EXCEEDED" -> "등록 가능한 자녀 수를 초과했습니다."
+            "CHILD_NOT_FOUND" -> "자녀를 찾을 수 없습니다."
+            "MAX_QUEST_LIMIT" -> "먼저 기존 퀘스트를 완료하거나 취소해주세요."
+            "QUEST_NOT_FOUND" -> "퀘스트를 찾을 수 없습니다."
+            "QUEST_NOT_PENDING" -> "확인 대기 중인 퀘스트가 아닙니다."
+            "QUEST_NOT_CANCELLABLE" -> "이미 완료 요청됐거나 종료된 퀘스트예요."
+            "ALREADY_TRIGGERED" -> "이미 지급된 보상은 수정할 수 없습니다."
             else -> null
         }
         return base ?: "문제를 불러오지 못했습니다."

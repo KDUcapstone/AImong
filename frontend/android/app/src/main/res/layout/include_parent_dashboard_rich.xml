@@ -100,6 +100,50 @@
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/card_dashboard_not_linked"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        android:visibility="gone"
+        app:cardBackgroundColor="@color/parent_mock_yellow_box_bg"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="0dp"
+        app:strokeColor="@color/parent_mock_yellow_box_border"
+        app:strokeWidth="1dp"
+        tools:visibility="visible">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="14dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/parent_dashboard_not_linked_title"
+                android:textColor="@color/parent_mock_yellow_box_text"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:lineSpacingMultiplier="1.15"
+                android:text="@string/parent_dashboard_not_linked_message"
+                android:textColor="@color/parent_mock_yellow_box_text"
+                android:textSize="13sp" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <LinearLayout
+        android:id="@+id/layout_dashboard_linked_body"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -350,6 +394,203 @@
                         android:text="@string/parent_weekday_sun" />
                 </LinearLayout>
             </LinearLayout>
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/card_parent_custom_quests"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        app:cardBackgroundColor="@color/parent_mock_surface"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="2dp"
+        app:strokeColor="@color/parent_mock_border"
+        app:strokeWidth="1dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_star_filled"
+                    app:tint="@color/parent_mock_green" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:paddingStart="6dp"
+                    android:text="@string/parent_dashboard_custom_quest_title"
+                    android:textColor="@color/parent_mock_text_primary"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    tools:ignore="RtlSymmetry" />
+
+                <TextView
+                    android:id="@+id/btn_parent_add_custom_quest"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_parent_mock_green_btn"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="6dp"
+                    android:text="@string/parent_dashboard_custom_quest_add"
+                    android:textColor="@color/parent_mock_surface"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="@string/parent_dashboard_custom_quest_subtitle"
+                android:textColor="@color/parent_mock_text_muted"
+                android:textSize="12sp" />
+
+            <LinearLayout
+                android:id="@+id/layout_parent_custom_quest_list"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+
+            <TextView
+                android:id="@+id/tv_parent_custom_quest_empty"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center"
+                android:text="@string/parent_dashboard_custom_quest_empty"
+                android:textColor="@color/parent_mock_text_muted"
+                android:textSize="13sp"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/btn_parent_toggle_past_quests"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:layout_marginTop="10dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:paddingHorizontal="4dp"
+                android:paddingVertical="6dp"
+                android:text="@string/parent_custom_quest_toggle_past_show"
+                android:textColor="@color/parent_mock_indigo"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_parent_past_quests_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="@string/parent_custom_quest_past_title"
+                android:textColor="@color/parent_mock_text_secondary"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:visibility="gone"
+                tools:visibility="visible" />
+
+            <LinearLayout
+                android:id="@+id/layout_parent_past_custom_quest_list"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone"
+                tools:visibility="visible" />
+
+            <TextView
+                android:id="@+id/tv_parent_past_custom_quest_empty"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center"
+                android:text="@string/parent_custom_quest_past_empty"
+                android:textColor="@color/parent_mock_text_muted"
+                android:textSize="13sp"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/btn_parent_load_more_past_quests"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_parent_child_selector_row"
+                android:gravity="center"
+                android:paddingVertical="10dp"
+                android:text="@string/parent_custom_quest_past_load_more"
+                android:textColor="@color/parent_mock_indigo"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/card_parent_stage_rewards"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        app:cardBackgroundColor="@color/parent_mock_surface"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="2dp"
+        app:strokeColor="@color/parent_mock_border"
+        app:strokeWidth="1dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_chip_gear"
+                    app:tint="@color/parent_mock_blue" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="6dp"
+                    android:text="@string/parent_dashboard_stage_reward_title"
+                    android:textColor="@color/parent_mock_text_primary"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    tools:ignore="RtlSymmetry" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="@string/parent_dashboard_stage_reward_subtitle"
+                android:textColor="@color/parent_mock_text_muted"
+                android:textSize="12sp" />
+
+            <LinearLayout
+                android:id="@+id/layout_parent_stage_rewards"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
@@ -730,5 +971,7 @@
                 android:visibility="gone" />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
+
+    </LinearLayout>
 
 </LinearLayout>

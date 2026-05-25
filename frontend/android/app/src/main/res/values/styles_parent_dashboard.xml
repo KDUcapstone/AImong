@@ -24,6 +24,21 @@
         <item name="android:textSize">13sp</item>
         <item name="android:textStyle">bold</item>
     </style>
+    <style name="Widget.AImong.ParentDialogPresetChip" parent="Widget.MaterialComponents.Button.TextButton">
+        <item name="android:minWidth">0dp</item>
+        <item name="android:minHeight">36dp</item>
+        <item name="android:paddingLeft">12dp</item>
+        <item name="android:paddingRight">12dp</item>
+        <item name="android:paddingTop">6dp</item>
+        <item name="android:paddingBottom">6dp</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/parent_dialog_preset_chip_text</item>
+        <item name="android:background">@drawable/bg_parent_dialog_preset_chip</item>
+        <item name="backgroundTint">@null</item>
+        <item name="rippleColor">@color/parent_mock_indigo</item>
+    </style>
+
     <style name="ParentPrivacyTypeChip" parent="android:Widget.TextView">
         <item name="android:layout_width">0dp</item>
         <item name="android:layout_height">wrap_content</item>

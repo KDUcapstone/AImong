@@ -7,10 +7,14 @@ import com.kduniv.aimong.core.network.model.ParentRegisterResponse
 import com.kduniv.aimong.core.network.model.PatchParentChildRequest
 import com.kduniv.aimong.core.ui.BaseViewModel
 import com.kduniv.aimong.feature.parent.data.ParentRepository
+import com.kduniv.aimong.feature.parent.data.model.CreateParentCustomQuestRequest
 import com.kduniv.aimong.feature.parent.data.model.ParentChildSummaryResponseData
+import com.kduniv.aimong.feature.parent.data.model.ParentCustomQuestDto
+import com.kduniv.aimong.feature.parent.data.model.ParentStageRewardDto
 import com.kduniv.aimong.feature.parent.data.model.ParentWeakPointsResponseData
 import com.kduniv.aimong.feature.parent.data.model.ParentWeeklyStatsResponseData
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.time.Instant
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -26,10 +30,13 @@ class ParentDashboardViewModel @Inject constructor(
     private val parentRepository: ParentRepository
 ) : BaseViewModel() {
 
+    companion object {
+        private const val PAST_QUEST_PAGE_SIZE = 10
+    }
+
     private val _messageEvent = MutableSharedFlow<String>()
     val messageEvent = _messageEvent.asSharedFlow()
 
-    /** 둘째·셋째 자녀 추가 성공 — 등록 완료 바텀시트(코드·스타터 티켓) 표시용 */
     private val _childRegisteredEvent = MutableSharedFlow<ParentRegisterResponse>()
     val childRegisteredEvent = _childRegisteredEvent.asSharedFlow()
 
@@ -48,6 +55,26 @@ class ParentDashboardViewModel @Inject constructor(
     private val _weakPoints = MutableStateFlow<ParentWeakPointsResponseData?>(null)
     val weakPoints: StateFlow<ParentWeakPointsResponseData?> = _weakPoints.asStateFlow()
 
+    private val _customQuests = MutableStateFlow<List<ParentCustomQuestDto>>(emptyList())
+    val customQuests: StateFlow<List<ParentCustomQuestDto>> = _customQuests.asStateFlow()
+
+    private val _pastCustomQuests = MutableStateFlow<List<ParentCustomQuestDto>>(emptyList())
+    val pastCustomQuests: StateFlow<List<ParentCustomQuestDto>> = _pastCustomQuests.asStateFlow()
+
+    private val _pastQuestsExpanded = MutableStateFlow(false)
+    val pastQuestsExpanded: StateFlow<Boolean> = _pastQuestsExpanded.asStateFlow()
+
+    private val _pastQuestsHasNext = MutableStateFlow(false)
+    val pastQuestsHasNext: StateFlow<Boolean> = _pastQuestsHasNext.asStateFlow()
+
+    private val _pastQuestsLoading = MutableStateFlow(false)
+    val pastQuestsLoading: StateFlow<Boolean> = _pastQuestsLoading.asStateFlow()
+
+    private var pastQuestsNextPage = 0
+
+    private val _stageRewards = MutableStateFlow<List<ParentStageRewardDto>>(emptyList())
+    val stageRewards: StateFlow<List<ParentStageRewardDto>> = _stageRewards.asStateFlow()
+
     val children: StateFlow<List<ParentChildItem>> = parentRepository.observeCachedParentChildren()
         .stateIn(
             scope = viewModelScope,
@@ -60,11 +87,26 @@ class ParentDashboardViewModel @Inject constructor(
         viewModelScope.launch { refreshAllDashboardForChild(childId) }
     }
 
-    /** 요약·주간·약점 API를 한 번에 갱신한다. */
     private suspend fun refreshAllDashboardForChild(childId: String) {
+        _pastQuestsExpanded.value = false
+        _pastCustomQuests.value = emptyList()
+        _pastQuestsHasNext.value = false
+        pastQuestsNextPage = 0
         val detailResult = parentRepository.getParentChildDetail(childId)
         detailResult.fold(
-            onSuccess = { _childDetail.value = it },
+            onSuccess = { detail ->
+                _childDetail.value = detail
+                if (detail.lastActiveAt.isNullOrBlank()) {
+                    _childSummary.value = null
+                    _weeklyStats.value = null
+                    _weakPoints.value = null
+                    _customQuests.value = emptyList()
+                    _pastCustomQuests.value = emptyList()
+                    _pastQuestsExpanded.value = false
+                    _stageRewards.value = emptyList()
+                    return
+                }
+            },
             onFailure = { e ->
                 _messageEvent.emit(e.message ?: "자녀 상세 조회 실패")
                 return
@@ -81,6 +123,153 @@ class ParentDashboardViewModel @Inject constructor(
         parentRepository.getWeakPoints(childId, page = 0, size = 20).fold(
             onSuccess = { _weakPoints.value = it },
             onFailure = { _weakPoints.value = null }
+        )
+        parentRepository.getCustomQuests(childId).fold(
+            onSuccess = { _customQuests.value = it.quests },
+            onFailure = { _customQuests.value = emptyList() }
+        )
+        parentRepository.getStageRewards(childId).fold(
+            onSuccess = { data ->
+                _stageRewards.value = data.stages.sortedBy { it.stageNumber }
+            },
+            onFailure = { _stageRewards.value = emptyList() }
+        )
+    }
+
+    fun createCustomQuest(title: String, description: String?, rewardText: String, expiresAt: String) {
+        val childId = _selectedChildId.value ?: return
+        viewModelScope.launch {
+            parentRepository.createCustomQuest(
+                childId,
+                CreateParentCustomQuestRequest(
+                    title = title,
+                    description = description?.takeIf { it.isNotBlank() },
+                    rewardText = rewardText,
+                    expiresAt = expiresAt
+                )
+            ).fold(
+                onSuccess = {
+                    refreshCustomQuests(childId)
+                    _messageEvent.emit("퀘스트를 만들었어요.")
+                },
+                onFailure = { e -> _messageEvent.emit(e.message ?: "퀘스트 생성에 실패했습니다.") }
+            )
+        }
+    }
+
+    fun togglePastCustomQuests() {
+        val childId = _selectedChildId.value ?: return
+        if (_pastQuestsExpanded.value) {
+            _pastQuestsExpanded.value = false
+            return
+        }
+        viewModelScope.launch {
+            loadPastCustomQuests(childId, reset = true)
+            _pastQuestsExpanded.value = true
+        }
+    }
+
+    fun loadMorePastCustomQuests() {
+        val childId = _selectedChildId.value ?: return
+        if (_pastQuestsLoading.value || !_pastQuestsHasNext.value) return
+        viewModelScope.launch {
+            _pastQuestsLoading.value = true
+            loadPastCustomQuests(childId, reset = false)
+            _pastQuestsLoading.value = false
+        }
+    }
+
+    fun confirmCustomQuest(questId: String) {
+        val childId = _selectedChildId.value ?: return
+        viewModelScope.launch {
+            parentRepository.confirmCustomQuest(questId).fold(
+                onSuccess = {
+                    refreshCustomQuests(childId)
+                    _messageEvent.emit("퀘스트를 승인했어요.")
+                },
+                onFailure = { e -> _messageEvent.emit(e.message ?: "승인에 실패했습니다.") }
+            )
+        }
+    }
+
+    fun cancelCustomQuest(questId: String) {
+        val childId = _selectedChildId.value ?: return
+        viewModelScope.launch {
+            parentRepository.cancelCustomQuest(questId).fold(
+                onSuccess = {
+                    refreshCustomQuests(childId)
+                    _messageEvent.emit("퀘스트를 취소했어요.")
+                },
+                onFailure = { e -> _messageEvent.emit(e.message ?: "취소에 실패했습니다.") }
+            )
+        }
+    }
+
+    fun saveStageReward(stageNumber: Int, rewardText: String, hasExistingReward: Boolean) {
+        val childId = _selectedChildId.value ?: return
+        viewModelScope.launch {
+            parentRepository.saveStageReward(childId, stageNumber, rewardText, hasExistingReward).fold(
+                onSuccess = {
+                    refreshStageRewards(childId)
+                    _messageEvent.emit("단계 보상을 저장했어요.")
+                },
+                onFailure = { e -> _messageEvent.emit(e.message ?: "보상 저장에 실패했습니다.") }
+            )
+        }
+    }
+
+    private suspend fun refreshCustomQuests(childId: String) {
+        parentRepository.getCustomQuests(childId).fold(
+            onSuccess = { _customQuests.value = it.quests },
+            onFailure = { }
+        )
+        if (_pastQuestsExpanded.value) {
+            loadPastCustomQuests(childId, reset = true)
+        }
+    }
+
+    private suspend fun loadPastCustomQuests(childId: String, reset: Boolean) {
+        if (reset) {
+            pastQuestsNextPage = 0
+            _pastCustomQuests.value = emptyList()
+            _pastQuestsHasNext.value = false
+        }
+        val page = pastQuestsNextPage
+        parentRepository.getCustomQuests(
+            childId,
+            status = "COMPLETED,CANCELLED",
+            page = page,
+            size = PAST_QUEST_PAGE_SIZE
+        ).fold(
+            onSuccess = { data ->
+                val batch = data.quests.sortedByDescending { it.pastSortInstant() }
+                _pastCustomQuests.value = if (reset) {
+                    batch
+                } else {
+                    (_pastCustomQuests.value + batch)
+                        .distinctBy { it.questId }
+                        .sortedByDescending { it.pastSortInstant() }
+                }
+                pastQuestsNextPage = page + 1
+                _pastQuestsHasNext.value = data.hasNext ||
+                    (data.quests.size >= PAST_QUEST_PAGE_SIZE && data.totalCount > _pastCustomQuests.value.size)
+            },
+            onFailure = {
+                if (reset) _pastCustomQuests.value = emptyList()
+                _pastQuestsHasNext.value = false
+            }
+        )
+    }
+
+    private fun ParentCustomQuestDto.pastSortInstant(): Instant {
+        val raw = confirmedAt ?: completedAt ?: createdAt
+        return raw?.let { runCatching { Instant.parse(it) }.getOrNull() } ?: Instant.EPOCH
+    }
+
+    private suspend fun refreshStageRewards(childId: String) {
+        parentRepository.getStageRewards(childId).fold(
+            onSuccess = { _stageRewards.value = it.stages.sortedBy { s -> s.stageNumber } },
+            onFailure = { }
         )
     }
 
@@ -140,6 +329,10 @@ class ParentDashboardViewModel @Inject constructor(
                             ?: run {
                                 _childDetail.value = null
                                 _childSummary.value = null
+                                _customQuests.value = emptyList()
+                                _pastCustomQuests.value = emptyList()
+                                _pastQuestsExpanded.value = false
+                                _stageRewards.value = emptyList()
                             }
                     }
                     _messageEvent.emit("자녀 프로필이 삭제되었어요.")

@@ -97,10 +97,10 @@ class MockParentRegisterChildFragment :
                 nickname = data.nickname,
                 code = data.code,
                 profileImageType = "DEFAULT",
-                totalXp = 0,
-                hasFcmToken = false,
-                lastActiveAt = null,
-                createdAt = null
+                totalXp = 150,
+                hasFcmToken = true,
+                lastActiveAt = java.time.Instant.now().toString(),
+                createdAt = java.time.Instant.now().toString()
             )
         )
         sessionManager.saveParentChildrenJson(gson.toJson(list))

@@ -6,7 +6,12 @@ import com.kduniv.aimong.core.network.model.ParentMeData
 import com.kduniv.aimong.core.network.model.ParentRegisterResponse
 import com.kduniv.aimong.core.network.model.PatchParentChildRequest
 import com.kduniv.aimong.core.network.model.ParentChildPatchResponseData
+import com.kduniv.aimong.feature.parent.data.model.CreateParentCustomQuestRequest
+import com.kduniv.aimong.feature.parent.data.model.CreateParentCustomQuestResponseData
+import com.kduniv.aimong.feature.parent.data.model.CreateParentStageRewardRequest
 import com.kduniv.aimong.feature.parent.data.model.ParentChildSummaryResponseData
+import com.kduniv.aimong.feature.parent.data.model.ParentCustomQuestListResponseData
+import com.kduniv.aimong.feature.parent.data.model.ParentStageRewardsResponseData
 import com.kduniv.aimong.feature.parent.data.model.ParentWeakPointsResponseData
 import com.kduniv.aimong.feature.parent.data.model.ParentWeeklyStatsResponseData
 import kotlinx.coroutines.flow.Flow
@@ -32,6 +37,31 @@ interface ParentRepository {
     suspend fun getChildSummary(childId: String): Result<ParentChildSummaryResponseData>
     suspend fun getWeeklyStats(childId: String): Result<ParentWeeklyStatsResponseData>
     suspend fun getWeakPoints(childId: String, page: Int = 0, size: Int = 20): Result<ParentWeakPointsResponseData>
+
+    suspend fun getCustomQuests(
+        childId: String,
+        status: String = "ACTIVE,PENDING_CONFIRM",
+        page: Int? = null,
+        size: Int? = null
+    ): Result<ParentCustomQuestListResponseData>
+
+    suspend fun createCustomQuest(
+        childId: String,
+        body: CreateParentCustomQuestRequest
+    ): Result<CreateParentCustomQuestResponseData>
+
+    suspend fun confirmCustomQuest(questId: String): Result<Unit>
+
+    suspend fun cancelCustomQuest(questId: String): Result<Unit>
+
+    suspend fun getStageRewards(childId: String): Result<ParentStageRewardsResponseData>
+
+    suspend fun saveStageReward(
+        childId: String,
+        stageNumber: Int,
+        rewardText: String,
+        hasExistingReward: Boolean
+    ): Result<Unit>
 
     /** DELETE /parent/fcm-token — 로그아웃 직전 best-effort */
     suspend fun deleteParentFcmToken(firebaseIdToken: String): Result<Unit>

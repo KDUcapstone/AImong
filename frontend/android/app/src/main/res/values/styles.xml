@@ -22,4 +22,28 @@
         <item name="android:minHeight">48dp</item>
         <item name="android:includeFontPadding">true</item>
     </style>
+
+    <style name="Widget.AImong.ParentDialogEditText" parent="Widget.MaterialComponents.TextInputEditText.OutlinedBox">
+        <item name="android:gravity">center</item>
+        <item name="android:textAlignment">center</item>
+        <item name="android:textColor">@color/parent_mock_text_primary</item>
+        <item name="android:textColorHint">@color/parent_mock_text_muted</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:includeFontPadding">false</item>
+        <item name="android:paddingTop">0dp</item>
+        <item name="android:paddingBottom">0dp</item>
+    </style>
+
+    <style name="Widget.AImong.ParentDialogEditText.SingleLine" parent="Widget.AImong.ParentDialogEditText">
+        <item name="android:minHeight">52dp</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:scrollHorizontally">true</item>
+    </style>
+
+    <style name="Widget.AImong.ParentDialogEditText.MultiLine" parent="Widget.AImong.ParentDialogEditText">
+        <item name="android:minHeight">72dp</item>
+        <item name="android:minLines">2</item>
+        <item name="android:maxLines">4</item>
+        <item name="android:gravity">center</item>
+    </style>
 </resources>

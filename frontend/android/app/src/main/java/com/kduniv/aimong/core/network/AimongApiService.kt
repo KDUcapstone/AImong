@@ -9,9 +9,19 @@ import com.kduniv.aimong.feature.home.data.model.StreakCalendarData
 import com.kduniv.aimong.feature.home.data.model.ReturnRewardClaimResponseData
 import com.kduniv.aimong.feature.home.data.model.ReturnRewardCheckResponseData
 import com.kduniv.aimong.feature.mission.data.model.MissionsMapResponseData
+import com.kduniv.aimong.feature.parent.data.model.CancelParentCustomQuestResponseData
+import com.kduniv.aimong.feature.parent.data.model.ConfirmParentCustomQuestResponseData
+import com.kduniv.aimong.feature.parent.data.model.CreateParentCustomQuestRequest
+import com.kduniv.aimong.feature.parent.data.model.CreateParentCustomQuestResponseData
+import com.kduniv.aimong.feature.parent.data.model.CreateParentStageRewardRequest
+import com.kduniv.aimong.feature.parent.data.model.CreateParentStageRewardResponseData
+import com.kduniv.aimong.feature.parent.data.model.ParentCustomQuestListResponseData
+import com.kduniv.aimong.feature.parent.data.model.ParentStageRewardsResponseData
 import com.kduniv.aimong.feature.parent.data.model.ParentWeakPointsResponseData
 import com.kduniv.aimong.feature.parent.data.model.ParentWeeklyStatsResponseData
 import com.kduniv.aimong.feature.parent.data.model.ParentChildSummaryResponseData
+import com.kduniv.aimong.feature.parent.data.model.PatchParentStageRewardRequest
+import com.kduniv.aimong.feature.parent.data.model.PatchParentStageRewardResponseData
 import com.kduniv.aimong.feature.quiz.data.model.QuestionReportRequest
 import com.kduniv.aimong.feature.quiz.data.model.QuestionReportResponseData
 import com.kduniv.aimong.feature.mission.data.model.MissionStatusResponseData
@@ -331,6 +341,55 @@ interface AimongApiService {
         @Query("page") page: Int? = null,
         @Query("size") size: Int? = null
     ): ApiResponse<ParentWeakPointsResponseData>
+
+    @GET("parent/children/{childId}/custom-quests")
+    suspend fun getParentCustomQuests(
+        @Header("Authorization") authorization: String,
+        @Path("childId") childId: String,
+        @Query("status") status: String? = "ACTIVE,PENDING_CONFIRM",
+        @Query("page") page: Int? = null,
+        @Query("size") size: Int? = null
+    ): ApiResponse<ParentCustomQuestListResponseData>
+
+    @POST("parent/children/{childId}/custom-quests")
+    suspend fun createParentCustomQuest(
+        @Header("Authorization") authorization: String,
+        @Path("childId") childId: String,
+        @Body body: CreateParentCustomQuestRequest
+    ): ApiResponse<CreateParentCustomQuestResponseData>
+
+    @PATCH("parent/custom-quests/{questId}/confirm")
+    suspend fun confirmParentCustomQuest(
+        @Header("Authorization") authorization: String,
+        @Path("questId") questId: String
+    ): ApiResponse<ConfirmParentCustomQuestResponseData>
+
+    @DELETE("parent/custom-quests/{questId}")
+    suspend fun cancelParentCustomQuest(
+        @Header("Authorization") authorization: String,
+        @Path("questId") questId: String
+    ): ApiResponse<CancelParentCustomQuestResponseData>
+
+    @GET("parent/children/{childId}/stage-rewards")
+    suspend fun getParentStageRewards(
+        @Header("Authorization") authorization: String,
+        @Path("childId") childId: String
+    ): ApiResponse<ParentStageRewardsResponseData>
+
+    @POST("parent/children/{childId}/stage-rewards")
+    suspend fun createParentStageReward(
+        @Header("Authorization") authorization: String,
+        @Path("childId") childId: String,
+        @Body body: CreateParentStageRewardRequest
+    ): ApiResponse<CreateParentStageRewardResponseData>
+
+    @PATCH("parent/children/{childId}/stage-rewards/{stageNumber}")
+    suspend fun patchParentStageReward(
+        @Header("Authorization") authorization: String,
+        @Path("childId") childId: String,
+        @Path("stageNumber") stageNumber: Int,
+        @Body body: PatchParentStageRewardRequest
+    ): ApiResponse<PatchParentStageRewardResponseData>
 
     // CHAT
     @POST("chat/send")

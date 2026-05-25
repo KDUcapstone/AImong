@@ -15,9 +15,14 @@ import com.kduniv.aimong.core.network.model.ParentMeData
 import com.kduniv.aimong.core.network.model.ParentRegisterRequest
 import com.kduniv.aimong.core.network.model.ParentRegisterResponse
 import com.kduniv.aimong.core.network.model.PatchParentChildRequest
+import com.kduniv.aimong.feature.parent.data.model.CreateParentCustomQuestRequest
+import com.kduniv.aimong.feature.parent.data.model.CreateParentStageRewardRequest
 import com.kduniv.aimong.feature.parent.data.model.ParentChildSummaryResponseData
+import com.kduniv.aimong.feature.parent.data.model.ParentCustomQuestListResponseData
+import com.kduniv.aimong.feature.parent.data.model.ParentStageRewardsResponseData
 import com.kduniv.aimong.feature.parent.data.model.ParentWeakPointsResponseData
 import com.kduniv.aimong.feature.parent.data.model.ParentWeeklyStatsResponseData
+import com.kduniv.aimong.feature.parent.data.model.PatchParentStageRewardRequest
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -155,6 +160,67 @@ class ParentRepositoryImpl @Inject constructor(
         try {
             val idToken = requireParentIdToken()
             apiService.getParentChildWeakPoints("Bearer $idToken", childId, page = page, size = size).toResult()
+        } catch (e: HttpException) {
+            Result.failure(Exception(ApiErrorMapper.userMessageForHttpException(e)))
+        } catch (e: IOException) {
+            Result.failure(Exception("연결을 확인한 뒤 다시 시도해주세요."))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+
+    override suspend fun getCustomQuests(
+        childId: String,
+        status: String,
+        page: Int?,
+        size: Int?
+    ): Result<ParentCustomQuestListResponseData> = parentApiCall {
+        apiService.getParentCustomQuests("Bearer $it", childId, status, page, size)
+    }
+
+    override suspend fun createCustomQuest(
+        childId: String,
+        body: CreateParentCustomQuestRequest
+    ) = parentApiCall {
+        apiService.createParentCustomQuest("Bearer $it", childId, body)
+    }
+
+    override suspend fun confirmCustomQuest(questId: String): Result<Unit> = parentApiCall {
+        apiService.confirmParentCustomQuest("Bearer $it", questId)
+    }.map { }
+
+    override suspend fun cancelCustomQuest(questId: String): Result<Unit> = parentApiCall {
+        apiService.cancelParentCustomQuest("Bearer $it", questId)
+    }.map { }
+
+    override suspend fun getStageRewards(childId: String): Result<ParentStageRewardsResponseData> =
+        parentApiCall { apiService.getParentStageRewards("Bearer $it", childId) }
+
+    override suspend fun saveStageReward(
+        childId: String,
+        stageNumber: Int,
+        rewardText: String,
+        hasExistingReward: Boolean
+    ): Result<Unit> = parentApiCall {
+        if (hasExistingReward) {
+            apiService.patchParentStageReward(
+                "Bearer $it",
+                childId,
+                stageNumber,
+                PatchParentStageRewardRequest(rewardText = rewardText)
+            )
+        } else {
+            apiService.createParentStageReward(
+                "Bearer $it",
+                childId,
+                CreateParentStageRewardRequest(stageNumber = stageNumber, rewardText = rewardText)
+            )
+        }
+    }.map { }
+
+    private suspend fun <T> parentApiCall(block: suspend (idToken: String) -> com.kduniv.aimong.core.network.ApiResponse<T>): Result<T> =
+        try {
+            val idToken = requireParentIdToken()
+            block(idToken).toResult()
         } catch (e: HttpException) {
             Result.failure(Exception(ApiErrorMapper.userMessageForHttpException(e)))
         } catch (e: IOException) {
