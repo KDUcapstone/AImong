@@ -1,8 +1,16 @@
 package com.kduniv.aimong.feature.home.presentation.quest
 
+import android.content.Context
+import com.kduniv.aimong.R
+import com.kduniv.aimong.feature.quest.data.model.ChildCustomQuestDto
 import com.kduniv.aimong.feature.quest.data.model.QuestApiItemDto
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 object QuestSheetMapper {
+
+    private val expiresDisplayFormatter = DateTimeFormatter.ofPattern("yyyy.MM.dd HH:mm")
 
     fun mapItem(
         dto: QuestApiItemDto,
@@ -43,7 +51,46 @@ object QuestSheetMapper {
             detailText = detailText,
             period = period,
             primaryAction = action.first,
-            actionEnabled = action.second
+            actionEnabled = action.second,
         )
+    }
+
+    fun mapCustomQuest(dto: ChildCustomQuestDto, context: Context): QuestSheetRow {
+        val detailText = buildString {
+            dto.description?.trim()?.takeIf { it.isNotEmpty() }?.let {
+                append(it)
+                append('\n')
+            }
+            append(context.getString(R.string.child_custom_quest_reward_fmt, dto.rewardText))
+            formatExpires(dto.expiresAt)?.let { label ->
+                append('\n')
+                append(context.getString(R.string.child_custom_quest_expires_fmt, label))
+            }
+        }
+        val (action, enabled) = when (dto.status.uppercase()) {
+            "ACTIVE" -> QuestSheetPrimaryAction.COMPLETE_CUSTOM to true
+            "PENDING_CONFIRM" -> QuestSheetPrimaryAction.AWAITING_CONFIRM to false
+            "COMPLETED", "AUTO_CONFIRMED" -> QuestSheetPrimaryAction.COMPLETED to false
+            else -> QuestSheetPrimaryAction.IN_PROGRESS to false
+        }
+        return QuestSheetRow(
+            questType = dto.questId,
+            title = dto.title,
+            detailText = detailText,
+            period = QuestSheetPeriod.PARENT,
+            primaryAction = action,
+            actionEnabled = enabled,
+            isCustomQuest = true,
+        )
+    }
+
+    private fun formatExpires(expiresAt: String?): String? {
+        val raw = expiresAt?.trim().orEmpty()
+        if (raw.isEmpty()) return null
+        return try {
+            Instant.parse(raw).atZone(ZoneId.systemDefault()).format(expiresDisplayFormatter)
+        } catch (_: Exception) {
+            null
+        }
     }
 }

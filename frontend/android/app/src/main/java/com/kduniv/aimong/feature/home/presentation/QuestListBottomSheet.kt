@@ -67,12 +67,16 @@ class QuestListBottomSheet : BottomSheetDialogFragment() {
         binding.tabQuestPeriod.addTab(
             binding.tabQuestPeriod.newTab().setText(getString(R.string.quest_tab_weekly))
         )
+        binding.tabQuestPeriod.addTab(
+            binding.tabQuestPeriod.newTab().setText(getString(R.string.quest_tab_parent))
+        )
 
         binding.tabQuestPeriod.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab?) {
                 when (tab?.position) {
                     0 -> viewModel.selectPeriod(QuestSheetPeriod.DAILY)
                     1 -> viewModel.selectPeriod(QuestSheetPeriod.WEEKLY)
+                    2 -> viewModel.selectPeriod(QuestSheetPeriod.PARENT)
                 }
             }
 
@@ -81,6 +85,7 @@ class QuestListBottomSheet : BottomSheetDialogFragment() {
                 when (tab?.position) {
                     0 -> viewModel.selectPeriod(QuestSheetPeriod.DAILY)
                     1 -> viewModel.selectPeriod(QuestSheetPeriod.WEEKLY)
+                    2 -> viewModel.selectPeriod(QuestSheetPeriod.PARENT)
                 }
             }
         })
@@ -113,6 +118,24 @@ class QuestListBottomSheet : BottomSheetDialogFragment() {
                     }
                 }
                 launch {
+                    combine(viewModel.emptyMessage, viewModel.loading, viewModel.loadError) { empty, loading, err ->
+                        Triple(empty, loading, err)
+                    }.collect { (empty, loading, err) ->
+                        val show = empty != null && !loading && err == null
+                        binding.tvQuestEmpty.isVisible = show
+                        binding.rvQuests.isVisible = !show
+                        if (show) binding.tvQuestEmpty.text = empty
+                    }
+                }
+                launch {
+                    viewModel.hasPendingCustomQuest.collect { pending ->
+                        binding.tabQuestPeriod.getTabAt(2)?.let { tab ->
+                            val badge = tab.orCreateBadge
+                            badge.isVisible = pending
+                        }
+                    }
+                }
+                launch {
                     viewModel.effects.collect { effect ->
                         when (effect) {
                             is QuestSheetEffect.ShowRewardCelebration ->
@@ -137,6 +160,8 @@ class QuestListBottomSheet : BottomSheetDialogFragment() {
 
     private fun onQuestRowClicked(row: QuestSheetRow) {
         when (row.primaryAction) {
+            QuestSheetPrimaryAction.COMPLETE_CUSTOM ->
+                viewModel.onCompleteCustomQuest(row.questType)
             QuestSheetPrimaryAction.CLAIM ->
                 viewModel.onClaim(row.questType, row.period, row.title)
             QuestSheetPrimaryAction.GO_LEARN -> {

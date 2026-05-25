@@ -48,9 +48,19 @@
         app:tabBackground="@android:color/transparent"
         app:tabGravity="fill"
         app:tabIndicatorColor="@color/child_nav_item_selected"
-        app:tabMode="fixed"
+        app:tabMode="scrollable"
         app:tabSelectedTextColor="@color/child_nav_item_selected"
         app:tabTextColor="@color/child_quest_sheet_text_secondary" />
+
+    <TextView
+        android:id="@+id/tv_quest_empty"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:paddingVertical="20dp"
+        android:textColor="@color/child_quest_sheet_text_secondary"
+        android:textSize="14sp"
+        android:visibility="gone" />
 
     <LinearLayout
         android:id="@+id/layout_quest_error"

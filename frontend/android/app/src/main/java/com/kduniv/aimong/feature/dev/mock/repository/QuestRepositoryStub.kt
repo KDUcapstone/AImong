@@ -3,6 +3,9 @@ package com.kduniv.aimong.feature.dev.mock.repository
 import com.kduniv.aimong.feature.quest.data.model.AchievementItemDto
 import com.kduniv.aimong.feature.quest.data.model.AchievementProgressDto
 import com.kduniv.aimong.feature.quest.data.model.AchievementsResponseData
+import com.kduniv.aimong.feature.quest.data.model.ChildCustomQuestCompleteResponseData
+import com.kduniv.aimong.feature.quest.data.model.ChildCustomQuestDto
+import com.kduniv.aimong.feature.quest.data.model.ChildCustomQuestListResponseData
 import com.kduniv.aimong.feature.quest.data.model.DailyQuestsResponseData
 import com.kduniv.aimong.feature.quest.data.model.QuestApiItemDto
 import com.kduniv.aimong.feature.quest.data.model.QuestApiProgressDto
@@ -13,7 +16,9 @@ import com.kduniv.aimong.feature.quest.data.model.WeeklyQuestsResponseData
 import com.kduniv.aimong.feature.quest.domain.QuestPolicy
 import com.kduniv.aimong.feature.quest.domain.repository.QuestRepository
 import java.time.DayOfWeek
+import java.time.Instant
 import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -22,6 +27,26 @@ import javax.inject.Singleton
  */
 @Singleton
 class QuestRepositoryStub @Inject constructor() : QuestRepository {
+
+    private val customQuests = mutableListOf(
+        ChildCustomQuestDto(
+            questId = "stub-custom-1",
+            title = "AI 없이 숙제 30분 하기",
+            description = "타이머를 켜고 혼자 해보기",
+            rewardText = "아이스크림 사줄게",
+            expiresAt = Instant.now().plus(2, ChronoUnit.DAYS).toString(),
+            status = "ACTIVE",
+        ),
+        ChildCustomQuestDto(
+            questId = "stub-custom-2",
+            title = "오늘 배운 AI 내용 설명하기",
+            description = null,
+            rewardText = "주말에 영화 보러 가자",
+            expiresAt = Instant.now().plus(1, ChronoUnit.DAYS).toString(),
+            status = "PENDING_CONFIRM",
+            completedAt = Instant.now().minus(1, ChronoUnit.HOURS).toString(),
+        ),
+    )
 
     override suspend fun getDailyQuests(): Result<DailyQuestsResponseData> {
         val today = LocalDate.now().toString()
@@ -112,6 +137,41 @@ class QuestRepositoryStub @Inject constructor() : QuestRepository {
                     ),
                 ),
                 remainingTickets = QuestRemainingTicketsDto(normal = 3),
+            ),
+        )
+    }
+
+    override suspend fun getChildCustomQuests(): Result<ChildCustomQuestListResponseData> {
+        val pending = customQuests.any { it.status == "PENDING_CONFIRM" }
+        return Result.success(
+            ChildCustomQuestListResponseData(
+                quests = customQuests.toList(),
+                hasPendingConfirm = pending,
+            ),
+        )
+    }
+
+    override suspend fun completeChildCustomQuest(
+        questId: String
+    ): Result<ChildCustomQuestCompleteResponseData> {
+        val index = customQuests.indexOfFirst { it.questId == questId }
+        if (index < 0) {
+            return Result.failure(Exception("퀘스트를 찾을 수 없습니다."))
+        }
+        val quest = customQuests[index]
+        if (quest.status != "ACTIVE") {
+            return Result.failure(Exception("이미 완료 요청했거나 종료된 퀘스트예요."))
+        }
+        val completedAt = Instant.now().toString()
+        customQuests[index] = quest.copy(
+            status = "PENDING_CONFIRM",
+            completedAt = completedAt,
+        )
+        return Result.success(
+            ChildCustomQuestCompleteResponseData(
+                questId = questId,
+                status = "PENDING_CONFIRM",
+                completedAt = completedAt,
             ),
         )
     }

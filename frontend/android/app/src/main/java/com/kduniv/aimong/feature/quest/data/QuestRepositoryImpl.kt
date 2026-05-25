@@ -3,6 +3,8 @@ package com.kduniv.aimong.feature.quest.data
 import com.kduniv.aimong.core.network.AimongApiService
 import com.kduniv.aimong.core.network.ApiErrorMapper
 import com.kduniv.aimong.core.network.toResult
+import com.kduniv.aimong.feature.quest.data.model.ChildCustomQuestCompleteResponseData
+import com.kduniv.aimong.feature.quest.data.model.ChildCustomQuestListResponseData
 import com.kduniv.aimong.feature.quest.data.model.DailyQuestsResponseData
 import com.kduniv.aimong.feature.quest.data.model.QuestClaimRequest
 import com.kduniv.aimong.feature.quest.data.model.QuestClaimResponseData
@@ -49,6 +51,28 @@ class QuestRepositoryImpl @Inject constructor(
 
     override suspend fun getAchievements(): Result<AchievementsResponseData> = try {
         apiService.getAchievements().toResult()
+    } catch (e: HttpException) {
+        Result.failure(Exception(ApiErrorMapper.userMessageForHttpException(e)))
+    } catch (e: IOException) {
+        Result.failure(Exception("연결을 확인한 뒤 다시 시도해주세요."))
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    override suspend fun getChildCustomQuests(): Result<ChildCustomQuestListResponseData> = try {
+        apiService.getChildCustomQuests().toResult()
+    } catch (e: HttpException) {
+        Result.failure(Exception(ApiErrorMapper.userMessageForHttpException(e)))
+    } catch (e: IOException) {
+        Result.failure(Exception("연결을 확인한 뒤 다시 시도해주세요."))
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    override suspend fun completeChildCustomQuest(
+        questId: String
+    ): Result<ChildCustomQuestCompleteResponseData> = try {
+        apiService.completeChildCustomQuest(questId).toResult()
     } catch (e: HttpException) {
         Result.failure(Exception(ApiErrorMapper.userMessageForHttpException(e)))
     } catch (e: IOException) {

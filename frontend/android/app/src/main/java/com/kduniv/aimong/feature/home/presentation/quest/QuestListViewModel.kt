@@ -44,6 +44,12 @@ class QuestListViewModel @Inject constructor(
     private val _selectedPeriod = MutableStateFlow(QuestSheetPeriod.DAILY)
     val selectedPeriod: StateFlow<QuestSheetPeriod> = _selectedPeriod.asStateFlow()
 
+    private val _emptyMessage = MutableStateFlow<String?>(null)
+    val emptyMessage: StateFlow<String?> = _emptyMessage.asStateFlow()
+
+    private val _hasPendingCustomQuest = MutableStateFlow(false)
+    val hasPendingCustomQuest: StateFlow<Boolean> = _hasPendingCustomQuest.asStateFlow()
+
     private val _effects = Channel<QuestSheetEffect>(capacity = Channel.BUFFERED)
     val effects = _effects.receiveAsFlow()
 
@@ -62,6 +68,7 @@ class QuestListViewModel @Inject constructor(
         when (period) {
             QuestSheetPeriod.DAILY -> loadDaily()
             QuestSheetPeriod.WEEKLY -> loadWeekly()
+            QuestSheetPeriod.PARENT -> loadParentCustom()
         }
     }
 
@@ -69,6 +76,7 @@ class QuestListViewModel @Inject constructor(
         when (_selectedPeriod.value) {
             QuestSheetPeriod.DAILY -> loadDaily()
             QuestSheetPeriod.WEEKLY -> loadWeekly()
+            QuestSheetPeriod.PARENT -> loadParentCustom()
         }
     }
 
@@ -81,6 +89,7 @@ class QuestListViewModel @Inject constructor(
                     _rows.value = data.quests.map {
                         QuestSheetMapper.mapItem(it, QuestSheetPeriod.DAILY, canStartMission)
                     }
+                    _emptyMessage.value = null
                     _loadError.value = null
                 },
                 onFailure = { e ->
@@ -102,6 +111,7 @@ class QuestListViewModel @Inject constructor(
                     _rows.value = data.quests.map {
                         QuestSheetMapper.mapItem(it, QuestSheetPeriod.WEEKLY, canStartMission)
                     }
+                    _emptyMessage.value = null
                     _loadError.value = null
                 },
                 onFailure = { e ->
@@ -126,6 +136,7 @@ class QuestListViewModel @Inject constructor(
         val periodStr = when (period) {
             QuestSheetPeriod.DAILY -> "daily"
             QuestSheetPeriod.WEEKLY -> "weekly"
+            QuestSheetPeriod.PARENT -> return
         }
         viewModelScope.launch {
             _loading.value = true
@@ -145,12 +156,60 @@ class QuestListViewModel @Inject constructor(
                     when (period) {
                         QuestSheetPeriod.DAILY -> loadDaily()
                         QuestSheetPeriod.WEEKLY -> loadWeekly()
+                        QuestSheetPeriod.PARENT -> Unit
                     }
                 },
                 onFailure = { e ->
                     _loading.value = false
                     _effects.trySend(QuestSheetEffect.Snackbar(e.message ?: "수령에 실패했습니다."))
                 }
+            )
+        }
+    }
+
+    fun loadParentCustom() {
+        viewModelScope.launch {
+            _loading.value = true
+            _loadError.value = null
+            _emptyMessage.value = null
+            questRepository.getChildCustomQuests().fold(
+                onSuccess = { data ->
+                    _hasPendingCustomQuest.value = data.hasPendingConfirm
+                    _rows.value = data.quests.map {
+                        QuestSheetMapper.mapCustomQuest(it, appContext)
+                    }
+                    if (data.quests.isEmpty()) {
+                        _emptyMessage.value = appContext.getString(R.string.child_custom_quest_empty)
+                    }
+                    _loadError.value = null
+                },
+                onFailure = { e ->
+                    _rows.value = emptyList()
+                    _hasPendingCustomQuest.value = false
+                    _loadError.value = e.message?.takeIf { it.isNotBlank() }
+                        ?: appContext.getString(R.string.quest_load_failed)
+                },
+            )
+            _loading.value = false
+        }
+    }
+
+    fun onCompleteCustomQuest(questId: String) {
+        viewModelScope.launch {
+            _loading.value = true
+            questRepository.completeChildCustomQuest(questId).fold(
+                onSuccess = {
+                    _effects.trySend(
+                        QuestSheetEffect.Snackbar(
+                            appContext.getString(R.string.child_custom_quest_complete_success),
+                        ),
+                    )
+                    loadParentCustom()
+                },
+                onFailure = { e ->
+                    _loading.value = false
+                    _effects.trySend(QuestSheetEffect.Snackbar(e.message ?: "완료 요청에 실패했습니다."))
+                },
             )
         }
     }

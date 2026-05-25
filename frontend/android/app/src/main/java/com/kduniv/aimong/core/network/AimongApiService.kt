@@ -53,6 +53,8 @@ import com.kduniv.aimong.feature.quest.data.model.QuestClaimRequest
 import com.kduniv.aimong.feature.quest.data.model.QuestClaimResponseData
 import com.kduniv.aimong.feature.quest.data.model.WeeklyQuestsResponseData
 import com.kduniv.aimong.feature.quest.data.model.AchievementsResponseData
+import com.kduniv.aimong.feature.quest.data.model.ChildCustomQuestCompleteResponseData
+import com.kduniv.aimong.feature.quest.data.model.ChildCustomQuestListResponseData
 import com.kduniv.aimong.feature.quiz.data.model.MissionSetSubmitRequest
 import com.kduniv.aimong.feature.quiz.data.model.MissionSetReportResponseData
 import com.kduniv.aimong.feature.quiz.data.model.QuizSubmitResponse
@@ -242,6 +244,14 @@ interface AimongApiService {
     suspend fun claimQuest(
         @Body body: QuestClaimRequest
     ): ApiResponse<QuestClaimResponseData>
+
+    @GET("child/custom-quests")
+    suspend fun getChildCustomQuests(): ApiResponse<ChildCustomQuestListResponseData>
+
+    @POST("child/custom-quests/{questId}/complete")
+    suspend fun completeChildCustomQuest(
+        @Path("questId") questId: String
+    ): ApiResponse<ChildCustomQuestCompleteResponseData>
 
     // ACHIEVEMENTS (CHILD)
     @GET("achievements")

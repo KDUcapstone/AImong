@@ -51,16 +51,16 @@
                 android:textSize="18sp"
                 android:textStyle="bold" />
 
-            <TextView
+            <ImageButton
                 android:id="@+id/btn_settings"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/parent_settings"
                 android:padding="8dp"
-                android:text="@string/parent_settings"
-                android:textColor="@color/parent_mock_logout"
-                android:textSize="14sp"
-                android:textStyle="bold" />
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_parent_settings"
+                app:tint="@color/parent_mock_text_secondary" />
         </LinearLayout>
 
         <ScrollView

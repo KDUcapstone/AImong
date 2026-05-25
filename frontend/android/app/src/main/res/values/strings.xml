@@ -210,6 +210,14 @@
     <string name="quest_sheet_title">퀘스트</string>
     <string name="quest_tab_daily">데일리</string>
     <string name="quest_tab_weekly">위클리</string>
+    <string name="quest_tab_parent">부모님</string>
+    <string name="child_custom_quest_reward_fmt">약속: %1$s</string>
+    <string name="child_custom_quest_expires_fmt">%1$s까지</string>
+    <string name="child_custom_quest_empty">부모님이 만든 퀘스트가 없어요.</string>
+    <string name="child_custom_quest_action_complete">완료했어요</string>
+    <string name="child_custom_quest_action_pending">승인 대기</string>
+    <string name="child_custom_quest_complete_success">부모님께 완료 알림을 보냈어요!</string>
+    <string name="child_custom_quest_status_done">완료됨</string>
     <string name="quest_action_completed">완료</string>
     <string name="quest_action_claim">수령</string>
     <string name="quest_action_go_learn">학습하기</string>

@@ -135,6 +135,8 @@ object ApiErrorMapper {
             "QUEST_NOT_FOUND" -> "퀘스트를 찾을 수 없습니다."
             "QUEST_NOT_PENDING" -> "확인 대기 중인 퀘스트가 아닙니다."
             "QUEST_NOT_CANCELLABLE" -> "이미 완료 요청됐거나 종료된 퀘스트예요."
+            "QUEST_EXPIRED" -> "기간이 지난 퀘스트예요."
+            "QUEST_NOT_ACTIVE" -> "이미 완료 요청했거나 종료된 퀘스트예요."
             "ALREADY_TRIGGERED" -> "이미 지급된 보상은 수정할 수 없습니다."
             else -> null
         }
