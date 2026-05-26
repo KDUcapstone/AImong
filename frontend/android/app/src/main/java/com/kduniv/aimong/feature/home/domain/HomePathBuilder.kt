@@ -6,6 +6,7 @@ import com.kduniv.aimong.feature.home.data.model.HomeScreenData
 import com.kduniv.aimong.feature.home.presentation.DifficultyUnlockMode
 import com.kduniv.aimong.feature.home.presentation.HomePathItem
 import com.kduniv.aimong.feature.home.presentation.HomeQuizNavigation
+import com.kduniv.aimong.feature.home.presentation.StageRewardUi
 import com.kduniv.aimong.feature.mission.domain.model.Mission
 import com.kduniv.aimong.feature.mission.domain.model.hasActiveStar1
 import com.kduniv.aimong.feature.mission.domain.model.isStar1Completed
@@ -37,7 +38,11 @@ object HomePathBuilder {
         IslandMeta(R.drawable.ic_nav_study_color, "마스터의 별섬", R.drawable.bg_home_section_banner_stage3),
     )
 
-    fun build(data: HomeScreenData, missions: List<Mission>): List<HomePathItem> {
+    fun build(
+        data: HomeScreenData,
+        missions: List<Mission>,
+        stageRewards: Map<Int, StageRewardUi> = emptyMap(),
+    ): List<HomePathItem> {
         val rec = data.missionSummary.recommendedMission
         val summary = data.missionSummary
         val canStart = summary.canStartMission
@@ -152,7 +157,14 @@ object HomePathBuilder {
             }
 
             if (stage < 3) {
-                items.add(HomePathItem.InterStageDivider)
+                val reward = stageRewards[stage]
+                    ?: StageRewardUi.defaultsForStages(listOf(stage)).getValue(stage)
+                items.add(
+                    HomePathItem.InterStageRewardChest(
+                        afterStageNumber = stage,
+                        reward = reward,
+                    ),
+                )
             }
         }
 

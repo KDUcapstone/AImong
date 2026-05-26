@@ -6,7 +6,7 @@ fun List<HomePathItem>.pathStructureKey(): String =
 
 private fun HomePathItem.pathStructureToken(): String = when (this) {
     is HomePathItem.SectionHeader -> "H:$stage"
-    HomePathItem.InterStageDivider -> "D"
+    is HomePathItem.InterStageRewardChest -> "Chest:${afterStageNumber}"
     is HomePathItem.Completed -> "C:$missionId:${quizNav.entrySetId}"
     is HomePathItem.TodayStart -> "T:${quizNav.missionId}:${quizNav.entrySetId}:$enabled"
     is HomePathItem.Start -> "S:${quizNav.missionId}:$enabled"

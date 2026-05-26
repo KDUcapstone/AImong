@@ -217,6 +217,14 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    private suspend fun resolveStageRewardsForPath(): Map<Int, StageRewardUi> {
+        val fromApi = homeRepository.getStageRewards().getOrNull()?.stages
+            ?.map { StageRewardUi.fromDto(it) }
+            ?.associateBy { it.stageNumber }
+        if (!fromApi.isNullOrEmpty()) return fromApi
+        return StageRewardUi.defaultsForStages(listOf(1, 2))
+    }
+
     private fun loadHome(showLoading: Boolean = true) {
         homeLoadJob?.cancel()
         homeLoadJob = viewModelScope.launch {
@@ -243,7 +251,8 @@ class HomeViewModel @Inject constructor(
                     val missions = MissionPathDevHelper.applyPathUnlockGuarantees(
                         supplementMissionsStarLevels(rawMissions)
                     )
-                    val path = HomePathBuilder.build(data, missions)
+                    val stageRewards = resolveStageRewardsForPath()
+                    val path = HomePathBuilder.build(data, missions, stageRewards)
                     val missionsRefreshNotice = if (missionsRefresh.isFailure && rawMissions.isNotEmpty()) {
                         val refreshError = missionsRefresh.exceptionOrNull()
                         if (refreshError is CancellationException) {

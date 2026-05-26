@@ -125,6 +125,9 @@ class MockHomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::
                 ).show()
             },
             onShowMissionHint = { Snackbar.make(binding.root, it, Snackbar.LENGTH_SHORT).show() },
+            onStageRewardChestClick = { reward ->
+                com.kduniv.aimong.feature.home.presentation.StageRewardDialog.show(this, reward)
+            },
         )
         binding.layoutChipEnergy.setOnClickListener {
             EnergyBottomSheet.newInstance().show(childFragmentManager, "energy_sheet")

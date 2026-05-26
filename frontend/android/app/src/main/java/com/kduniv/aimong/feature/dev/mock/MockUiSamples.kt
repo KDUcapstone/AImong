@@ -5,6 +5,7 @@ import com.kduniv.aimong.feature.home.presentation.HomePathItem
 import com.kduniv.aimong.feature.home.presentation.HomeQuizNavigation
 import com.kduniv.aimong.feature.gacha.GachaPetCatalog
 import com.kduniv.aimong.feature.home.presentation.HomeUiState
+import com.kduniv.aimong.feature.home.presentation.StageRewardUi
 import com.kduniv.aimong.feature.home.presentation.WalletBalanceDefaults
 import com.kduniv.aimong.feature.home.presentation.QuestItemUiState
 import com.kduniv.aimong.feature.pet.domain.PetGrowthRules
@@ -165,7 +166,18 @@ object MockUiSamples {
                         starsFilled = 0,
                     )
                 )
-                add(HomePathItem.InterStageDivider)
+                add(
+                    HomePathItem.InterStageRewardChest(
+                        afterStageNumber = 1,
+                        reward = StageRewardUi(
+                            stageNumber = 1,
+                            stageThemeTitle = "AI 잘 쓰기",
+                            parentPromise = "주말에 놀이공원 가기",
+                            defaultGear = 50,
+                            normalTickets = 0,
+                        ),
+                    ),
+                )
                 add(
                     HomePathItem.SectionHeader(
                         stage = 3,

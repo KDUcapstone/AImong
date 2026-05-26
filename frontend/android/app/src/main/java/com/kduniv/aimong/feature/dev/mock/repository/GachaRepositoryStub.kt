@@ -35,13 +35,14 @@ class GachaRepositoryStub @Inject constructor() : GachaRepository {
     override suspend fun getFragments(): Result<GachaFragmentsData> {
         return Result.success(
             GachaFragmentsData(
+                totalCount = 13,
                 fragments = listOf(
-                    FragmentGradeRow("NORMAL", count = 7, exchangeThreshold = 10),
-                    FragmentGradeRow("RARE", count = 12, exchangeThreshold = 30),
+                    FragmentGradeRow("NORMAL", count = 0, exchangeThreshold = 10),
+                    FragmentGradeRow("RARE", count = 0, exchangeThreshold = 30),
                     FragmentGradeRow("EPIC", count = 0, exchangeThreshold = 80),
                     FragmentGradeRow("LEGEND", count = 0, exchangeThreshold = 200),
-                )
-            )
+                ),
+            ),
         )
     }
 

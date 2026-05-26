@@ -100,6 +100,7 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
             onNavigateToQuiz = { nav, unlockMode -> navigateToQuizAfterValidation(nav, unlockMode) },
             onEnergyInsufficient = { showEnergyInsufficientSnackbar() },
             onShowMissionHint = { showMissionHint(it) },
+            onStageRewardChestClick = { reward -> StageRewardDialog.show(this, reward) },
         )
         binding.layoutChipEnergy.setOnClickListener {
             EnergyBottomSheet.newInstance().show(childFragmentManager, "energy_sheet")

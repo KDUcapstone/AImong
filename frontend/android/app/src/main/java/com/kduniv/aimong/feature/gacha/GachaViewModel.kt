@@ -8,7 +8,6 @@ import com.kduniv.aimong.core.dev.UiMode
 import com.kduniv.aimong.feature.dev.mock.StubPetGachaStore
 import com.kduniv.aimong.feature.gacha.data.GachaPullCountStore
 import com.kduniv.aimong.feature.gacha.data.GachaRepository
-import com.kduniv.aimong.feature.gacha.data.model.FragmentGradeRow
 import com.kduniv.aimong.feature.gacha.data.model.GachaPullData
 import com.kduniv.aimong.feature.gacha.data.model.RemainingTicketsDto
 import com.kduniv.aimong.feature.home.data.PetRepository
@@ -43,7 +42,7 @@ class GachaViewModel @Inject constructor(
         val loading: Boolean = false,
         val pets: PetListData? = null,
         val petCards: List<GachaPetCardUi> = emptyList(),
-        val fragmentRows: List<FragmentGradeRow> = emptyList(),
+        val fragmentBalance: GachaFragmentBalance = GachaFragmentBalance.from(null),
         val ownedCatalogCount: Int = 0,
         val pullReveal: GachaPullRevealUi? = null,
         val tickets: RemainingTicketsDto? = null,
@@ -132,7 +131,7 @@ class GachaViewModel @Inject constructor(
             val petData = withContext(Dispatchers.IO) { petRepository.getPets().getOrNull() }
                 ?: return@launch
             _state.update { s ->
-                val lists = buildPetLists(petData, s.fragmentRows)
+                val lists = buildPetLists(petData, s.fragmentBalance)
                 s.copy(
                     pets = petData,
                     petCards = lists.encyclopedia,
@@ -151,7 +150,7 @@ class GachaViewModel @Inject constructor(
                     card.copy(isEquipped = card.pet?.id == equippedId)
                 }
             } else {
-                buildPetLists(petData, s.fragmentRows).encyclopedia
+                buildPetLists(petData, s.fragmentBalance).encyclopedia
             }
             s.copy(
                 pets = petData,
@@ -170,18 +169,18 @@ class GachaViewModel @Inject constructor(
             val fragData = gachaRepository.getFragments().onFailure {
                 if (err == null) err = it.message
             }.getOrNull()
-            val rows = fragData?.fragments.orEmpty()
+            val balance = GachaFragmentBalance.from(fragData)
             val tickets = loadTickets().onFailure {
                 if (err == null) err = it.message
             }.getOrNull()
             val pullCount = gachaPullCountStore.getPullCount()
             _state.update {
-                val lists = buildPetLists(petData, rows)
+                val lists = buildPetLists(petData, balance)
                 it.copy(
                     loading = false,
                     pets = petData,
                     petCards = lists.encyclopedia,
-                    fragmentRows = rows,
+                    fragmentBalance = balance,
                     ownedCatalogCount = lists.ownedCount,
                     tickets = tickets ?: it.tickets,
                     gachaPullCount = pullCount,
@@ -237,14 +236,14 @@ class GachaViewModel @Inject constructor(
                     val fragData = gachaRepository.getFragments().onFailure { e ->
                         if (err == null) err = e.message
                     }.getOrNull()
-                    val rows = fragData?.fragments.orEmpty()
+                    val balance = GachaFragmentBalance.from(fragData)
                     _state.update { s ->
-                        val lists = buildPetLists(petData, rows)
+                        val lists = buildPetLists(petData, balance)
                         s.copy(
                             loading = false,
                             pets = petData,
                             petCards = lists.encyclopedia,
-                            fragmentRows = rows,
+                            fragmentBalance = balance,
                             ownedCatalogCount = lists.ownedCount,
                             transientMessage = err ?: appContext.getString(R.string.gacha_exchange_done)
                         )
@@ -268,14 +267,14 @@ class GachaViewModel @Inject constructor(
         val fragData = gachaRepository.getFragments().onFailure {
             if (err == null) err = it.message
         }.getOrNull()
-        val rows = fragData?.fragments.orEmpty()
+        val balance = GachaFragmentBalance.from(fragData)
         _state.update {
-            val lists = buildPetLists(petData, rows)
+            val lists = buildPetLists(petData, balance)
             it.copy(
                 loading = false,
                 pets = petData,
                 petCards = lists.encyclopedia,
-                fragmentRows = rows,
+                fragmentBalance = balance,
                 ownedCatalogCount = lists.ownedCount,
                 pullReveal = buildPullReveal(data),
                 tickets = data.remainingTickets,
@@ -318,9 +317,9 @@ class GachaViewModel @Inject constructor(
         val ownedCount: Int,
     )
 
-    private fun buildPetLists(pets: PetListData?, rows: List<FragmentGradeRow>): PetLists =
+    private fun buildPetLists(pets: PetListData?, balance: GachaFragmentBalance): PetLists =
         PetLists(
-            encyclopedia = buildEncyclopediaCards(pets, rows),
+            encyclopedia = buildEncyclopediaCards(pets, balance),
             ownedCount = countOwnedInCatalog(pets),
         )
 
@@ -335,7 +334,7 @@ class GachaViewModel @Inject constructor(
 
     private fun buildEncyclopediaCards(
         pets: PetListData?,
-        rows: List<FragmentGradeRow>
+        balance: GachaFragmentBalance,
     ): List<GachaPetCardUi> {
         val equippedId = pets?.equippedPet?.id
         val ownedByType = buildMap {
@@ -346,9 +345,9 @@ class GachaViewModel @Inject constructor(
             val owned = ownedByType[entry.petType]
             val isLocked = owned == null
             val (count, threshold) = if (owned != null) {
-                GachaUiMapper.fragmentProgress(owned, rows)
+                GachaUiMapper.fragmentProgress(owned, balance)
             } else {
-                GachaUiMapper.fragmentProgressForGrade(entry.grade, rows)
+                GachaUiMapper.fragmentProgressForGrade(entry.grade, balance)
             }
             GachaPetCardUi(
                 catalogPetType = entry.petType,

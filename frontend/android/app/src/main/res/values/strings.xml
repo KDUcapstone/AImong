@@ -52,6 +52,18 @@
     <string name="aimong_celebration_message">왕관이 영구 해금됐어요. 도감에서도 확인할 수 있어요!</string>
     <string name="aimong_celebration_confirm">확인</string>
     <string name="home_island_progress_fmt">%1$d / %2$d 완료</string>
+    <string name="home_stage_reward_chest_cd">단계 보상 보물상자</string>
+    <string name="home_stage_reward_chest_label">단계 보상</string>
+    <string name="home_stage_reward_dialog_title">%1$d단계 보상</string>
+    <string name="home_stage_reward_parent_label">부모님 약속</string>
+    <string name="home_stage_reward_default_heading">기본 보상 (단계 클리어 시)</string>
+    <string name="home_stage_reward_gear_fmt">+%1$d</string>
+    <string name="home_stage_reward_gear_label">톱니바퀴</string>
+    <string name="home_stage_reward_gear_default">기본</string>
+    <string name="home_stage_reward_ticket_fmt">+%1$d</string>
+    <string name="home_stage_reward_ticket_label">뽑기 티켓</string>
+    <string name="home_stage_reward_close">확인</string>
+    <string name="home_stage_reward_toast_fallback">%1$d단계 보상을 확인해 주세요.</string>
     <string name="home_chip_streak_fmt">%d일</string>
     <string name="home_today_mission_locked_hint">지금은 이 미션을 시작할 수 없어요.</string>
 
@@ -308,7 +320,7 @@
     <string name="gacha_exchange_button">교환하기</string>
     <string name="gacha_exchange_done">교환으로 새 펫을 받았어요.</string>
     <string name="gacha_fragment_exchange_label">조각 모으기</string>
-    <string name="gacha_exchange_manual_hint">조각이 충분해도 자동으로 획득되지 않아요. 아래 「교환하기」를 눌러야 펫을 받을 수 있어요.</string>
+    <string name="gacha_exchange_manual_hint">보유 조각은 모든 펫이 공유해요. 충분해도 자동 획득되지 않으니 「교환하기」를 눌러 주세요.</string>
     <string name="gacha_exchange_need_more_fmt">조각이 %1$d개 더 필요해요 (%2$d / %3$d)</string>
     <string name="gacha_close">닫기</string>
     <string name="gacha_pull_reveal_title_new">새로운 친구를 만났어요!</string>

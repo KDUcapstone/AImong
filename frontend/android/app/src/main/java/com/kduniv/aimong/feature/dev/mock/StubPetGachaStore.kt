@@ -83,11 +83,14 @@ object StubPetGachaStore {
         ),
     )
 
-    private val fragmentRows = mutableListOf(
-        FragmentGradeRow("NORMAL", 7, 10),
-        FragmentGradeRow("RARE", 12, 30),
+    /** 등급·펫 무관 공통 조각 풀 */
+    private var totalFragmentCount = 13
+
+    private val exchangeThresholdRows = listOf(
+        FragmentGradeRow("NORMAL", 0, 10),
+        FragmentGradeRow("RARE", 0, 30),
         FragmentGradeRow("EPIC", 0, 80),
-        FragmentGradeRow("LEGEND", 0, 200)
+        FragmentGradeRow("LEGEND", 0, 200),
     )
 
     fun currentTickets(): RemainingTicketsDto = synchronized(lock) {
@@ -128,7 +131,10 @@ object StubPetGachaStore {
     }
 
     fun getFragments(): GachaFragmentsData = synchronized(lock) {
-        GachaFragmentsData(fragmentRows.map { it.copy() })
+        GachaFragmentsData(
+            totalCount = totalFragmentCount,
+            fragments = exchangeThresholdRows.map { it.copy() },
+        )
     }
 
     /** v2.2: NORMAL 티켓만 사용 */
@@ -160,11 +166,7 @@ object StubPetGachaStore {
                 )
             }
         } else {
-            val row = fragmentRows.find { it.grade == "NORMAL" }
-            if (row != null) {
-                val idx = fragmentRows.indexOf(row)
-                fragmentRows[idx] = row.copy(count = row.count + 1)
-            }
+            totalFragmentCount += resultFragmentsForGrade(grade)
         }
 
         val missBefore = srMissCount
@@ -186,13 +188,14 @@ object StubPetGachaStore {
             normalTickets += 2
         }
 
+        val fragmentsGot = if (isNew) 0 else resultFragmentsForGrade(grade)
         val result = GachaPullResultDto(
             petId = petId,
             petType = petType,
             petName = petName,
             grade = grade,
             isNew = isNew,
-            fragmentsGot = if (isNew) 0 else 1
+            fragmentsGot = fragmentsGot,
         )
         Result.success(
             GachaPullData(
@@ -205,17 +208,29 @@ object StubPetGachaStore {
         )
     }
 
+    private fun resultFragmentsForGrade(grade: String): Int = when (grade.uppercase()) {
+        "RARE" -> 3
+        "EPIC" -> 8
+        "LEGEND", "LEGENDARY" -> 20
+        else -> 1
+    }
+
+    private fun exchangeThresholdFor(grade: String): Int = when (grade.uppercase()) {
+        "RARE" -> 30
+        "EPIC" -> 80
+        "LEGEND", "LEGENDARY" -> 200
+        else -> 10
+    }
+
     fun exchange(grade: String, petType: String): Result<GachaExchangeData> = synchronized(lock) {
         if (ownedPets.any { it.petType == petType }) {
             return Result.failure(Exception("이미 보유한 펫이에요"))
         }
-        val row = fragmentRows.find { it.grade == grade }
-            ?: return Result.failure(Exception("조각이 부족해요!"))
-        if (row.count < row.exchangeThreshold) {
+        val threshold = exchangeThresholdFor(grade)
+        if (totalFragmentCount < threshold) {
             return Result.failure(Exception("조각이 부족해요!"))
         }
-        val idx = fragmentRows.indexOf(row)
-        fragmentRows[idx] = row.copy(count = row.count - row.exchangeThreshold)
+        totalFragmentCount -= threshold
 
         val newId = "stub-ex-${petType.hashCode()}"
         ownedPets.add(

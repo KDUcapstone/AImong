@@ -32,8 +32,11 @@ sealed class HomePathItem {
         val starsFilled: Int = 0,
     ) : HomePathItem()
 
-    /** 스테이지 블록 사이 가로 구분선 1줄 */
-    object InterStageDivider : HomePathItem()
+    /** 스테이지 블록 사이 — 단계별 보상 보물상자 */
+    data class InterStageRewardChest(
+        val afterStageNumber: Int,
+        val reward: StageRewardUi,
+    ) : HomePathItem()
 
     data class TodayStart(
         val quizNav: HomeQuizNavigation,

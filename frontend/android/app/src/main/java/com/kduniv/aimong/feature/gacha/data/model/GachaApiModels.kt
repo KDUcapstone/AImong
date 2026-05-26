@@ -40,7 +40,9 @@ data class FragmentGradeRow(
 )
 
 data class GachaFragmentsData(
-    @SerializedName("fragments") val fragments: List<FragmentGradeRow>
+    /** 등급·펫 공통 조각 보유량 (v2.3+) */
+    @SerializedName("totalCount") val totalCount: Int? = null,
+    @SerializedName("fragments") val fragments: List<FragmentGradeRow> = emptyList(),
 )
 
 data class GachaExchangeRequest(

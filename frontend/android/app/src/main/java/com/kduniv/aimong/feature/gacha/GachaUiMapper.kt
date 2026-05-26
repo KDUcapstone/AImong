@@ -3,7 +3,6 @@ package com.kduniv.aimong.feature.gacha
 import android.content.Context
 import androidx.annotation.ColorInt
 import com.kduniv.aimong.R
-import com.kduniv.aimong.feature.gacha.data.model.FragmentGradeRow
 import com.kduniv.aimong.feature.pet.data.model.PetDto
 import com.kduniv.aimong.feature.pet.domain.PetGrowthRules
 
@@ -59,29 +58,9 @@ object GachaUiMapper {
         else -> R.color.gacha_rarity_normal
     }
 
-    fun fragmentProgress(
-        pet: PetDto,
-        rows: List<FragmentGradeRow>
-    ): Pair<Int, Int> {
-        val row = rows.firstOrNull { it.grade.equals(pet.grade, ignoreCase = true) }
-            ?: return 0 to defaultThreshold(pet.grade)
-        val threshold = row.exchangeThreshold.coerceAtLeast(1)
-        return row.count.coerceAtLeast(0) to threshold
-    }
+    fun fragmentProgress(pet: PetDto, balance: GachaFragmentBalance): Pair<Int, Int> =
+        balance.progressForExchange(pet.grade)
 
-    fun fragmentProgressForGrade(
-        grade: String,
-        rows: List<FragmentGradeRow>
-    ): Pair<Int, Int> {
-        val row = rows.firstOrNull { it.grade.equals(grade, ignoreCase = true) }
-        val threshold = row?.exchangeThreshold?.coerceAtLeast(1) ?: defaultThreshold(grade)
-        return 0 to threshold
-    }
-
-    private fun defaultThreshold(grade: String): Int = when (grade.uppercase()) {
-        "RARE" -> 30
-        "EPIC" -> 80
-        "LEGEND", "LEGENDARY" -> 200
-        else -> 10
-    }
+    fun fragmentProgressForGrade(grade: String, balance: GachaFragmentBalance): Pair<Int, Int> =
+        balance.progressForExchange(grade)
 }

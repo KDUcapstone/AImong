@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_child_quest_sheet"
+    android:clipChildren="false"
+    android:clipToPadding="false"
+    android:orientation="vertical"
+    android:padding="22dp">
+
+    <ImageView
+        android:id="@+id/iv_stage_reward_chest"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:layout_gravity="center_horizontal"
+        android:background="@drawable/bg_home_stage_chest_chip"
+        android:contentDescription="@null"
+        android:padding="10dp"
+        android:src="@drawable/ic_home_treasure_chest" />
+
+    <TextView
+        android:id="@+id/tv_stage_reward_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:gravity="center"
+        android:textColor="@color/child_quest_sheet_text_primary"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        tools:text="1단계 보상" />
+
+    <TextView
+        android:id="@+id/tv_stage_reward_theme"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:gravity="center"
+        android:textColor="@color/child_quest_sheet_text_secondary"
+        android:textSize="14sp"
+        tools:text="AI가 뭐예요?" />
+
+    <LinearLayout
+        android:id="@+id/card_parent_promise"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:background="@drawable/bg_home_stage_promise_card"
+        android:orientation="vertical"
+        android:paddingHorizontal="14dp"
+        android:paddingVertical="12dp"
+        android:visibility="gone"
+        tools:visibility="visible">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/home_stage_reward_parent_label"
+            android:textColor="@color/quiz_hint_gold"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tv_parent_promise"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:textColor="@color/child_quest_sheet_text_primary"
+            android:textSize="15sp"
+            tools:text="아이스크림 사주기" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/tv_default_rewards_heading"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:text="@string/home_stage_reward_default_heading"
+        android:textColor="@color/child_quest_sheet_text_secondary"
+        android:textSize="13sp" />
+
+    <LinearLayout
+        android:id="@+id/card_stage_rewards"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:background="@drawable/bg_child_quest_row"
+        android:orientation="vertical"
+        android:paddingHorizontal="12dp"
+        android:paddingVertical="4dp">
+
+        <LinearLayout
+            android:id="@+id/ll_stage_default_rewards"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+    </LinearLayout>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_stage_reward_close"
+        style="@style/Widget.MaterialComponents.Button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="18dp"
+        android:backgroundTint="@color/child_nav_item_selected"
+        android:text="@string/home_stage_reward_close"
+        android:textColor="@color/white"
+        app:cornerRadius="14dp" />
+</LinearLayout>

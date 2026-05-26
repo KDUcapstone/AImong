@@ -272,7 +272,7 @@
             android:layout_height="wrap_content"
             android:gravity="center_horizontal"
             android:orientation="vertical"
-            app:layout_constraintBottom_toTopOf="@id/btn_pull"
+            app:layout_constraintBottom_toTopOf="@id/layout_pull_action"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent">
@@ -316,47 +316,54 @@
             </FrameLayout>
         </LinearLayout>
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_pull"
+        <FrameLayout
+            android:id="@+id/layout_pull_action"
             android:layout_width="0dp"
-            android:layout_height="56dp"
+            android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
-            android:background="@drawable/bg_gacha_pull_enabled"
-            android:gravity="center"
-            android:insetTop="0dp"
-            android:insetBottom="0dp"
-            android:text="@string/gacha_pull"
-            android:textAlignment="center"
-            android:textAllCaps="false"
-            android:textColor="@color/quiz_on_accent"
-            android:textSize="17sp"
-            android:textStyle="bold"
-            app:backgroundTint="@null"
-            app:icon="@drawable/ic_sparkles"
-            app:iconGravity="textStart"
-            app:iconPadding="8dp"
-            app:iconSize="22dp"
-            app:iconTint="@color/quiz_on_accent"
+            android:clipChildren="false"
+            android:clipToPadding="false"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/layout_gacha_level_strip" />
+            app:layout_constraintTop_toBottomOf="@id/layout_gacha_level_strip">
 
-        <ImageButton
-            android:id="@+id/btn_probabilities"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_marginStart="8dp"
-            android:layout_marginTop="-6dp"
-            android:background="@drawable/bg_gacha_ticket_chip"
-            android:contentDescription="@string/gacha_probabilities"
-            android:elevation="6dp"
-            android:padding="8dp"
-            android:scaleType="fitCenter"
-            android:src="@drawable/ic_info_outline"
-            app:layout_constraintStart_toStartOf="@id/btn_pull"
-            app:layout_constraintTop_toTopOf="@id/btn_pull"
-            app:tint="@color/quiz_mint_dark" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_pull"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:background="@drawable/bg_gacha_pull_enabled"
+                android:gravity="center"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:text="@string/gacha_pull"
+                android:textAlignment="center"
+                android:textAllCaps="false"
+                android:textColor="@color/quiz_on_accent"
+                android:textSize="17sp"
+                android:textStyle="bold"
+                app:backgroundTint="@null"
+                app:icon="@drawable/ic_sparkles"
+                app:iconGravity="textStart"
+                app:iconPadding="8dp"
+                app:iconSize="22dp"
+                app:iconTint="@color/quiz_on_accent" />
+
+            <ImageButton
+                android:id="@+id/btn_probabilities"
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:layout_gravity="top|start"
+                android:layout_marginStart="6dp"
+                android:layout_marginTop="6dp"
+                android:background="@drawable/bg_gacha_pull_info_chip"
+                android:contentDescription="@string/gacha_probabilities"
+                android:elevation="2dp"
+                android:padding="5dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_info_outline"
+                app:tint="@color/quiz_mint_dark" />
+        </FrameLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <ProgressBar

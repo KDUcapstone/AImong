@@ -253,6 +253,10 @@ interface AimongApiService {
         @Path("questId") questId: String
     ): ApiResponse<ChildCustomQuestCompleteResponseData>
 
+    /** 단계별 보상 — 부모 약속 + 기본 기어·티켓 */
+    @GET("child/stage-rewards")
+    suspend fun getChildStageRewards(): ApiResponse<com.kduniv.aimong.feature.home.data.model.ChildStageRewardsResponseData>
+
     // ACHIEVEMENTS (CHILD)
     @GET("achievements")
     suspend fun getAchievements(): ApiResponse<AchievementsResponseData>

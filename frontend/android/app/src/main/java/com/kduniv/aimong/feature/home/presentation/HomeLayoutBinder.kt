@@ -11,6 +11,7 @@ import com.kduniv.aimong.databinding.ViewHomePathNodeCompletedBinding
 import com.kduniv.aimong.databinding.ViewHomePathNodeLockedBinding
 import com.kduniv.aimong.databinding.ViewHomePathNodeReviewBinding
 import com.kduniv.aimong.databinding.ViewHomePathNodeStartBinding
+import com.kduniv.aimong.databinding.ViewHomePathStageRewardChestBinding
 import com.kduniv.aimong.feature.gacha.PetArtAssets
 import androidx.core.content.ContextCompat
 import kotlin.math.sin
@@ -26,6 +27,7 @@ class HomeLayoutBinder(
     private val onNavigateToQuiz: (HomeQuizNavigation, DifficultyUnlockMode) -> Unit,
     private val onEnergyInsufficient: () -> Unit,
     private val onShowMissionHint: (String) -> Unit,
+    private val onStageRewardChestClick: (StageRewardUi) -> Unit,
 ) {
 
     private var scrollHooked = false
@@ -163,9 +165,9 @@ class HomeLayoutBinder(
                 if (isHeader) {
                     topMargin = (8 * density).toInt()
                     bottomMargin = (4 * density).toInt()
-                } else if (item === HomePathItem.InterStageDivider) {
-                    topMargin = (8 * density).toInt()
-                    bottomMargin = (8 * density).toInt()
+                } else if (item is HomePathItem.InterStageRewardChest) {
+                    topMargin = (4 * density).toInt()
+                    bottomMargin = (4 * density).toInt()
                 } else {
                     topMargin = if (nodeIndex == 0) (8 * density).toInt() else (20 * density).toInt()
                     bottomMargin = (20 * density).toInt()
@@ -178,8 +180,8 @@ class HomeLayoutBinder(
                 continue
             }
 
-            if (item === HomePathItem.InterStageDivider) {
-                addInterStageDivider(density)
+            if (item is HomePathItem.InterStageRewardChest) {
+                addInterStageRewardChest(item, density)
                 continue
             }
 
@@ -321,19 +323,18 @@ class HomeLayoutBinder(
         }
     }
 
-    private fun addInterStageDivider(density: Float) {
-        val v = View(binding.root.context).apply {
-            setBackgroundColor(ContextCompat.getColor(context, R.color.home_card_stroke))
-        }
+    private fun addInterStageRewardChest(item: HomePathItem.InterStageRewardChest, density: Float) {
+        val row = ViewHomePathStageRewardChestBinding.inflate(layoutInflater, binding.layoutMissionPath, false)
+        row.dotParentReward.isVisible = item.reward.hasParentPromise
+        row.btnStageRewardChest.setOnClickListener { onStageRewardChestClick(item.reward) }
+        row.btnStageRewardChest.setOnScaleTouchListener()
         val lp = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
-            (2 * density).toInt().coerceAtLeast(1)
+            LinearLayout.LayoutParams.WRAP_CONTENT,
         ).apply {
-            leftMargin = (24 * density).toInt()
-            rightMargin = (24 * density).toInt()
-            topMargin = (12 * density).toInt()
-            bottomMargin = (12 * density).toInt()
+            topMargin = (8 * density).toInt()
+            bottomMargin = (8 * density).toInt()
         }
-        binding.layoutMissionPath.addView(v, lp)
+        binding.layoutMissionPath.addView(row.root, lp)
     }
 }
