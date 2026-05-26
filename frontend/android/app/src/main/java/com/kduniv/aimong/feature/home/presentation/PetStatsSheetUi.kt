@@ -1,6 +1,7 @@
 package com.kduniv.aimong.feature.home.presentation
 
 import android.view.View
+import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.core.view.isVisible
@@ -19,6 +20,7 @@ object PetStatsSheetUi {
         val ivSprite = root.findViewById<android.widget.ImageView>(R.id.iv_pet_sprite)
         val tvEmoji = root.findViewById<TextView>(R.id.tv_pet_emoji)
         val tvName = root.findViewById<TextView>(R.id.tv_pet_name)
+        val ivMood = root.findViewById<ImageView>(R.id.tv_pet_mood_icon)
         val tvLevel = root.findViewById<TextView>(R.id.tv_pet_level)
         val progress = root.findViewById<ProgressBar>(R.id.progress_pet_xp)
         val tvXp = root.findViewById<TextView>(R.id.tv_pet_xp_label)
@@ -33,6 +35,7 @@ object PetStatsSheetUi {
         HomePetMoodVisual.apply(ivSprite, tvEmoji, state.homeState)
 
         tvName.text = state.petName.ifBlank { petNameFallback }
+        ivMood.isVisible = state.homeState == HomeState.SAD_LIGHT || state.homeState == HomeState.SAD_DEEP
         tvLevel.text = root.context.getString(R.string.home_pet_level_fmt, state.petLevel)
 
         val showXp = state.showPetXpProgress

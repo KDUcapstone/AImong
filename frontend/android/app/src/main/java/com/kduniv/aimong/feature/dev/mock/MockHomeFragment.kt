@@ -98,10 +98,11 @@ class MockHomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::
                         missionKey,
                     ) { picked, _ ->
                         findNavController().navigate(
-                            MockHomeFragmentDirections.actionHomeFragmentToQuizFragment(
-                                picked.entrySetId,
-                                picked.missionId,
-                                picked.starLevel,
+                            R.id.quizFragment,
+                            androidx.core.os.bundleOf(
+                                "entrySetId" to picked.entrySetId,
+                                "missionId" to picked.missionId,
+                                "starLevel" to picked.starLevel,
                             ),
                         )
                     }
@@ -110,10 +111,11 @@ class MockHomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::
             },
             onNavigateToQuiz = { nav, _ ->
                 findNavController().navigate(
-                    MockHomeFragmentDirections.actionHomeFragmentToQuizFragment(
-                        nav.entrySetId,
-                        nav.missionId,
-                        nav.starLevel,
+                    R.id.quizFragment,
+                    androidx.core.os.bundleOf(
+                        "entrySetId" to nav.entrySetId,
+                        "missionId" to nav.missionId,
+                        "starLevel" to nav.starLevel,
                     ),
                 )
             },

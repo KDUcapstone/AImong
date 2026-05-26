@@ -275,7 +275,6 @@ class HomeViewModel @Inject constructor(
                         errorMessage = null,
                         subtleNotice = notice
                     )
-                    supplementEmptyMissionStarLevels(path)
                     coroutineScope {
                         val energyDeferred = async { homeRepository.getEnergy() }
                         val walletDeferred = async { walletRepository.getWallet() }

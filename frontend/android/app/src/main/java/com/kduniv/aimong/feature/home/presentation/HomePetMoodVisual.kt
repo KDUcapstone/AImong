@@ -1,7 +1,5 @@
 package com.kduniv.aimong.feature.home.presentation
 
-import android.graphics.ColorMatrix
-import android.graphics.ColorMatrixColorFilter
 import android.widget.ImageView
 import android.widget.TextView
 
@@ -9,22 +7,10 @@ import android.widget.TextView
 object HomePetMoodVisual {
 
     fun apply(image: ImageView, emojiFallback: TextView, homeState: HomeState) {
-        when (homeState) {
-            HomeState.SAD_DEEP -> {
-                image.alpha = 0.5f
-                image.colorFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0f) })
-                emojiFallback.alpha = 0.5f
-            }
-            HomeState.SAD_LIGHT -> {
-                image.alpha = 0.88f
-                image.colorFilter = null
-                emojiFallback.alpha = 0.88f
-            }
-            else -> {
-                image.alpha = 1f
-                image.colorFilter = null
-                emojiFallback.alpha = 1f
-            }
-        }
+        // 홈 펫은 상태와 무관하게 항상 컬러로 표시한다.
+        // (SAD_* 상태 표현은 이름/왕관 영역의 아이콘으로 처리)
+        image.alpha = 1f
+        image.colorFilter = null
+        emojiFallback.alpha = 1f
     }
 }

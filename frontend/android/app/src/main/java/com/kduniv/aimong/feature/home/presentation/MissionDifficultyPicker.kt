@@ -149,7 +149,12 @@ class MissionDifficultyPicker(
         val useMissionStars = base.missionId.isNotBlank()
         val onPicked = onPickedCallback ?: return
         val pick: (Int) -> Unit = { starLevel ->
-            val nav = base.copy(starLevel = starLevel)
+            val nav = if (base.missionId.isNotBlank()) {
+                // 난이도를 직접 고른 경우에는 추천 setId가 있어도 missionId+starLevel 진입을 우선한다.
+                base.copy(entrySetId = "", starLevel = starLevel)
+            } else {
+                base.copy(starLevel = starLevel)
+            }
             val resolvedMode = if (unlockMode == DifficultyUnlockMode.PER_STAR && useMissionStars) {
                 starLevels.firstOrNull { it.starLevel == starLevel }?.resolveUnlockModeForPick()
                     ?: unlockMode

@@ -68,6 +68,7 @@ class QuestListViewModel @Inject constructor(
 
     private var canStartMission: Boolean = true
     private var suppressTabBadges: Boolean = false
+    private val seenPeriods = mutableSetOf<QuestSheetPeriod>()
 
     init {
         refreshTabBadges()
@@ -82,6 +83,7 @@ class QuestListViewModel @Inject constructor(
 
     /** 시트가 열릴 때 일·주·부모 탭 배지를 미리 갱신합니다. */
     fun onSheetOpened() {
+        seenPeriods += _selectedPeriod.value
         refreshTabBadges()
     }
 
@@ -95,9 +97,9 @@ class QuestListViewModel @Inject constructor(
         if (suppressTabBadges) {
             clearTabBadges()
         } else {
-            _dailyTabBadgeCount.value = daily
-            _weeklyTabBadgeCount.value = weekly
-            _parentTabBadgeCount.value = parent
+            _dailyTabBadgeCount.value = daily.takeUnless { QuestSheetPeriod.DAILY in seenPeriods } ?: 0
+            _weeklyTabBadgeCount.value = weekly.takeUnless { QuestSheetPeriod.WEEKLY in seenPeriods } ?: 0
+            _parentTabBadgeCount.value = parent.takeUnless { QuestSheetPeriod.PARENT in seenPeriods } ?: 0
         }
     }
 
@@ -107,6 +109,12 @@ class QuestListViewModel @Inject constructor(
 
     fun selectPeriod(period: QuestSheetPeriod) {
         _selectedPeriod.value = period
+        seenPeriods += period
+        publishTabBadges(
+            _dailyTabBadgeCount.value,
+            _weeklyTabBadgeCount.value,
+            _parentTabBadgeCount.value,
+        )
         when (period) {
             QuestSheetPeriod.DAILY -> loadDaily()
             QuestSheetPeriod.WEEKLY -> loadWeekly()
@@ -137,20 +145,18 @@ class QuestListViewModel @Inject constructor(
                     _hasPendingCustomQuest.value = parentData.hasPendingConfirm
                 }
                 val parent = parentData?.let {
-                    countParentTabNotifications(it.quests, it.hasPendingConfirm)
+                    countParentTabNotifications(it.quests)
                 } ?: _parentTabBadgeCount.value
                 publishTabBadges(daily, weekly, parent)
             }
         }
     }
 
-    private fun countParentTabNotifications(
-        quests: List<ChildCustomQuestDto>,
-        hasPendingConfirm: Boolean,
-    ): Int {
-        val active = quests.count { it.status.equals("ACTIVE", ignoreCase = true) }
-        return active + if (hasPendingConfirm) 1 else 0
-    }
+    private fun countParentTabNotifications(quests: List<ChildCustomQuestDto>): Int =
+        quests.count { quest ->
+            quest.status.equals("COMPLETED", ignoreCase = true) ||
+                quest.status.equals("AUTO_CONFIRMED", ignoreCase = true)
+        }
 
     fun loadDaily() {
         viewModelScope.launch {
@@ -261,7 +267,7 @@ class QuestListViewModel @Inject constructor(
                     publishTabBadges(
                         _dailyTabBadgeCount.value,
                         _weeklyTabBadgeCount.value,
-                        countParentTabNotifications(data.quests, data.hasPendingConfirm),
+                        countParentTabNotifications(data.quests),
                     )
                     _rows.value = data.quests.map {
                         QuestSheetMapper.mapCustomQuest(it, appContext)
@@ -292,6 +298,9 @@ class QuestListViewModel @Inject constructor(
                             appContext.getString(R.string.child_custom_quest_complete_success),
                         ),
                     )
+                    if (!UiMode.useStubNav) {
+                        homeRefreshBus.notify(HomeRefreshTrigger.Full)
+                    }
                     loadParentCustom()
                 },
                 onFailure = { e ->

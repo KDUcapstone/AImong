@@ -38,10 +38,15 @@ internal object HomeUiMapper {
 
         val todayDone = "${quests.completedCount}/${quests.totalCount}"
 
+        val todayActivityCount = maxOf(
+            streak.todaySetCount,
+            mission.todayCompletedCount,
+            quests.completedCount,
+        )
         val homeState = PetMoodRules.resolveHomeState(
             mood = pet?.mood,
-            todaySetCount = streak.todaySetCount,
-            todayCompletedCount = mission.todayCompletedCount,
+            todaySetCount = todayActivityCount,
+            todayCompletedCount = todayActivityCount,
             lastCompletedDate = streak.lastCompletedDate,
             serverDate = data.serverDate,
         )

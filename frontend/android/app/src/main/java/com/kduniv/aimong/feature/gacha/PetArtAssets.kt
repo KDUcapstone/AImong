@@ -161,6 +161,8 @@ object PetArtAssets {
         if (resId != null) {
             emojiFallback.isVisible = false
             image.isVisible = true
+            image.alpha = 1f
+            image.colorFilter = null
             val px = spriteTargetPx(image)
             Glide.with(image)
                 .load(resId)

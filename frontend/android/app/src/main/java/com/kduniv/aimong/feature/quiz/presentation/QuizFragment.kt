@@ -1290,15 +1290,17 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         binding.tvOxXText.setTextColor(quizColor(R.color.quiz_red))
     }
 
-    /** OX 탭 직후(채점 전) '내 선택'만 강조 — 반대쪽은 기본 O(민트)/X(빨강) 유지 */
+    /** OX 탭 직후(채점 전) '내 선택'만 강조 — O는 민트, X는 빨강 */
     private fun applyOxPendingSelection(choice: String) {
         val density = resources.displayMetrics.density
         resetOxButtons()
 
         val mint = ContextCompat.getColor(requireContext(), R.color.quiz_mint)
+        val red = quizColor(R.color.quiz_red)
+        val selectedColor = if (choice == "O") mint else red
         val selected = if (choice == "O") binding.btnOxO else binding.btnOxX
-        selected.setCardBackgroundColor(mint)
-        selected.setStrokeColor(android.content.res.ColorStateList.valueOf(mint))
+        selected.setCardBackgroundColor(selectedColor)
+        selected.setStrokeColor(android.content.res.ColorStateList.valueOf(selectedColor))
         selected.setStrokeWidth((2 * density).toInt())
 
         if (choice == "O") {
@@ -1323,8 +1325,9 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         val userLabel = if (userAnswer == "O") binding.tvOxOText else binding.tvOxXText
 
         if (isCorrect) {
-            userBtn.setCardBackgroundColor(mint)
-            userBtn.setStrokeColor(android.content.res.ColorStateList.valueOf(mint))
+            val selectedColor = if (userAnswer == "O") mint else red
+            userBtn.setCardBackgroundColor(selectedColor)
+            userBtn.setStrokeColor(android.content.res.ColorStateList.valueOf(selectedColor))
             userBtn.setStrokeWidth((2 * density).toInt())
             userIcon.setTextColor(Color.WHITE)
             userLabel.setTextColor(Color.WHITE)

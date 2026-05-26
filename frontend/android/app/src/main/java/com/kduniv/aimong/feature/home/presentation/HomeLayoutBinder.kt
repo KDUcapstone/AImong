@@ -218,22 +218,16 @@ class HomeLayoutBinder(
                     row.root.translationX = translation
                     row.btnNode.root.setBackgroundResource(R.drawable.bg_mission_node_start)
                     MissionPathUiHelper.bindNodeIcon(row.btnNode.root, MissionPathUiHelper.ICON_PLAY)
-                    row.btnNode.root.alpha = if (item.enabled) 1f else 0.55f
+                    row.btnNode.root.alpha = 1f
                     MissionPathUiHelper.bindStarRow(row.layoutStars, item.starsFilled)
                     row.tvMissionCaption.text = item.missionTitle
                     val go = {
-                        if (!item.enabled) {
-                            onShowMissionHint(binding.root.context.getString(R.string.home_today_mission_locked_hint))
-                        } else if (!state.canOpenMissionPicker(
+                        if (!state.canOpenMissionPicker(
                                 item.unlockMode,
                                 state.missionStarLevelsById[item.quizNav.missionId].orEmpty(),
                             )
                         ) {
                             onEnergyInsufficient()
-                        } else if (item.quizNav.entrySetId.isNotBlank() &&
-                            item.unlockMode != DifficultyUnlockMode.PER_STAR
-                        ) {
-                            onNavigateToQuiz(item.quizNav, item.unlockMode)
                         } else {
                             onOpenDifficultyPicker(
                                 item.missionTitle,

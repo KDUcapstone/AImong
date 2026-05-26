@@ -21,29 +21,41 @@ object PetMoodRules {
         lastCompletedDate: String?,
         serverDate: String?,
     ): HomeState {
-        homeStateFromMood(mood)?.let { return it }
         if (todaySetCount > 0 || todayCompletedCount > 0) return HomeState.HAPPY
-        return when (daysSinceLastMission(lastCompletedDate, serverDate)) {
-            null -> HomeState.IDLE
-            0 -> HomeState.HAPPY
-            1 -> HomeState.SAD_LIGHT
-            else -> HomeState.SAD_DEEP
-        }
+
+        val inferred = inferHomeStateFromStreak(lastCompletedDate, serverDate)
+        val fromMood = homeStateFromMood(mood) ?: return inferred
+
+        // lastCompletedDate 미전달·신규 등으로 추정이 IDLE인데 서버만 SAD_* 인 경우 회색 과적용 방지
+        if (fromMood == HomeState.SAD_DEEP && inferred == HomeState.IDLE) return HomeState.IDLE
+        if (fromMood == HomeState.SAD_LIGHT && inferred == HomeState.IDLE) return HomeState.IDLE
+
+        return fromMood
+    }
+
+    private fun inferHomeStateFromStreak(
+        lastCompletedDate: String?,
+        serverDate: String?,
+    ): HomeState = when (daysSinceLastMission(lastCompletedDate, serverDate)) {
+        null -> HomeState.IDLE
+        0 -> HomeState.HAPPY
+        1 -> HomeState.SAD_LIGHT
+        else -> HomeState.SAD_DEEP
     }
 
     fun homeStateFromMood(mood: String?): HomeState? =
         when (mood?.trim()?.uppercase()) {
             "HAPPY" -> HomeState.HAPPY
-            "IDLE" -> HomeState.IDLE
-            "SAD_LIGHT" -> HomeState.SAD_LIGHT
+            "IDLE", "NORMAL", "NEUTRAL" -> HomeState.IDLE
+            "SAD_LIGHT", "SAD" -> HomeState.SAD_LIGHT
             "SAD_DEEP" -> HomeState.SAD_DEEP
             else -> null
         }
 
-    /** KST 기준: serverDate − lastCompletedDate (일). 미완료 이력 없으면 null이 아닌 큰 값으로 SAD_DEEP. */
+    /** KST 기준: serverDate − lastCompletedDate (일). 이력 없음·날짜 파싱 실패 시 null. */
     fun daysSinceLastMission(lastCompletedDate: String?, serverDate: String?): Int? {
         val today = parseKstLocalDate(serverDate) ?: return null
-        val last = parseKstLocalDate(lastCompletedDate) ?: return Int.MAX_VALUE
+        val last = parseKstLocalDate(lastCompletedDate) ?: return null
         return ChronoUnit.DAYS.between(last, today).toInt().coerceAtLeast(0)
     }
 

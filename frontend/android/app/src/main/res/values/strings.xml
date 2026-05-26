@@ -45,6 +45,7 @@
     <string name="home_pet_sheet_title">내 펫</string>
     <string name="home_pet_level_fmt">Lv.%1$d</string>
     <string name="home_pet_xp_fmt">%1$d / %2$d XP</string>
+    <string name="home_pet_mood_sad_icon_cd">펫 슬픔 상태</string>
     <string name="home_pet_aimong_crown_hint">아이몽 달성 · 왕관 영구 해금</string>
     <string name="gacha_pet_crown_unlocked">왕관 해금</string>
     <string name="gacha_pet_level_xp_fmt">Lv.%1$d · %2$d/%3$d XP</string>

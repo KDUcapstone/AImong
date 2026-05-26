@@ -13,6 +13,7 @@ import com.kduniv.aimong.feature.mission.domain.model.isStar1Completed
 import com.kduniv.aimong.feature.mission.domain.model.openDifficultyCount
 import com.kduniv.aimong.feature.mission.domain.model.showsReviewPathNode
 import com.kduniv.aimong.feature.mission.domain.model.displayTitle
+import com.kduniv.aimong.feature.mission.domain.model.needsStatusStarSupplement
 import com.kduniv.aimong.feature.mission.domain.model.toDisplayMissionTitle
 
 /**
@@ -148,6 +149,17 @@ object HomePathBuilder {
                             title = displayTitle,
                             missionId = m.missionId,
                             quizNav = HomeQuizNavigation("", m.missionId, star),
+                            starsFilled = stars,
+                        )
+                    )
+                } else if (m.needsStatusStarSupplement()) {
+                    // 서버 status 보강 전이라 별 난이도 정보만 비어 있는 상태.
+                    // 잠금 노드로 막지 않고 클릭 가능한 노드로 둔 뒤, 피커에서 해당 미션만 보강한다.
+                    items.add(
+                        HomePathItem.Start(
+                            quizNav = HomeQuizNavigation("", m.missionId, 1),
+                            missionTitle = displayTitle,
+                            enabled = true,
                             starsFilled = stars,
                         )
                     )

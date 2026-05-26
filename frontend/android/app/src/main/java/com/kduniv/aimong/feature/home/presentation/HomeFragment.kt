@@ -200,10 +200,11 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
             viewModel.validateMissionQuizNav(nav, unlockMode)
                 .onSuccess { validated ->
                     findNavController().navigate(
-                        HomeFragmentDirections.actionHomeFragmentToQuizFragment(
-                            validated.entrySetId,
-                            validated.missionId,
-                            validated.starLevel,
+                        R.id.quizFragment,
+                        androidx.core.os.bundleOf(
+                            "entrySetId" to validated.entrySetId,
+                            "missionId" to validated.missionId,
+                            "starLevel" to validated.starLevel,
                         ),
                     )
                 }
