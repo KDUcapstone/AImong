@@ -1,5 +1,6 @@
 package com.kduniv.aimong.feature.home.presentation
 
+import android.view.MotionEvent
 import android.view.View
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
@@ -15,6 +16,7 @@ import com.google.android.material.snackbar.Snackbar
 import com.kduniv.aimong.R
 import com.kduniv.aimong.core.navigation.ChildTopLevelNav.onChildBottomNavTap
 import com.kduniv.aimong.core.ui.BaseFragment
+import com.kduniv.aimong.core.util.UiPerfLog
 import com.kduniv.aimong.databinding.FragmentHomeBinding
 import com.kduniv.aimong.feature.mission.domain.model.normalizeToThreeLevels
 import dagger.hilt.android.AndroidEntryPoint
@@ -32,9 +34,13 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
     }
     private var missionPickerStarLevelsJob: Job? = null
     private var lastHomePathStructureKey: String? = null
+    private var homePerfResumeMark: Long? = null
+    private var homePerfFirstTouchLogged = false
 
     override fun onResume() {
         super.onResume()
+        homePerfResumeMark = UiPerfLog.mark("home_first_interaction")
+        homePerfFirstTouchLogged = false
         viewModel.onHomeResumed()
         viewModel.pendingAimongCelebration.value?.let { pending ->
             binding.root.post {
@@ -77,6 +83,7 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
                             missionPickerStarLevelsJob?.cancel()
                             val initialStars = viewModel.initialMissionStarLevelsForPicker(nav.missionId)
                                 .normalizeToThreeLevels()
+                            val pickerMark = UiPerfLog.mark("home_difficulty_picker")
                             missionDifficultyPicker.show(
                                 title,
                                 nav,
@@ -88,6 +95,11 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
                                 missionPickerStarLevelsJob?.cancel()
                                 navigateToQuizAfterValidation(picked, resolvedMode)
                             }
+                            UiPerfLog.measureFrom(
+                                "home_difficulty_picker",
+                                pickerMark,
+                                "home_click_to_difficulty_picker_ms",
+                            )
                             if (nav.missionId.isNotBlank()) {
                                 missionPickerStarLevelsJob = viewLifecycleOwner.lifecycleScope.launch {
                                     val starLevels = viewModel.ensureMissionStarLevels(nav.missionId)
@@ -118,6 +130,12 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
         }
         binding.fabChildQuest.setOnClickListener { openQuestList() }
         binding.cardFloatPet.setOnClickListener { showPetStatsSheet() }
+        binding.scrollPath.setOnTouchListener { _, event ->
+            if (event.actionMasked == MotionEvent.ACTION_DOWN) {
+                logHomeFirstTouchIfNeeded()
+            }
+            false
+        }
         binding.layoutChipTicket.setOnClickListener { openGacha() }
         binding.layoutChipStreak.setOnClickListener { openStreakSheet() }
         parentFragmentManager.setFragmentResultListener(
@@ -230,6 +248,19 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
         }
         lastHomePathStructureKey = null
         super.onDestroyView()
+    }
+
+    private fun logHomeFirstTouchIfNeeded() {
+        if (homePerfFirstTouchLogged) return
+        homePerfFirstTouchLogged = true
+        homePerfResumeMark?.let { started ->
+            UiPerfLog.measureFrom(
+                "home_first_interaction",
+                started,
+                "home_resume_to_first_touch_ms",
+            )
+            homePerfResumeMark = null
+        }
     }
 
     private fun openGacha() {

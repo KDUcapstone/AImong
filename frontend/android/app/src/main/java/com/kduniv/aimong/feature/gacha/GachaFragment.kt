@@ -30,8 +30,7 @@ class GachaFragment : BaseFragment<FragmentGachaBinding>(FragmentGachaBinding::i
 
     override fun onResume() {
         super.onResume()
-        viewModel.syncTicketsFromHome()
-        viewModel.refreshCatalogFromServer()
+        viewModel.onGachaResumed()
     }
 
     override fun initView() {

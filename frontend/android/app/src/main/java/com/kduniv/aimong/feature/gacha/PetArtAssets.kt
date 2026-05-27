@@ -152,7 +152,19 @@ object PetArtAssets {
         allowStageFallback: Boolean = true,
     ) {
         val artType = resolveArtPetType(petType)
-        val bindKey = "$artType|${stageSuffix(stage)}|fallback=$allowStageFallback|norm=v2"
+        val bindKey = "$artType|${stageSuffix(stage)}|fallback=$allowStageFallback|norm=v2|emoji=$emoji"
+        if (image.getTag(R.id.pet_art_bind_key) == bindKey) {
+            val resId = drawableRes(image.context, petType, stage, allowStageFallback)
+            if (resId != null && image.drawable != null) {
+                emojiFallback.isVisible = false
+                image.isVisible = true
+                return
+            }
+            if (resId == null && emojiFallback.isVisible && emojiFallback.text.toString() == emoji) {
+                image.isVisible = false
+                return
+            }
+        }
         image.setTag(R.id.pet_art_bind_key, bindKey)
         clearSprite(image)
         configureSpriteImageView(image)

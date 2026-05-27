@@ -45,11 +45,43 @@ class ChatMessageAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(Dif
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        onBindViewHolder(holder, position, mutableListOf())
+    }
+
+    override fun onBindViewHolder(
+        holder: RecyclerView.ViewHolder,
+        position: Int,
+        payloads: MutableList<Any>,
+    ) {
         val item = getItem(position)
+        if (payloads.isNotEmpty() && payloads.any { it == PAYLOAD_PET_AVATAR }) {
+            when (holder) {
+                is PetVh -> holder.bindPetAvatar(petType, petStage, petAvatarEmoji)
+                is TypingVh -> holder.bindPetAvatar(petType, petStage, petAvatarEmoji)
+                else -> Unit
+            }
+            return
+        }
         when (holder) {
             is PetVh -> holder.bind(item, petType, petStage, petAvatarEmoji, onSaveImage)
             is TypingVh -> holder.bind(item, petType, petStage, petAvatarEmoji)
             is UserVh -> holder.bind(item)
+        }
+    }
+
+    /** 펫 아바타만 바뀔 때 해당 행만 갱신 — 전체 [notifyDataSetChanged] 대신 */
+    fun updatePetAvatar(petType: String, petStage: String, petAvatarEmoji: String) {
+        val changed = this.petType != petType ||
+            this.petStage != petStage ||
+            this.petAvatarEmoji != petAvatarEmoji
+        if (!changed) return
+        this.petType = petType
+        this.petStage = petStage
+        this.petAvatarEmoji = petAvatarEmoji
+        for (i in 0 until itemCount) {
+            when (getItemViewType(i)) {
+                VIEW_TYPE_PET, VIEW_TYPE_TYPING -> notifyItemChanged(i, PAYLOAD_PET_AVATAR)
+            }
         }
     }
 
@@ -86,6 +118,10 @@ class ChatMessageAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(Dif
                 binding.tvMessage.isVisible = true
                 binding.tvMessage.text = item.text
             }
+            bindPetAvatar(petType, petStage, avatarEmoji)
+        }
+
+        fun bindPetAvatar(petType: String, petStage: String, avatarEmoji: String) {
             PetArtAssets.bindSprite(
                 image = binding.ivPetAvatarSprite,
                 emojiFallback = binding.tvPetAvatarEmoji,
@@ -104,6 +140,10 @@ class ChatMessageAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(Dif
             binding.tvTypingLabel.text = binding.root.context.getString(
                 if (item.isImageTyping) R.string.chat_typing_image else R.string.chat_typing
             )
+            bindPetAvatar(petType, petStage, avatarEmoji)
+        }
+
+        fun bindPetAvatar(petType: String, petStage: String, avatarEmoji: String) {
             PetArtAssets.bindSprite(
                 image = binding.ivPetAvatarSprite,
                 emojiFallback = binding.tvPetAvatarEmoji,
@@ -143,6 +183,7 @@ class ChatMessageAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(Dif
         }
 
         private const val MENU_SAVE_IMAGE = 1
+        private const val PAYLOAD_PET_AVATAR = "pet_avatar"
         private const val VIEW_TYPE_PET = 0
         private const val VIEW_TYPE_USER = 1
         private const val VIEW_TYPE_TYPING = 2

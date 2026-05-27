@@ -32,16 +32,63 @@ class HomeLayoutBinder(
     private var scrollHooked = false
     private var pathItemsForScroll: List<HomePathItem> = emptyList()
     private var lastPathStructureKey: String? = null
+    private var lastPathStarsKey: String? = null
+    private var lastTopChipsKey: String? = null
+    private var lastPetVisualKey: String? = null
+    private var lastQuestBadgeKey: String? = null
 
     fun bind(state: HomeUiState) {
         pathItemsForScroll = state.pathItems
+        val topChipsKey = topChipsKey(state)
+        if (topChipsKey != lastTopChipsKey) {
+            bindTopChips(state)
+            lastTopChipsKey = topChipsKey
+        }
+        val petVisualKey = petVisualKey(state)
+        if (petVisualKey != lastPetVisualKey) {
+            bindPetArea(state)
+            lastPetVisualKey = petVisualKey
+        }
+        val questBadgeKey = questBadgeKey(state)
+        if (questBadgeKey != lastQuestBadgeKey) {
+            bindQuestBadge(state)
+            lastQuestBadgeKey = questBadgeKey
+        }
+        bindMissionPath(state)
+        with(binding) {
+            firstSectionFromPath(state.pathItems)?.let { applyFloatingSection(it) }
+            binding.root.post { updateFloatingSectionForScroll(binding.scrollPath.scrollY) }
+            if (!scrollHooked) {
+                scrollHooked = true
+                binding.scrollPath.setOnScrollChangeListener { _, _, scrollY, _, _ ->
+                    updateFloatingSectionForScroll(scrollY)
+                }
+            }
+        }
+    }
+
+    private fun topChipsKey(state: HomeUiState): String =
+        "${state.energyCurrent}/${state.energyMax}|${state.gearBalance}|${state.topStatusXp}|" +
+            "${state.topTicketCount}|${state.streakDays}"
+
+    private fun petVisualKey(state: HomeUiState): String =
+        "${state.equippedPetType}|${state.petStage}|${state.equippedPetGrade}|${state.homeState}"
+
+    private fun questBadgeKey(state: HomeUiState): String =
+        "${state.shouldShowQuestFabBadge()}|${state.questNotificationCount()}"
+
+    private fun bindTopChips(state: HomeUiState) {
         with(binding) {
             tvChipEnergy.text = "${state.energyCurrent}/${state.energyMax}"
             tvChipGear.text = state.gearBalance.toString()
             tvChipXp.text = state.topStatusXp.toString()
             tvChipTicket.text = state.topTicketCount.toString()
             tvChipStreak.text = root.context.getString(R.string.home_chip_streak_fmt, state.streakDays)
+        }
+    }
 
+    private fun bindPetArea(state: HomeUiState) {
+        with(binding) {
             PetArtAssets.bindEquipped(
                 image = ivFloatPetSprite,
                 emojiFallback = tvFloatPetEmoji,
@@ -51,25 +98,33 @@ class HomeLayoutBinder(
                 lottie = lottiePetHome,
             )
             HomePetMoodVisual.apply(ivFloatPetSprite, tvFloatPetEmoji, state.homeState)
-            val showQuestBadge = state.shouldShowQuestFabBadge()
-            tvQuestBadge.isVisible = showQuestBadge
-            if (showQuestBadge) {
-                tvQuestBadge.text = state.questNotificationCount().coerceAtMost(99).toString()
-            }
-            val structureKey = state.pathItems.pathStructureKey()
-            if (structureKey == lastPathStructureKey && binding.layoutMissionPath.childCount > 0) {
+        }
+    }
+
+    private fun bindQuestBadge(state: HomeUiState) {
+        val showQuestBadge = state.shouldShowQuestFabBadge()
+        binding.tvQuestBadge.isVisible = showQuestBadge
+        if (showQuestBadge) {
+            binding.tvQuestBadge.text = state.questNotificationCount().coerceAtMost(99).toString()
+        }
+    }
+
+    private fun bindMissionPath(state: HomeUiState) {
+        val structureKey = state.pathItems.pathStructureKey()
+        val starsKey = state.pathItems.pathStarsKey()
+        val hasPath = binding.layoutMissionPath.childCount > 0
+        val structureUnchanged = structureKey == lastPathStructureKey && hasPath
+        val starsUnchanged = starsKey == lastPathStarsKey
+        when {
+            structureUnchanged && starsUnchanged -> return
+            structureUnchanged -> {
                 patchPathStarLevels(state.pathItems)
-            } else {
+                lastPathStarsKey = starsKey
+            }
+            else -> {
                 renderMissionPath(state)
                 lastPathStructureKey = structureKey
-            }
-            firstSectionFromPath(state.pathItems)?.let { applyFloatingSection(it) }
-            binding.root.post { updateFloatingSectionForScroll(binding.scrollPath.scrollY) }
-            if (!scrollHooked) {
-                scrollHooked = true
-                binding.scrollPath.setOnScrollChangeListener { _, _, scrollY, _, _ ->
-                    updateFloatingSectionForScroll(scrollY)
-                }
+                lastPathStarsKey = starsKey
             }
         }
     }

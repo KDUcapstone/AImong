@@ -75,7 +75,10 @@ class GachaViewModel @Inject constructor(
                         HomeRefreshTrigger.Full,
                         is HomeRefreshTrigger.MissionCompleted,
                         is HomeRefreshTrigger.PetAimongAchieved,
-                        -> syncTicketsFromHome()
+                        -> {
+                            syncTicketsFromHome()
+                            refreshCatalogFromServer()
+                        }
                     }
                 }
         }
@@ -99,6 +102,23 @@ class GachaViewModel @Inject constructor(
 
     fun consumePullReveal() {
         _state.update { it.copy(pullReveal = null) }
+    }
+
+    /**
+     * 탭 복귀 — 티켓·장착 배지만 동기화. 도감 전체는 비어 있을 때·[invalidateGachaCatalog] 때만.
+     */
+    fun onGachaResumed() {
+        syncTicketsFromHome()
+        if (_state.value.petCards.isEmpty() || _state.value.pets == null) {
+            refresh()
+        } else {
+            reloadEquippedPet()
+        }
+    }
+
+    /** 뽑기·교환·장착·홈 [HomeRefreshTrigger] 후 도감 Lv·스프라이트 전체 갱신 */
+    fun invalidateGachaCatalog() {
+        refreshCatalogFromServer()
     }
 
     /** 홈·퀘스트 보상 후 수집 탭 티켓 칩만 GET /home 으로 맞춤 */

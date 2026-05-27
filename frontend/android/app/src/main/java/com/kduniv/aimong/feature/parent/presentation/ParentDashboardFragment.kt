@@ -24,6 +24,7 @@ import com.kduniv.aimong.core.network.model.PatchParentChildRequest
 import com.kduniv.aimong.feature.auth.presentation.ChildRegisterSuccessBottomSheet
 import com.kduniv.aimong.feature.parent.domain.ParentAuthPolicy
 import com.kduniv.aimong.core.ui.BaseFragment
+import com.kduniv.aimong.core.util.UiPerfLog
 import com.kduniv.aimong.databinding.FragmentParentDashboardBinding
 import com.kduniv.aimong.feature.parent.data.model.ParentChildSummaryResponseData
 import com.kduniv.aimong.feature.parent.data.model.ParentCustomQuestDto
@@ -72,6 +73,7 @@ class ParentDashboardFragment :
     private var latestChildren: List<ParentChildItem> = emptyList()
     private var latestSelectedChildId: String? = null
     private var latestChildDetail: ParentChildDetailData? = null
+    private var parentDashboardPerfMark: Long? = null
     private var isSelectedChildLinked: Boolean = false
 
     private val questExpiresDisplayFormatter = DateTimeFormatter.ofPattern("yyyy.MM.dd HH:mm")
@@ -182,6 +184,7 @@ class ParentDashboardFragment :
 
     override fun onResume() {
         super.onResume()
+        parentDashboardPerfMark = UiPerfLog.mark("parent_dashboard_first_paint")
         viewModel.refreshCustomQuestsOnResume()
     }
 
@@ -863,6 +866,14 @@ class ParentDashboardFragment :
                         applyRichSummary(s)
                         applyRichRecent(s)
                         if (s == null) return@collect
+                        parentDashboardPerfMark?.let { started ->
+                            parentDashboardPerfMark = null
+                            UiPerfLog.measureFrom(
+                                "parent_dashboard_first_paint",
+                                started,
+                                "parent_dashboard_entry_to_summary_ms",
+                            )
+                        }
                         binding.tvParentSummary.text =
                             "요약\n- 닉네임: ${s.nickname}\n- XP: ${s.totalXp}\n- 스트릭: ${s.continuousDays}일\n- 실드: ${s.shieldCount}\n- 주간 완료 세트: ${s.weeklyCompletedSetCount}\n- 총 완료 세트: ${s.totalCompletedSetCount}\n- 현재 레벨: ${s.currentLevelNo}\n- 마지막 활동: ${s.lastActiveAt ?: "-"}"
                     }

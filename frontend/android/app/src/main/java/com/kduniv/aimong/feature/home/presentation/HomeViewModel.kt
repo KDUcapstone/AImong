@@ -35,12 +35,8 @@ import com.kduniv.aimong.feature.mission.domain.model.needsStatusStarSupplement
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.supervisorScope
-import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
@@ -92,7 +88,11 @@ class HomeViewModel @Inject constructor(
     }
 
     fun onHomeResumed() {
-        loadHome(showLoading = _uiState.value.pathItems.isEmpty())
+        if (_uiState.value.pathItems.isEmpty()) {
+            loadHome(showLoading = true)
+        } else {
+            refreshHomeLightOnResume()
+        }
         checkStreakShieldRecoveryPrompt()
     }
 
@@ -359,33 +359,7 @@ class HomeViewModel @Inject constructor(
                         errorMessage = null,
                         subtleNotice = notice
                     )
-                    coroutineScope {
-                        val energyDeferred = async { homeRepository.getEnergy() }
-                        val walletDeferred = async { walletRepository.getWallet() }
-                        energyDeferred.await().getOrNull()?.let { energy ->
-                            ui = ui.copy(
-                                missionStartCost = energy.missionStartCost
-                                    ?: HomeUiState.DEFAULT_MISSION_START_COST,
-                                energyCurrent = energy.energy,
-                                energyMax = energy.maxEnergy,
-                                nextEnergyRecoverAt = energy.nextEnergyRecoverAt
-                                    ?: ui.nextEnergyRecoverAt,
-                            )
-                        }
-                        walletDeferred.await().getOrNull()?.let { wallet ->
-                            ui = ui.copy(
-                                gearBalance = wallet.gear,
-                                heartReviveCost = wallet.heartReviveCost,
-                                streakShieldCost = wallet.streakShieldCost,
-                            )
-                        }
-                    }
-                    questRepository.getChildCustomQuests().getOrNull()?.let { custom ->
-                        ui = ui.copy(hasPendingCustomQuest = custom.hasPendingConfirm)
-                    }
-                    if (ui.questNotificationCount() == 0) {
-                        ui = ui.copy(questNotificationsAcknowledged = false)
-                    }
+                    ui = enrichHomeWithSideApis(ui, preserveQuestAck = false)
                     _uiState.value = ui
                     homeRefreshBus.notify(HomeRefreshTrigger.TicketsUpdated(ui.normalTickets))
                 },
@@ -405,6 +379,74 @@ class HomeViewModel @Inject constructor(
             homeLoadJob?.invokeOnCompletion {
                 _uiState.update { it.copy(isRefreshing = false) }
             }
+        }
+    }
+
+    /**
+     * 탭 복귀 등 — 미션 경로·별 캐시는 유지하고 상단 칩·펫·티켓·에너지만 갱신.
+     * 전체 경로 재구성은 [loadHome]·[HomeRefreshTrigger]·당겨서 새로고침에서만 수행.
+     */
+    private fun refreshHomeLightOnResume() {
+        homeLoadJob?.cancel()
+        homeLoadJob = viewModelScope.launch {
+            getHomeStatusUseCase().fold(
+                onSuccess = { data ->
+                    val prev = _uiState.value
+                    val notice = computeServerDayNotice(data.serverDate)
+                    var ui = HomeUiMapper.toUiState(data).copy(
+                        pathItems = prev.pathItems,
+                        missionStarLevelsById = prev.missionStarLevelsById,
+                        missionUnlockedById = prev.missionUnlockedById,
+                        isLoading = false,
+                        isRefreshing = false,
+                        errorMessage = null,
+                        subtleNotice = notice ?: prev.subtleNotice,
+                    )
+                    ui = enrichHomeWithSideApis(ui, preserveQuestAck = true, prev = prev)
+                    _uiState.value = ui
+                    homeRefreshBus.notify(HomeRefreshTrigger.TicketsUpdated(ui.normalTickets))
+                },
+                onFailure = { /* 경로는 유지 — 실패 시 기존 UI 그대로 */ },
+            )
+        }
+    }
+
+    private suspend fun enrichHomeWithSideApis(
+        base: HomeUiState,
+        preserveQuestAck: Boolean,
+        prev: HomeUiState? = null,
+    ): HomeUiState {
+        var ui = base
+        coroutineScope {
+            val energyDeferred = async { homeRepository.getEnergy() }
+            val walletDeferred = async { walletRepository.getWallet() }
+            energyDeferred.await().getOrNull()?.let { energy ->
+                ui = ui.copy(
+                    missionStartCost = energy.missionStartCost
+                        ?: HomeUiState.DEFAULT_MISSION_START_COST,
+                    energyCurrent = energy.energy,
+                    energyMax = energy.maxEnergy,
+                    nextEnergyRecoverAt = energy.nextEnergyRecoverAt
+                        ?: ui.nextEnergyRecoverAt,
+                )
+            }
+            walletDeferred.await().getOrNull()?.let { wallet ->
+                ui = ui.copy(
+                    gearBalance = wallet.gear,
+                    heartReviveCost = wallet.heartReviveCost,
+                    streakShieldCost = wallet.streakShieldCost,
+                )
+            }
+        }
+        questRepository.getChildCustomQuests().getOrNull()?.let { custom ->
+            ui = ui.copy(hasPendingCustomQuest = custom.hasPendingConfirm)
+        }
+        return when {
+            ui.questNotificationCount() == 0 ->
+                ui.copy(questNotificationsAcknowledged = false)
+            preserveQuestAck && prev != null ->
+                ui.copy(questNotificationsAcknowledged = prev.questNotificationsAcknowledged)
+            else -> ui
         }
     }
 
@@ -476,10 +518,7 @@ class HomeViewModel @Inject constructor(
     fun isMissionUnlocked(missionId: String): Boolean =
         _uiState.value.isMissionUnlocked(missionId)
 
-    /**
-     * GET /missions 의 starLevels 로 경로를 먼저 구성한다.
-     * status 는 화면에 보이는 미션만 [supplementEmptyMissionStarLevels] 에서 지연·병렬 보강.
-     */
+    /** GET /missions 의 starLevels 로 경로를 먼저 구성한다. status 는 노드 클릭 시 지연 보강. */
     private fun supplementMissionsStarLevels(missions: List<Mission>): List<Mission> {
         if (UiMode.useStubNav) return missions
         return missions.map { mission ->
@@ -559,37 +598,6 @@ class HomeViewModel @Inject constructor(
             isUnlocked = status.isUnlocked,
         )
     }
-
-    /** 경로에 노출된 미션 중 목록 API 만으로 부족한 것만 status 로 보강(비동기·병렬) */
-    private fun supplementEmptyMissionStarLevels(path: List<HomePathItem>) {
-        if (UiMode.useStubNav) return
-        val ids = path.missionIdsNeedingStarSupplement().filter { missionId ->
-            val mission = _uiState.value.missionStarLevelsById[missionId]
-            mission == null || mission.none { it.isPlayable || it.isReviewable || it.isCompleted }
-        }
-        if (ids.isEmpty()) return
-        viewModelScope.launch {
-            val limiter = Semaphore(MAX_PARALLEL_MISSION_STATUS)
-            supervisorScope {
-                ids.map { missionId ->
-                    async {
-                        limiter.withPermit { ensureMissionStarLevels(missionId) }
-                    }
-                }.awaitAll()
-            }
-        }
-    }
-
-    private fun List<HomePathItem>.missionIdsNeedingStarSupplement(): List<String> =
-        mapNotNull { item ->
-            when (item) {
-                is HomePathItem.TodayStart -> item.quizNav.missionId.takeIf { it.isNotBlank() }
-                is HomePathItem.Start -> item.quizNav.missionId.takeIf { it.isNotBlank() }
-                is HomePathItem.Completed -> item.missionId.takeIf { it.isNotBlank() }
-                is HomePathItem.Review -> item.quizNav.missionId.takeIf { it.isNotBlank() }
-                else -> null
-            }
-        }.distinct()
 
     private fun mapStarLevelDtos(dtos: List<MissionStarLevelDto>): List<MissionStarLevel> =
         dtos.map {
@@ -746,7 +754,5 @@ class HomeViewModel @Inject constructor(
         private const val PREFS_HOME = "aimong_home"
         private const val KEY_LAST_SERVER_DATE = "last_server_date_kst"
         private const val KEY_STREAK_SHIELD_PROMPT_SEEN = "streak_shield_prompt_seen_key"
-        /** 홈 진입 시 status fan-out 상한 — 미션 수 × p50 지연 방지 */
-        private const val MAX_PARALLEL_MISSION_STATUS = 3
     }
 }

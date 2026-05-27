@@ -26,6 +26,8 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -187,28 +189,36 @@ class ParentDashboardViewModel @Inject constructor(
                 return
             }
         )
-        parentRepository.getChildSummary(childId).fold(
-            onSuccess = { _childSummary.value = it },
-            onFailure = { _childSummary.value = null }
-        )
-        parentRepository.getWeeklyStats(childId).fold(
-            onSuccess = { _weeklyStats.value = it },
-            onFailure = { _weeklyStats.value = null }
-        )
-        parentRepository.getWeakPoints(childId, page = 0, size = 20).fold(
-            onSuccess = { _weakPoints.value = it },
-            onFailure = { _weakPoints.value = null }
-        )
-        parentRepository.getCustomQuests(childId).fold(
-            onSuccess = { _customQuests.value = it.quests },
-            onFailure = { _customQuests.value = emptyList() }
-        )
-        parentRepository.getStageRewards(childId).fold(
-            onSuccess = { data ->
-                _stageRewards.value = data.stages.sortedBy { it.stageNumber }
-            },
-            onFailure = { _stageRewards.value = emptyList() }
-        )
+        coroutineScope {
+            val summaryDeferred = async { parentRepository.getChildSummary(childId) }
+            val weeklyDeferred = async { parentRepository.getWeeklyStats(childId) }
+            val weakPointsDeferred = async { parentRepository.getWeakPoints(childId, page = 0, size = 20) }
+            val customQuestsDeferred = async { parentRepository.getCustomQuests(childId) }
+            val stageRewardsDeferred = async { parentRepository.getStageRewards(childId) }
+
+            summaryDeferred.await().fold(
+                onSuccess = { _childSummary.value = it },
+                onFailure = { _childSummary.value = null },
+            )
+            weeklyDeferred.await().fold(
+                onSuccess = { _weeklyStats.value = it },
+                onFailure = { _weeklyStats.value = null },
+            )
+            weakPointsDeferred.await().fold(
+                onSuccess = { _weakPoints.value = it },
+                onFailure = { _weakPoints.value = null },
+            )
+            customQuestsDeferred.await().fold(
+                onSuccess = { _customQuests.value = it.quests },
+                onFailure = { _customQuests.value = emptyList() },
+            )
+            stageRewardsDeferred.await().fold(
+                onSuccess = { data ->
+                    _stageRewards.value = data.stages.sortedBy { it.stageNumber }
+                },
+                onFailure = { _stageRewards.value = emptyList() },
+            )
+        }
     }
 
     fun createCustomQuest(title: String, description: String?, rewardText: String, expiresAt: String) {

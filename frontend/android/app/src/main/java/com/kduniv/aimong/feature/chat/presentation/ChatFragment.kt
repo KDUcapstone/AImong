@@ -19,6 +19,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.kduniv.aimong.R
 import com.kduniv.aimong.core.ui.BaseFragment
+import com.kduniv.aimong.core.util.UiPerfLog
 import com.kduniv.aimong.databinding.FragmentChatBinding
 import com.kduniv.aimong.feature.chat.ChatForegroundTracker
 import com.kduniv.aimong.feature.chat.ChatImageSaver
@@ -47,6 +48,9 @@ class ChatFragment : BaseFragment<FragmentChatBinding>(FragmentChatBinding::infl
     private var suppressImageModeCallback = false
 
     private var privacyDialog: AlertDialog? = null
+
+    private var chatPerfReadyMark: Long? = null
+    private var chatPerfReadyLogged = false
 
     override fun shouldApplySystemBarInsets(): Boolean = false
 
@@ -90,7 +94,9 @@ class ChatFragment : BaseFragment<FragmentChatBinding>(FragmentChatBinding::infl
     override fun onResume() {
         super.onResume()
         chatForegroundTracker.isChatVisible = true
-        viewModel.refreshEquippedPet()
+        chatPerfReadyMark = UiPerfLog.mark("chat_ready")
+        chatPerfReadyLogged = false
+        viewModel.onChatResumed()
     }
 
     override fun onPause() {
@@ -102,10 +108,6 @@ class ChatFragment : BaseFragment<FragmentChatBinding>(FragmentChatBinding::infl
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
-                    val prevEmoji = chatAdapter.petAvatarEmoji
-                    chatAdapter.petAvatarEmoji = state.petAvatarEmoji
-                    chatAdapter.petType = state.petType
-                    chatAdapter.petStage = state.petStage
                     binding.tvChatTitle.text = state.petDisplayName
                     PetArtAssets.bindEquipped(
                         image = binding.ivHeaderPetSprite,
@@ -115,15 +117,28 @@ class ChatFragment : BaseFragment<FragmentChatBinding>(FragmentChatBinding::infl
                         grade = state.petGrade,
                         lottie = binding.lavHeaderPet,
                     )
-                    if (prevEmoji != state.petAvatarEmoji) {
-                        chatAdapter.notifyDataSetChanged()
-                    }
+                    chatAdapter.updatePetAvatar(
+                        petType = state.petType,
+                        petStage = state.petStage,
+                        petAvatarEmoji = state.petAvatarEmoji,
+                    )
                     chatAdapter.submitList(state.messages) {
                         scrollChatToBottom()
                     }
                     binding.btnSend.isEnabled = state.sendEnabled
                     binding.btnSend.alpha = if (state.sendEnabled) 1f else 0.45f
                     binding.etMessage.isEnabled = !state.isLoading
+                    if (!chatPerfReadyLogged && !state.isLoading && state.sendEnabled) {
+                        chatPerfReadyLogged = true
+                        chatPerfReadyMark?.let { started ->
+                            UiPerfLog.measureFrom(
+                                "chat_ready",
+                                started,
+                                "chat_entry_to_input_ready_ms",
+                            )
+                        }
+                        chatPerfReadyMark = null
+                    }
 
                     val rc = state.remainingCalls
                     binding.tvRemainingCalls.isVisible = true

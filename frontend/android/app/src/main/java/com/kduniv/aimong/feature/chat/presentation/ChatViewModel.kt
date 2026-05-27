@@ -13,6 +13,8 @@ import com.kduniv.aimong.feature.chat.domain.ReportPrivacyEventUseCase
 import com.kduniv.aimong.feature.chat.domain.SendChatMessageUseCase
 import com.kduniv.aimong.feature.gacha.GachaPetCatalog
 import com.kduniv.aimong.feature.home.data.PetRepository
+import com.kduniv.aimong.feature.home.domain.ChildHomeRefreshBus
+import com.kduniv.aimong.feature.home.domain.HomeRefreshTrigger
 import com.kduniv.aimong.feature.pet.data.model.PetDto
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -31,6 +33,7 @@ class ChatViewModel @Inject constructor(
     private val chatForegroundTracker: ChatForegroundTracker,
     private val chatHintNotifier: ChatHintNotifier,
     private val petRepository: PetRepository,
+    private val homeRefreshBus: ChildHomeRefreshBus,
     @ApplicationContext private val appContext: Context
 ) : BaseViewModel() {
     private val messageSeq = AtomicLong(0L)
@@ -39,11 +42,31 @@ class ChatViewModel @Inject constructor(
     val uiState = _uiState.asStateFlow()
 
     init {
-        refreshEquippedPet()
+        refreshEquippedPet(force = true)
+        viewModelScope.launch {
+            homeRefreshBus.events.collect { trigger ->
+                when (trigger) {
+                    HomeRefreshTrigger.Full,
+                    is HomeRefreshTrigger.MissionCompleted,
+                    is HomeRefreshTrigger.PetAimongAchieved,
+                    -> refreshEquippedPet(force = true)
+                    else -> Unit
+                }
+            }
+        }
+    }
+
+    /** 단순 탭 복귀 — 이미 펫 컨텍스트가 있으면 GET /pet 생략 */
+    fun onChatResumed() {
+        val s = _uiState.value
+        if (s.petType.isBlank() && !s.hasEquippedPet) {
+            refreshEquippedPet(force = true)
+        }
     }
 
     /** 수집 탭과 동일 — GET /pet 의 equippedPet 만 사용 */
-    fun refreshEquippedPet() {
+    fun refreshEquippedPet(force: Boolean = false) {
+        if (!force) return
         viewModelScope.launch {
             petRepository.getPets().fold(
                 onSuccess = { data ->
