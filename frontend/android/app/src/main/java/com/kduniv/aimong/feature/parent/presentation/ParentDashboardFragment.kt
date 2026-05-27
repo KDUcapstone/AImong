@@ -146,6 +146,14 @@ class ParentDashboardFragment :
 
     override fun initView() {
         val rich = binding.includeDashboardRich
+        binding.swipeParentDashboardRefresh.setColorSchemeColors(
+            ContextCompat.getColor(requireContext(), R.color.parent_mock_indigo),
+            ContextCompat.getColor(requireContext(), R.color.parent_mock_green),
+        )
+        binding.swipeParentDashboardRefresh.setOnRefreshListener {
+            viewModel.refreshSelectedDashboardFromPull()
+        }
+
         rich.rowDashboardChildSelector.setOnClickListener { showChildSelectSheet() }
         binding.cardEmptyChildren.setOnClickListener { showChildSelectSheet() }
 
@@ -928,6 +936,11 @@ class ParentDashboardFragment :
                             if (wp.totalPages > 0) "\n- totalPages: ${wp.totalPages}" else ""
                         binding.tvParentWeakPoints.text =
                             "약점 분석 (${wp.analyzedPeriod ?: "최근"})\n- total: ${wp.totalCount}$wpPages\n$lines"
+                    }
+                }
+                launch {
+                    viewModel.dashboardRefreshing.collect { refreshing ->
+                        binding.swipeParentDashboardRefresh.isRefreshing = refreshing
                     }
                 }
                 launch {

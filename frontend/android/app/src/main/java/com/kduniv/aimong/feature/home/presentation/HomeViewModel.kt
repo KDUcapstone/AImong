@@ -96,6 +96,11 @@ class HomeViewModel @Inject constructor(
         checkStreakShieldRecoveryPrompt()
     }
 
+    fun refreshHomeFromPull() {
+        loadHome(showLoading = false, showRefreshing = true)
+        checkStreakShieldRecoveryPrompt()
+    }
+
     private fun handleRefreshTrigger(trigger: HomeRefreshTrigger) {
         when (trigger) {
             is HomeRefreshTrigger.TicketsUpdated -> patchTicketCount(trigger.normal)
@@ -301,8 +306,11 @@ class HomeViewModel @Inject constructor(
         return StageRewardUi.defaultsForStages(listOf(1, 2))
     }
 
-    private fun loadHome(showLoading: Boolean = true) {
+    private fun loadHome(showLoading: Boolean = true, showRefreshing: Boolean = false) {
         homeLoadJob?.cancel()
+        if (showRefreshing) {
+            _uiState.update { it.copy(isRefreshing = true, errorMessage = null) }
+        }
         homeLoadJob = viewModelScope.launch {
             if (showLoading) {
                 _uiState.update { it.copy(isLoading = true, errorMessage = null, subtleNotice = null) }
@@ -392,6 +400,11 @@ class HomeViewModel @Inject constructor(
                     }
                 }
             )
+        }
+        if (showRefreshing) {
+            homeLoadJob?.invokeOnCompletion {
+                _uiState.update { it.copy(isRefreshing = false) }
+            }
         }
     }
 

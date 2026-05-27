@@ -88,6 +88,9 @@ class ParentDashboardViewModel @Inject constructor(
     private val _pastQuestsLoading = MutableStateFlow(false)
     val pastQuestsLoading: StateFlow<Boolean> = _pastQuestsLoading.asStateFlow()
 
+    private val _dashboardRefreshing = MutableStateFlow(false)
+    val dashboardRefreshing: StateFlow<Boolean> = _dashboardRefreshing.asStateFlow()
+
     private var pastQuestsNextPage = 0
 
     private val _stageRewards = MutableStateFlow<List<ParentStageRewardDto>>(emptyList())
@@ -110,6 +113,23 @@ class ParentDashboardViewModel @Inject constructor(
         val childId = _selectedChildId.value ?: return
         if (_childDetail.value?.lastActiveAt.isNullOrBlank()) return
         viewModelScope.launch { refreshCustomQuests(childId) }
+    }
+
+    fun refreshSelectedDashboardFromPull() {
+        if (_dashboardRefreshing.value) return
+        viewModelScope.launch {
+            _dashboardRefreshing.value = true
+            try {
+                val childId = _selectedChildId.value
+                if (childId.isNullOrBlank()) {
+                    parentRepository.syncParentChildren()
+                    return@launch
+                }
+                refreshAllDashboardForChild(childId)
+            } finally {
+                _dashboardRefreshing.value = false
+            }
+        }
     }
 
     private suspend fun onCustomQuestsChangedExternally(

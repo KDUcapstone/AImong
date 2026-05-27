@@ -52,6 +52,7 @@ data class HomeUiState(
     val quests: List<QuestItemUiState> = emptyList(),
 
     val isLoading: Boolean = false,
+    val isRefreshing: Boolean = false,
     val errorMessage: String? = null,
     /** serverDate(KST)가 직전 저장값과 달라졌을 때 1회 안내 */
     val subtleNotice: String? = null,

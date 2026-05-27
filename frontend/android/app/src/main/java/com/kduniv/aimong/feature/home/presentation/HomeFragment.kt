@@ -47,6 +47,14 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
 
     override fun initView() {
         applyHomeTopChromeInsets()
+        binding.swipeHomeRefresh.setColorSchemeColors(
+            ContextCompat.getColor(requireContext(), R.color.child_streak_accent),
+            ContextCompat.getColor(requireContext(), R.color.child_home_gradient_mid),
+        )
+        binding.swipeHomeRefresh.setOnRefreshListener {
+            missionDifficultyPicker.dismissAnimated()
+            viewModel.refreshHomeFromPull()
+        }
         homeLayoutBinder = HomeLayoutBinder(
             binding = binding,
             layoutInflater = layoutInflater,
@@ -303,6 +311,7 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
                             missionDifficultyPicker.dismissImmediate()
                             lastHomePathStructureKey = pathKey
                         }
+                        binding.swipeHomeRefresh.isRefreshing = state.isRefreshing
                         homeLayoutBinder.bind(state)
                         state.errorMessage?.let { msg ->
                             Snackbar.make(binding.root, msg, Snackbar.LENGTH_LONG).show()
