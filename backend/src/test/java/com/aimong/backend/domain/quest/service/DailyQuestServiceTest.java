@@ -57,5 +57,13 @@ class DailyQuestServiceTest {
         DailyQuest missionOne = quests.get(DailyQuestType.MISSION_1);
         assertThat(missionOne.isCompleted()).isTrue();
         assertThat(missionOne.isRewardClaimed()).isFalse();
+        assertThat(quests).containsKeys(
+                DailyQuestType.MISSION_3,
+                DailyQuestType.STREAK_CHECK,
+                DailyQuestType.ALL_DAILY
+        );
+        assertThat(quests).doesNotContainKey(DailyQuestType.ALL_3);
+        assertThat(quests.get(DailyQuestType.STREAK_CHECK).isCompleted()).isTrue();
+        assertThat(DailyQuestService.claimType(DailyQuestType.MISSION_1)).isEqualTo("MANUAL");
     }
 }

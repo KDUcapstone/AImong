@@ -30,6 +30,19 @@ public interface MissionDailyProgressRepository extends JpaRepository<MissionDai
     long countByChildIdAndProgressDateBetween(UUID childId, LocalDate startDate, LocalDate endDate);
 
     @Query("""
+            select count(distinct p.progressDate)
+            from MissionDailyProgress p
+            where p.childId = :childId
+              and p.progressDate between :startDate and :endDate
+              and p.completedSetCount > 0
+            """)
+    long countCompletedDaysByChildIdAndProgressDateBetween(
+            @Param("childId") UUID childId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate
+    );
+
+    @Query("""
             select new com.aimong.backend.domain.parent.dto.ParentDailyProgressStat(
                 p.progressDate,
                 coalesce(sum(p.completedSetCount), 0),

@@ -14,7 +14,6 @@ import com.aimong.backend.global.exception.AimongException;
 import com.aimong.backend.global.exception.ErrorCode;
 import com.aimong.backend.global.util.KstDateUtils;
 import java.time.LocalDate;
-import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +25,23 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class DailyQuestService {
+
+    private static final List<DailyQuestType> BASE_TYPES = List.of(
+            DailyQuestType.MISSION_1,
+            DailyQuestType.MISSION_3,
+            DailyQuestType.XP_20,
+            DailyQuestType.CHAT_GPT,
+            DailyQuestType.STREAK_CHECK
+    );
+
+    private static final List<DailyQuestType> ACTIVE_TYPES = List.of(
+            DailyQuestType.MISSION_1,
+            DailyQuestType.MISSION_3,
+            DailyQuestType.XP_20,
+            DailyQuestType.CHAT_GPT,
+            DailyQuestType.STREAK_CHECK,
+            DailyQuestType.ALL_DAILY
+    );
 
     private final DailyQuestRepository dailyQuestRepository;
     private final ChildProfileRepository childProfileRepository;
@@ -68,22 +84,30 @@ public class DailyQuestService {
         int todayChats = chatUsageRepository.findByChildIdAndUsageDate(childId, today)
                 .map(usage -> usage.getCount())
                 .orElse(0);
+        int todayStreakMaintained = todayMissions > 0 ? 1 : 0;
 
-        quests.get(DailyQuestType.MISSION_1).updateProgress(todayMissions, requiredValue(DailyQuestType.MISSION_1), false);
-        quests.get(DailyQuestType.XP_20).updateProgress(childProfile.getTodayXp(), requiredValue(DailyQuestType.XP_20), false);
-        quests.get(DailyQuestType.CHAT_GPT).updateProgress(todayChats, requiredValue(DailyQuestType.CHAT_GPT), true);
+        quests.get(DailyQuestType.MISSION_1)
+                .updateProgress(todayMissions, requiredValue(DailyQuestType.MISSION_1), false);
+        quests.get(DailyQuestType.MISSION_3)
+                .updateProgress(todayMissions, requiredValue(DailyQuestType.MISSION_3), false);
+        quests.get(DailyQuestType.XP_20)
+                .updateProgress(childProfile.getTodayXp(), requiredValue(DailyQuestType.XP_20), false);
+        quests.get(DailyQuestType.CHAT_GPT)
+                .updateProgress(todayChats, requiredValue(DailyQuestType.CHAT_GPT), false);
+        quests.get(DailyQuestType.STREAK_CHECK)
+                .updateProgress(todayStreakMaintained, requiredValue(DailyQuestType.STREAK_CHECK), false);
 
-        int completedBaseQuestCount = (int) List.of(DailyQuestType.MISSION_1, DailyQuestType.XP_20, DailyQuestType.CHAT_GPT)
-                .stream()
+        int completedBaseQuestCount = (int) BASE_TYPES.stream()
                 .filter(type -> quests.get(type).isCompleted())
                 .count();
-        quests.get(DailyQuestType.ALL_3).updateProgress(completedBaseQuestCount, requiredValue(DailyQuestType.ALL_3), false);
+        quests.get(DailyQuestType.ALL_DAILY)
+                .updateProgress(completedBaseQuestCount, requiredValue(DailyQuestType.ALL_DAILY), false);
         return quests;
     }
 
     private Map<DailyQuestType, DailyQuest> ensureDailyQuests(UUID childId, LocalDate today) {
         Map<DailyQuestType, DailyQuest> quests = new EnumMap<>(DailyQuestType.class);
-        Arrays.stream(DailyQuestType.values()).forEach(type -> {
+        ACTIVE_TYPES.forEach(type -> {
             DailyQuest quest = dailyQuestRepository.findByChildIdAndQuestDateAndQuestType(childId, today, type)
                     .orElseGet(() -> dailyQuestRepository.save(DailyQuest.create(childId, today, type)));
             quests.put(type, quest);
@@ -105,38 +129,46 @@ public class DailyQuestService {
     }
 
     private List<DailyQuestType> orderedTypes() {
-        return List.of(DailyQuestType.MISSION_1, DailyQuestType.XP_20, DailyQuestType.CHAT_GPT, DailyQuestType.ALL_3);
+        return ACTIVE_TYPES;
+    }
+
+    public static boolean isActiveType(DailyQuestType type) {
+        return ACTIVE_TYPES.contains(type);
+    }
+
+    public static int activeQuestCount() {
+        return ACTIVE_TYPES.size();
     }
 
     public static int requiredValue(DailyQuestType type) {
         return switch (type) {
-            case MISSION_1, CHAT_GPT -> 1;
+            case MISSION_1, CHAT_GPT, STREAK_CHECK -> 1;
+            case MISSION_3, ALL_3 -> 3;
             case XP_20 -> 20;
-            case ALL_3 -> 3;
+            case ALL_DAILY -> BASE_TYPES.size();
         };
     }
 
     public static String claimType(DailyQuestType type) {
-        return switch (type) {
-            case MISSION_1, CHAT_GPT -> "AUTO";
-            case XP_20, ALL_3 -> "MANUAL";
-        };
+        return "MANUAL";
     }
 
     public static String label(DailyQuestType type) {
         return switch (type) {
-            case MISSION_1 -> "미션 1개 완료하기";
-            case XP_20 -> "오늘 XP 20 획득하기";
-            case CHAT_GPT -> "GPT 챗봇과 대화하기";
+            case MISSION_1 -> "미션 1개 완료";
+            case MISSION_3 -> "미션 3개 완료";
+            case XP_20 -> "오늘 XP 20 획득";
+            case CHAT_GPT -> "GPT 챗봇과 대화";
+            case STREAK_CHECK -> "오늘 스트릭 유지";
+            case ALL_DAILY -> "일간 퀘스트 모두 완료";
             case ALL_3 -> "데일리 3개 모두 완료";
         };
     }
 
     public static String reward(DailyQuestType type) {
         return switch (type) {
-            case MISSION_1 -> "자동 적용(별도 수령 없음)";
-            case CHAT_GPT -> "XP 5 자동 지급";
-            case XP_20, ALL_3 -> "일반 티켓 1장";
+            case ALL_DAILY -> "기본 티켓 2장";
+            case MISSION_1, MISSION_3, XP_20, CHAT_GPT, STREAK_CHECK, ALL_3 -> "기본 티켓 1장";
         };
     }
 }

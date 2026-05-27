@@ -38,7 +38,6 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -128,6 +127,7 @@ public class HomeService {
         List<LocalDate> completedDates = missionDailyProgressRepository
                 .findAllByChildIdAndProgressDateBetweenOrderByProgressDateAsc(childId, startDate, endDate)
                 .stream()
+                .filter(progress -> progress.getCompletedSetCount() > 0)
                 .map(MissionDailyProgress::getProgressDate)
                 .distinct()
                 .toList();
@@ -139,7 +139,11 @@ public class HomeService {
                 && !streakRecord.getLastShieldUsedDate().isAfter(endDate)
                 ? List.of(streakRecord.getLastShieldUsedDate())
                 : List.of();
-        LocalDate recoverableDate = streakRecord != null && streakRecord.isRecoveryAvailable(KstDateUtils.today())
+        LocalDate recoverableDate = streakRecord != null
+                && streakRecord.isRecoveryAvailable(KstDateUtils.today())
+                && streakRecord.getRecoveryDeadlineDate() != null
+                && !streakRecord.getRecoveryDeadlineDate().isBefore(startDate)
+                && !streakRecord.getRecoveryDeadlineDate().isAfter(endDate)
                 ? streakRecord.getRecoveryDeadlineDate()
                 : null;
 
@@ -298,6 +302,7 @@ public class HomeService {
     private HomeResponse.StreakSummaryResponse streakSummary(UUID childId, ChildProfile childProfile, LocalDate today) {
         StreakRecord streakRecord = streakRecordRepository.findById(childId)
                 .orElseGet(() -> StreakRecord.create(childId));
+        streakRecord.expireRecoveryIfPast(today);
         int todayMissionCount = today.equals(streakRecord.getLastCompletedDate())
                 ? streakRecord.getTodayMissionCount()
                 : 0;
@@ -332,16 +337,16 @@ public class HomeService {
     private HomeResponse.DailyQuestSummaryResponse dailyQuestSummary(UUID childId, LocalDate today) {
         List<DailyQuest> quests = dailyQuestRepository.findAllByChildIdAndQuestDate(childId, today)
                 .stream()
+                .filter(quest -> DailyQuestService.isActiveType(quest.getQuestType()))
                 .sorted(Comparator.comparingInt(quest -> quest.getQuestType().ordinal()))
                 .toList();
         long completedCount = quests.stream().filter(DailyQuest::isCompleted).count();
         long claimableCount = quests.stream()
                 .filter(quest -> quest.isCompleted() && !quest.isRewardClaimed())
-                .filter(quest -> Objects.equals(DailyQuestService.claimType(quest.getQuestType()), "MANUAL"))
                 .count();
         return new HomeResponse.DailyQuestSummaryResponse(
                 completedCount,
-                DailyQuestType.values().length,
+                DailyQuestService.activeQuestCount(),
                 claimableCount,
                 quests.stream().map(this::toDailyQuestItem).toList()
         );

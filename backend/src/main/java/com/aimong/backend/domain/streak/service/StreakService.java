@@ -70,6 +70,7 @@ public class StreakService {
         ChildProfile profile = childProfileRepository.findById(childId)
                 .orElseThrow(() -> new AimongException(ErrorCode.CHILD_NOT_FOUND));
         LocalDate today = KstDateUtils.today();
+        streak.expireRecoveryIfPast(today);
 
         return new StreakResponse(
                 streak.getContinuousDays(),
@@ -158,25 +159,37 @@ public class StreakService {
         childActivityService.touchLastActiveAt(childId);
         LocalDate today = KstDateUtils.today();
         StreakRecord streak = streakRecordRepository.findWithLockByChildId(childId)
-                .orElseThrow(() -> new AimongException(ErrorCode.CONFLICT, "No recoverable streak is available."));
+                .orElseThrow(() -> new AimongException(ErrorCode.STREAK_NOT_RECOVERABLE));
+        if (streak.expireRecoveryIfPast(today)) {
+            throw new AimongException(ErrorCode.RECOVERY_EXPIRED);
+        }
         if (!streak.isRecoveryAvailable(today)) {
-            throw new AimongException(ErrorCode.CONFLICT, "No recoverable streak is available.");
+            throw new AimongException(ErrorCode.STREAK_NOT_RECOVERABLE);
         }
 
         ChildProfile childProfile = childProfileRepository.findWithLockById(childId)
                 .orElseThrow(() -> new AimongException(ErrorCode.CHILD_NOT_FOUND));
         if (!childProfile.consumeShieldIfAvailable()) {
-            throw new AimongException(ErrorCode.CONFLICT, "No shield is available.");
+            throw new AimongException(ErrorCode.SHIELD_NOT_ENOUGH);
         }
 
-        streak.markProtectedByShield(today.minusDays(1));
+        LocalDate protectedDate = streak.getRecoveryDeadlineDate().minusDays(1);
+        streak.markProtectedByShield(protectedDate);
+        if (currencyService != null) {
+            currencyService.recordZeroAmountEvent(
+                    childProfile,
+                    CurrencyTransactionReason.STREAK_SHIELD_USE,
+                    "STREAK_SHIELD",
+                    protectedDate.toString()
+            );
+        }
         return new ShieldUseResponse(
-                true,
                 childProfile.getShieldCount(),
                 streak.getStatus().name(),
+                streak.getContinuousDays(),
+                streak.getLastShieldUsedDate(),
                 streak.isRecoveryAvailable(today),
-                streak.getRecoveryDeadlineDate(),
-                streak.getLastShieldUsedDate()
+                streak.getRecoveryDeadlineDate()
         );
     }
 

@@ -4,6 +4,7 @@ import com.aimong.backend.domain.auth.entity.ChildProfile;
 import com.aimong.backend.domain.auth.repository.ChildProfileRepository;
 import com.aimong.backend.domain.chat.repository.ChatUsageRepository;
 import com.aimong.backend.domain.mission.repository.MissionAttemptRepository;
+import com.aimong.backend.domain.mission.repository.MissionDailyProgressRepository;
 import com.aimong.backend.domain.quest.dto.ProgressResponse;
 import com.aimong.backend.domain.quest.dto.QuestItemResponse;
 import com.aimong.backend.domain.quest.dto.WeeklyQuestResponse;
@@ -14,7 +15,6 @@ import com.aimong.backend.global.exception.AimongException;
 import com.aimong.backend.global.exception.ErrorCode;
 import com.aimong.backend.global.util.KstDateUtils;
 import java.time.LocalDate;
-import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -27,9 +27,18 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class WeeklyQuestService {
 
+    private static final List<WeeklyQuestType> ACTIVE_TYPES = List.of(
+            WeeklyQuestType.XP_100,
+            WeeklyQuestType.MISSION_5,
+            WeeklyQuestType.MISSION_10,
+            WeeklyQuestType.CHAT_3,
+            WeeklyQuestType.STREAK_5
+    );
+
     private final WeeklyQuestRepository weeklyQuestRepository;
     private final ChildProfileRepository childProfileRepository;
     private final MissionAttemptRepository missionAttemptRepository;
+    private final MissionDailyProgressRepository missionDailyProgressRepository;
     private final ChatUsageRepository chatUsageRepository;
 
     @Transactional
@@ -68,16 +77,21 @@ public class WeeklyQuestService {
                 weekEnd
         ));
         int weeklyChats = Math.toIntExact(chatUsageRepository.sumCountByChildIdAndUsageDateBetween(childId, weekStart, weekEnd));
+        int weeklyStreakDays = Math.toIntExact(
+                missionDailyProgressRepository.countCompletedDaysByChildIdAndProgressDateBetween(childId, weekStart, weekEnd)
+        );
 
         quests.get(WeeklyQuestType.XP_100).updateProgress(childProfile.getWeeklyXp(), requiredValue(WeeklyQuestType.XP_100));
         quests.get(WeeklyQuestType.MISSION_5).updateProgress(weeklyMissions, requiredValue(WeeklyQuestType.MISSION_5));
+        quests.get(WeeklyQuestType.MISSION_10).updateProgress(weeklyMissions, requiredValue(WeeklyQuestType.MISSION_10));
         quests.get(WeeklyQuestType.CHAT_3).updateProgress(weeklyChats, requiredValue(WeeklyQuestType.CHAT_3));
+        quests.get(WeeklyQuestType.STREAK_5).updateProgress(weeklyStreakDays, requiredValue(WeeklyQuestType.STREAK_5));
         return quests;
     }
 
     private Map<WeeklyQuestType, WeeklyQuest> ensureWeeklyQuests(UUID childId, LocalDate weekStart) {
         Map<WeeklyQuestType, WeeklyQuest> quests = new EnumMap<>(WeeklyQuestType.class);
-        Arrays.stream(WeeklyQuestType.values()).forEach(type -> {
+        ACTIVE_TYPES.forEach(type -> {
             WeeklyQuest quest = weeklyQuestRepository.findByChildIdAndWeekStartAndQuestType(childId, weekStart, type)
                     .orElseGet(() -> weeklyQuestRepository.save(WeeklyQuest.create(childId, weekStart, type)));
             quests.put(type, quest);
@@ -99,30 +113,34 @@ public class WeeklyQuestService {
     }
 
     private List<WeeklyQuestType> orderedTypes() {
-        return List.of(WeeklyQuestType.XP_100, WeeklyQuestType.MISSION_5, WeeklyQuestType.CHAT_3);
+        return ACTIVE_TYPES;
     }
 
     public static int requiredValue(WeeklyQuestType type) {
         return switch (type) {
             case XP_100 -> 100;
             case MISSION_5 -> 5;
+            case MISSION_10 -> 10;
             case CHAT_3 -> 3;
+            case STREAK_5 -> 5;
         };
     }
 
     public static String label(WeeklyQuestType type) {
         return switch (type) {
-            case XP_100 -> "이번 주 XP 100 획득하기";
-            case MISSION_5 -> "미션 5개 완료하기";
-            case CHAT_3 -> "GPT 챗봇 3번 사용하기";
+            case XP_100 -> "이번 주 XP 100 획득";
+            case MISSION_5 -> "미션 5개 완료";
+            case MISSION_10 -> "미션 10개 완료";
+            case CHAT_3 -> "GPT 챗봇 3번 사용";
+            case STREAK_5 -> "이번 주 스트릭 5일 유지";
         };
     }
 
     public static String reward(WeeklyQuestType type) {
         return switch (type) {
-            case XP_100 -> "레어 티켓 1장";
-            case MISSION_5 -> "일반 티켓 2장";
-            case CHAT_3 -> "일반 티켓 1장";
+            case MISSION_10 -> "기본 티켓 3장";
+            case XP_100, MISSION_5, STREAK_5 -> "기본 티켓 2장";
+            case CHAT_3 -> "기본 티켓 1장";
         };
     }
 }

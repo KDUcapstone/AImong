@@ -145,6 +145,16 @@ public class StreakRecord {
                 && !today.isAfter(recoveryDeadlineDate);
     }
 
+    public boolean expireRecoveryIfPast(LocalDate today) {
+        if (status == StreakStatus.RECOVERABLE
+                && recoveryDeadlineDate != null
+                && today.isAfter(recoveryDeadlineDate)) {
+            breakStreak();
+            return true;
+        }
+        return false;
+    }
+
     private void clearRecovery(StreakStatus nextStatus) {
         status = nextStatus;
         recoveryDeadlineDate = null;

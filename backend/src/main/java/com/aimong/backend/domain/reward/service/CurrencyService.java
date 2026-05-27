@@ -43,6 +43,15 @@ public class CurrencyService {
         return true;
     }
 
+    public void recordZeroAmountEvent(
+            ChildProfile childProfile,
+            CurrencyTransactionReason reason,
+            String refType,
+            String refId
+    ) {
+        record(childProfile.getId(), 0, childProfile.getGear(), reason, refType, refId);
+    }
+
     private void record(
             UUID childId,
             int amount,

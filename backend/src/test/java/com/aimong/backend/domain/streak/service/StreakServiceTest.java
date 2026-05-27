@@ -115,7 +115,7 @@ class StreakServiceTest {
 
     @Test
     void useShieldConsumesShieldAndProtectsRecoverableStreak() {
-        StreakService service = service();
+        StreakService service = serviceWithCurrency();
         ParentAccount parent = ParentAccount.create("parent-id", "parent@example.com");
         ChildProfile child = ChildProfile.create(parent, "child", "123456");
         child.addShield(1);
@@ -129,11 +129,12 @@ class StreakServiceTest {
 
         var response = service.useShield(child.getId());
 
-        assertThat(response.used()).isTrue();
         assertThat(response.shieldCount()).isZero();
         assertThat(response.status()).isEqualTo(StreakStatus.PROTECTED.name());
+        assertThat(response.continuousDays()).isEqualTo(1);
         assertThat(response.recoveryAvailable()).isFalse();
         assertThat(response.lastShieldUsedDate()).isEqualTo(today.minusDays(1));
+        verify(currencyTransactionRepository).save(any());
     }
 
     @Test
