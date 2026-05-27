@@ -431,6 +431,12 @@ class HomeViewModel @Inject constructor(
     fun missionStarLevels(missionId: String): List<MissionStarLevel> =
         _uiState.value.missionStarLevelsById[missionId].orEmpty()
 
+    fun initialMissionStarLevelsForPicker(missionId: String): List<MissionStarLevel> {
+        val cached = missionStarLevels(missionId).normalizeToThreeLevels()
+        if (cached.any { it.isPlayable || it.isReviewable || it.isCompleted }) return cached
+        return if (isMissionUnlocked(missionId)) defaultPlayableStarLevels() else cached
+    }
+
     /**
      * /missions 목록에 starLevels가 비어 있을 때(2·3스테이지 등) status로 보강.
      * 피커 표시 전 호출하면 잠금 UI가 서버와 맞는다.
@@ -440,6 +446,8 @@ class HomeViewModel @Inject constructor(
         if (UiMode.useStubNav) return missionStarLevels(missionId).normalizeToThreeLevels()
 
         val cached = missionStarLevels(missionId).normalizeToThreeLevels()
+        if (cached.any { it.isPlayable || it.isReviewOnly }) return cached
+
         val snapshot = fetchMissionStatusSnapshot(missionId)
         val merged = snapshot?.stars?.let { statusStars ->
             cached.mergePreservingHigherUnlock(statusStars)

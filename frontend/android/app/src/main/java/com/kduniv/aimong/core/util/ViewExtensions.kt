@@ -12,10 +12,12 @@ fun View.setOnScaleTouchListener() {
     this.setOnTouchListener { v, event ->
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
+                v.parent?.requestDisallowInterceptTouchEvent(true)
                 v.animate().scaleX(0.95f).scaleY(0.95f).setDuration(100).start()
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 v.animate().scaleX(1.0f).scaleY(1.0f).setDuration(100).start()
+                v.parent?.requestDisallowInterceptTouchEvent(false)
             }
         }
         false

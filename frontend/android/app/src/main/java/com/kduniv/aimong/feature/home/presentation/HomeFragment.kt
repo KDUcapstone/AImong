@@ -51,6 +51,9 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
             ContextCompat.getColor(requireContext(), R.color.child_streak_accent),
             ContextCompat.getColor(requireContext(), R.color.child_home_gradient_mid),
         )
+        binding.swipeHomeRefresh.setOnChildScrollUpCallback { _, _ ->
+            missionDifficultyPicker.isShowing() || binding.scrollPath.canScrollVertically(-1)
+        }
         binding.swipeHomeRefresh.setOnRefreshListener {
             missionDifficultyPicker.dismissAnimated()
             viewModel.refreshHomeFromPull()
@@ -63,7 +66,7 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
                 when {
                     nav.missionId.isNotBlank() && !st.isMissionUnlocked(nav.missionId) ->
                         showMissionHint(getString(R.string.quiz_mission_locked))
-                    !st.hasEnoughEnergyForMissionStart() ->
+                    !st.canOpenMissionPicker(unlockMode, viewModel.missionStarLevels(nav.missionId)) ->
                         showEnergyInsufficientSnackbar()
                     else -> {
                         val missionKey = nav.difficultyPickerMissionKey()
@@ -72,7 +75,7 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
                             missionDifficultyPicker.dismissAnimated()
                         } else {
                             missionPickerStarLevelsJob?.cancel()
-                            val initialStars = viewModel.missionStarLevels(nav.missionId)
+                            val initialStars = viewModel.initialMissionStarLevelsForPicker(nav.missionId)
                                 .normalizeToThreeLevels()
                             missionDifficultyPicker.show(
                                 title,
