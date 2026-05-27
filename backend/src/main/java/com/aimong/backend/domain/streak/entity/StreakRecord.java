@@ -2,6 +2,8 @@ package com.aimong.backend.domain.streak.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
@@ -12,6 +14,8 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Getter
 @Entity
@@ -36,14 +40,56 @@ public class StreakRecord {
     @Column(name = "shield_count", nullable = false)
     private int shieldCount;
 
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "status", nullable = false)
+    private StreakStatus status;
+
+    @Column(name = "recovery_deadline_date")
+    private LocalDate recoveryDeadlineDate;
+
+    @Column(name = "recovery_base_days")
+    private Integer recoveryBaseDays;
+
+    @Column(name = "last_shield_used_date")
+    private LocalDate lastShieldUsedDate;
+
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
     public static StreakRecord create(UUID childId) {
-        return new StreakRecord(childId, 0, null, 0, 0, null);
+        return new StreakRecord(childId, 0, null, 0, 0, StreakStatus.ACTIVE, null, null, null, null);
     }
 
     public void recordMissionCompletion(LocalDate today) {
+        if (status == null) {
+            status = StreakStatus.ACTIVE;
+        }
+
+        if (status == StreakStatus.RECOVERABLE && recoveryDeadlineDate != null && !today.isAfter(recoveryDeadlineDate)) {
+            continuousDays = (recoveryBaseDays == null ? continuousDays : recoveryBaseDays) + 1;
+            todayMissionCount = 1;
+            lastCompletedDate = today;
+            clearRecovery(StreakStatus.ACTIVE);
+            updatedAt = Instant.now();
+            return;
+        }
+
+        if (status == StreakStatus.RECOVERABLE && recoveryDeadlineDate != null && today.isAfter(recoveryDeadlineDate)) {
+            breakStreak();
+        }
+
+        if (status == StreakStatus.PROTECTED
+                && lastShieldUsedDate != null
+                && lastShieldUsedDate.equals(today.minusDays(1))) {
+            continuousDays += 1;
+            todayMissionCount = 1;
+            lastCompletedDate = today;
+            clearRecovery(StreakStatus.ACTIVE);
+            updatedAt = Instant.now();
+            return;
+        }
+
         if (lastCompletedDate == null || lastCompletedDate.isBefore(today.minusDays(1))) {
             continuousDays = 1;
             todayMissionCount = 1;
@@ -58,12 +104,18 @@ public class StreakRecord {
         }
 
         lastCompletedDate = today;
+        clearRecovery(StreakStatus.ACTIVE);
         updatedAt = Instant.now();
     }
 
     public void resetStreak() {
+        breakStreak();
+    }
+
+    public void breakStreak() {
         continuousDays = 0;
         todayMissionCount = 0;
+        clearRecovery(StreakStatus.BROKEN);
         updatedAt = Instant.now();
     }
 
@@ -72,8 +124,38 @@ public class StreakRecord {
         updatedAt = Instant.now();
     }
 
+    public void markProtectedByShield(LocalDate protectedDate) {
+        todayMissionCount = 0;
+        lastShieldUsedDate = protectedDate;
+        clearRecovery(StreakStatus.PROTECTED);
+        updatedAt = Instant.now();
+    }
+
+    public void markRecoverable(LocalDate recoveryDeadlineDate) {
+        todayMissionCount = 0;
+        status = StreakStatus.RECOVERABLE;
+        this.recoveryDeadlineDate = recoveryDeadlineDate;
+        this.recoveryBaseDays = continuousDays;
+        updatedAt = Instant.now();
+    }
+
+    public boolean isRecoveryAvailable(LocalDate today) {
+        return status == StreakStatus.RECOVERABLE
+                && recoveryDeadlineDate != null
+                && !today.isAfter(recoveryDeadlineDate);
+    }
+
+    private void clearRecovery(StreakStatus nextStatus) {
+        status = nextStatus;
+        recoveryDeadlineDate = null;
+        recoveryBaseDays = null;
+    }
+
     @PrePersist
     void prePersist() {
+        if (status == null) {
+            status = StreakStatus.ACTIVE;
+        }
         if (updatedAt == null) {
             updatedAt = Instant.now();
         }

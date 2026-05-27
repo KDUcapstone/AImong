@@ -19,9 +19,22 @@ public interface StreakRecordRepository extends JpaRepository<StreakRecord, UUID
             select s
             from StreakRecord s
             where s.continuousDays > 0
+              and s.status in (
+                  com.aimong.backend.domain.streak.entity.StreakStatus.ACTIVE,
+                  com.aimong.backend.domain.streak.entity.StreakStatus.PROTECTED
+              )
               and (s.lastCompletedDate is null or s.lastCompletedDate < :yesterday)
             """)
     List<StreakRecord> findMissedActiveStreaksForReset(LocalDate yesterday);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+            select s
+            from StreakRecord s
+            where s.status = com.aimong.backend.domain.streak.entity.StreakStatus.RECOVERABLE
+              and s.recoveryDeadlineDate < :today
+            """)
+    List<StreakRecord> findExpiredRecoverableStreaks(LocalDate today);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""

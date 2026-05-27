@@ -22,14 +22,15 @@ public class FcmService {
             return;
         }
 
+        FcmPayload displayPayload = normalizeDisplayPayload(payload);
         Message.Builder messageBuilder = Message.builder()
                 .setToken(token)
                 .setNotification(Notification.builder()
-                        .setTitle(payload.title())
-                        .setBody(payload.body())
+                        .setTitle(displayPayload.title())
+                        .setBody(displayPayload.body())
                         .build());
 
-        payload.dataWithDisplayFields().forEach(messageBuilder::putData);
+        displayPayload.dataWithDisplayFields().forEach(messageBuilder::putData);
 
         try {
             FirebaseMessaging.getInstance().send(messageBuilder.build());
@@ -40,6 +41,39 @@ public class FcmService {
         } catch (RuntimeException exception) {
             log.warn("FCM send failed: message={}", exception.getMessage());
         }
+    }
+
+    private FcmPayload normalizeDisplayPayload(FcmPayload payload) {
+        if (payload == null || payload.data() == null) {
+            return payload;
+        }
+        String type = payload.data().get("type");
+        if (type == null) {
+            return payload;
+        }
+        return switch (type) {
+            case "GACHA_LEVEL_UP" -> new FcmPayload(
+                    "Gacha level up",
+                    "Your child's Aimong collection is growing.",
+                    payload.data()
+            );
+            case "LEARNING_REMINDER" -> new FcmPayload(
+                    "Learning reminder",
+                    "Your child has not studied for " + payload.data().getOrDefault("daysMissed", "several") + " days.",
+                    payload.data()
+            );
+            case "PRIVACY_ALERT" -> new FcmPayload(
+                    "Privacy alert",
+                    "Your child may have entered personal information.",
+                    payload.data()
+            );
+            case "PRIVACY_ALERT_BATCH" -> new FcmPayload(
+                    "Privacy alert summary",
+                    payload.data().getOrDefault("queuedCount", "Several") + " privacy-risk attempts were detected today.",
+                    payload.data()
+            );
+            default -> payload;
+        };
     }
 
     @Async

@@ -15,6 +15,7 @@ import com.aimong.backend.domain.reward.repository.CurrencyTransactionRepository
 import com.aimong.backend.domain.reward.service.CurrencyService;
 import com.aimong.backend.domain.streak.entity.FriendStreak;
 import com.aimong.backend.domain.streak.entity.StreakRecord;
+import com.aimong.backend.domain.streak.entity.StreakStatus;
 import com.aimong.backend.domain.streak.repository.FriendStreakRepository;
 import com.aimong.backend.domain.streak.repository.StreakRecordRepository;
 import com.aimong.backend.global.exception.AimongException;
@@ -55,6 +56,8 @@ class StreakServiceTest {
         assertThat(response.continuousDays()).isEqualTo(1);
         assertThat(response.lastCompletedDate()).isEqualTo(yesterday);
         assertThat(response.todaySetCount()).isZero();
+        assertThat(response.status()).isEqualTo(StreakStatus.ACTIVE.name());
+        assertThat(response.recoveryAvailable()).isFalse();
         assertThat(response.partner()).isNull();
         verify(childActivityService).touchLastActiveAt(childId);
     }
@@ -77,6 +80,60 @@ class StreakServiceTest {
         assertThat(response.todaySetCount()).isEqualTo(1);
         assertThat(response.shieldCount()).isEqualTo(2);
         assertThat(response.partner()).isNull();
+    }
+
+    @Test
+    void recoverableStreakContinuesWhenMissionCompletesBeforeDeadline() {
+        UUID childId = UUID.randomUUID();
+        LocalDate today = KstDateUtils.today();
+        StreakRecord streak = StreakRecord.create(childId);
+        streak.recordMissionCompletion(today.minusDays(2));
+        streak.markRecoverable(today);
+
+        streak.recordMissionCompletion(today);
+
+        assertThat(streak.getContinuousDays()).isEqualTo(2);
+        assertThat(streak.getTodayMissionCount()).isEqualTo(1);
+        assertThat(streak.getStatus()).isEqualTo(StreakStatus.ACTIVE);
+        assertThat(streak.getRecoveryDeadlineDate()).isNull();
+    }
+
+    @Test
+    void protectedStreakContinuesWhenMissionCompletesAfterShieldUse() {
+        UUID childId = UUID.randomUUID();
+        LocalDate today = KstDateUtils.today();
+        StreakRecord streak = StreakRecord.create(childId);
+        streak.recordMissionCompletion(today.minusDays(2));
+        streak.markProtectedByShield(today.minusDays(1));
+
+        streak.recordMissionCompletion(today);
+
+        assertThat(streak.getContinuousDays()).isEqualTo(2);
+        assertThat(streak.getTodayMissionCount()).isEqualTo(1);
+        assertThat(streak.getStatus()).isEqualTo(StreakStatus.ACTIVE);
+    }
+
+    @Test
+    void useShieldConsumesShieldAndProtectsRecoverableStreak() {
+        StreakService service = service();
+        ParentAccount parent = ParentAccount.create("parent-id", "parent@example.com");
+        ChildProfile child = ChildProfile.create(parent, "child", "123456");
+        child.addShield(1);
+        LocalDate today = KstDateUtils.today();
+        StreakRecord streak = StreakRecord.create(child.getId());
+        streak.recordMissionCompletion(today.minusDays(2));
+        streak.markRecoverable(today);
+
+        when(streakRecordRepository.findWithLockByChildId(child.getId())).thenReturn(Optional.of(streak));
+        when(childProfileRepository.findWithLockById(child.getId())).thenReturn(Optional.of(child));
+
+        var response = service.useShield(child.getId());
+
+        assertThat(response.used()).isTrue();
+        assertThat(response.shieldCount()).isZero();
+        assertThat(response.status()).isEqualTo(StreakStatus.PROTECTED.name());
+        assertThat(response.recoveryAvailable()).isFalse();
+        assertThat(response.lastShieldUsedDate()).isEqualTo(today.minusDays(1));
     }
 
     @Test

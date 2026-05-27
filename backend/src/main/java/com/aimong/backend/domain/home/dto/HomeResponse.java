@@ -79,6 +79,10 @@ public record HomeResponse(
             LocalDate lastCompletedDate,
             int todayMissionCount,
             int shieldCount,
+            String status,
+            boolean recoveryAvailable,
+            LocalDate recoveryDeadlineDate,
+            LocalDate lastShieldUsedDate,
             PartnerResponse partner
     ) {
     }

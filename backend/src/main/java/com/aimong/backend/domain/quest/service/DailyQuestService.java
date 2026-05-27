@@ -69,7 +69,7 @@ public class DailyQuestService {
                 .map(usage -> usage.getCount())
                 .orElse(0);
 
-        quests.get(DailyQuestType.MISSION_1).updateProgress(todayMissions, requiredValue(DailyQuestType.MISSION_1), true);
+        quests.get(DailyQuestType.MISSION_1).updateProgress(todayMissions, requiredValue(DailyQuestType.MISSION_1), false);
         quests.get(DailyQuestType.XP_20).updateProgress(childProfile.getTodayXp(), requiredValue(DailyQuestType.XP_20), false);
         quests.get(DailyQuestType.CHAT_GPT).updateProgress(todayChats, requiredValue(DailyQuestType.CHAT_GPT), true);
 

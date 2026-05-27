@@ -131,14 +131,25 @@ public class HomeService {
                 .map(MissionDailyProgress::getProgressDate)
                 .distinct()
                 .toList();
-        int continuousDays = streakRecordRepository.findById(childId)
-                .map(StreakRecord::getContinuousDays)
-                .orElse(0);
+        StreakRecord streakRecord = streakRecordRepository.findById(childId).orElse(null);
+        int continuousDays = streakRecord == null ? 0 : streakRecord.getContinuousDays();
+        List<LocalDate> protectedDates = streakRecord != null
+                && streakRecord.getLastShieldUsedDate() != null
+                && !streakRecord.getLastShieldUsedDate().isBefore(startDate)
+                && !streakRecord.getLastShieldUsedDate().isAfter(endDate)
+                ? List.of(streakRecord.getLastShieldUsedDate())
+                : List.of();
+        LocalDate recoverableDate = streakRecord != null && streakRecord.isRecoveryAvailable(KstDateUtils.today())
+                ? streakRecord.getRecoveryDeadlineDate()
+                : null;
 
         return new StreakCalendarResponse(
                 targetMonth.toString(),
                 continuousDays,
                 completedDates,
+                protectedDates,
+                recoverableDate,
+                List.of(),
                 KstDateUtils.today()
         );
     }
@@ -295,6 +306,10 @@ public class HomeService {
                 streakRecord.getLastCompletedDate(),
                 todayMissionCount,
                 childProfile.getShieldCount(),
+                streakRecord.getStatus().name(),
+                streakRecord.isRecoveryAvailable(today),
+                streakRecord.getRecoveryDeadlineDate(),
+                streakRecord.getLastShieldUsedDate(),
                 partner(childId, today)
         );
     }

@@ -6,6 +6,7 @@ import com.aimong.backend.domain.auth.service.ChildActivityService;
 import com.aimong.backend.domain.streak.dto.PartnerConnectResponse;
 import com.aimong.backend.domain.streak.dto.PartnerDisconnectResponse;
 import com.aimong.backend.domain.streak.dto.ShieldPurchaseResponse;
+import com.aimong.backend.domain.streak.dto.ShieldUseResponse;
 import com.aimong.backend.domain.streak.dto.StreakResponse;
 import com.aimong.backend.domain.streak.entity.FriendStreak;
 import com.aimong.backend.domain.streak.entity.StreakRecord;
@@ -75,6 +76,10 @@ public class StreakService {
                 streak.getLastCompletedDate(),
                 todayMissionCountForToday(streak, today),
                 profile.getShieldCount(),
+                streak.getStatus().name(),
+                streak.isRecoveryAvailable(today),
+                streak.getRecoveryDeadlineDate(),
+                streak.getLastShieldUsedDate(),
                 findPartner(childId, today)
         );
     }
@@ -145,6 +150,33 @@ public class StreakService {
                 count,
                 CurrencyService.STREAK_SHIELD_COST,
                 childProfile.getGear()
+        );
+    }
+
+    @Transactional
+    public ShieldUseResponse useShield(UUID childId) {
+        childActivityService.touchLastActiveAt(childId);
+        LocalDate today = KstDateUtils.today();
+        StreakRecord streak = streakRecordRepository.findWithLockByChildId(childId)
+                .orElseThrow(() -> new AimongException(ErrorCode.CONFLICT, "No recoverable streak is available."));
+        if (!streak.isRecoveryAvailable(today)) {
+            throw new AimongException(ErrorCode.CONFLICT, "No recoverable streak is available.");
+        }
+
+        ChildProfile childProfile = childProfileRepository.findWithLockById(childId)
+                .orElseThrow(() -> new AimongException(ErrorCode.CHILD_NOT_FOUND));
+        if (!childProfile.consumeShieldIfAvailable()) {
+            throw new AimongException(ErrorCode.CONFLICT, "No shield is available.");
+        }
+
+        streak.markProtectedByShield(today.minusDays(1));
+        return new ShieldUseResponse(
+                true,
+                childProfile.getShieldCount(),
+                streak.getStatus().name(),
+                streak.isRecoveryAvailable(today),
+                streak.getRecoveryDeadlineDate(),
+                streak.getLastShieldUsedDate()
         );
     }
 
