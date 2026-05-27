@@ -9,6 +9,7 @@ import com.kduniv.aimong.feature.dev.mock.MockGearBalance
 import com.kduniv.aimong.feature.streak.data.model.StreakPartnerDto
 import com.kduniv.aimong.feature.streak.data.model.StreakShieldPurchaseRequest
 import com.kduniv.aimong.feature.streak.data.model.StreakShieldPurchaseResponseData
+import com.kduniv.aimong.feature.streak.data.model.StreakShieldUseResponseData
 import com.kduniv.aimong.feature.streak.data.model.StreakStatusData
 import retrofit2.HttpException
 import javax.inject.Inject
@@ -29,6 +30,7 @@ class StreakRepositoryImpl @Inject constructor(
                     lastCompletedDate = "2026-03-28",
                     todaySetCount = 1,
                     shieldCount = stubShieldCount,
+                    status = "ACTIVE",
                     partner = StreakPartnerDto(
                         childId = "stub-partner",
                         nickname = "지우",
@@ -57,6 +59,30 @@ class StreakRepositoryImpl @Inject constructor(
         }
         return try {
             apiService.purchaseStreakShield(StreakShieldPurchaseRequest(safeCount)).toResult()
+        } catch (e: HttpException) {
+            Result.failure(Exception(ApiErrorMapper.userMessageForHttpException(e)))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun useShield(): Result<StreakShieldUseResponseData> {
+        if (UiMode.useStubNav) {
+            if (stubShieldCount <= 0) {
+                return Result.failure(Exception("사용할 불꽃 방패가 없어요."))
+            }
+            stubShieldCount -= 1
+            return Result.success(
+                StreakShieldUseResponseData(
+                    continuousDays = 5,
+                    shieldCount = stubShieldCount,
+                    status = "PROTECTED",
+                    used = true,
+                ),
+            )
+        }
+        return try {
+            apiService.useStreakShield().toResult()
         } catch (e: HttpException) {
             Result.failure(Exception(ApiErrorMapper.userMessageForHttpException(e)))
         } catch (e: Exception) {

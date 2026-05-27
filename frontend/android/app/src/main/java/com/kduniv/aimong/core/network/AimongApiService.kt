@@ -447,6 +447,9 @@ interface AimongApiService {
     suspend fun purchaseStreakShield(
         @Body body: StreakShieldPurchaseRequest
     ): ApiResponse<StreakShieldPurchaseResponseData>
+
+    @POST("streak/shields/use")
+    suspend fun useStreakShield(): ApiResponse<com.kduniv.aimong.feature.streak.data.model.StreakShieldUseResponseData>
 }
 
 data class ChatMessageRequest(

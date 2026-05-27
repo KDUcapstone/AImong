@@ -25,7 +25,6 @@ class HomeLayoutBinder(
     private val layoutInflater: LayoutInflater,
     private val onOpenDifficultyPicker: (String, HomeQuizNavigation, View, DifficultyUnlockMode) -> Unit,
     private val onNavigateToQuiz: (HomeQuizNavigation, DifficultyUnlockMode) -> Unit,
-    private val onEnergyInsufficient: () -> Unit,
     private val onShowMissionHint: (String) -> Unit,
     private val onStageRewardChestClick: (StageRewardUi) -> Unit,
 ) {
@@ -222,20 +221,12 @@ class HomeLayoutBinder(
                     MissionPathUiHelper.bindStarRow(row.layoutStars, item.starsFilled)
                     row.tvMissionCaption.text = item.missionTitle
                     val go = {
-                        if (!state.canOpenMissionPicker(
-                                item.unlockMode,
-                                state.missionStarLevelsById[item.quizNav.missionId].orEmpty(),
-                            )
-                        ) {
-                            onEnergyInsufficient()
-                        } else {
-                            onOpenDifficultyPicker(
-                                item.missionTitle,
-                                item.quizNav,
-                                row.root,
-                                item.unlockMode,
-                            )
-                        }
+                        onOpenDifficultyPicker(
+                            item.missionTitle,
+                            item.quizNav,
+                            row.root,
+                            item.unlockMode,
+                        )
                     }
                     row.btnNode.root.setOnClickListener { go() }
                     row.tvMissionCaption.setOnClickListener { go() }

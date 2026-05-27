@@ -26,6 +26,8 @@ import com.kduniv.aimong.feature.mission.domain.model.normalizeToThreeLevels
 import com.kduniv.aimong.feature.mission.domain.model.openDifficultyCount
 import com.kduniv.aimong.feature.mission.domain.repository.MissionRepository
 import com.kduniv.aimong.feature.quest.domain.repository.QuestRepository
+import com.kduniv.aimong.feature.streak.data.StreakRepository
+import com.kduniv.aimong.feature.streak.data.model.StreakStatusData
 import com.kduniv.aimong.feature.wallet.domain.repository.WalletRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -55,6 +57,7 @@ class HomeViewModel @Inject constructor(
     private val homeRepository: HomeRepository,
     private val walletRepository: WalletRepository,
     private val questRepository: QuestRepository,
+    private val streakRepository: StreakRepository,
     private val appBootstrapRepository: AppBootstrapRepository,
     private val apiService: AimongApiService,
     private val missionStatusCache: MissionStatusCache,
@@ -67,6 +70,10 @@ class HomeViewModel @Inject constructor(
 
     private val _pendingAimongCelebration = MutableStateFlow<AimongCelebrationUi?>(null)
     val pendingAimongCelebration: StateFlow<AimongCelebrationUi?> = _pendingAimongCelebration.asStateFlow()
+
+    private val _pendingStreakShieldRecovery = MutableStateFlow<StreakShieldRecoveryUi?>(null)
+    val pendingStreakShieldRecovery: StateFlow<StreakShieldRecoveryUi?> =
+        _pendingStreakShieldRecovery.asStateFlow()
 
     private val homePrefs by lazy {
         appContext.getSharedPreferences(PREFS_HOME, Context.MODE_PRIVATE)
@@ -86,6 +93,7 @@ class HomeViewModel @Inject constructor(
 
     fun onHomeResumed() {
         loadHome(showLoading = _uiState.value.pathItems.isEmpty())
+        checkStreakShieldRecoveryPrompt()
     }
 
     private fun handleRefreshTrigger(trigger: HomeRefreshTrigger) {
@@ -113,6 +121,41 @@ class HomeViewModel @Inject constructor(
 
     fun consumeAimongCelebration() {
         _pendingAimongCelebration.value = null
+    }
+
+    fun consumeStreakShieldRecoveryPrompt(dismissForNow: Boolean = false) {
+        if (dismissForNow) {
+            _pendingStreakShieldRecovery.value?.let { markStreakShieldPromptSeen(it) }
+        }
+        _pendingStreakShieldRecovery.value = null
+    }
+
+    fun useStreakShieldForRecovery() {
+        val pending = _pendingStreakShieldRecovery.value
+        viewModelScope.launch {
+            streakRepository.useShield().fold(
+                onSuccess = {
+                    pending?.let { markStreakShieldPromptSeen(it) }
+                    _pendingStreakShieldRecovery.value = null
+                    _uiState.update { state ->
+                        state.copy(
+                            streakDays = it.continuousDays ?: state.streakDays,
+                            shieldCount = it.shieldCount,
+                            subtleNotice = appContext.getString(R.string.streak_shield_recovery_success),
+                        )
+                    }
+                    homeRefreshBus.notify(HomeRefreshTrigger.Full)
+                },
+                onFailure = { e ->
+                    _uiState.update {
+                        it.copy(
+                            errorMessage = e.message
+                                ?: appContext.getString(R.string.streak_shield_recovery_failed),
+                        )
+                    }
+                },
+            )
+        }
     }
 
     private fun applyMissionXpHint(xpEarned: Int, equippedPetXp: Int) {
@@ -215,6 +258,39 @@ class HomeViewModel @Inject constructor(
                 }
             )
         }
+    }
+
+    private fun checkStreakShieldRecoveryPrompt() {
+        viewModelScope.launch {
+            streakRepository.getStreak().onSuccess { status ->
+                val prompt = status.toRecoveryPrompt() ?: return@onSuccess
+                if (!isStreakShieldPromptSeen(prompt)) {
+                    _pendingStreakShieldRecovery.value = prompt
+                }
+            }
+        }
+    }
+
+    private fun StreakStatusData.toRecoveryPrompt(): StreakShieldRecoveryUi? {
+        if (shieldCount <= 0) return null
+        val normalized = status?.trim()?.uppercase().orEmpty()
+        if (normalized != "BROKEN" && normalized != "RECOVERABLE") return null
+        return StreakShieldRecoveryUi(
+            status = normalized,
+            shieldCount = shieldCount,
+            continuousDays = continuousDays,
+            recoveryDeadlineDate = recoveryDeadlineDate,
+        )
+    }
+
+    private fun streakShieldPromptKey(ui: StreakShieldRecoveryUi): String =
+        listOf(ui.status, ui.recoveryDeadlineDate.orEmpty(), ui.continuousDays).joinToString("|")
+
+    private fun isStreakShieldPromptSeen(ui: StreakShieldRecoveryUi): Boolean =
+        homePrefs.getString(KEY_STREAK_SHIELD_PROMPT_SEEN, null) == streakShieldPromptKey(ui)
+
+    private fun markStreakShieldPromptSeen(ui: StreakShieldRecoveryUi) {
+        homePrefs.edit().putString(KEY_STREAK_SHIELD_PROMPT_SEEN, streakShieldPromptKey(ui)).apply()
     }
 
     private suspend fun resolveStageRewardsForPath(): Map<Int, StageRewardUi> {
@@ -648,6 +724,7 @@ class HomeViewModel @Inject constructor(
     companion object {
         private const val PREFS_HOME = "aimong_home"
         private const val KEY_LAST_SERVER_DATE = "last_server_date_kst"
+        private const val KEY_STREAK_SHIELD_PROMPT_SEEN = "streak_shield_prompt_seen_key"
         /** 홈 진입 시 status fan-out 상한 — 미션 수 × p50 지연 방지 */
         private const val MAX_PARALLEL_MISSION_STATUS = 3
     }

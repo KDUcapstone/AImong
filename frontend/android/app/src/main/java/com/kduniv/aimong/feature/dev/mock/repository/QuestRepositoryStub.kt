@@ -13,7 +13,6 @@ import com.kduniv.aimong.feature.quest.data.model.QuestClaimResponseData
 import com.kduniv.aimong.feature.quest.data.model.QuestRemainingTicketsDto
 import com.kduniv.aimong.feature.quest.data.model.QuestRewardItemDto
 import com.kduniv.aimong.feature.quest.data.model.WeeklyQuestsResponseData
-import com.kduniv.aimong.feature.quest.domain.QuestPolicy
 import com.kduniv.aimong.feature.quest.domain.repository.QuestRepository
 import java.time.DayOfWeek
 import java.time.Instant
@@ -63,7 +62,7 @@ class QuestRepositoryStub @Inject constructor() : QuestRepository {
                         current = 1,
                         required = 1,
                         completed = true,
-                        rewardClaimed = true,
+                        rewardClaimed = false,
                     ),
                     sampleQuest(
                         "MISSION_2",
@@ -133,9 +132,6 @@ class QuestRepositoryStub @Inject constructor() : QuestRepository {
     }
 
     override suspend fun claimQuest(questType: String, period: String): Result<QuestClaimResponseData> {
-        if (QuestPolicy.isAutoClaimQuest(questType)) {
-            return Result.failure(Exception("자동 지급 퀘스트는 수령 API를 호출할 수 없어요"))
-        }
         return Result.success(
             QuestClaimResponseData(
                 rewards = listOf(

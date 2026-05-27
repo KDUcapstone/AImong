@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_child_quest_sheet"
+    android:gravity="center_horizontal"
+    android:orientation="vertical"
+    android:paddingHorizontal="24dp"
+    android:paddingTop="24dp"
+    android:paddingBottom="22dp">
+
+    <FrameLayout
+        android:layout_width="72dp"
+        android:layout_height="72dp"
+        android:background="@drawable/bg_child_streak_shield_row">
+
+        <ImageView
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:layout_gravity="center"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_flame"
+            app:tint="@color/child_streak_accent" />
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/tv_streak_shield_recovery_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:gravity="center"
+        android:textColor="@color/child_quest_sheet_text_primary"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        tools:text="스트릭이 끊겼어요" />
+
+    <TextView
+        android:id="@+id/tv_streak_shield_recovery_body"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:gravity="center"
+        android:lineSpacingExtra="3dp"
+        android:textColor="@color/child_quest_sheet_text_secondary"
+        android:textSize="14sp"
+        tools:text="불꽃 방패를 사용하면 5일 스트릭을 되살릴 수 있어요.\n보유 불꽃 방패 2개" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_streak_shield_use"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:backgroundTint="@color/child_streak_accent"
+        android:text="@string/streak_shield_recovery_use"
+        android:textColor="@color/white"
+        app:cornerRadius="14dp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_streak_shield_later"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:text="@string/streak_shield_recovery_later"
+        android:textColor="@color/child_quest_sheet_text_secondary" />
+</LinearLayout>

@@ -9,7 +9,6 @@ import com.kduniv.aimong.feature.home.domain.ChildHomeRefreshBus
 import com.kduniv.aimong.feature.home.domain.HomeRefreshTrigger
 import com.kduniv.aimong.feature.quest.data.model.ChildCustomQuestDto
 import com.kduniv.aimong.feature.quest.domain.QuestNotificationHelper
-import com.kduniv.aimong.feature.quest.domain.QuestPolicy
 import com.kduniv.aimong.feature.quest.domain.repository.QuestRepository
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -213,14 +212,6 @@ class QuestListViewModel @Inject constructor(
     }
 
     fun onClaim(questType: String, period: QuestSheetPeriod, questTitle: String) {
-        if (QuestPolicy.isAutoClaimQuest(questType)) {
-            viewModelScope.launch {
-                _effects.trySend(
-                    QuestSheetEffect.Snackbar(appContext.getString(R.string.quest_auto_no_claim)),
-                )
-            }
-            return
-        }
         val periodStr = when (period) {
             QuestSheetPeriod.DAILY -> "daily"
             QuestSheetPeriod.WEEKLY -> "weekly"

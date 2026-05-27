@@ -23,7 +23,7 @@ class MissionPathNestedScrollView @JvmOverloads constructor(
             val r = popupBoundsInScroll?.invoke()
             if (r != null) {
                 val x = ev.x.toInt()
-                val y = ev.y.toInt()
+                val y = ev.y.toInt() + scrollY
                 if (!r.contains(x, y)) {
                     post { onOutsidePopupAction?.invoke() }
                 }

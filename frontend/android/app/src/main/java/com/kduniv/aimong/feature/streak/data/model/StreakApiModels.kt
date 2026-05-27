@@ -15,6 +15,10 @@ data class StreakStatusData(
     @SerializedName(value = "todaySetCount", alternate = ["todayMissionCount"])
     val todaySetCount: Int = 0,
     @SerializedName("shieldCount") val shieldCount: Int,
+    @SerializedName("status") val status: String? = null,
+    @SerializedName("recoveryAvailable") val recoveryAvailable: Boolean = false,
+    @SerializedName("recoveryDeadlineDate") val recoveryDeadlineDate: String? = null,
+    @SerializedName("lastShieldUsedDate") val lastShieldUsedDate: String? = null,
     @SerializedName("partner") val partner: StreakPartnerDto?
 )
 
@@ -32,4 +36,12 @@ data class StreakShieldPurchaseResponseData(
 ) {
     fun resolvedGearBalance(): Int? = gearBalance ?: gear
 }
+
+/** POST /streak/shields/use — 끊긴 스트릭을 불꽃 방패로 복구 */
+data class StreakShieldUseResponseData(
+    @SerializedName("continuousDays") val continuousDays: Int? = null,
+    @SerializedName("shieldCount") val shieldCount: Int,
+    @SerializedName("status") val status: String? = null,
+    @SerializedName("used") val used: Boolean = true,
+)
 

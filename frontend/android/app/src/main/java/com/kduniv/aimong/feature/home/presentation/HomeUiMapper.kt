@@ -115,10 +115,7 @@ internal object HomeUiMapper {
     }
 
     private fun mapQuest(q: DailyQuestItemDto, canStartMission: Boolean): QuestItemUiState {
-        val lineComplete = when (q.claimType.uppercase()) {
-            "MANUAL" -> q.completed && q.rewardClaimed
-            else -> q.completed
-        }
+        val lineComplete = q.completed && q.rewardClaimed
         val missionLike = q.questType.contains("MISSION", ignoreCase = true)
         val canStart = !lineComplete &&
             if (missionLike) canStartMission else true

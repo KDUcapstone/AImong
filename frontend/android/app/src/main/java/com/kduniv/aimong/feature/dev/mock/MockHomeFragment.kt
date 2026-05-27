@@ -72,12 +72,11 @@ class MockHomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::
             binding = binding,
             layoutInflater = layoutInflater,
             onOpenDifficultyPicker = { title, nav, anchor, unlockMode ->
-                val st = sampleState
-                if (!st.canOpenMissionPicker(unlockMode)) {
+                if (!sampleState.hasEnoughEnergyForMissionStart()) {
                     Snackbar.make(
                         binding.root,
                         getString(R.string.home_energy_insufficient_toast),
-                        Snackbar.LENGTH_LONG
+                        Snackbar.LENGTH_LONG,
                     )
                         .setAction(getString(R.string.home_go_energy_charge)) {
                             EnergyBottomSheet.newInstance().show(childFragmentManager, "energy_sheet")
@@ -88,24 +87,24 @@ class MockHomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::
                     if (missionDifficultyPicker.isShowingForMission(missionKey)) {
                         missionDifficultyPicker.dismissAnimated()
                     } else {
-                    missionDifficultyPicker.dismissImmediate()
-                    missionDifficultyPicker.show(
-                        title,
-                        nav,
-                        emptyList(),
-                        unlockMode,
-                        anchor,
-                        missionKey,
-                    ) { picked, _ ->
-                        findNavController().navigate(
-                            R.id.quizFragment,
-                            androidx.core.os.bundleOf(
-                                "entrySetId" to picked.entrySetId,
-                                "missionId" to picked.missionId,
-                                "starLevel" to picked.starLevel,
-                            ),
-                        )
-                    }
+                        missionDifficultyPicker.dismissImmediate()
+                        missionDifficultyPicker.show(
+                            title,
+                            nav,
+                            emptyList(),
+                            unlockMode,
+                            anchor,
+                            missionKey,
+                        ) { picked, _ ->
+                            findNavController().navigate(
+                                R.id.quizFragment,
+                                androidx.core.os.bundleOf(
+                                    "entrySetId" to picked.entrySetId,
+                                    "missionId" to picked.missionId,
+                                    "starLevel" to picked.starLevel,
+                                ),
+                            )
+                        }
                     }
                 }
             },
@@ -118,13 +117,6 @@ class MockHomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::
                         "starLevel" to nav.starLevel,
                     ),
                 )
-            },
-            onEnergyInsufficient = {
-                Snackbar.make(
-                    binding.root,
-                    getString(R.string.home_energy_insufficient_toast),
-                    Snackbar.LENGTH_SHORT,
-                ).show()
             },
             onShowMissionHint = { Snackbar.make(binding.root, it, Snackbar.LENGTH_SHORT).show() },
             onStageRewardChestClick = { reward ->

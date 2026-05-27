@@ -17,11 +17,7 @@ object QuestSheetMapper {
         period: QuestSheetPeriod,
         canStartMission: Boolean
     ): QuestSheetRow {
-        val claimType = dto.claimType.uppercase()
-        val lineComplete = when (claimType) {
-            "MANUAL" -> dto.completed && dto.rewardClaimed
-            else -> dto.completed
-        }
+        val lineComplete = dto.completed && dto.rewardClaimed
         val progressStr = "${dto.progress.current} / ${dto.progress.required}"
         val detailText = buildString {
             append(progressStr)
@@ -36,8 +32,7 @@ object QuestSheetMapper {
 
         val action: Pair<QuestSheetPrimaryAction, Boolean> = when {
             lineComplete -> QuestSheetPrimaryAction.COMPLETED to false
-            claimType == "MANUAL" && dto.completed && !dto.rewardClaimed ->
-                QuestSheetPrimaryAction.CLAIM to true
+            dto.completed && !dto.rewardClaimed -> QuestSheetPrimaryAction.CLAIM to true
             !dto.completed && missionLike ->
                 if (canStartMission) QuestSheetPrimaryAction.GO_LEARN to true
                 else QuestSheetPrimaryAction.IN_PROGRESS to false

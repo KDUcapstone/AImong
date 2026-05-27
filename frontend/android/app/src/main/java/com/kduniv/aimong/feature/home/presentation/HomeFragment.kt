@@ -55,10 +55,8 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
                 when {
                     nav.missionId.isNotBlank() && !st.isMissionUnlocked(nav.missionId) ->
                         showMissionHint(getString(R.string.quiz_mission_locked))
-                    !st.canOpenMissionPicker(
-                        unlockMode,
-                        viewModel.missionStarLevels(nav.missionId),
-                    ) -> showEnergyInsufficientSnackbar()
+                    !st.hasEnoughEnergyForMissionStart() ->
+                        showEnergyInsufficientSnackbar()
                     else -> {
                         val missionKey = nav.difficultyPickerMissionKey()
                         if (missionDifficultyPicker.isShowingForMission(missionKey)) {
@@ -98,7 +96,6 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
                 }
             },
             onNavigateToQuiz = { nav, unlockMode -> navigateToQuizAfterValidation(nav, unlockMode) },
-            onEnergyInsufficient = { showEnergyInsufficientSnackbar() },
             onShowMissionHint = { showMissionHint(it) },
             onStageRewardChestClick = { reward -> StageRewardDialog.show(this, reward) },
         )
@@ -268,12 +265,30 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
     override fun initObserver() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.pendingAimongCelebration.collect { pending ->
-                    if (pending == null || !isAdded) return@collect
-                    binding.root.post {
-                        if (!isAdded) return@post
-                        AimongCelebrationDialog.show(this@HomeFragment, pending)
-                        viewModel.consumeAimongCelebration()
+                launch {
+                    viewModel.pendingAimongCelebration.collect { pending ->
+                        if (pending == null || !isAdded) return@collect
+                        binding.root.post {
+                            if (!isAdded) return@post
+                            AimongCelebrationDialog.show(this@HomeFragment, pending)
+                            viewModel.consumeAimongCelebration()
+                        }
+                    }
+                }
+                launch {
+                    viewModel.pendingStreakShieldRecovery.collect { pending ->
+                        if (pending == null || !isAdded) return@collect
+                        binding.root.post {
+                            if (!isAdded) return@post
+                            StreakShieldRecoveryDialog.show(
+                                host = this@HomeFragment,
+                                ui = pending,
+                                onUseShield = { viewModel.useStreakShieldForRecovery() },
+                                onDismissForNow = {
+                                    viewModel.consumeStreakShieldRecoveryPrompt(dismissForNow = true)
+                                },
+                            )
+                        }
                     }
                 }
             }
