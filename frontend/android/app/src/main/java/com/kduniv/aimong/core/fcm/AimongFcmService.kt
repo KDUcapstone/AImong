@@ -39,7 +39,21 @@ class AimongFcmService : FirebaseMessagingService() {
         ) {
             return
         }
-        // 그 외 타입(PRIVACY_ALERT, 미학습 알림 등)은 추후 확장
+        if (PrivacyAlertNotificationHelper.showIfApplicable(this, remoteMessage)) {
+            return
+        }
+        if (LearningReminderNotificationHelper.showIfApplicable(this, remoteMessage)) {
+            return
+        }
+        if (WeeklyReportNotificationHelper.showIfApplicable(this, remoteMessage)) {
+            return
+        }
+        if (ChildRewardNotificationHelper.showIfApplicable(this, remoteMessage)) {
+            return
+        }
+        if (StreakShieldNotificationHelper.showIfApplicable(this, remoteMessage)) {
+            return
+        }
     }
 
     override fun onNewToken(token: String) {

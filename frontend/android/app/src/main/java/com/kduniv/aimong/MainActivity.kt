@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.content.res.ColorStateList
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Checkable
@@ -66,6 +67,12 @@ class MainActivity : AppCompatActivity() {
         /** FCM 실세계 미션 승인 요청 탭 시 부모 대시보드·퀘스트 갱신 */
         const val EXTRA_OPEN_PARENT_CUSTOM_QUESTS = "open_parent_custom_quests"
         const val EXTRA_QUEST_COMPLETE_CHILD_ID = "quest_complete_child_id"
+        const val EXTRA_FCM_NOTIFICATION_TYPE = "fcm_notification_type"
+        const val EXTRA_FCM_TARGET = "fcm_target"
+        const val FCM_TARGET_PARENT_DASHBOARD = "parent_dashboard"
+        const val FCM_TARGET_CHILD_HOME = "child_home"
+        const val FCM_TARGET_CHILD_GACHA = "child_gacha"
+        private const val REQ_POST_NOTIFICATIONS = 1001
     }
 
     @Inject
@@ -118,12 +125,7 @@ class MainActivity : AppCompatActivity() {
             insets
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            val perm = Manifest.permission.POST_NOTIFICATIONS
-            if (ContextCompat.checkSelfPermission(this, perm) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this, arrayOf(perm), 1001)
-            }
-        }
+        requestNotificationPermissionIfNeeded()
 
         val navHostFragment = supportFragmentManager
             .findFragmentById(R.id.nav_host_fragment) as? NavHostFragment
@@ -142,6 +144,44 @@ class MainActivity : AppCompatActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         handleQuestCompleteNotificationIntent(intent)
+        if (::navController.isInitialized) {
+            lifecycleScope.launch {
+                handleFcmNavigationIntent(intent, sessionManager.userRole.first())
+            }
+        }
+    }
+
+    private fun requestNotificationPermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        val perm = Manifest.permission.POST_NOTIFICATIONS
+        if (ContextCompat.checkSelfPermission(this, perm) == PackageManager.PERMISSION_GRANTED) return
+        AlertDialog.Builder(this)
+            .setTitle(R.string.notification_permission_title)
+            .setMessage(R.string.notification_permission_message)
+            .setPositiveButton(R.string.notification_permission_allow) { _, _ ->
+                ActivityCompat.requestPermissions(this, arrayOf(perm), REQ_POST_NOTIFICATIONS)
+            }
+            .setNegativeButton(R.string.notification_permission_later, null)
+            .show()
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode != REQ_POST_NOTIFICATIONS) return
+        val granted = grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED
+        if (granted) return
+        Snackbar.make(
+            binding.root,
+            getString(R.string.notification_permission_denied),
+            Snackbar.LENGTH_LONG,
+        ).setAction(R.string.notification_permission_open_settings) {
+            val uri = Uri.fromParts("package", packageName, null)
+            startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, uri))
+        }.show()
     }
 
     private fun handleQuestCompleteNotificationIntent(intent: Intent?) {
@@ -157,6 +197,38 @@ class MainActivity : AppCompatActivity() {
         )
         intent.removeExtra(EXTRA_OPEN_PARENT_CUSTOM_QUESTS)
         intent.removeExtra(EXTRA_QUEST_COMPLETE_CHILD_ID)
+    }
+
+    private fun handleFcmNavigationIntent(intent: Intent?, userRole: String?) {
+        val target = intent?.getStringExtra(EXTRA_FCM_TARGET)
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+            ?: return
+        when (target) {
+            FCM_TARGET_PARENT_DASHBOARD -> {
+                if (userRole == "PARENT") {
+                    runCatching {
+                        if (!navController.popBackStack(R.id.parentDashboardFragment, false)) {
+                            navController.navigate(R.id.parentDashboardFragment)
+                        }
+                    }
+                }
+            }
+            FCM_TARGET_CHILD_HOME -> {
+                if (userRole == "CHILD") {
+                    runCatching { navController.navigateToChildTopLevel(R.id.homeFragment) }
+                    binding.bottomNav.post { syncChildBottomNavTabSelection(binding.bottomNav, R.id.homeFragment) }
+                }
+            }
+            FCM_TARGET_CHILD_GACHA -> {
+                if (userRole == "CHILD") {
+                    runCatching { navController.navigateToChildTopLevel(R.id.gachaFragment) }
+                    binding.bottomNav.post { syncChildBottomNavTabSelection(binding.bottomNav, R.id.gachaFragment) }
+                }
+            }
+        }
+        intent.removeExtra(EXTRA_FCM_TARGET)
+        intent.removeExtra(EXTRA_FCM_NOTIFICATION_TYPE)
     }
 
     private suspend fun runBootstrapIfNeeded() {
@@ -339,6 +411,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             installMainBackNavigation(userRole)
+            handleFcmNavigationIntent(intent, userRole)
         }
     }
 

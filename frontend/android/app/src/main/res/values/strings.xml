@@ -507,6 +507,26 @@
     <string name="fcm_gacha_level_up_pull_count_fmt">누적 뽑기 %1$s회 구간</string>
     <string name="fcm_quest_complete_request_title_default">실세계 미션 승인 요청</string>
     <string name="fcm_quest_complete_request_body_default">자녀가 미션 완료를 요청했어요. 대시보드에서 확인해 주세요.</string>
+    <string name="fcm_privacy_alert_title_default">개인정보 위험 알림</string>
+    <string name="fcm_privacy_alert_body_default">자녀 대화에서 확인이 필요한 내용이 감지됐어요.</string>
+    <string name="fcm_privacy_alert_batch_title_default">개인정보 알림 모음</string>
+    <string name="fcm_privacy_alert_batch_body_default">확인하지 않은 개인정보 위험 알림이 있어요.</string>
+    <string name="fcm_learning_reminder_title_default">학습 리마인더</string>
+    <string name="fcm_learning_reminder_body_default">오늘 학습을 이어갈 시간이에요.</string>
+    <string name="fcm_weekly_report_title_default">주간 리포트가 도착했어요</string>
+    <string name="fcm_weekly_report_body_default">이번 주 학습 기록을 확인해 보세요.</string>
+    <string name="fcm_child_reward_title_default">단원 보상을 받을 수 있어요</string>
+    <string name="fcm_child_reward_body_default">홈에서 보물상자를 눌러 보상을 확인해 보세요.</string>
+    <string name="fcm_streak_shield_used_title_default">불꽃 방패가 스트릭을 지켰어요</string>
+    <string name="fcm_streak_shield_used_body_default">어제의 빈자리를 불꽃 방패가 막아줬어요.</string>
+    <string name="fcm_streak_recovery_title_default">스트릭 복구 기회가 있어요</string>
+    <string name="fcm_streak_recovery_body_default">오늘 학습하거나 불꽃 방패를 사용해 스트릭을 지켜 보세요.</string>
+    <string name="notification_permission_title">알림을 받을까요?</string>
+    <string name="notification_permission_message">승인 요청, 개인정보 알림, 학습 리마인더를 놓치지 않도록 알림 권한이 필요해요.</string>
+    <string name="notification_permission_allow">허용하기</string>
+    <string name="notification_permission_later">나중에</string>
+    <string name="notification_permission_denied">알림이 꺼져 있어요. 설정에서 다시 켤 수 있어요.</string>
+    <string name="notification_permission_open_settings">설정 열기</string>
     <string name="parent_custom_quest_pending_notice">자녀가 실세계 미션 완료를 요청했어요. 승인해 주세요.</string>
 
     <!-- Energy (v2.7) -->

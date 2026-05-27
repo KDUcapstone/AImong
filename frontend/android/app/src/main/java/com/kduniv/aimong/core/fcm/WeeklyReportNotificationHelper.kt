@@ -11,18 +11,15 @@ import com.google.firebase.messaging.RemoteMessage
 import com.kduniv.aimong.MainActivity
 import com.kduniv.aimong.R
 
-/**
- * v2.1 가챠 레벨업 부모 FCM (`type=GACHA_LEVEL_UP`).
- * 서버가 `notification` 페이로드와 `data`를 함께 보낼 수 있어 둘 다 수용한다.
- */
-object GachaLevelUpNotificationHelper {
+/** 주간 리포트 FCM (`WEEKLY_REPORT`). */
+object WeeklyReportNotificationHelper {
 
-    private const val CHANNEL_ID = "aimong_gacha_level_up"
-    private const val CHANNEL_NAME = "가챠 레벨업"
+    private const val CHANNEL_ID = "aimong_weekly_report"
+    private const val CHANNEL_NAME = "주간 리포트"
 
     fun showIfApplicable(context: Context, remoteMessage: RemoteMessage): Boolean {
         val type = remoteMessage.data["type"] ?: return false
-        if (type != "GACHA_LEVEL_UP") return false
+        if (type != "WEEKLY_REPORT") return false
 
         val appCtx = context.applicationContext
         val nm = appCtx.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -30,56 +27,48 @@ object GachaLevelUpNotificationHelper {
 
         val title = remoteMessage.notification?.title
             ?: remoteMessage.data["title"]
-            ?: appCtx.getString(R.string.fcm_gacha_level_up_title_default)
+            ?: appCtx.getString(R.string.fcm_weekly_report_title_default)
         val body = remoteMessage.notification?.body
             ?: remoteMessage.data["body"]
-            ?: appCtx.getString(R.string.fcm_gacha_level_up_body_default)
-
-        val pullCount = remoteMessage.data["gachaPullCount"]
-        val text = if (!pullCount.isNullOrBlank()) {
-            "$body (${appCtx.getString(R.string.fcm_gacha_level_up_pull_count_fmt, pullCount)})"
-        } else {
-            body
-        }
+            ?: appCtx.getString(R.string.fcm_weekly_report_body_default)
 
         val intent = Intent(appCtx, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             putExtra(MainActivity.EXTRA_FCM_NOTIFICATION_TYPE, type)
-            putExtra(MainActivity.EXTRA_FCM_TARGET, MainActivity.FCM_TARGET_CHILD_GACHA)
+            putExtra(MainActivity.EXTRA_FCM_TARGET, MainActivity.FCM_TARGET_PARENT_DASHBOARD)
         }
         val pending = PendingIntent.getActivity(
             appCtx,
-            0,
+            type.hashCode(),
             intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
 
         val notification = NotificationCompat.Builder(appCtx, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_star_filled)
+            .setSmallIcon(R.drawable.ic_notifications)
             .setContentTitle(title)
-            .setContentText(text)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(text))
+            .setContentText(body)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
             .setAutoCancel(true)
             .setContentIntent(pending)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .build()
 
-        val id = ("GACHA_LEVEL_UP_" + (pullCount ?: "0")).hashCode()
-        nm.notify(id, notification)
+        val weekStart = remoteMessage.data["weekStart"] ?: "latest"
+        nm.notify(("WEEKLY_REPORT_$weekStart").hashCode(), notification)
         return true
     }
 
     private fun ensureChannel(nm: NotificationManager) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
-        val existing = nm.getNotificationChannel(CHANNEL_ID)
-        if (existing != null) return
-        val ch = NotificationChannel(
+        if (nm.getNotificationChannel(CHANNEL_ID) != null) return
+        val channel = NotificationChannel(
             CHANNEL_ID,
             CHANNEL_NAME,
-            NotificationManager.IMPORTANCE_DEFAULT
+            NotificationManager.IMPORTANCE_DEFAULT,
         ).apply {
-            description = "자녀 가챠 레벨 구간 상승 시 부모에게 전달되는 알림입니다."
+            description = "자녀의 주간 학습 리포트가 준비됐을 때 전달됩니다."
         }
-        nm.createNotificationChannel(ch)
+        nm.createNotificationChannel(channel)
     }
 }

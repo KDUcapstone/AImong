@@ -1,6 +1,8 @@
 package com.kduniv.aimong.feature.auth.domain
 
+import android.util.Log
 import com.google.firebase.messaging.FirebaseMessaging
+import com.kduniv.aimong.BuildConfig
 import com.kduniv.aimong.core.local.SessionManager
 import com.kduniv.aimong.feature.auth.data.AuthRepository
 import kotlinx.coroutines.flow.first
@@ -28,7 +30,25 @@ class RegisterChildFcmTokenUseCase @Inject constructor(
             val jwt = sessionManager.authToken.first()
             if (jwt.isNullOrBlank()) return@runCatching
             val fcm = fcmTokenOverride ?: FirebaseMessaging.getInstance().token.await()
-            authRepository.registerChildFcmToken(fcm)
+            authRepository.registerChildFcmToken(fcm).fold(
+                onSuccess = {
+                    if (BuildConfig.DEBUG) Log.d(TAG, "Child FCM token registered: ${mask(fcm)}")
+                },
+                onFailure = {
+                    if (BuildConfig.DEBUG) Log.w(TAG, "Child FCM token registration failed", it)
+                },
+            )
+        }.onFailure {
+            if (BuildConfig.DEBUG) Log.w(TAG, "Child FCM token registration skipped/failed", it)
         }
+    }
+
+    private fun mask(token: String): String {
+        if (token.length <= 10) return "***"
+        return "${token.take(6)}...${token.takeLast(4)}"
+    }
+
+    companion object {
+        private const val TAG = "AimongFcmToken"
     }
 }
