@@ -26,14 +26,17 @@ public class DailyResetScheduler {
         streakRecordRepository.findStaleTodayMissionCounts(today)
                 .forEach(StreakRecord::resetTodayMissionCount);
 
+        streakRecordRepository.findExpiredRecoverableStreaks(today)
+                .forEach(StreakRecord::breakStreak);
+
         LocalDate yesterday = today.minusDays(1);
         for (StreakRecord streakRecord : streakRecordRepository.findMissedActiveStreaksForReset(yesterday)) {
             ChildProfile profile = childProfileRepository.findWithLockById(streakRecord.getChildId())
                     .orElse(null);
             if (profile != null && profile.consumeShieldIfAvailable()) {
-                streakRecord.resetTodayMissionCount();
+                streakRecord.markProtectedByShield(yesterday);
             } else {
-                streakRecord.resetStreak();
+                streakRecord.markRecoverable(today);
             }
         }
     }

@@ -52,6 +52,7 @@ _generated/question-bank/*
 !_generated/question-bank/question-bank-1056-starlevel-edits.json
 !_generated/question-bank/question-bank-1056-starlevel-seed.sql
 private-docs/test.html
+question/
 
 ### Local Development Overrides ###
 docker-compose.override.yml

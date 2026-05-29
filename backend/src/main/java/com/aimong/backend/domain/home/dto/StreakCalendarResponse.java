@@ -7,6 +7,9 @@ public record StreakCalendarResponse(
         String yearMonth,
         int continuousDays,
         List<LocalDate> completedDates,
+        List<LocalDate> protectedDates,
+        LocalDate recoverableDate,
+        List<LocalDate> brokenDates,
         LocalDate today
 ) {
 }

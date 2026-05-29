@@ -48,23 +48,23 @@ public class QuestClaimService {
         if (PERIOD_WEEKLY.equals(period)) {
             return claimWeekly(childId, childProfile, parseWeeklyQuestType(questType));
         }
-        throw new AimongException(ErrorCode.BAD_REQUEST, "기간은 daily 또는 weekly만 사용할 수 있어요");
+        throw new AimongException(ErrorCode.BAD_REQUEST, "period must be daily or weekly.");
     }
 
     private ClaimResponse claimDaily(UUID childId, ChildProfile childProfile, DailyQuestType questType) {
-        if ("AUTO".equals(DailyQuestService.claimType(questType))) {
-            throw new AimongException(ErrorCode.BAD_REQUEST, "자동 지급 퀘스트는 수령 API를 호출할 수 없어요");
+        if (!DailyQuestService.isActiveType(questType)) {
+            throw new AimongException(ErrorCode.BAD_REQUEST, "Inactive daily quest type.");
         }
 
         LocalDate today = KstDateUtils.today();
         dailyQuestService.refreshDailyProgress(childId, childProfile, today);
         DailyQuest quest = dailyQuestRepository.findWithLockByChildIdAndQuestDateAndQuestType(childId, today, questType)
-                .orElseThrow(() -> new AimongException(ErrorCode.BAD_REQUEST, "아직 완료되지 않은 퀘스트예요"));
+                .orElseThrow(() -> new AimongException(ErrorCode.BAD_REQUEST, "Daily quest is not completed."));
         validateClaimable(quest.isCompleted(), quest.isRewardClaimed());
         quest.claimReward();
 
         TicketType ticketType = TicketType.NORMAL;
-        int count = 1;
+        int count = dailyRewardCount(questType);
         grantTickets(childId, ticketType, count);
         return new ClaimResponse(
                 List.of(new ClaimResponse.RewardResponse("TICKET", ticketType.name(), count, "DAILY_QUEST_" + questType.name())),
@@ -76,7 +76,7 @@ public class QuestClaimService {
         LocalDate weekStart = KstDateUtils.currentWeekStart();
         weeklyQuestService.refreshWeeklyProgress(childId, childProfile, weekStart);
         WeeklyQuest quest = weeklyQuestRepository.findWithLockByChildIdAndWeekStartAndQuestType(childId, weekStart, questType)
-                .orElseThrow(() -> new AimongException(ErrorCode.BAD_REQUEST, "아직 완료되지 않은 퀘스트예요"));
+                .orElseThrow(() -> new AimongException(ErrorCode.BAD_REQUEST, "Weekly quest is not completed."));
         validateClaimable(quest.isCompleted(), quest.isRewardClaimed());
         quest.claimReward();
 
@@ -90,10 +90,10 @@ public class QuestClaimService {
 
     private void validateClaimable(boolean completed, boolean rewardClaimed) {
         if (!completed) {
-            throw new AimongException(ErrorCode.BAD_REQUEST, "아직 완료되지 않은 퀘스트예요");
+            throw new AimongException(ErrorCode.BAD_REQUEST, "Quest is not completed.");
         }
         if (rewardClaimed) {
-            throw new AimongException(ErrorCode.CONFLICT, "이미 보상을 받았어요");
+            throw new AimongException(ErrorCode.CONFLICT, "Quest reward is already claimed.");
         }
     }
 
@@ -101,7 +101,7 @@ public class QuestClaimService {
         try {
             return DailyQuestType.valueOf(questType);
         } catch (IllegalArgumentException | NullPointerException exception) {
-            throw new AimongException(ErrorCode.BAD_REQUEST, "알 수 없는 데일리 퀘스트예요");
+            throw new AimongException(ErrorCode.BAD_REQUEST, "Unknown daily quest type.");
         }
     }
 
@@ -109,14 +109,22 @@ public class QuestClaimService {
         try {
             return WeeklyQuestType.valueOf(questType);
         } catch (IllegalArgumentException | NullPointerException exception) {
-            throw new AimongException(ErrorCode.BAD_REQUEST, "알 수 없는 위클리 퀘스트예요");
+            throw new AimongException(ErrorCode.BAD_REQUEST, "Unknown weekly quest type.");
         }
+    }
+
+    private int dailyRewardCount(DailyQuestType questType) {
+        return switch (questType) {
+            case ALL_DAILY -> 2;
+            case MISSION_1, MISSION_3, XP_20, CHAT_GPT, STREAK_CHECK -> 1;
+            case ALL_3 -> throw new AimongException(ErrorCode.BAD_REQUEST, "Inactive daily quest type.");
+        };
     }
 
     private TicketReward weeklyReward(WeeklyQuestType questType) {
         return switch (questType) {
-            case XP_100 -> new TicketReward(TicketType.NORMAL, 2);
-            case MISSION_5 -> new TicketReward(TicketType.NORMAL, 2);
+            case MISSION_10 -> new TicketReward(TicketType.NORMAL, 3);
+            case XP_100, MISSION_5, STREAK_5 -> new TicketReward(TicketType.NORMAL, 2);
             case CHAT_3 -> new TicketReward(TicketType.NORMAL, 1);
         };
     }

@@ -8,6 +8,10 @@ public record StreakResponse(
         LocalDate lastCompletedDate,
         int todaySetCount,
         int shieldCount,
+        String status,
+        boolean recoveryAvailable,
+        LocalDate recoveryDeadlineDate,
+        LocalDate lastShieldUsedDate,
         PartnerResponse partner
 ) {
 

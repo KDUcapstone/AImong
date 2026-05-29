@@ -5,6 +5,7 @@ import com.aimong.backend.domain.streak.dto.PartnerConnectResponse;
 import com.aimong.backend.domain.streak.dto.PartnerDisconnectResponse;
 import com.aimong.backend.domain.streak.dto.ShieldPurchaseRequest;
 import com.aimong.backend.domain.streak.dto.ShieldPurchaseResponse;
+import com.aimong.backend.domain.streak.dto.ShieldUseResponse;
 import com.aimong.backend.domain.streak.dto.StreakResponse;
 import com.aimong.backend.domain.streak.service.StreakService;
 import com.aimong.backend.global.response.ApiResponse;
@@ -75,5 +76,10 @@ public class StreakController {
                 UUID.fromString(authentication.getName()),
                 request.count()
         ));
+    }
+
+    @PostMapping("/shields/use")
+    public ApiResponse<ShieldUseResponse> useShield(Authentication authentication) {
+        return ApiResponse.success(streakService.useShield(UUID.fromString(authentication.getName())));
     }
 }

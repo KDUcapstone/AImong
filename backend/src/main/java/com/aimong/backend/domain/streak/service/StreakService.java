@@ -6,6 +6,7 @@ import com.aimong.backend.domain.auth.service.ChildActivityService;
 import com.aimong.backend.domain.streak.dto.PartnerConnectResponse;
 import com.aimong.backend.domain.streak.dto.PartnerDisconnectResponse;
 import com.aimong.backend.domain.streak.dto.ShieldPurchaseResponse;
+import com.aimong.backend.domain.streak.dto.ShieldUseResponse;
 import com.aimong.backend.domain.streak.dto.StreakResponse;
 import com.aimong.backend.domain.streak.entity.FriendStreak;
 import com.aimong.backend.domain.streak.entity.StreakRecord;
@@ -69,12 +70,17 @@ public class StreakService {
         ChildProfile profile = childProfileRepository.findById(childId)
                 .orElseThrow(() -> new AimongException(ErrorCode.CHILD_NOT_FOUND));
         LocalDate today = KstDateUtils.today();
+        streak.expireRecoveryIfPast(today);
 
         return new StreakResponse(
                 streak.getContinuousDays(),
                 streak.getLastCompletedDate(),
                 todayMissionCountForToday(streak, today),
                 profile.getShieldCount(),
+                streak.getStatus().name(),
+                streak.isRecoveryAvailable(today),
+                streak.getRecoveryDeadlineDate(),
+                streak.getLastShieldUsedDate(),
                 findPartner(childId, today)
         );
     }
@@ -145,6 +151,45 @@ public class StreakService {
                 count,
                 CurrencyService.STREAK_SHIELD_COST,
                 childProfile.getGear()
+        );
+    }
+
+    @Transactional
+    public ShieldUseResponse useShield(UUID childId) {
+        childActivityService.touchLastActiveAt(childId);
+        LocalDate today = KstDateUtils.today();
+        StreakRecord streak = streakRecordRepository.findWithLockByChildId(childId)
+                .orElseThrow(() -> new AimongException(ErrorCode.STREAK_NOT_RECOVERABLE));
+        if (streak.expireRecoveryIfPast(today)) {
+            throw new AimongException(ErrorCode.RECOVERY_EXPIRED);
+        }
+        if (!streak.isRecoveryAvailable(today)) {
+            throw new AimongException(ErrorCode.STREAK_NOT_RECOVERABLE);
+        }
+
+        ChildProfile childProfile = childProfileRepository.findWithLockById(childId)
+                .orElseThrow(() -> new AimongException(ErrorCode.CHILD_NOT_FOUND));
+        if (!childProfile.consumeShieldIfAvailable()) {
+            throw new AimongException(ErrorCode.SHIELD_NOT_ENOUGH);
+        }
+
+        LocalDate protectedDate = streak.getRecoveryDeadlineDate().minusDays(1);
+        streak.markProtectedByShield(protectedDate);
+        if (currencyService != null) {
+            currencyService.recordZeroAmountEvent(
+                    childProfile,
+                    CurrencyTransactionReason.STREAK_SHIELD_USE,
+                    "STREAK_SHIELD",
+                    protectedDate.toString()
+            );
+        }
+        return new ShieldUseResponse(
+                childProfile.getShieldCount(),
+                streak.getStatus().name(),
+                streak.getContinuousDays(),
+                streak.getLastShieldUsedDate(),
+                streak.isRecoveryAvailable(today),
+                streak.getRecoveryDeadlineDate()
         );
     }
 
