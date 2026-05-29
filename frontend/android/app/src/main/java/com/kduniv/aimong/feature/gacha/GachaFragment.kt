@@ -9,32 +9,60 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.GridLayoutManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
+import com.kduniv.aimong.MainActivity
 import com.kduniv.aimong.R
 import com.kduniv.aimong.core.ui.BaseFragment
+import com.kduniv.aimong.core.ui.TutorialCoachmarkOverlay
 import com.kduniv.aimong.databinding.DialogGachaPetDetailBinding
 import com.kduniv.aimong.databinding.FragmentGachaBinding
+import com.kduniv.aimong.feature.onboarding.child.ChildGachaOnboardingController
+import com.kduniv.aimong.feature.onboarding.child.ChildGachaOnboardingDialogs
+import com.kduniv.aimong.feature.onboarding.child.ChildGachaOnboardingPhase
 import com.kduniv.aimong.feature.pet.data.model.PetDto
 import com.kduniv.aimong.feature.pet.data.model.PetListData
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 import kotlinx.coroutines.launch
 import kotlin.math.max
 
 @AndroidEntryPoint
 class GachaFragment : BaseFragment<FragmentGachaBinding>(FragmentGachaBinding::inflate) {
 
+    @Inject
+    lateinit var childGachaOnboardingController: ChildGachaOnboardingController
+
     private val viewModel: GachaViewModel by viewModels()
     private lateinit var petAdapter: GachaPetAdapter
     private var pullRevealShowing = false
     private var lastEquippedBindKey: String? = null
     private var lastPetListRevisionKey: String? = null
+    private var coachmarkOverlay: TutorialCoachmarkOverlay? = null
+    private var onboardingCompleteDialogShown = false
 
     override fun onResume() {
         super.onResume()
-        viewModel.onGachaResumed()
+        if (!childGachaOnboardingController.isActive) {
+            viewModel.onGachaResumed()
+        }
+    }
+
+    override fun onDestroyView() {
+        coachmarkOverlay?.dismiss()
+        coachmarkOverlay = null
+        super.onDestroyView()
     }
 
     override fun initView() {
-        val onPetClick: (GachaPetCardUi) -> Unit = { item -> showPetDetailDialog(item) }
+        coachmarkOverlay = TutorialCoachmarkOverlay(binding.layoutGachaRoot)
+        val onPetClick: (GachaPetCardUi) -> Unit = { item ->
+            if (childGachaOnboardingController.phase.value == ChildGachaOnboardingPhase.GachaEquipCoachmark &&
+                item.isLocked
+            ) {
+                Snackbar.make(binding.root, R.string.child_onboarding_coach_equip, Snackbar.LENGTH_SHORT).show()
+            } else {
+                showPetDetailDialog(item)
+            }
+        }
 
         petAdapter = GachaPetAdapter(onPetClick)
         val encyclopediaSpan = resources.getInteger(R.integer.gacha_encyclopedia_span_count)
@@ -50,7 +78,10 @@ class GachaFragment : BaseFragment<FragmentGachaBinding>(FragmentGachaBinding::i
 
         applyWindowInsets()
 
-        binding.btnProbabilities.setOnClickListener { showProbabilitySheet() }
+        binding.btnProbabilities.setOnClickListener {
+            if (childGachaOnboardingController.isActive) return@setOnClickListener
+            showProbabilitySheet()
+        }
 
         binding.btnPull.setOnClickListener {
             if (viewModel.state.value.hasAnyTicket) {
@@ -78,6 +109,19 @@ class GachaFragment : BaseFragment<FragmentGachaBinding>(FragmentGachaBinding::i
     override fun initObserver() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    childGachaOnboardingController.phase.collect { phase ->
+                        when (phase) {
+                            ChildGachaOnboardingPhase.GachaPullCoachmark -> {
+                                viewModel.refresh()
+                                binding.root.post { showPullCoachmarkIfNeeded() }
+                            }
+                            ChildGachaOnboardingPhase.GachaEquipCoachmark ->
+                                binding.rvPets.post { showEquipCoachmarkIfNeeded() }
+                            else -> coachmarkOverlay?.dismiss()
+                        }
+                    }
+                }
                 viewModel.state.collect { s ->
                     binding.pbGacha.isVisible = s.loading && !pullRevealShowing
 
@@ -142,6 +186,13 @@ class GachaFragment : BaseFragment<FragmentGachaBinding>(FragmentGachaBinding::i
                     }
                     bindPullButton(s)
 
+                    if (childGachaOnboardingController.phase.value ==
+                        ChildGachaOnboardingPhase.GachaEquipCoachmark &&
+                        s.pets?.equippedPet != null
+                    ) {
+                        maybeCompleteOnboarding()
+                    }
+
                     s.transientMessage?.let { msg ->
                         Snackbar.make(binding.root, msg, Snackbar.LENGTH_LONG).show()
                         viewModel.consumeTransientMessage()
@@ -156,7 +207,13 @@ class GachaFragment : BaseFragment<FragmentGachaBinding>(FragmentGachaBinding::i
                                 onDismiss = {
                                     pullRevealShowing = false
                                     viewModel.consumePullReveal()
-                                }
+                                    if (childGachaOnboardingController.phase.value ==
+                                        ChildGachaOnboardingPhase.GachaPullCoachmark
+                                    ) {
+                                        childGachaOnboardingController.onGachaEquipCoachmark()
+                                        binding.rvPets.post { showEquipCoachmarkIfNeeded() }
+                                    }
+                                },
                             )
                         }
                     }
@@ -195,7 +252,56 @@ class GachaFragment : BaseFragment<FragmentGachaBinding>(FragmentGachaBinding::i
         )
     }
 
+    private fun showPullCoachmarkIfNeeded() {
+        if (childGachaOnboardingController.phase.value != ChildGachaOnboardingPhase.GachaPullCoachmark) {
+            return
+        }
+        if (!binding.btnPull.isShown) {
+            binding.btnPull.post { showPullCoachmarkIfNeeded() }
+            return
+        }
+        coachmarkOverlay?.show(
+            binding.btnPull,
+            getString(R.string.child_onboarding_coach_pull),
+        )
+    }
+
+    private fun showEquipCoachmarkIfNeeded() {
+        if (childGachaOnboardingController.phase.value != ChildGachaOnboardingPhase.GachaEquipCoachmark) {
+            return
+        }
+        val index = viewModel.state.value.petCards.indexOfFirst { !it.isLocked }
+        if (index < 0) {
+            binding.rvPets.postDelayed({ showEquipCoachmarkIfNeeded() }, 150)
+            return
+        }
+        (binding.rvPets.layoutManager as? GridLayoutManager)?.scrollToPositionWithOffset(index, 48)
+        binding.rvPets.post {
+            val holder = binding.rvPets.findViewHolderForAdapterPosition(index)
+            val target = holder?.itemView ?: binding.rvPets
+            coachmarkOverlay?.show(target, getString(R.string.child_onboarding_coach_equip))
+        }
+    }
+
+    private fun maybeCompleteOnboarding() {
+        if (onboardingCompleteDialogShown) return
+        if (childGachaOnboardingController.phase.value != ChildGachaOnboardingPhase.GachaEquipCoachmark) {
+            return
+        }
+        onboardingCompleteDialogShown = true
+        coachmarkOverlay?.dismiss()
+        childGachaOnboardingController.onCompleting()
+        viewLifecycleOwner.lifecycleScope.launch {
+            childGachaOnboardingController.refreshEquippedFromServer()
+            if (!isAdded) return@launch
+            ChildGachaOnboardingDialogs.showComplete(this@GachaFragment) {
+                (activity as? MainActivity)?.navigateChildToHomeAfterOnboarding()
+            }
+        }
+    }
+
     private fun showPetDetailDialog(item: GachaPetCardUi) {
+        coachmarkOverlay?.dismiss()
         val dialogBinding =
             DialogGachaPetDetailBinding.inflate(LayoutInflater.from(requireContext()))
 

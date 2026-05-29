@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_child_quest_sheet"
+    android:gravity="center_horizontal"
+    android:orientation="vertical"
+    android:paddingHorizontal="22dp"
+    android:paddingTop="22dp"
+    android:paddingBottom="20dp">
+
+    <FrameLayout
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:background="@drawable/bg_chat_privacy_icon_circle">
+
+        <ImageView
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_gravity="center"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_nav_parent_privacy"
+            app:tint="@color/child_streak_accent" />
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/tv_chat_privacy_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:gravity="center"
+        android:text="@string/chat_privacy_dialog_title"
+        android:textColor="@color/child_quest_sheet_text_primary"
+        android:textSize="20sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/tv_chat_privacy_message"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:gravity="center"
+        android:lineSpacingExtra="3dp"
+        android:text="@string/chat_privacy_dialog_message"
+        android:textColor="@color/child_quest_sheet_text_secondary"
+        android:textSize="14sp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="@string/chat_privacy_preview_label"
+        android:textColor="@color/child_quest_sheet_text_primary"
+        android:textSize="13sp"
+        android:textStyle="bold" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:background="@drawable/bg_chat_privacy_preview"
+        android:fillViewport="true"
+        android:maxHeight="120dp"
+        android:paddingHorizontal="14dp"
+        android:paddingVertical="12dp"
+        android:scrollbars="vertical">
+
+        <TextView
+            android:id="@+id/tv_chat_privacy_preview"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:lineSpacingExtra="4dp"
+            android:textColor="@color/child_quest_sheet_text_primary"
+            android:textSize="15sp"
+            tools:text="저는 서울 ○○초등학교 3학년이고 010-1234-5678이에요" />
+    </ScrollView>
+
+    <TextView
+        android:id="@+id/tv_chat_privacy_detected_types"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:lineSpacingExtra="2dp"
+        android:textColor="@color/child_streak_accent_dark"
+        android:textSize="13sp"
+        tools:text="감지된 항목: 전화번호 · 학교명 · 학년" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_chat_privacy_mask"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="18dp"
+        android:backgroundTint="@color/child_nav_item_selected"
+        android:text="@string/chat_privacy_action_mask"
+        android:textColor="@color/white"
+        app:cornerRadius="14dp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_chat_privacy_cancel"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="@string/chat_privacy_action_cancel"
+        android:textColor="@color/child_quest_sheet_text_secondary" />
+</LinearLayout>

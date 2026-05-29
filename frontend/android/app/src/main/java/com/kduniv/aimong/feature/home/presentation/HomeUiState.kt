@@ -90,19 +90,17 @@ data class HomeUiState(
     fun canAttemptMissionStart(skipEnergyBecauseReview: Boolean = false): Boolean =
         canStartMission && (skipEnergyBecauseReview || hasEnoughEnergyForMissionStart())
 
-    /** 난이도 피커를 열 수 있는지(복습 가능 난이도가 있으면 에너지 부족해도 PER_STAR 허용) */
+    /**
+     * 난이도 피커 표시 여부.
+     * [canStartMission]·로컬 에너지로 막지 않는다 — 경로 UI와 /home 갱신 타이밍이 어긋나면
+     * “클릭은 되는데 팝업만 안 뜨는” 상태가 생기기 때문.
+     * 실제 진입 가능 여부는 [HomeViewModel.validateMissionQuizNav]에서 서버 status·에너지로 검증.
+     */
+    @Suppress("UNUSED_PARAMETER")
     fun canOpenMissionPicker(
         unlockMode: DifficultyUnlockMode,
         starLevels: List<MissionStarLevel> = emptyList(),
-    ): Boolean {
-        if (!canStartMission) return false
-        return when (unlockMode) {
-            DifficultyUnlockMode.REVIEW -> true
-            DifficultyUnlockMode.NEW_PLAY -> hasEnoughEnergyForMissionStart()
-            DifficultyUnlockMode.PER_STAR ->
-                hasEnoughEnergyForMissionStart() || starLevels.any { it.isReviewOnly }
-        }
-    }
+    ): Boolean = true
 
     /** 홈 퀘스트 FAB에 표시할 알림 개수 (미완료 퀘스트 수가 아님) */
     fun questNotificationCount(): Int =

@@ -169,30 +169,6 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             applyOxPendingSelection("X")
             handleOptionClick("X") 
         }
-        parentFragmentManager.setFragmentResultListener(
-            QuizReportBottomSheet.REQUEST_KEY_SUBMIT,
-            viewLifecycleOwner
-        ) { _, bundle ->
-            val reasonCode = bundle.getString(QuizReportBottomSheet.RESULT_REASON_CODE) ?: return@setFragmentResultListener
-            val detail = bundle.getString(QuizReportBottomSheet.RESULT_DETAIL)
-            submitQuestionReport(reasonCode, detail)
-        }
-        parentFragmentManager.setFragmentResultListener(
-            QuizReportBottomSheet.REQUEST_KEY_DISMISS,
-            viewLifecycleOwner
-        ) { _, _ ->
-            // dismiss 시 타이머 즉시 재개
-            viewModel.resumeSessionTimerAfterOverlay()
-            if (!viewModel.isSolutionMode.value &&
-                binding.layoutQuizResult.visibility != View.VISIBLE &&
-                binding.layoutFeedbackPanel.visibility != View.VISIBLE
-            ) {
-                if (questionTimeLeftMs > 0) startTimer(reset = false)
-            }
-        }
-
-        binding.btnReportQuestion.setOnClickListener { showQuestionReportReasonDialog() }
-        updateReportButtonVisibility()
     }
 
     override fun initObserver() {
@@ -339,50 +315,11 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                 }
             }
         }
-        updateReportButtonVisibility()
     }
 
     private fun setQuizLoadingOverlay(visible: Boolean, messageRes: Int? = null) {
         binding.layoutQuizLoadingOverlay.visibility = if (visible) View.VISIBLE else View.GONE
         messageRes?.let { binding.tvQuizLoadingOverlay.setText(it) }
-    }
-
-    private fun updateReportButtonVisibility() {
-        binding.btnReportQuestion.visibility = when (viewModel.uiState.value) {
-            is QuizUiState.Loading, is QuizUiState.Submitting, is QuizUiState.Finished -> View.GONE
-            else -> View.VISIBLE
-        }
-    }
-
-    private fun showQuestionReportReasonDialog() {
-        // 앱 테마에 맞는 바텀시트로 노출
-        timer?.cancel()
-        viewModel.pauseSessionTimerForOverlay()
-        QuizReportBottomSheet.newInstance()
-            .show(parentFragmentManager, "QuizReportBottomSheet")
-    }
-
-    private fun submitQuestionReport(reasonCode: String, detail: String?) {
-        val q = currentQuestionForReport() ?: run {
-            Toast.makeText(requireContext(), R.string.quiz_report_no_question, Toast.LENGTH_SHORT).show()
-            return
-        }
-        lifecycleScope.launch {
-            viewModel.reportQuestion(q.id, reasonCode, detail)
-                .onSuccess {
-                    Toast.makeText(requireContext(), R.string.quiz_report_success, Toast.LENGTH_SHORT).show()
-                }
-                .onFailure {
-                    Toast.makeText(requireContext(), it.message.orEmpty(), Toast.LENGTH_SHORT).show()
-                }
-        }
-    }
-
-    private fun currentQuestionForReport(): Question? {
-        return when (val s = viewModel.uiState.value) {
-            is QuizUiState.SolutionLoaded -> s.question
-            else -> getCurrentQuestion()
-        }
     }
 
     private fun showSolution(state: QuizUiState.SolutionLoaded) {

@@ -43,6 +43,8 @@
     <string name="quiz_difficulty_medium">보통</string>
     <string name="quiz_difficulty_high">어려움</string>
     <string name="home_pet_sheet_title">내 펫</string>
+    <string name="home_pet_sheet_xp_label">성장 경험치</string>
+    <string name="home_pet_sheet_close">닫기</string>
     <string name="home_pet_level_fmt">Lv.%1$d</string>
     <string name="home_pet_xp_fmt">%1$d / %2$d XP</string>
     <string name="home_pet_mood_sad_icon_cd">펫 슬픔 상태</string>
@@ -277,9 +279,21 @@
     <string name="chat_remaining_calls_unknown">AI 친구와 대화해 보세요.</string>
     <string name="chat_char_counter_fmt">%1$d / 200</string>
     <string name="chat_privacy_blocked_message">개인정보로 보이는 부분이 있어요. 지우거나, 가리고 보내기를 선택할 수 있어요.</string>
-    <string name="chat_privacy_dialog_title">개인정보 입력 주의</string>
-    <string name="chat_privacy_dialog_message">민감해 보이는 부분은 [***]로 가려서 보낼 수 있어요. 그래도 직접 지우고 다시 쓰는 것이 가장 안전해요.</string>
-    <string name="chat_privacy_action_cancel">취소</string>
+    <string name="chat_privacy_dialog_title">개인정보가 들어 있어요</string>
+    <string name="chat_privacy_dialog_message">주황색으로 표시된 부분은 보내기 전에 가리는 것이 좋아요.\n가리고 보내기를 누르면 [***]로 바꿔서 전송해요.</string>
+    <string name="chat_privacy_preview_label">내가 쓴 말</string>
+    <string name="chat_privacy_detected_types_fmt">감지된 항목: %1$s</string>
+    <string name="chat_privacy_type_phone">전화번호</string>
+    <string name="chat_privacy_type_email">이메일</string>
+    <string name="chat_privacy_type_school">학교명</string>
+    <string name="chat_privacy_type_age">나이</string>
+    <string name="chat_privacy_type_grade">학년</string>
+    <string name="chat_privacy_type_address">주소</string>
+    <string name="chat_privacy_type_date">날짜</string>
+    <string name="chat_privacy_type_url">링크</string>
+    <string name="chat_privacy_type_name">이름</string>
+    <string name="chat_privacy_type_etc">기타 개인정보</string>
+    <string name="chat_privacy_action_cancel">다시 수정할게요</string>
     <string name="chat_privacy_action_mask">가리고 보내기</string>
     <string name="chat_image_mode_toggle">그림 그리기</string>
     <string name="chat_image_mode_on_hint">그림 그리기 모드 — 설명을 적고내면 AI가 그려줘요</string>
@@ -372,6 +386,21 @@
     <string name="gacha_new_no">아니오</string>
     <string name="gacha_level_up_yes">예</string>
     <string name="gacha_level_up_no">아니오</string>
+
+    <!-- 자녀 첫 펫 온보딩 -->
+    <string name="child_onboarding_welcome_title">아이몽의 세계로 들어왔어요!</string>
+    <string name="child_onboarding_welcome_invite">펫을 만나러 가볼까요?</string>
+    <string name="child_onboarding_welcome_body_fmt">뽑기 티켓 %1$d장이 준비됐어요.</string>
+    <string name="child_onboarding_welcome_start">첫 펫 뽑으러 가기</string>
+    <string name="child_onboarding_no_tickets_title">뽑기 티켓이 없어요</string>
+    <string name="child_onboarding_no_tickets_message">부모님께 앱에서 자녀 등록이 잘 됐는지, 코드를 다시 확인해 달라고 해 주세요.</string>
+    <string name="child_onboarding_no_tickets_ok">확인</string>
+    <string name="child_onboarding_coach_pull">여기를 눌러요</string>
+    <string name="child_onboarding_coach_equip">방금 뽑은 펫을 눌러 장착해 보세요</string>
+    <string name="child_onboarding_complete_title">준비 완료!</string>
+    <string name="child_onboarding_complete_body">이제 같이 공부해봐요!</string>
+    <string name="child_onboarding_complete_go_home">홈으로 가기</string>
+    <string name="child_onboarding_gacha_only">지금은 수집 탭에서 첫 펫을 준비해 주세요.</string>
 
     <string name="parent_dashboard_empty_title">등록된 자녀가 없어요</string>
     <string name="parent_dashboard_empty_message">역할 선택에서 부모로 들어온 뒤, 온보딩 화면에서「새 자녀 등록하기」로 자녀를 추가해 주세요. 이 화면으로 돌아오면 목록이 반영됩니다.</string>

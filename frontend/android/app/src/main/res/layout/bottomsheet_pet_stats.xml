@@ -1,23 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:background="@drawable/bg_energy_bottom_sheet"
     android:gravity="center_horizontal"
     android:orientation="vertical"
-    android:paddingHorizontal="24dp"
-    android:paddingTop="20dp"
-    android:paddingBottom="28dp">
+    android:paddingStart="24dp"
+    android:paddingTop="12dp"
+    android:paddingEnd="24dp"
+    android:paddingBottom="24dp">
+
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:background="@drawable/bg_child_sheet_handle" />
+
+    <TextView
+        android:id="@+id/tv_pet_sheet_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:gravity="center"
+        android:text="@string/home_pet_sheet_title"
+        android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
+        android:textColor="@color/child_quest_sheet_text_primary" />
 
     <FrameLayout
-        android:layout_width="@dimen/pet_sprite_stats_sheet"
-        android:layout_height="@dimen/pet_sprite_stats_sheet">
+        android:layout_width="112dp"
+        android:layout_height="112dp"
+        android:layout_marginTop="20dp"
+        android:background="@drawable/bg_child_pet_sheet_avatar"
+        android:padding="10dp">
 
         <ImageView
             android:id="@+id/iv_pet_sprite"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_gravity="center"
             android:contentDescription="@null"
             android:scaleType="fitCenter"
             android:visibility="gone" />
@@ -26,16 +46,15 @@
             android:id="@+id/tv_pet_emoji"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_gravity="center"
             android:gravity="center"
-            android:textSize="58sp"
+            android:textSize="52sp"
             tools:text="✨" />
     </FrameLayout>
 
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="14dp"
         android:gravity="center_vertical"
         android:orientation="horizontal">
 
@@ -43,16 +62,16 @@
             android:id="@+id/tv_pet_name"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textColor="#1B2B4A"
-            android:textSize="18sp"
+            android:textColor="@color/child_quest_sheet_text_primary"
+            android:textSize="20sp"
             android:textStyle="bold"
             tools:text="별이" />
 
         <ImageView
             android:id="@+id/tv_pet_mood_icon"
-            android:layout_width="18dp"
-            android:layout_height="18dp"
-            android:layout_marginStart="6dp"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_marginStart="8dp"
             android:contentDescription="@string/home_pet_mood_sad_icon_cd"
             android:src="@drawable/ic_pet_mood_teardrop"
             android:visibility="gone"
@@ -60,31 +79,107 @@
     </LinearLayout>
 
     <TextView
-        android:id="@+id/tv_pet_level"
+        android:id="@+id/tv_pet_stage_chip"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
-        android:textColor="#059669"
-        android:textSize="15sp"
+        android:background="@drawable/bg_child_mission_label"
+        android:paddingHorizontal="12dp"
+        android:paddingVertical="4dp"
+        android:textColor="@color/child_nav_item_selected"
+        android:textSize="12sp"
         android:textStyle="bold"
-        tools:text="Lv.3" />
+        tools:text="성장" />
 
-    <ProgressBar
-        android:id="@+id/progress_pet_xp"
-        style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/card_pet_message"
         android:layout_width="match_parent"
-        android:layout_height="8dp"
-        android:layout_marginTop="16dp"
-        android:max="100"
-        android:progressTint="#A855F7"
-        tools:progress="60" />
-
-    <TextView
-        android:id="@+id/tv_pet_xp_label"
-        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:textColor="#64748B"
-        android:textSize="13sp"
-        tools:text="120 / 200 XP" />
+        android:layout_marginTop="16dp"
+        android:visibility="gone"
+        app:cardBackgroundColor="@color/quiz_card_bg"
+        app:cardCornerRadius="14dp"
+        app:cardElevation="0dp"
+        app:strokeColor="@color/child_streak_accent_stroke"
+        app:strokeWidth="1dp"
+        tools:visibility="visible">
+
+        <TextView
+            android:id="@+id/tv_pet_message"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:lineSpacingExtra="3dp"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="12dp"
+            android:textColor="@color/child_quest_sheet_text_secondary"
+            android:textSize="14sp"
+            tools:text="홈에서 오늘의 미션을 시작해 보세요." />
+    </com.google.android.material.card.MaterialCardView>
+
+    <LinearLayout
+        android:id="@+id/layout_pet_xp_card"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:background="@drawable/bg_child_pet_stats_card"
+        android:orientation="vertical"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="14dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/home_pet_sheet_xp_label"
+                android:textColor="@color/child_quest_sheet_text_secondary"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/tv_pet_level"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/child_nav_item_selected"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                tools:text="Lv.3" />
+        </LinearLayout>
+
+        <ProgressBar
+            android:id="@+id/progress_pet_xp"
+            style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="10dp"
+            android:layout_marginTop="10dp"
+            android:max="100"
+            android:progressDrawable="@drawable/progress_child_pet_xp"
+            tools:progress="60" />
+
+        <TextView
+            android:id="@+id/tv_pet_xp_label"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:textColor="@color/child_quest_sheet_text_secondary"
+            android:textSize="13sp"
+            tools:text="120 / 200 XP" />
+    </LinearLayout>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_pet_sheet_close"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:backgroundTint="@color/child_nav_item_selected"
+        android:minHeight="52dp"
+        android:text="@string/home_pet_sheet_close"
+        android:textColor="@color/white"
+        app:cornerRadius="14dp" />
 </LinearLayout>

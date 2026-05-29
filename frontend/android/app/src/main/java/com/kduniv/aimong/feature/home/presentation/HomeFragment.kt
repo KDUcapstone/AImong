@@ -11,21 +11,29 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
-import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.snackbar.Snackbar
+import com.kduniv.aimong.MainActivity
 import com.kduniv.aimong.R
+import com.kduniv.aimong.core.dev.UiMode
 import com.kduniv.aimong.core.navigation.ChildTopLevelNav.onChildBottomNavTap
 import com.kduniv.aimong.core.ui.BaseFragment
 import com.kduniv.aimong.core.util.UiPerfLog
 import com.kduniv.aimong.databinding.FragmentHomeBinding
 import com.kduniv.aimong.feature.mission.domain.model.normalizeToThreeLevels
+import com.kduniv.aimong.feature.onboarding.child.ChildGachaOnboardingDialogs
+import com.kduniv.aimong.feature.onboarding.child.ChildGachaOnboardingController
+import com.kduniv.aimong.feature.onboarding.child.ChildGachaOnboardingEntry
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::inflate) {
+
+    @Inject
+    lateinit var childGachaOnboardingController: ChildGachaOnboardingController
 
     private val viewModel: HomeViewModel by activityViewModels()
     private lateinit var homeLayoutBinder: HomeLayoutBinder
@@ -36,6 +44,7 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
     private var lastHomePathStructureKey: String? = null
     private var homePerfResumeMark: Long? = null
     private var homePerfFirstTouchLogged = false
+    private var childOnboardingEntryChecked = false
 
     override fun onResume() {
         super.onResume()
@@ -72,8 +81,6 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
                 when {
                     nav.missionId.isNotBlank() && !st.isMissionUnlocked(nav.missionId) ->
                         showMissionHint(getString(R.string.quiz_mission_locked))
-                    !st.canOpenMissionPicker(unlockMode, viewModel.missionStarLevels(nav.missionId)) ->
-                        showEnergyInsufficientSnackbar()
                     else -> {
                         val missionKey = nav.difficultyPickerMissionKey()
                         if (missionDifficultyPicker.isShowingForMission(missionKey)) {
@@ -197,10 +204,6 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
             showMissionHint(getString(R.string.mission_no_playable_star_level))
             return
         }
-        if (!state.canOpenMissionPicker(unlockMode, viewModel.missionStarLevels(nav.missionId))) {
-            showEnergyInsufficientSnackbar()
-            return
-        }
         navigateToQuizAfterValidation(nav, unlockMode)
     }
 
@@ -217,11 +220,6 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
     }
 
     private fun navigateToQuizAfterValidation(nav: HomeQuizNavigation, unlockMode: DifficultyUnlockMode) {
-        val st = viewModel.uiState.value
-        if (!st.canAttemptMissionStart(skipEnergyBecauseReview = unlockMode == DifficultyUnlockMode.REVIEW)) {
-            showEnergyInsufficientSnackbar()
-            return
-        }
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.validateMissionQuizNav(nav, unlockMode)
                 .onSuccess { validated ->
@@ -235,7 +233,16 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
                     )
                 }
                 .onFailure { e ->
-                    Snackbar.make(binding.root, e.message ?: getString(R.string.quiz_star_not_playable), Snackbar.LENGTH_LONG).show()
+                    val msg = e.message.orEmpty()
+                    if (msg == getString(R.string.quiz_insufficient_energy)) {
+                        showEnergyInsufficientSnackbar()
+                    } else {
+                        Snackbar.make(
+                            binding.root,
+                            msg.ifBlank { getString(R.string.quiz_star_not_playable) },
+                            Snackbar.LENGTH_LONG,
+                        ).show()
+                    }
                 }
         }
     }
@@ -288,15 +295,7 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
             showMissionHint(getString(R.string.pet_equip_required_for_xp))
             return
         }
-        val dialog = BottomSheetDialog(requireContext())
-        val v = layoutInflater.inflate(R.layout.bottomsheet_pet_stats, null, false)
-        PetStatsSheetUi.bind(
-            root = v,
-            state = s,
-            petNameFallback = getString(R.string.home_pet_name_default),
-        )
-        dialog.setContentView(v)
-        dialog.show()
+        PetStatsSheetPresenter.show(this, s)
     }
 
     private fun openQuestList() {
@@ -304,9 +303,33 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
             .show(parentFragmentManager, "quest_list")
     }
 
+    private suspend fun maybeStartChildGachaOnboarding() {
+        if (!isAdded) return
+        when (val entry = childGachaOnboardingController.evaluateEntry()) {
+            ChildGachaOnboardingEntry.Skip -> Unit
+            ChildGachaOnboardingEntry.NoTickets -> {
+                ChildGachaOnboardingDialogs.showNoTickets(this@HomeFragment)
+            }
+            is ChildGachaOnboardingEntry.StartWelcome -> {
+                childGachaOnboardingController.onWelcomeShown()
+                ChildGachaOnboardingDialogs.showWelcome(
+                    host = this@HomeFragment,
+                    ticketCount = entry.ticketCount,
+                ) {
+                    val activity = activity as? MainActivity ?: return@showWelcome
+                    activity.navigateChildToGachaForOnboarding()
+                }
+            }
+        }
+    }
+
     override fun initObserver() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                if (!childOnboardingEntryChecked && !UiMode.useStubNav) {
+                    childOnboardingEntryChecked = true
+                    launch { maybeStartChildGachaOnboarding() }
+                }
                 launch {
                     viewModel.pendingAimongCelebration.collect { pending ->
                         if (pending == null || !isAdded) return@collect

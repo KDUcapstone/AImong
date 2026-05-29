@@ -63,7 +63,8 @@
     <color name="child_streak_accent_stroke">#FDBA74</color>
     <color name="text_grey">#9E9E9E</color>
     <color name="text_sub_grey">#757575</color>
-    <color name="chat_privacy_highlight">#66FF6D00</color>
+    <color name="chat_privacy_highlight">#4DFF6D00</color>
+    <color name="chat_privacy_sensitive_text">#C2410C</color>
 
     <!-- 수집(가챠) 도감 카드 등급 테두리 -->
     <color name="gacha_rarity_normal">#F97316</color>

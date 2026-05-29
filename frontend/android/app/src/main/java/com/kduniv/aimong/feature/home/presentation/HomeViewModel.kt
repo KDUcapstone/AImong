@@ -393,10 +393,13 @@ class HomeViewModel @Inject constructor(
                 onSuccess = { data ->
                     val prev = _uiState.value
                     val notice = computeServerDayNotice(data.serverDate)
-                    var ui = HomeUiMapper.toUiState(data).copy(
+                    val mapped = HomeUiMapper.toUiState(data)
+                    var ui = mapped.copy(
                         pathItems = prev.pathItems,
                         missionStarLevelsById = prev.missionStarLevelsById,
                         missionUnlockedById = prev.missionUnlockedById,
+                        // 경로는 이전 /home·/missions 기준으로 그려진 상태 — 요약만 false로 덮이면 UI·가드 불일치
+                        canStartMission = prev.canStartMission,
                         isLoading = false,
                         isRefreshing = false,
                         errorMessage = null,

@@ -269,19 +269,6 @@
                         android:textColor="@color/quiz_text_grey"
                         android:textSize="10sp" />
 
-                    <Space
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1" />
-
-                    <TextView
-                        android:id="@+id/btn_report_question"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:background="?attr/selectableItemBackgroundBorderless"
-                        android:padding="4dp"
-                        android:text="🚨"
-                        android:textSize="14sp" />
                 </LinearLayout>
 
                 <TextView

@@ -51,6 +51,7 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.snackbar.Snackbar
 import com.kduniv.aimong.databinding.ActivityMainBinding
 import com.kduniv.aimong.feature.chat.ChatHintNotifier
+import com.kduniv.aimong.feature.onboarding.child.ChildGachaOnboardingController
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -98,6 +99,9 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var childSessionValidateUseCase: ChildSessionValidateUseCase
+
+    @Inject
+    lateinit var childGachaOnboardingController: ChildGachaOnboardingController
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var navController: NavController
@@ -382,6 +386,16 @@ class MainActivity : AppCompatActivity() {
 
                 binding.bottomNav.setOnItemSelectedListener { item ->
                     if (suppressChildBottomNavItemSelected) return@setOnItemSelectedListener true
+                    if (childGachaOnboardingController.isNavLockedToGacha &&
+                        item.itemId != R.id.gachaFragment
+                    ) {
+                        Snackbar.make(
+                            binding.root,
+                            R.string.child_onboarding_gacha_only,
+                            Snackbar.LENGTH_SHORT,
+                        ).show()
+                        return@setOnItemSelectedListener false
+                    }
                     val currentId = navController.currentDestination?.id
                     // MY 하위(알림 설정 등)에서 탭만 맞추는 경우 pop/navigate 하지 않음 — 잠깐 열렸다 닫힘 방지
                     if (currentId == item.itemId ||
@@ -400,6 +414,11 @@ class MainActivity : AppCompatActivity() {
 
                 binding.bottomNav.setOnItemReselectedListener { item ->
                     if (suppressChildBottomNavItemSelected) return@setOnItemReselectedListener
+                    if (childGachaOnboardingController.isNavLockedToGacha &&
+                        item.itemId != R.id.gachaFragment
+                    ) {
+                        return@setOnItemReselectedListener
+                    }
                     navController.onChildBottomNavTap(item.itemId)
                 }
             } else if (userRole == "PARENT") {
@@ -465,6 +484,28 @@ class MainActivity : AppCompatActivity() {
             ChildTopLevelNav.mapDestinationToTab(navController.currentDestination?.id)?.let { tabId ->
                 syncChildBottomNavTabSelection(binding.bottomNav, tabId)
             }
+        }
+    }
+
+    /** 자녀 첫 펫 온보딩 — 수집 탭으로 이동하고 뽑기 코치마크 단계로 전환 */
+    fun navigateChildToGachaForOnboarding() {
+        if (navigationUserRole != "CHILD" || !::navController.isInitialized) return
+        childGachaOnboardingController.onGachaPullCoachmark()
+        suppressChildBottomNavItemSelected = true
+        runCatching { navController.navigateToChildTopLevel(R.id.gachaFragment) }
+        binding.bottomNav.post {
+            syncChildBottomNavTabSelection(binding.bottomNav, R.id.gachaFragment)
+            suppressChildBottomNavItemSelected = false
+        }
+    }
+
+    fun navigateChildToHomeAfterOnboarding() {
+        if (navigationUserRole != "CHILD" || !::navController.isInitialized) return
+        suppressChildBottomNavItemSelected = true
+        runCatching { navController.navigateToChildTopLevel(R.id.homeFragment) }
+        binding.bottomNav.post {
+            syncChildBottomNavTabSelection(binding.bottomNav, R.id.homeFragment)
+            suppressChildBottomNavItemSelected = false
         }
     }
 

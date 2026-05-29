@@ -1,9 +1,12 @@
 package com.kduniv.aimong.feature.chat.presentation
 
+import android.graphics.Typeface
 import android.text.Editable
 import android.text.Spanned
 import android.text.TextWatcher
 import android.text.style.BackgroundColorSpan
+import android.text.style.ForegroundColorSpan
+import android.text.style.StyleSpan
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
@@ -15,9 +18,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.kduniv.aimong.R
+import com.kduniv.aimong.core.privacy.PrivacyRadar
 import com.kduniv.aimong.core.ui.BaseFragment
 import com.kduniv.aimong.core.util.UiPerfLog
 import com.kduniv.aimong.databinding.FragmentChatBinding
@@ -40,6 +43,9 @@ class ChatFragment : BaseFragment<FragmentChatBinding>(FragmentChatBinding::infl
 
     @Inject
     lateinit var chatForegroundTracker: ChatForegroundTracker
+
+    @Inject
+    lateinit var privacyRadar: PrivacyRadar
 
     private val chatAdapter = ChatMessageAdapter()
 
@@ -177,27 +183,28 @@ class ChatFragment : BaseFragment<FragmentChatBinding>(FragmentChatBinding::infl
                         viewModel.acknowledgeInputClear()
                     }
 
-                    if (state.privacyPrompt != null && privacyDialog?.isShowing != true) {
-                            var choiceMade = false
-                            privacyDialog = MaterialAlertDialogBuilder(requireContext())
-                                .setTitle(R.string.chat_privacy_dialog_title)
-                                .setMessage(R.string.chat_privacy_dialog_message)
-                                .setNegativeButton(R.string.chat_privacy_action_cancel) { _, _ ->
-                                    choiceMade = true
-                                    viewModel.onPrivacySendCancelled()
-                                }
-                                .setPositiveButton(R.string.chat_privacy_action_mask) { _, _ ->
-                                    choiceMade = true
-                                    viewModel.onPrivacyMaskedSend()
-                                }
-                                .setOnDismissListener {
-                                    if (!choiceMade) {
-                                        viewModel.onPrivacySendCancelled()
-                                    }
-                                    privacyDialog = null
-                                }
-                                .create()
-                            privacyDialog?.show()
+                    val prompt = state.privacyPrompt
+                    if (prompt != null && privacyDialog?.isShowing != true) {
+                        var choiceMade = false
+                        privacyDialog = ChatPrivacyDialog.show(
+                            host = this@ChatFragment,
+                            prompt = prompt,
+                            privacyRadar = privacyRadar,
+                            onMaskAndSend = {
+                                choiceMade = true
+                                viewModel.onPrivacyMaskedSend()
+                            },
+                            onCancel = {
+                                choiceMade = true
+                                viewModel.onPrivacySendCancelled()
+                            },
+                        ) as? AlertDialog
+                        privacyDialog?.setOnDismissListener {
+                            if (!choiceMade) {
+                                viewModel.onPrivacySendCancelled()
+                            }
+                            privacyDialog = null
+                        }
                     }
 
                     val highlightRanges = state.privacyPrompt?.highlightRanges
@@ -260,30 +267,50 @@ class ChatFragment : BaseFragment<FragmentChatBinding>(FragmentChatBinding::infl
         val editable = binding.etMessage.text as? Editable ?: return
         suppressInputCallback = true
         try {
-            editable.getSpans(0, editable.length, ChatPrivacyHighlightSpan::class.java)
-                .forEach { editable.removeSpan(it) }
+            clearPrivacySpans(editable)
         } finally {
             suppressInputCallback = false
         }
+    }
+
+    private fun clearPrivacySpans(editable: Editable) {
+        editable.getSpans(0, editable.length, ChatPrivacyHighlightSpan::class.java)
+            .forEach { editable.removeSpan(it) }
+        editable.getSpans(0, editable.length, ForegroundColorSpan::class.java)
+            .forEach { editable.removeSpan(it) }
+        editable.getSpans(0, editable.length, StyleSpan::class.java)
+            .forEach { editable.removeSpan(it) }
     }
 
     private fun applyPrivacyHighlights(ranges: List<IntRange>) {
         val editable = binding.etMessage.text as? Editable ?: return
         suppressInputCallback = true
         try {
-            editable.getSpans(0, editable.length, ChatPrivacyHighlightSpan::class.java)
-                .forEach { editable.removeSpan(it) }
-            val color = ContextCompat.getColor(requireContext(), R.color.chat_privacy_highlight)
+            clearPrivacySpans(editable)
+            val bgColor = ContextCompat.getColor(requireContext(), R.color.chat_privacy_highlight)
+            val fgColor = ContextCompat.getColor(requireContext(), R.color.chat_privacy_sensitive_text)
             val n = editable.length
             for (range in ranges) {
                 val start = range.first.coerceIn(0, n)
                 val end = (range.last + 1).coerceIn(start, n)
                 if (start < end) {
                     editable.setSpan(
-                        ChatPrivacyHighlightSpan(color),
+                        ChatPrivacyHighlightSpan(bgColor),
                         start,
                         end,
-                        Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                        Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
+                    )
+                    editable.setSpan(
+                        ForegroundColorSpan(fgColor),
+                        start,
+                        end,
+                        Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
+                    )
+                    editable.setSpan(
+                        StyleSpan(Typeface.BOLD),
+                        start,
+                        end,
+                        Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
                     )
                 }
             }

@@ -131,9 +131,19 @@ class PrivacyRadar @Inject constructor() {
     fun detectPrivacyType(text: String): PrivacyType {
         if (Regex("""(초등학교|중학교|고등학교|\w+초|\w+중|\w+고)""").containsMatchIn(text)) return PrivacyType.SCHOOL
         if (Regex("""\d+살|\d+세""").containsMatchIn(text)) return PrivacyType.AGE
-        if (Regex("""\d+학년""").containsMatchIn(text)) return PrivacyType.ETC
+        if (Regex("""\d+학년""").containsMatchIn(text)) return PrivacyType.GRADE
         if (Regex("""010[- .]?\d{3,4}[- .]?\d{4}""").containsMatchIn(text)) return PrivacyType.PHONE
         if (Regex("""[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}""").containsMatchIn(text)) return PrivacyType.EMAIL
         return PrivacyType.ETC
     }
+
+    fun describeRange(text: String, range: IntRange): PrivacyType {
+        val start = range.first.coerceIn(0, text.length)
+        val end = (range.last + 1).coerceIn(start, text.length)
+        if (start >= end) return PrivacyType.ETC
+        return detectPrivacyType(text.substring(start, end))
+    }
+
+    fun privacyTypesInRanges(text: String, ranges: List<IntRange>): List<PrivacyType> =
+        ranges.map { describeRange(text, it) }.distinct()
 }

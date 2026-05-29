@@ -13,7 +13,6 @@ import com.kduniv.aimong.feature.home.domain.HomeRefreshTrigger
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import kotlinx.coroutines.launch
-import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.snackbar.Snackbar
 import com.kduniv.aimong.R
 import com.kduniv.aimong.core.ui.BaseFragment
@@ -21,7 +20,7 @@ import com.kduniv.aimong.databinding.FragmentHomeBinding
 import com.kduniv.aimong.feature.home.presentation.EnergyBottomSheet
 import com.kduniv.aimong.feature.home.presentation.GearBottomSheet
 import com.kduniv.aimong.feature.home.presentation.HomeLayoutBinder
-import com.kduniv.aimong.feature.home.presentation.PetStatsSheetUi
+import com.kduniv.aimong.feature.home.presentation.PetStatsSheetPresenter
 import com.kduniv.aimong.feature.home.presentation.DifficultyUnlockMode
 import com.kduniv.aimong.feature.home.presentation.MissionDifficultyPicker
 import com.kduniv.aimong.feature.home.presentation.difficultyPickerMissionKey
@@ -198,15 +197,6 @@ class MockHomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::
     }
 
     private fun showPetStatsSheet() {
-        val s = sampleState
-        val dialog = BottomSheetDialog(requireContext())
-        val v = layoutInflater.inflate(R.layout.bottomsheet_pet_stats, null, false)
-        PetStatsSheetUi.bind(
-            root = v,
-            state = s,
-            petNameFallback = getString(R.string.home_pet_name_default),
-        )
-        dialog.setContentView(v)
-        dialog.show()
+        PetStatsSheetPresenter.show(this, sampleState)
     }
 }

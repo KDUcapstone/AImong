@@ -51,30 +51,6 @@ class DummyQuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding:
         binding.ivBack.setOnClickListener { findNavController().popBackStack() }
         binding.btnResFinish.setOnClickListener { findNavController().popBackStack() }
 
-        parentFragmentManager.setFragmentResultListener(
-            com.kduniv.aimong.feature.quiz.presentation.QuizReportBottomSheet.REQUEST_KEY_SUBMIT,
-            viewLifecycleOwner
-        ) { _, bundle ->
-            val reasonCode =
-                bundle.getString(com.kduniv.aimong.feature.quiz.presentation.QuizReportBottomSheet.RESULT_REASON_CODE)
-                    ?: return@setFragmentResultListener
-            Toast.makeText(requireContext(), "목업 신고 접수: $reasonCode", Toast.LENGTH_SHORT).show()
-            Toast.makeText(requireContext(), getString(R.string.quiz_report_success), Toast.LENGTH_SHORT).show()
-        }
-        parentFragmentManager.setFragmentResultListener(
-            com.kduniv.aimong.feature.quiz.presentation.QuizReportBottomSheet.REQUEST_KEY_DISMISS,
-            viewLifecycleOwner
-        ) { _, _ ->
-            // dismiss 시 타이머 즉시 재개
-            if (binding.layoutFeedbackPanel.visibility != View.VISIBLE &&
-                binding.layoutQuizResult.visibility != View.VISIBLE
-            ) {
-                if (questionTimeLeftMs > 0) startTimer(reset = false)
-            }
-        }
-
-        binding.btnReportQuestion.setOnClickListener { showQuestionReportReasonDialog() }
-        
         binding.btnResRetry.setOnClickListener {
             binding.layoutQuizResult.visibility = View.GONE
             currentQuestionIndex = 0
@@ -442,10 +418,4 @@ class DummyQuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding:
     }
 
     override fun initObserver() {}
-
-    private fun showQuestionReportReasonDialog() {
-        timer?.cancel()
-        com.kduniv.aimong.feature.quiz.presentation.QuizReportBottomSheet.newInstance()
-            .show(parentFragmentManager, "QuizReportBottomSheet")
-    }
 }

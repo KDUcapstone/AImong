@@ -4,6 +4,7 @@ enum class PrivacyType {
     NAME,
     SCHOOL,
     AGE,
+    GRADE,
     PHONE,
     EMAIL,
     ADDRESS,
@@ -13,7 +14,7 @@ enum class PrivacyType {
 
     /** POST /privacy/event 의 `detectedType` (ETC는 API 미지원 → AGE로 보냄). */
     fun toApiDetectedType(): String = when (this) {
-        ETC -> "AGE"
+        ETC, GRADE -> "AGE"
         else -> name
     }
 }
