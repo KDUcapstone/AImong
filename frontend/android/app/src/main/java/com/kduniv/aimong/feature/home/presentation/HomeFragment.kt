@@ -2,6 +2,7 @@ package com.kduniv.aimong.feature.home.presentation
 
 import android.view.MotionEvent
 import android.view.View
+import androidx.core.view.isVisible
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -167,6 +168,13 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
                 viewModel.onHomeResumed()
             }
         }
+    }
+
+    /** 첫 홈 로드: 앱 아이콘만 보이고, API·경로 준비 후 홈 UI를 한 번에 표시 */
+    private fun updateHomeBootstrapOverlay(state: HomeUiState) {
+        val showBootstrap =
+            state.isLoading && state.pathItems.isEmpty() && state.errorMessage.isNullOrBlank()
+        binding.layoutHomeBootstrap.root.isVisible = showBootstrap
     }
 
     private fun applyHomeTopChromeInsets() {
@@ -369,7 +377,10 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
                             lastHomePathStructureKey = pathKey
                         }
                         binding.swipeHomeRefresh.isRefreshing = state.isRefreshing
-                        homeLayoutBinder.bind(state)
+                        updateHomeBootstrapOverlay(state)
+                        if (!binding.layoutHomeBootstrap.root.isVisible) {
+                            homeLayoutBinder.bind(state)
+                        }
                         state.errorMessage?.let { msg ->
                             Snackbar.make(binding.root, msg, Snackbar.LENGTH_LONG).show()
                             viewModel.consumeError()

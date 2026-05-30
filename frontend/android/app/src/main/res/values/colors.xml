@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- 기본 시스템 색상 (themes.xml 참조용) -->
+    <!-- 적응형 아이콘·스플래시 — ic_launcher_foreground.png 배경과 동일 톤 -->
+    <color name="ic_launcher_background">#007BFF</color>
+
     <color name="aimong_primary">#7C4DFF</color>
     <color name="aimong_primary_variant">#5E35B1</color>
     <color name="aimong_secondary">#03DAC6</color>

@@ -84,6 +84,12 @@ class HomeViewModel @Inject constructor(
                     .debounce(200)
                     .collect { handleRefreshTrigger(it) }
             }
+            // 홈 Fragment 진입 전에 미리 로드해, 준비되면 바로 그릴 수 있게 한다.
+            viewModelScope.launch {
+                if (_uiState.value.pathItems.isEmpty()) {
+                    loadHome(showLoading = true)
+                }
+            }
         }
     }
 
