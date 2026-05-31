@@ -70,6 +70,7 @@ class MockHomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::
         homeLayoutBinder = HomeLayoutBinder(
             binding = binding,
             layoutInflater = layoutInflater,
+            onMissionPathWillRebuild = { missionDifficultyPicker.dismissImmediate() },
             onOpenDifficultyPicker = { title, nav, anchor, unlockMode ->
                 if (!sampleState.hasEnoughEnergyForMissionStart()) {
                     Snackbar.make(

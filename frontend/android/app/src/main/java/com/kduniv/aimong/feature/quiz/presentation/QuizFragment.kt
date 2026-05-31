@@ -330,7 +330,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         bindQuestionDifficultyStars(state.question.difficulty)
         binding.tvQuizQuestion.text = state.question.question
         binding.pbQuizProgress.progress = index + 1
-
+        
         setupOptions(state.question)
         // 풀이 모드에서는 클릭 방지 및 정답 표시
         lockOptions()
@@ -484,16 +484,16 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
 
     private fun navigateQuizBackToHome() {
         if (!isAdded) return
-        val nav = findNavController()
-        val popped = runCatching { nav.popBackStack(R.id.homeFragment, false) }.getOrDefault(false)
-        if (!popped) {
-            nav.popBackStack()
+            val nav = findNavController()
+            val popped = runCatching { nav.popBackStack(R.id.homeFragment, false) }.getOrDefault(false)
+            if (!popped) {
+                nav.popBackStack()
         }
     }
 
     private fun bindLivesExhaustedFeedbackActions(canRevive: Boolean, reviveCost: Int?, gearBalance: Int?) {
         if (canRevive) {
-            binding.btnFeedbackRefillHearts.visibility = View.VISIBLE
+        binding.btnFeedbackRefillHearts.visibility = View.VISIBLE
             val cost = reviveCost ?: com.kduniv.aimong.feature.home.presentation.WalletBalanceDefaults.HEART_REVIVE_COST
             val balance = gearBalance ?: 0
             binding.btnFeedbackRefillHearts.text = getString(R.string.quiz_revive_cost_fmt, cost, balance)
@@ -651,8 +651,8 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         if (!isCorrect && !viewModel.isSolutionMode.value) {
             val displayLives = (serverRemainingLives ?: (lives - 1)).coerceIn(0, 3)
             updateHearts(displayLives, forceReset = true)
-            shakeView(binding.layoutHearts)
-            shakeScreen()
+                shakeView(binding.layoutHearts)
+                shakeScreen()
         }
 
         val effectiveLives = if (!isCorrect && !viewModel.isSolutionMode.value) {
@@ -842,7 +842,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         val startXp = (endXp - gainedXp).coerceAtLeast(0)
         ValueAnimator.ofInt(startXp, endXp).apply {
             duration = 1500
-            addUpdateListener {
+            addUpdateListener { 
                 val value = it.animatedValue as Int
                 binding.pbResXpProgress.progress = value
                 binding.pbResXpProgress.max = safeMax
@@ -958,7 +958,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                 }
             binding.tvQuestionCount.text = "${index + 1} / $total 문제"
             bindQuestionDifficultyStars(question.difficulty)
-
+            
             // v1.3 + v2.3: 유형 라벨 포함 및 하이라이트 적용
             val typeLabel = when(question.type) {
                 QuestionType.OX -> "OX 퀴즈"
@@ -1268,7 +1268,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             userBtn.setStrokeWidth((2 * density).toInt())
             userIcon.setTextColor(Color.WHITE)
             userLabel.setTextColor(Color.WHITE)
-        } else {
+                } else {
             userBtn.setCardBackgroundColor(cardBg)
             userBtn.setStrokeColor(android.content.res.ColorStateList.valueOf(red))
             userBtn.setStrokeWidth((8 * density).toInt())

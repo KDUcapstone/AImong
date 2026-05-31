@@ -152,10 +152,7 @@ class QuestListViewModel @Inject constructor(
     }
 
     private fun countParentTabNotifications(quests: List<ChildCustomQuestDto>): Int =
-        quests.count { quest ->
-            quest.status.equals("COMPLETED", ignoreCase = true) ||
-                quest.status.equals("AUTO_CONFIRMED", ignoreCase = true)
-        }
+        QuestNotificationHelper.countParentCustomQuestNotifications(quests)
 
     fun loadDaily() {
         viewModelScope.launch {

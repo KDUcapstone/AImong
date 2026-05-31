@@ -21,6 +21,7 @@ class ChildLoginViewModel @Inject constructor(
         }
         val data = result.getOrThrow()
         sessionManager.saveSession("CHILD", data.sessionVersion ?: 1, data.sessionToken)
+        sessionManager.saveChildId(data.childId)
         registerChildFcmTokenUseCase(requireChildSession = true)
         return Result.success(Unit)
     }

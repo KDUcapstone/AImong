@@ -71,7 +71,7 @@ object QuestSheetMapper {
             "COMPLETED", "AUTO_CONFIRMED" -> QuestSheetPrimaryAction.COMPLETED to false
             else -> QuestSheetPrimaryAction.IN_PROGRESS to false
         }
-        val showDot = action == QuestSheetPrimaryAction.COMPLETED
+        val showDot = action == QuestSheetPrimaryAction.COMPLETE_CUSTOM
 
         return QuestSheetRow(
             questType = dto.questId,

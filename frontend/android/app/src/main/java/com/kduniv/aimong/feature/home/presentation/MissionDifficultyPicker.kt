@@ -48,11 +48,14 @@ class MissionDifficultyPicker(
     private var heightAnimator: ValueAnimator? = null
     private var onPickedCallback: ((HomeQuizNavigation, DifficultyUnlockMode) -> Unit)? = null
 
-    fun isShowing(): Boolean = popupView != null
+    fun isShowing(): Boolean {
+        val v = popupView ?: return false
+        return v.parent != null && v.findViewById<View>(R.id.mission_diff_popup_root) != null
+    }
 
     /** 같은 미션 노드를 다시 눌렀을 때 토글 닫기용 */
     fun isShowingForMission(missionKey: String): Boolean =
-        popupView != null && !missionKey.isBlank() && openMissionKey == missionKey
+        isShowing() && !missionKey.isBlank() && openMissionKey == missionKey
 
     fun dismissImmediate() {
         heightAnimator?.cancel()
@@ -85,6 +88,10 @@ class MissionDifficultyPicker(
                 override fun onAnimationEnd(animation: android.animation.Animator) {
                     dismissImmediate()
                 }
+
+                override fun onAnimationCancel(animation: android.animation.Animator) {
+                    dismissImmediate()
+                }
             })
             start()
         }
@@ -98,7 +105,7 @@ class MissionDifficultyPicker(
         base: HomeQuizNavigation,
         starLevels: List<MissionStarLevel>,
         unlockMode: DifficultyUnlockMode,
-        anchorRow: View?,
+        @Suppress("UNUSED_PARAMETER") anchorRow: View?,
         missionKey: String,
         onPicked: (HomeQuizNavigation, DifficultyUnlockMode) -> Unit,
         onPopupLaidOut: (() -> Unit)? = null,
@@ -112,7 +119,7 @@ class MissionDifficultyPicker(
         dismissAllPopupsInPath(binding.layoutMissionPath)
         val parent = binding.layoutMissionPath
         val scroll = binding.scrollPath
-        val idx = resolveAnchorIndex(parent, anchorRow, base.missionId)
+        val idx = resolveAnchorIndex(parent, base.missionId)
         if (idx < 0) {
             if (BuildConfig.DEBUG) {
                 UiPerfLog.mark(
@@ -148,16 +155,8 @@ class MissionDifficultyPicker(
         return true
     }
 
-    /** 경로 전체 재구성 후에도 missionId 태그로 행을 다시 찾는다. */
-    private fun resolveAnchorIndex(
-        parent: ViewGroup,
-        anchorRow: View?,
-        missionId: String,
-    ): Int {
-        if (anchorRow != null) {
-            val direct = parent.indexOfChild(anchorRow)
-            if (direct >= 0) return direct
-        }
+    /** 경로 재구성·로딩 후에도 missionId 태그로 행을 찾는다(클릭 시 넘긴 anchor 뷰는 신뢰하지 않음). */
+    private fun resolveAnchorIndex(parent: ViewGroup, missionId: String): Int {
         if (missionId.isBlank()) return -1
         for (i in 0 until parent.childCount) {
             val child = parent.getChildAt(i)

@@ -23,6 +23,7 @@ import kotlin.math.sin
 class HomeLayoutBinder(
     private val binding: FragmentHomeBinding,
     private val layoutInflater: LayoutInflater,
+    private val onMissionPathWillRebuild: () -> Unit,
     private val onOpenDifficultyPicker: (String, HomeQuizNavigation, View, DifficultyUnlockMode) -> Unit,
     private val onNavigateToQuiz: (HomeQuizNavigation, DifficultyUnlockMode) -> Unit,
     private val onShowMissionHint: (String) -> Unit,
@@ -113,12 +114,13 @@ class HomeLayoutBinder(
         val structureKey = state.pathItems.pathStructureKey()
         val starsKey = state.pathItems.pathStarsKey()
         val hasPath = binding.layoutMissionPath.childCount > 0
+        val pathOutOfSync = state.pathItems.isNotEmpty() && !hasPath
         val popupOpen = MissionDifficultyPicker.isPopupOpenIn(binding.layoutMissionPath)
 
         if (popupOpen) {
-            val structureUnchanged = structureKey == lastPathStructureKey && hasPath
+            val structureUnchanged = structureKey == lastPathStructureKey && hasPath && !pathOutOfSync
             if (!structureUnchanged) {
-                MissionDifficultyPicker.dismissAllPopupsInPath(binding.layoutMissionPath)
+                onMissionPathWillRebuild()
                 renderMissionPath(state)
                 lastPathStructureKey = structureKey
                 lastPathStarsKey = starsKey
@@ -129,17 +131,17 @@ class HomeLayoutBinder(
             return
         }
 
-        val structureUnchanged = structureKey == lastPathStructureKey && hasPath
+        val structureUnchanged = structureKey == lastPathStructureKey && hasPath && !pathOutOfSync
         val starsUnchanged = starsKey == lastPathStarsKey
         when {
-            structureUnchanged && starsUnchanged -> return
-            structureUnchanged -> {
-                patchPathStarLevels(state.pathItems)
-                lastPathStarsKey = starsKey
-            }
-            else -> {
+            pathOutOfSync || !structureUnchanged -> {
+                onMissionPathWillRebuild()
                 renderMissionPath(state)
                 lastPathStructureKey = structureKey
+                lastPathStarsKey = starsKey
+            }
+            !starsUnchanged -> {
+                patchPathStarLevels(state.pathItems)
                 lastPathStarsKey = starsKey
             }
         }
@@ -213,7 +215,7 @@ class HomeLayoutBinder(
     }
 
     private fun renderMissionPath(state: HomeUiState) {
-        MissionDifficultyPicker.dismissAllPopupsInPath(binding.layoutMissionPath)
+        onMissionPathWillRebuild()
         binding.layoutMissionPath.removeAllViews()
         lastPathStructureKey = state.pathItems.pathStructureKey()
         val inflater = layoutInflater

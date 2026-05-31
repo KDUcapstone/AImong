@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kduniv.aimong.BuildConfig
 import com.kduniv.aimong.R
+import com.kduniv.aimong.core.local.SessionManager
 import com.kduniv.aimong.core.dev.UiMode
 import com.kduniv.aimong.core.util.UiPerfLog
 import com.kduniv.aimong.core.network.AimongApiService
@@ -28,6 +29,7 @@ import com.kduniv.aimong.feature.mission.domain.model.mergePreservingHigherUnloc
 import com.kduniv.aimong.feature.mission.domain.model.normalizeToThreeLevels
 import com.kduniv.aimong.feature.mission.domain.model.openDifficultyCount
 import com.kduniv.aimong.feature.mission.domain.repository.MissionRepository
+import com.kduniv.aimong.feature.quest.domain.QuestNotificationHelper
 import com.kduniv.aimong.feature.quest.domain.repository.QuestRepository
 import com.kduniv.aimong.feature.streak.data.StreakRepository
 import com.kduniv.aimong.feature.streak.data.model.StreakStatusData
@@ -61,8 +63,11 @@ class HomeViewModel @Inject constructor(
     private val apiService: AimongApiService,
     private val missionStatusCache: MissionStatusCache,
     private val homeRefreshBus: ChildHomeRefreshBus,
+    private val sessionManager: SessionManager,
     @ApplicationContext private val appContext: Context
 ) : ViewModel() {
+
+    suspend fun currentChildId(): String? = sessionManager.currentChildId()
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
@@ -328,6 +333,7 @@ class HomeViewModel @Inject constructor(
             val missionsRefresh = missionRepository.refreshMissions()
             getHomeStatusUseCase().fold(
                 onSuccess = { data ->
+                    sessionManager.saveChildId(data.profile.childId)
                     val rawMissions = missionRepository.getMissionsFlow().first()
                     if (rawMissions.isEmpty() && missionsRefresh.isFailure) {
                         val refreshError = missionsRefresh.exceptionOrNull()
@@ -400,6 +406,7 @@ class HomeViewModel @Inject constructor(
         homeLoadJob = viewModelScope.launch {
             getHomeStatusUseCase().fold(
                 onSuccess = { data ->
+                    sessionManager.saveChildId(data.profile.childId)
                     val prev = _uiState.value
                     val notice = computeServerDayNotice(data.serverDate)
                     val mapped = HomeUiMapper.toUiState(data)
@@ -451,13 +458,25 @@ class HomeViewModel @Inject constructor(
             }
         }
         questRepository.getChildCustomQuests().getOrNull()?.let { custom ->
-            ui = ui.copy(hasPendingCustomQuest = custom.hasPendingConfirm)
+            ui = ui.copy(
+                hasPendingCustomQuest = custom.hasPendingConfirm,
+                parentCustomQuestNotifyCount =
+                    QuestNotificationHelper.countParentCustomQuestNotifications(custom.quests),
+            )
         }
         return when {
             ui.questNotificationCount() == 0 ->
                 ui.copy(questNotificationsAcknowledged = false)
-            preserveQuestAck && prev != null ->
-                ui.copy(questNotificationsAcknowledged = prev.questNotificationsAcknowledged)
+            preserveQuestAck && prev != null -> {
+                val newCount = ui.questNotificationCount()
+                val oldCount = prev.questNotificationCount()
+                val acknowledged = if (newCount > oldCount) {
+                    false
+                } else {
+                    prev.questNotificationsAcknowledged
+                }
+                ui.copy(questNotificationsAcknowledged = acknowledged)
+            }
             else -> ui
         }
     }

@@ -67,6 +67,7 @@ object MockUiSamples {
             todayQuestProgress = "2/3",
             dailyQuestClaimableCount = 1,
             hasPendingCustomQuest = true,
+            parentCustomQuestNotifyCount = 2,
             quests = listOf(
                 QuestItemUiState("q1", "출석하기", "+10 XP", null, isCompleted = false, canStart = true),
                 QuestItemUiState("q2", "친구와 대화", "+15 XP", null, isCompleted = true, canStart = false),

@@ -50,13 +50,19 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
     private var lastHomePathStructureKey: String? = null
     private var homePerfResumeMark: Long? = null
     private var homePerfFirstTouchLogged = false
-    private var childOnboardingEntryChecked = false
+    /** 같은 자녀에 대해 Skip 확정 후에는 재시도하지 않음. NoTickets는 onResume에서 재시도. */
+    private var childOnboardingSkippedForChildId: String? = null
 
     override fun onResume() {
         super.onResume()
         homePerfResumeMark = UiPerfLog.mark("home_first_interaction")
         homePerfFirstTouchLogged = false
         viewModel.onHomeResumed()
+        if (!UiMode.useStubNav) {
+            viewLifecycleOwner.lifecycleScope.launch {
+                tryStartChildGachaOnboardingWhenReady()
+            }
+        }
         viewModel.pendingAimongCelebration.value?.let { pending ->
             binding.root.post {
                 if (!isAdded) return@post
@@ -82,6 +88,7 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
         homeLayoutBinder = HomeLayoutBinder(
             binding = binding,
             layoutInflater = layoutInflater,
+            onMissionPathWillRebuild = { missionDifficultyPicker.dismissImmediate() },
             onOpenDifficultyPicker = { title, nav, anchor, unlockMode ->
                 val st = viewModel.uiState.value
                 when {
@@ -94,6 +101,7 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
                             missionDifficultyPicker.dismissAnimated()
                         } else {
                             missionPickerStarLevelsJob?.cancel()
+                            missionDifficultyPicker.dismissImmediate()
                             val initialStars = viewModel.initialMissionStarLevelsForPicker(nav.missionId)
                                 .normalizeToThreeLevels()
                             val pickerMark = UiPerfLog.mark("home_difficulty_picker")
@@ -288,6 +296,7 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
             missionDifficultyPicker.dismissImmediate()
         }
         lastHomePathStructureKey = null
+        childOnboardingSkippedForChildId = null
         super.onDestroyView()
     }
 
@@ -337,21 +346,44 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
             .show(parentFragmentManager, "quest_list")
     }
 
-    private suspend fun maybeStartChildGachaOnboarding() {
-        if (!isAdded) return
-        when (val entry = childGachaOnboardingController.evaluateEntry()) {
-            ChildGachaOnboardingEntry.Skip -> Unit
+    private suspend fun tryStartChildGachaOnboardingWhenReady() {
+        if (!isAdded || UiMode.useStubNav) return
+        if (childGachaOnboardingController.isCompletedForCurrentChild()) return
+        val state = viewModel.uiState.value
+        if (state.isLoading && state.pathItems.isEmpty()) return
+        val childId = viewModel.currentChildId()
+            ?: state.childId.takeIf { it.isNotBlank() }
+            ?: return
+        if (childOnboardingSkippedForChildId == childId) return
+
+        val profileChildId = state.childId.takeIf { it.isNotBlank() } ?: childId
+        when (val entry = childGachaOnboardingController.evaluateEntry(
+            homeTicketHint = state.normalTickets,
+            profileChildId = profileChildId,
+        )) {
+            ChildGachaOnboardingEntry.Skip -> {
+                childOnboardingSkippedForChildId = childId
+            }
             ChildGachaOnboardingEntry.NoTickets -> {
-                ChildGachaOnboardingDialogs.showNoTickets(this@HomeFragment)
+                if (!isAdded) return
+                binding.root.post {
+                    if (!isAdded) return@post
+                    ChildGachaOnboardingDialogs.showNoTickets(this@HomeFragment)
+                }
             }
             is ChildGachaOnboardingEntry.StartWelcome -> {
-                childGachaOnboardingController.onWelcomeShown()
-                ChildGachaOnboardingDialogs.showWelcome(
-                    host = this@HomeFragment,
-                    ticketCount = entry.ticketCount,
-                ) {
-                    val activity = activity as? MainActivity ?: return@showWelcome
-                    activity.navigateChildToGachaForOnboarding()
+                childOnboardingSkippedForChildId = childId
+                if (!isAdded) return
+                binding.root.post {
+                    if (!isAdded) return@post
+                    childGachaOnboardingController.onWelcomeShown()
+                    ChildGachaOnboardingDialogs.showWelcome(
+                        host = this@HomeFragment,
+                        ticketCount = entry.ticketCount,
+                    ) {
+                        val activity = activity as? MainActivity ?: return@showWelcome
+                        activity.navigateChildToGachaForOnboarding()
+                    }
                 }
             }
         }
@@ -360,9 +392,10 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
     override fun initObserver() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                if (!childOnboardingEntryChecked && !UiMode.useStubNav) {
-                    childOnboardingEntryChecked = true
-                    launch { maybeStartChildGachaOnboarding() }
+                launch {
+                    if (!UiMode.useStubNav) {
+                        tryStartChildGachaOnboardingWhenReady()
+                    }
                 }
                 launch {
                     viewModel.pendingAimongCelebration.collect { pending ->
@@ -406,6 +439,14 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
                         updateHomeBootstrapOverlay(state)
                         if (!binding.layoutHomeBootstrap.root.isVisible) {
                             homeLayoutBinder.bind(state)
+                        }
+                        if (!UiMode.useStubNav &&
+                            !binding.layoutHomeBootstrap.root.isVisible &&
+                            !state.isLoading
+                        ) {
+                            viewLifecycleOwner.lifecycleScope.launch {
+                                tryStartChildGachaOnboardingWhenReady()
+                            }
                         }
                         state.errorMessage?.let { msg ->
                             Snackbar.make(binding.root, msg, Snackbar.LENGTH_LONG).show()

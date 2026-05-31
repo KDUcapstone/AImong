@@ -52,6 +52,7 @@ internal object HomeUiMapper {
         )
 
         return HomeUiState(
+            childId = profile.childId,
             nickname = profile.nickname,
             totalXp = userTotalXp,
             /** 스펙: topStatus.streakDays ≡ streak.continuousDays — streak 객체 우선 */

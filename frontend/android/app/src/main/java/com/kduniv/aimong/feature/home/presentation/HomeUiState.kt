@@ -5,6 +5,7 @@ import com.kduniv.aimong.feature.pet.domain.PetGrowthRules
 
 /** 홈 화면 UI 상태 (API 연동 전 기본값은 비어 있음) */
 data class HomeUiState(
+    val childId: String = "",
     val nickname: String = "",
     val totalXp: Int = 0,
     val streakDays: Int = 0,
@@ -65,8 +66,10 @@ data class HomeUiState(
     val returnRewardPending: Boolean = false,
     /** GET /home `dailyQuestSummary.claimableCount` — 수령 가능한 일일 퀘스트 */
     val dailyQuestClaimableCount: Int = 0,
-    /** GET /quests/child/custom `hasPendingConfirm` — 부모 확인 대기 커스텀 퀘스트 */
+    /** GET /quests/child/custom `hasPendingConfirm` — 부모 확인 대기(레거시·부모앱 연동) */
     val hasPendingCustomQuest: Boolean = false,
+    /** 부모 실세계 미션 알림 수(ACTIVE 신규 + PENDING_CONFIRM) — 홈 FAB 배지 */
+    val parentCustomQuestNotifyCount: Int = 0,
     /**
      * 퀘스트 시트를 한 번 열어 확인했으면 true.
      * 알림 개수가 0이 되기 전까지 홈 FAB·시트 탭 배지를 다시 띄우지 않습니다.
@@ -104,7 +107,7 @@ data class HomeUiState(
 
     /** 홈 퀘스트 FAB에 표시할 알림 개수 (미완료 퀘스트 수가 아님) */
     fun questNotificationCount(): Int =
-        dailyQuestClaimableCount + if (hasPendingCustomQuest) 1 else 0
+        dailyQuestClaimableCount + parentCustomQuestNotifyCount
 
     fun shouldShowQuestFabBadge(): Boolean =
         questNotificationCount() > 0 && !questNotificationsAcknowledged
