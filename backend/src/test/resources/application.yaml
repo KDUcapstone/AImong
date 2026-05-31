@@ -24,8 +24,4 @@ aimong:
     question:
       set-size: 10
       attempt-ttl-minutes: 30
-      # Test profile keeps Post-MVP runtime generation disabled.
-      dynamic-generation-enabled: false
-      async-refill-enabled: false
-      serving-auto-quarantine-enabled: false
       report-auto-deactivate-enabled: false

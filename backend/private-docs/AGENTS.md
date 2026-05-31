@@ -2,18 +2,16 @@
 
 ## Purpose
 This repository serves AImong's elementary AI literacy mission system.
-Always preserve the mission-based quiz contract, the 3-step curriculum flow, and the validation-first storage rule.
+Always preserve the mission-based quiz contract, the 3-step curriculum flow, and the static question-bank serving rule.
 
 ## Source of truth
 Use sources in this priority order:
-1. `🧩 AImong 문제 생성 시스템 설계서 v1.6`
-2. `review-v2.md`
-3. `validation-v2.txt`
-4. `question-bank-v2.json`
-5. `docs/keris/*.yaml`, `docs/keris/*.md`, `docs/keris/*.json`
-6. Raw KERIS PDF as reference only
+1. `_generated/question-bank/question-bank-1056-starlevel-ultra-diverse.json`
+2. `private-docs/review-v2.md`
+3. `/question` PDFs
+4. Feature/API/ERD specs in `private-docs`
 
-Do not depend on raw KERIS PDF parsing or OCR at runtime.
+Do not depend on raw PDF parsing, OCR, GPT generation, or runtime refill at runtime.
 
 ## Core API contract
 - Question lookup is always by `missionId`.
@@ -93,29 +91,19 @@ Recommended numeric mapping:
 - STEP 2: `LOW->2`, `MEDIUM->3`, `HIGH->3`
 - STEP 3: `LOW->3`, `MEDIUM->4`, `HIGH->4`
 
-## Runtime serving and refill
-- Prefer serving one intact unused pack first.
-- If no intact pack is available, recompose 10 questions from the mission pool.
+## Runtime Serving
+- Serve questions only from active DB-backed question-bank rows.
+- Recompose 10 questions from the mission pool by mission, child history, star level, and difficulty quota.
 - In normal mode, exclude already solved questions first.
 - In review mode, reuse is allowed.
-- Use async refill before pool exhaustion and sync shortage refill only when needed.
-- Keep mission pools near the target of `60`.
+- If the active pool cannot satisfy the exact 10-question quota, return `MISSION_SET_NOT_READY`.
+- Do not generate replacement questions when the pool is short.
 
-Recommended thresholds:
-- `TARGET_POOL_PER_MISSION = 60`
-- `SOFT_REFILL_TRIGGER = 36`
-- `HARD_REFILL_TRIGGER = 18`
-- `SYNC_GENERATE_BATCH = 10`
-- `MINI_MAX_RETRY = 2`
-
-## Generation rules
-- Use strict structured JSON output.
-- Never save generated questions before validation.
-- Validate schema, type-specific shape, child safety, tags, explanation length, stage guardrails, duplicates, and pack/band quotas before insert.
-- Reject near-duplicates inside the same mission.
-- Reject even more aggressively inside the same pack.
-- Generated explanations must be 2 sentences or fewer.
-- Do not generate direct requests for real names, addresses, phone numbers, faces, voiceprints, or fingerprints.
+## Question Bank Rules
+- Maintain the generated JSON/SQL/HTML artifacts together.
+- Reject exact or near-duplicate prompts inside a selected serving set.
+- Keep explanations 2 sentences or fewer.
+- Do not include direct requests for real names, addresses, phone numbers, faces, voiceprints, or fingerprints.
 
 ## Question writing rules
 - Write for grade 5–6 elementary students.
@@ -127,36 +115,9 @@ Recommended thresholds:
 - Keep choice lengths and tone balanced.
 - Do not make the correct answer visually obvious.
 
-## Model policy
-Default model:
-- `gpt-5-mini`
-
-Escalation model:
-- `gpt-5.4-mini`
-
-Escalate when:
-- mission is STEP 3
-- difficulty band is `HIGH`
-- numeric difficulty is `4`
-- mini has failed validation 2+ times
-- wording quality is weak for grade 5–6
-- duplicate risk is high
-- answer choices are too obvious
-- explanation quality is weak
-
-Never hardcode provider model IDs directly in business logic.
-Use a routing policy abstraction and config.
-
-## KERIS handling
-- Prefer `docs/keris/01_stage_map.yaml`
-- Prefer `docs/keris/02_mission_rules.yaml`
-- Prefer `docs/keris/03_generation_rules.md`
-- Prefer reviewed examples instead of raw PDF text
-- Use raw KERIS PDF only to verify missing references or curriculum context
-
 ## Working style
 - Start with a short plan.
 - Make small, reviewable changes.
 - Keep external API contracts unchanged unless explicitly requested.
 - Update tests and docs together with code changes.
-- When changing generation or refill logic, also update observability and quota tests.
+- When changing question serving logic, also update quota and shortage tests.

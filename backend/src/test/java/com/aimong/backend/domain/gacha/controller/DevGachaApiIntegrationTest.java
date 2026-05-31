@@ -51,7 +51,7 @@ class DevGachaApiIntegrationTest {
         given(devGachaGrantService.grant(any(UUID.class), any(DevGachaGrantRequest.class)))
                 .willReturn(new DevGachaGrantResponse(
                         new GachaPullResponse.RemainingTickets(3),
-                        new FragmentListResponse(List.of(
+                        new FragmentListResponse(40, List.of(
                                 new FragmentListResponse.FragmentSummary("NORMAL", 10, 10),
                                 new FragmentListResponse.FragmentSummary("RARE", 30, 30)
                         ))
@@ -66,6 +66,7 @@ class DevGachaApiIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.remainingTickets.normal").value(3))
+                .andExpect(jsonPath("$.data.fragments.totalCount").value(40))
                 .andExpect(jsonPath("$.data.fragments.fragments[0].grade").value("NORMAL"))
                 .andExpect(jsonPath("$.data.fragments.fragments[0].count").value(10));
     }

@@ -86,44 +86,6 @@ public final class QuestionBank1056Rebuilder {
             "주소와 전화번호는 AI 질문에 넣지 않아요.",
             "나와 친구를 알아볼 수 있는 자료는 먼저 가려요."
     };
-    private static final String[] ULTRA_PLACES = {
-            "도서관", "과학실", "운동장", "미술실", "음악실", "급식실", "복도", "교실",
-            "가정", "체험관", "박물관", "방과 후", "동아리", "온라인", "마을", "상담실",
-            "발표장", "실험실", "회의실", "자료실", "창의실", "컴퓨터실", "학급신문", "환경동아리",
-            "독서모임", "수학실", "국어 시간", "사회 시간", "과학 시간", "쉬는 시간"
-    };
-    private static final String[] ULTRA_TASKS = {
-            "조사", "발표", "기록", "토의", "실험", "복습", "정리", "검색", "비교", "점검",
-            "연습", "계획", "관찰", "보고서", "질문", "편집", "분류", "확인", "안내", "추천",
-            "요약", "토론", "설명", "작성", "공유", "검토", "선택", "활동", "수업", "숙제"
-    };
-    private static final String[] LEADING_CONTEXT_PREFIXES = {
-            "집에서 숙제할 때는", "방과 후 코딩 활동에", "발표 자료 만들기에서", "도서관 추천 활동에",
-            "온라인 자료 수집에서", "사진 분류 활동에", "학교 규칙 토의에", "생활 규칙 만들기에서",
-            "AI 모델 만들기에서", "태블릿 사용 시간에", "방과 후 활동에", "모둠 분류 활동에",
-            "숙제 자료 모으기에서", "AI 분류 실험에서", "동아리 프로젝트에서", "온라인 서비스에서",
-            "온라인 숙제에", "모둠 발표에서", "현장 체험에서", "가족 대화에서",
-            "수학 시간에", "과학 시간에", "동아리 발표에서", "모둠 토의에", "온라인 학습에",
-            "과학 조사에", "미술 자료 정리에서", "환경 수업에", "온라인 체험에서",
-            "학급 게시판에서", "도서관 프로젝트에서", "음악 시간에", "국어 시간에",
-            "과학 관찰에서", "학교 태블릿에서", "발표 준비에서", "가정 학습에",
-            "체험 부스에서", "도서관 검색에", "숙제 시간에", "교실 토의에",
-            "검색 활동에", "도서관 조사에", "친구와 협력에서", "숙제 계획에서",
-            "교실 활동에", "복습 시간에", "발표 연습에서", "숙제 정리에서",
-            "모둠 보고서에서", "독서 활동에", "과학 탐구에서", "학급 신문에서",
-            "온라인 복습에서", "AI 채팅에서", "사진 편집 앱에서", "음성 변환 앱에서",
-            "숙제 질문에서", "친구와 공유에서", "온라인 가입에서", "태블릿 사용에서",
-            "모둠 프로젝트에서", "환경 캠페인에서", "미술 시간에", "체육 기록에서",
-            "AI 체험 수업에", "모둠 실험에서", "온라인 활동에", "숙제 제출에서",
-            "글쓰기 시간에", "모둠 과제에서", "온라인 게시에서", "복습 노트에서",
-            "사회 조사에", "뉴스 읽기에서", "숙제 검토에서", "온라인 검색에",
-            "사회 발표에서", "독서 토론에서", "뉴스 분석에서", "가정 과제에서",
-            "학급 토의에", "설문 조사에", "추천 영상 분석에서", "지역 조사에",
-            "학교 생활에서", "도서관 이용에서", "친구와 대화에서", "체험 학습에",
-            "학급 회의에", "학교 행사에서", "모둠 활동에서", "온라인 설문에서",
-            "수행평가에서", "동아리 활동에", "교실에서", "도서관에서", "집에서"
-    };
-
     private QuestionBank1056Rebuilder() {
     }
 
@@ -169,8 +131,8 @@ public final class QuestionBank1056Rebuilder {
                 ? "AImong-AI-literacy-source-synthesis-1056-ultra-diverse-2026-05-26"
                 : "AImong-AI-literacy-source-synthesis-1056-2026-05-25");
         root.put("normalizationNote", ultraDiverse
-                ? "조건부 PASS 버전은 보존하고, 전체 질문문 TF-IDF 문자 2~5그램 cosine similarity 0.75 미만을 목표로 문항별 상황 구문을 질문 앞에 자연스럽게 통합해 별도 생성했습니다. JSON 구조와 정답 균형은 유지했습니다."
-                : "question 경로의 6개 PDF와 AI 리터러시 문제 구성 개편안의 방향을 반영해 새로 구성했습니다. 기존 question-bank-1056-starlevel-edits.json은 변수명과 JSON 구조만 참고했고, 문항 내용은 개인정보, 검증, 출처, 저작권, 편향, 공정성, 책임 있는 활용 중심으로 재작성했습니다.");
+                ? "question 경로의 6개 PDF와 AI 리터러시 문제 구성 개편안의 방향을 반영한 새 문제은행을 기준으로 문장 품질만 보정했습니다. 유사도 수치를 맞추기 위한 장면 접두사는 붙이지 않았고, 개인정보, 검증, 출처, 저작권, 편향, 공정성, 책임 있는 활용 중심의 문항 구조를 유지했습니다."
+                : "question 경로의 6개 PDF와 AI 리터러시 문제 구성 개편안의 방향을 반영해 새로 구성했습니다. 문항 내용은 개인정보, 검증, 출처, 저작권, 편향, 공정성, 책임 있는 활용 중심으로 재작성했습니다.");
         root.put("totalMissionCount", missions.size());
         root.put("totalQuestionCount", questions.size());
         root.put("stageSummary", List.of(
@@ -189,7 +151,7 @@ public final class QuestionBank1056Rebuilder {
                 "legacyGenerationReference", object("OX", 2, "MULTIPLE", 3, "FILL", 2, "SITUATION", 3)
         ));
         root.put("qualityRefinement", object(
-                "previousVersion", "question-bank-1056-starlevel-edits.json schema only",
+                "sourceBasis", "question 경로의 6개 PDF와 AI 리터러시 문제 구성 개편안",
                 "changes", List.of(
                         "Rebuilt all questions from the AI literacy reform brief and the six question-source PDFs.",
                         "Reduced theory memorization and increased privacy, verification, copyright, bias, fairness, and responsible-use items.",
@@ -209,7 +171,9 @@ public final class QuestionBank1056Rebuilder {
                 "addedHighQuestionCount", 96,
                 "addedPerMission", 6,
                 "externalIdRangePerMission", "P6-11..P6-16",
-                "outputFile", "question-bank-1056-starlevel-edits.json",
+                "outputFile", ultraDiverse
+                        ? "question-bank-1056-starlevel-ultra-diverse.json"
+                        : "question-bank-1056-starlevel-edits.json",
                 "actualPackTypeDistributionNote", "P6 contains 16 HIGH questions per mission."
         ));
         root.put("actualPackTypeDistribution", object(
@@ -415,21 +379,12 @@ public final class QuestionBank1056Rebuilder {
     }
 
     private static String ultraDiversifyQuestion(String question, int index, String externalId) {
-        String cleaned = stripLeadingContext(compactUltraQuestion(polishText(question), externalId));
-        String candidate = ultraScene(index) + " " + cleaned;
-        if (candidate.length() <= 90) {
-            return candidate;
-        }
-        candidate = ultraShortScene(index) + " " + cleaned;
-        if (candidate.length() <= 90) {
-            return candidate;
+        String cleaned = compactUltraQuestion(polishText(question), externalId);
+        if (cleaned.length() <= 90) {
+            return cleaned;
         }
         String shorter = stripQuestionIntro(cleaned);
-        candidate = ultraShortScene(index) + " " + shorter;
-        if (candidate.length() <= 90) {
-            return candidate;
-        }
-        return shorter;
+        return shorter.length() <= 90 ? shorter : cleaned;
     }
 
     private static String compactUltraQuestion(String question, String externalId) {
@@ -457,6 +412,14 @@ public final class QuestionBank1056Rebuilder {
                     "AI는 글과 사진의 특징을 보려면 다양한 ____를 살펴야 해요.",
                     "글과 사진의 특징을 배우려면 AI는 여러 ____를 비교해요."
             );
+            case "S0304-P2-09" -> fixed.replace(
+                    "자동 채점 사례에서 얼굴 인식처럼 사람을 알아보는 기술은 ____가 드러나지 않게 써요.",
+                    "자동 채점 사례에서는 사람을 알아볼 수 있는 ____ 노출을 조심해요."
+            );
+            case "S0304-P2-10" -> fixed.replace(
+                    "얼굴 인식처럼 사람을 알아보는 기술은 ____가 드러나지 않게 써요.",
+                    "얼굴 인식 기술을 쓸 때는 개인을 알아볼 ____ 보호가 필요해요."
+            );
             default -> fixed;
         };
     }
@@ -466,77 +429,6 @@ public final class QuestionBank1056Rebuilder {
             return "보기에서 " + question.substring("다음 중 ".length());
         }
         return question;
-    }
-
-    private static String stripLeadingContext(String question) {
-        for (String prefix : LEADING_CONTEXT_PREFIXES) {
-            if (question.startsWith(prefix + " ")) {
-                return question.substring(prefix.length() + 1);
-            }
-        }
-        return question;
-    }
-
-    private static String ultraScene(int index) {
-        String location = ultraLocation(ultraPlace(index));
-        String task = ultraTask(index);
-        return switch (task) {
-            case "조사" -> location + " 조사하며,";
-            case "발표" -> location + " 발표를 준비하며,";
-            case "기록" -> location + " 기록을 보며,";
-            case "토의" -> location + " 토의하며,";
-            case "실험" -> location + " 실험 전에,";
-            case "복습" -> location + " 복습하며,";
-            case "정리" -> location + " 정리하며,";
-            case "검색" -> location + " 검색하며,";
-            case "비교" -> location + " 비교하며,";
-            case "점검" -> location + " 점검하며,";
-            case "연습" -> location + " 연습하며,";
-            case "계획" -> location + " 계획을 세우며,";
-            case "관찰" -> location + " 관찰하며,";
-            case "보고서" -> location + " 보고서를 쓰며,";
-            case "질문" -> location + " 질문을 살펴보며,";
-            case "편집" -> location + " 자료를 편집하며,";
-            case "분류" -> location + " 자료를 분류하며,";
-            case "확인" -> location + " 확인하며,";
-            case "안내" -> location + " 안내문을 읽으며,";
-            case "추천" -> location + " 추천을 살피며,";
-            case "요약" -> location + " 요약하며,";
-            case "토론" -> location + " 토론하며,";
-            case "설명" -> location + " 설명을 듣고,";
-            case "작성" -> location + " 글을 쓰며,";
-            case "공유" -> location + " 공유 전에,";
-            case "검토" -> location + " 검토하며,";
-            case "선택" -> location + " 선택지를 비교하며,";
-            case "활동" -> location + " 활동 중,";
-            case "수업" -> location + " 수업 중,";
-            case "숙제" -> location + " 숙제하며,";
-            default -> location + " " + task + " 중,";
-        };
-    }
-
-    private static String ultraShortScene(int index) {
-        return ultraLocation(ultraPlace(index)) + " 살피며,";
-    }
-
-    private static String ultraTask(int index) {
-        return ULTRA_TASKS[Math.floorMod(index * 7 + Math.floorDiv(index, ULTRA_PLACES.length), ULTRA_TASKS.length)];
-    }
-
-    private static String ultraLocation(String place) {
-        if ("가정".equals(place)) {
-            return "집에서";
-        }
-        if ("온라인".equals(place)) {
-            return "온라인에서";
-        }
-        if ("방과 후".equals(place)) {
-            return "방과 후 활동에서";
-        }
-        if (place.endsWith("시간")) {
-            return place + "에";
-        }
-        return place + "에서";
     }
 
     private static String ultraPolishExplanation(String explanation, int index) {
@@ -556,10 +448,6 @@ public final class QuestionBank1056Rebuilder {
             case 4 -> "친구나 선생님과 한 번 더 비교해요.";
             default -> "필요한 부분만 골라 내 말로 고쳐요.";
         };
-    }
-
-    private static String ultraPlace(int index) {
-        return ULTRA_PLACES[Math.floorMod(index, ULTRA_PLACES.length)];
     }
 
     private static List<String> packTypes(int pack) {
@@ -769,12 +657,11 @@ public final class QuestionBank1056Rebuilder {
         String promptKey = mission.code + "|" + question;
         int occurrence = PROMPT_OCCURRENCES.merge(promptKey, 1, Integer::sum);
         if (occurrence > 1) {
-            question = question + " " + conceptFor(mission, pack + occurrence, slot + occurrence, no)
-                    + " 기준으로도 함께 생각해 보세요.";
+            question = duplicateQuestionVariant(mission, type, question, pack, slot, no, occurrence);
         }
         int globalOccurrence = GLOBAL_PROMPT_OCCURRENCES.merge(question, 1, Integer::sum);
         if (globalOccurrence > 1) {
-            question = question + " " + mission.missionTitle + " 사례로 생각해 보세요.";
+            question = duplicateQuestionVariant(mission, type, question, pack, slot, no, occurrence + globalOccurrence);
         }
         return new Question(
                 mission.code + "-P" + pack + "-" + "%02d".formatted(slot),
@@ -795,6 +682,89 @@ public final class QuestionBank1056Rebuilder {
                 difficulty,
                 pack
         );
+    }
+
+    private static String duplicateQuestionVariant(
+            Mission mission,
+            String type,
+            String originalQuestion,
+            int pack,
+            int slot,
+            int no,
+            int occurrence
+    ) {
+        String context = pick(mission.contexts, pack + occurrence, slot + occurrence, no + occurrence);
+        String example = pick(mission.examples, pack + occurrence, slot + occurrence, no + occurrence);
+        String concept = conceptFor(mission, pack + occurrence, slot + occurrence, no + occurrence);
+        return switch (type) {
+            case "OX" -> contextAt(context) + " " + objectPhrase(example)
+                    + " 볼 때 " + objectPhrase(concept) + " 판단으로 알맞은 말인지 확인해요.";
+            case "FILL" -> duplicateFillQuestion(mission, context, example, concept, originalQuestion);
+            case "MULTIPLE" -> duplicateMultipleQuestion(mission, context, example, concept, originalQuestion);
+            case "SITUATION" -> duplicateSituationQuestion(mission, context, example, concept, originalQuestion);
+            default -> originalQuestion;
+        };
+    }
+
+    private static String duplicateFillQuestion(
+            Mission mission,
+            String context,
+            String example,
+            String concept,
+            String originalQuestion
+    ) {
+        if (originalQuestion.contains("필요한 ____만")) {
+            return contextAt(context) + " " + objectPhrase(example)
+                    + " 쓸 때 꼭 필요한 ____만 고르는 습관이 좋아요.";
+        }
+        if (originalQuestion.contains("사용 전 먼저 살펴볼 점")) {
+            return contextAt(context) + " " + objectPhrase(example)
+                    + " 쓰기 전에는 " + objectPhrase(concept) + " 관련 ____을 확인해요.";
+        }
+        return contextAt(context) + " " + objectPhrase(concept)
+                + " 떠올리며 빈칸에 알맞은 말을 넣어요.";
+    }
+
+    private static String duplicateMultipleQuestion(
+            Mission mission,
+            String context,
+            String example,
+            String concept,
+            String originalQuestion
+    ) {
+        if (originalQuestion.contains("실천한 모습")) {
+            return contextAt(context) + " " + example
+                    + " 사례를 볼 때 " + objectPhrase(concept) + " 바르게 판단한 행동은 무엇일까요?";
+        }
+        if (originalQuestion.contains("사용 전 먼저 살펴볼 점")) {
+            return contextAt(context) + " " + objectPhrase(example)
+                    + " 활용 전에 먼저 확인할 점은 무엇일까요?";
+        }
+        if (originalQuestion.contains("피해야 할 행동")) {
+            return contextAt(context) + " " + objectPhrase(concept)
+                    + " 생각할 때 조심해야 할 행동은 무엇일까요?";
+        }
+        return contextAt(context) + " " + objectPhrase(concept)
+                + " 기준으로 가장 책임 있는 행동은 무엇일까요?";
+    }
+
+    private static String duplicateSituationQuestion(
+            Mission mission,
+            String context,
+            String example,
+            String concept,
+            String originalQuestion
+    ) {
+        if (originalQuestion.contains("사용하기 전에 먼저 살펴볼 점")) {
+            return contextAt(context) + " " + objectPhrase(example)
+                    + " 쓰기 전에 " + objectPhrase(concept) + " 관점에서 무엇을 확인할까요?";
+        }
+        if (originalQuestion.contains("의견이 달라")) {
+            return contextAt(context) + " " + objectPhrase(concept)
+                    + " 두고 의견이 갈렸어요. 어떤 순서로 해결할까요?";
+        }
+        return contextAt(context) + " " + example
+                + " 상황에서 " + mission.missionTitle + " 내용을 적용하려면 무엇부터 할까요?";
     }
 
     private static String oxExplanation(Mission mission, int pack, int slot, int no, boolean answer, String context, String claim) {
@@ -2323,7 +2293,7 @@ public final class QuestionBank1056Rebuilder {
                         "KERIS 초등 AI 교육 생활 속 인공지능; 디지털 리터러시 정보 이해",
                         "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf; 2021년 인공지능(AI)기본 역량 강화 연수 교재(초등).pdf",
                         tags("FACT", "VERIFICATION", "SAFETY"),
-                        examples("번역 앱", "스마트 스피커", "카메라 꽃 검색", "스팸 메일 분류", "영상 추천", "음성 받아쓰기", "길 찾기 추천", "그림 인식 게임"),
+                        examples("번역 앱", "스마트 스피커", "카메라 꽃 이름 찾기", "스팸 메일 분류", "영상 추천", "음성 받아쓰기", "길 찾기 추천", "그림 인식 게임"),
                         concepts("기능 중심 판단", "생활 속 AI", "추천과 분류", "말과 글 인식", "사진 인식", "자동화와 AI 구분", "데이터 활용", "AI의 도움"),
                         contexts("교실", "집", "도서관", "온라인 숙제", "모둠 발표", "현장 체험", "방과 후 활동", "가족 대화"),
                         good("무엇을 보고 판단하는 기능인지 살펴봐요.", "사람의 말이나 사진을 바탕으로 추측하는지 확인해요.", "단순 전자기기와 AI 기능을 나누어 봐요.", "AI가 어떤 도움을 주는지 예로 설명해요.", "추천 결과가 왜 나왔는지 생각해 봐요.", "필요한 때에만 AI 기능을 사용해요.", "겉모습보다 하는 일을 먼저 봐요.", "AI가 아닌 기능도 함께 구별해요."),
@@ -2979,7 +2949,7 @@ public final class QuestionBank1056Rebuilder {
                 missionIds.put(mission.code, uuid("mission:" + mission.code));
             }
             StringBuilder sql = new StringBuilder();
-            sql.append("-- Generated from question-bank-1056-starlevel-edits.json; adapted for current backend schema\n");
+            sql.append("-- Generated from question source PDFs and AI literacy reform brief; adapted for current backend schema\n");
             sql.append("-- Question count: 1056; questions are selected at runtime by missionId + starLevel ratio.\n");
             sql.append("-- Star-level ratios: starLevel 1 = 7 LOW / 2 MEDIUM / 1 HIGH, starLevel 2 = 3 / 5 / 2, starLevel 3 = 2 / 3 / 5.\n\n");
             sql.append("BEGIN;\n\n");

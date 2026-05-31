@@ -54,20 +54,4 @@ aimong:
     question:
       set-size: 10
       attempt-ttl-minutes: 30
-      # Post-MVP runtime generation switches. MVP serving path ignores them even if enabled.
-      dynamic-generation-enabled: false
-      async-refill-enabled: false
-      serving-auto-quarantine-enabled: true
       report-auto-deactivate-enabled: false
-    generation:
-      target-pool-per-mission: 60
-      questions-per-pack: 10
-      soft-refill-trigger: 36
-      hard-refill-trigger: 18
-      async-generate-batch: 10
-      async-refill-fixed-delay-ms: 30000
-      sync-generate-batch: 10
-      mini-max-retry: 2
-    model-routing:
-      default-model: gpt-5-mini
-      escalated-model: gpt-5.4-mini

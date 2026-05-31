@@ -14,6 +14,7 @@ import com.aimong.backend.domain.pet.entity.PetGrade;
 import com.aimong.backend.global.exception.AimongException;
 import com.aimong.backend.global.exception.ErrorCode;
 import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
@@ -71,10 +72,16 @@ public class DevGachaGrantService {
     }
 
     private FragmentListResponse fragments(UUID childId) {
-        return new FragmentListResponse(Arrays.stream(PetGrade.values())
+        List<Fragment> fragments = fragmentRepository.findByChildId(childId);
+        int totalCount = fragments.stream()
+                .mapToInt(Fragment::getCount)
+                .sum();
+        return new FragmentListResponse(totalCount, Arrays.stream(PetGrade.values())
                 .map(grade -> new FragmentListResponse.FragmentSummary(
                         grade.name(),
-                        fragmentRepository.findByChildIdAndGrade(childId, grade)
+                        fragments.stream()
+                                .filter(fragment -> fragment.getGrade() == grade)
+                                .findFirst()
                                 .map(Fragment::getCount)
                                 .orElse(0),
                         exchangeThreshold(grade)

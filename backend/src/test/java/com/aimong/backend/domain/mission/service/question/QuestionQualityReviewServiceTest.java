@@ -15,7 +15,6 @@ import com.aimong.backend.domain.mission.entity.QuestionPoolStatus;
 import com.aimong.backend.domain.mission.entity.QuestionType;
 import com.aimong.backend.domain.mission.repository.QuestionBankRepository;
 import com.aimong.backend.domain.mission.repository.QuestionQualityIssueRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -37,8 +36,7 @@ class QuestionQualityReviewServiceTest {
         QuestionQualityReviewService service = new QuestionQualityReviewService(
                 questionBankRepository,
                 questionQualityIssueRepository,
-                new MissionQuestionProperties(10, 30, false, false, false, false),
-                new ObjectMapper()
+                new MissionQuestionProperties(10, 30, false)
         );
         UUID childId = UUID.randomUUID();
         UUID missionId = UUID.randomUUID();

@@ -75,7 +75,7 @@ class GachaApiIntegrationTest {
 
     @Test
     void getFragmentsReturnsFragmentInventory() throws Exception {
-        given(gachaPullService.getFragments(any(UUID.class))).willReturn(new FragmentListResponse(List.of(
+        given(gachaPullService.getFragments(any(UUID.class))).willReturn(new FragmentListResponse(19, List.of(
                 new FragmentListResponse.FragmentSummary("NORMAL", 7, 10),
                 new FragmentListResponse.FragmentSummary("RARE", 12, 30)
         )));
@@ -84,6 +84,7 @@ class GachaApiIntegrationTest {
                         .principal(childPrincipal()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.totalCount").value(19))
                 .andExpect(jsonPath("$.data.fragments[0].grade").value("NORMAL"))
                 .andExpect(jsonPath("$.data.fragments[0].count").value(7))
                 .andExpect(jsonPath("$.data.fragments[0].exchangeThreshold").value(10));
