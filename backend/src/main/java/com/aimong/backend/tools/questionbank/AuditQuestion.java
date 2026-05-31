@@ -2,7 +2,6 @@ package com.aimong.backend.tools.questionbank;
 
 import com.aimong.backend.domain.mission.entity.DifficultyBand;
 import com.aimong.backend.domain.mission.entity.QuestionType;
-import com.aimong.backend.domain.mission.service.generation.StructuredQuestionSchema;
 import java.util.List;
 
 public record AuditQuestion(
@@ -23,19 +22,4 @@ public record AuditQuestion(
         Integer packNo,
         String sourceType
 ) {
-    public StructuredQuestionSchema toStructuredQuestionSchema() {
-        return new StructuredQuestionSchema(
-                missionCode,
-                packNo == null ? 0 : packNo,
-                difficultyBand,
-                type,
-                question,
-                options,
-                answer,
-                explanation,
-                contentTags,
-                curriculumRef,
-                difficulty
-        );
-    }
 }

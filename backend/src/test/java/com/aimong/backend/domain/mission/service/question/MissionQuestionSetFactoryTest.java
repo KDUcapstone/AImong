@@ -125,8 +125,8 @@ class MissionQuestionSetFactoryTest {
         lowPool.add(question(DifficultyBand.LOW, "shared prompt"));
         List<QuestionBank> mediumPool = List.of(
                 question(DifficultyBand.MEDIUM, "shared prompt"),
-                question(DifficultyBand.MEDIUM, "medium-1"),
-                question(DifficultyBand.MEDIUM, "medium-2")
+                question(DifficultyBand.MEDIUM, "medium topic one"),
+                question(DifficultyBand.MEDIUM, "medium topic two")
         );
         List<QuestionBank> highPool = createQuestions(1, DifficultyBand.HIGH, "high");
         stubMissionPools(missionId, lowPool, mediumPool, highPool);
@@ -148,8 +148,8 @@ class MissionQuestionSetFactoryTest {
         lowPool.add(question(DifficultyBand.LOW, "\uBE44\uBC00\uBC88\uD638\uB97C \uCE5C\uAD6C\uC5D0\uAC8C \uC54C\uB824 \uC8FC\uBA74 \uC65C \uC704\uD5D8\uD55C\uAC00\uC694?"));
         List<QuestionBank> mediumPool = List.of(
                 question(DifficultyBand.MEDIUM, "\uBE44\uBC00\uBC88\uD638\uB294 \uCE5C\uAD6C\uD55C\uD14C \uC54C\uB824\uC8FC\uBA74 \uC65C \uC704\uD5D8\uD560\uAE4C\uC694?"),
-                question(DifficultyBand.MEDIUM, "medium-1"),
-                question(DifficultyBand.MEDIUM, "medium-2")
+                question(DifficultyBand.MEDIUM, "medium topic one"),
+                question(DifficultyBand.MEDIUM, "medium topic two")
         );
         List<QuestionBank> highPool = createQuestions(1, DifficultyBand.HIGH, "high");
         stubMissionPools(missionId, lowPool, mediumPool, highPool);
@@ -197,7 +197,7 @@ class MissionQuestionSetFactoryTest {
     private MissionQuestionSetFactory factory() {
         return new MissionQuestionSetFactory(
                 approvedQuestionProvider,
-                new MissionQuestionProperties(10, 30, false, false, false, false)
+                new MissionQuestionProperties(10, 30, false)
         );
     }
 
@@ -225,7 +225,7 @@ class MissionQuestionSetFactoryTest {
     private List<QuestionBank> createQuestions(int count, DifficultyBand difficulty, String promptPrefix) {
         List<QuestionBank> questions = new ArrayList<>();
         for (int index = 0; index < count; index++) {
-            questions.add(question(difficulty, promptPrefix + "-" + index));
+            questions.add(question(difficulty, promptPrefix + " topic" + index));
         }
         return List.copyOf(questions);
     }

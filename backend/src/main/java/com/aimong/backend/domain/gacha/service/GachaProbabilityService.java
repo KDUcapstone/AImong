@@ -14,23 +14,34 @@ public class GachaProbabilityService {
 
     private static final Map<PetGrade, List<PetDefinition>> PET_POOL = Map.of(
             PetGrade.NORMAL, List.of(
-                    new PetDefinition("pet_normal_001", "토끼몽"),
-                    new PetDefinition("pet_normal_002", "거북몽"),
-                    new PetDefinition("pet_normal_003", "고슴몽"),
-                    new PetDefinition("pet_normal_004", "다람몽"),
-                    new PetDefinition("pet_normal_005", "새싹몽")
+                    new PetDefinition("pet_normal_001", "몽실토끼"),
+                    new PetDefinition("pet_normal_002", "방울펭귄"),
+                    new PetDefinition("pet_normal_003", "잎새여우"),
+                    new PetDefinition("pet_normal_004", "젤리곰"),
+                    new PetDefinition("pet_normal_005", "별콩새"),
+                    new PetDefinition("pet_normal_006", "조개물개"),
+                    new PetDefinition("pet_normal_007", "밤송이햄"),
+                    new PetDefinition("pet_normal_008", "바람다람"),
+                    new PetDefinition("pet_normal_009", "달빛냥"),
+                    new PetDefinition("pet_normal_010", "꽃사슴")
             ),
             PetGrade.RARE, List.of(
-                    new PetDefinition("pet_rare_001", "여우몽"),
-                    new PetDefinition("pet_rare_002", "부엉몽"),
-                    new PetDefinition("pet_rare_003", "번개몽")
+                    new PetDefinition("pet_rare_001", "번개람쥐"),
+                    new PetDefinition("pet_rare_002", "눈꽃여우"),
+                    new PetDefinition("pet_rare_003", "수정사슴"),
+                    new PetDefinition("pet_rare_004", "구름양"),
+                    new PetDefinition("pet_rare_005", "해초용"),
+                    new PetDefinition("pet_rare_006", "그림자냥")
             ),
             PetGrade.EPIC, List.of(
-                    new PetDefinition("pet_epic_001", "드래곤몽"),
-                    new PetDefinition("pet_epic_002", "유니콘몽")
+                    new PetDefinition("pet_epic_001", "화염늑대"),
+                    new PetDefinition("pet_epic_002", "폭풍매"),
+                    new PetDefinition("pet_epic_003", "흑요호랑"),
+                    new PetDefinition("pet_epic_004", "루미드래곤")
             ),
             PetGrade.LEGEND, List.of(
-                    new PetDefinition("pet_legend_001", "피닉스몽")
+                    new PetDefinition("pet_legend_001", "태양봉황"),
+                    new PetDefinition("pet_legend_002", "월광기린")
             )
     );
 

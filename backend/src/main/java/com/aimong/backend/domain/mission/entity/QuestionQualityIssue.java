@@ -48,17 +48,6 @@ public class QuestionQualityIssue {
     @Column(name = "detail_text", columnDefinition = "text")
     private String detailText;
 
-    @Column(name = "validation_decision", length = 32)
-    private String validationDecision;
-
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "hard_fail_reasons", columnDefinition = "jsonb")
-    private String hardFailReasonsJson;
-
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "repair_hints", columnDefinition = "jsonb")
-    private String repairHintsJson;
-
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -81,31 +70,6 @@ public class QuestionQualityIssue {
         issue.issueStatus = QuestionQualityIssueStatus.OPEN;
         issue.reasonCode = reasonCode;
         issue.detailText = detailText;
-        issue.createdAt = Instant.now();
-        issue.updatedAt = issue.createdAt;
-        return issue;
-    }
-
-    public static QuestionQualityIssue createServingRevalidationIssue(
-            UUID questionId,
-            UUID missionId,
-            String reasonCode,
-            String detailText,
-            String validationDecision,
-            String hardFailReasonsJson,
-            String repairHintsJson
-    ) {
-        QuestionQualityIssue issue = new QuestionQualityIssue();
-        issue.id = UUID.randomUUID();
-        issue.questionId = questionId;
-        issue.missionId = missionId;
-        issue.issueSource = QuestionQualityIssueSource.SERVING_REVALIDATION;
-        issue.issueStatus = QuestionQualityIssueStatus.OPEN;
-        issue.reasonCode = reasonCode;
-        issue.detailText = detailText;
-        issue.validationDecision = validationDecision;
-        issue.hardFailReasonsJson = hardFailReasonsJson;
-        issue.repairHintsJson = repairHintsJson;
         issue.createdAt = Instant.now();
         issue.updatedAt = issue.createdAt;
         return issue;

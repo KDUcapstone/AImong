@@ -53,6 +53,11 @@ _generated/question-bank/*
 !_generated/question-bank/question-bank-1056-starlevel-seed.sql
 private-docs/test.html
 question/
+!src/main/java/com/aimong/backend/domain/mission/service/question/
+!src/main/java/com/aimong/backend/domain/mission/service/question/SimilarityDeduplicator.java
+!src/test/java/com/aimong/backend/domain/mission/service/question/
+!src/test/java/com/aimong/backend/domain/mission/service/question/MissionQuestionSeedSelectionTest.java
+!src/test/java/com/aimong/backend/domain/mission/service/question/SimilarityDeduplicatorTest.java
 
 ### Local Development Overrides ###
 docker-compose.override.yml

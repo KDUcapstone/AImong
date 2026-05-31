@@ -18,15 +18,10 @@ import com.aimong.backend.domain.mission.repository.MissionDailyProgressReposito
 import com.aimong.backend.domain.mission.repository.MissionRepository;
 import com.aimong.backend.domain.mission.repository.QuizAttemptRepository;
 import com.aimong.backend.domain.mission.service.question.MissionQuestionSetFactory;
-import com.aimong.backend.domain.mission.service.question.QuestionServingQualityGuard;
-import com.aimong.backend.domain.mission.service.question.postmvp.AsyncMissionRefillService;
-import com.aimong.backend.domain.mission.service.question.postmvp.ValidatedDynamicQuestionGenerationPort;
-import com.aimong.backend.domain.mission.service.generation.QuestionGenerationService;
 import com.aimong.backend.global.exception.AimongException;
 import com.aimong.backend.global.exception.ErrorCode;
 import com.aimong.backend.global.util.KstDateUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -59,11 +54,8 @@ class QuizServiceTest {
     @Mock
     private MissionQuestionSetFactory missionQuestionSetFactory;
 
-    @Mock
-    private QuestionServingQualityGuard questionServingQualityGuard;
-
     private final MissionQuestionProperties missionQuestionProperties =
-            new MissionQuestionProperties(10, 30, false, false, true, false);
+            new MissionQuestionProperties(10, 30, false);
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
@@ -80,8 +72,6 @@ class QuizServiceTest {
         when(missionDailyProgressRepository.findByChildIdAndMissionIdAndProgressDate(childId, missionId, KstDateUtils.today()))
                 .thenReturn(Optional.of(org.mockito.Mockito.mock(MissionDailyProgress.class)));
         when(missionQuestionSetFactory.create(missionId, childId, true)).thenReturn(questions);
-        when(questionServingQualityGuard.validateForServing(mission, questions))
-                .thenReturn(new QuestionServingQualityGuard.ServingValidationResult(questions, List.of()));
         when(quizAttemptRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         var response = quizService.getQuestions(childId, missionId);
@@ -94,24 +84,19 @@ class QuizServiceTest {
     }
 
     @Test
-    void servingValidationFailureReturnsMissionSetNotReadyWithoutCreatingAttempt() {
+    void selectedQuestionCountMismatchReturnsMissionSetNotReadyWithoutCreatingAttempt() {
         QuizService quizService = quizService();
         UUID childId = UUID.randomUUID();
         UUID missionId = UUID.randomUUID();
         Mission mission = mission(missionId);
-        List<QuestionBank> questions = java.util.stream.IntStream.range(0, 10)
-                .mapToObj(index -> question("Invalid question " + index))
+        List<QuestionBank> questions = java.util.stream.IntStream.range(0, 9)
+                .mapToObj(index -> question("Question " + index))
                 .toList();
 
         wireUnlockedMission(childId, missionId, mission);
         when(missionDailyProgressRepository.findByChildIdAndMissionIdAndProgressDate(childId, missionId, KstDateUtils.today()))
                 .thenReturn(Optional.empty());
         when(missionQuestionSetFactory.create(missionId, childId, false)).thenReturn(questions);
-        List<UUID> invalidQuestionIds = questions.stream()
-                .map(QuestionBank::getId)
-                .toList();
-        when(questionServingQualityGuard.validateForServing(mission, questions))
-                .thenReturn(new QuestionServingQualityGuard.ServingValidationResult(List.of(), invalidQuestionIds));
 
         assertThatThrownBy(() -> quizService.getQuestions(childId, missionId))
                 .isInstanceOf(AimongException.class)
@@ -142,19 +127,6 @@ class QuizServiceTest {
         verify(quizAttemptRepository, never()).save(any());
     }
 
-    @Test
-    void quizServiceDoesNotDependOnPostMvpGenerationComponents() {
-        List<Class<?>> fieldTypes = Arrays.stream(QuizService.class.getDeclaredFields())
-                .map(java.lang.reflect.Field::getType)
-                .toList();
-
-        assertThat(fieldTypes).doesNotContain(
-                ValidatedDynamicQuestionGenerationPort.class,
-                AsyncMissionRefillService.class,
-                QuestionGenerationService.class
-        );
-    }
-
     private QuizService quizService() {
         return new QuizService(
                 missionRepository,
@@ -163,7 +135,6 @@ class QuizServiceTest {
                 childActivityService,
                 missionService,
                 missionQuestionSetFactory,
-                questionServingQualityGuard,
                 missionQuestionProperties,
                 objectMapper
         );

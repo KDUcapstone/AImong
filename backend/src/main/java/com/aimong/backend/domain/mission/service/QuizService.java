@@ -17,7 +17,6 @@ import com.aimong.backend.domain.mission.repository.MissionSetProgressRepository
 import com.aimong.backend.domain.mission.repository.MissionSetRepository;
 import com.aimong.backend.domain.mission.repository.QuizAttemptRepository;
 import com.aimong.backend.domain.mission.service.question.MissionQuestionSetFactory;
-import com.aimong.backend.domain.mission.service.question.QuestionServingQualityGuard;
 import com.aimong.backend.global.exception.AimongException;
 import com.aimong.backend.global.exception.ErrorCode;
 import com.aimong.backend.global.util.KstDateUtils;
@@ -49,7 +48,6 @@ public class QuizService {
     private final ChildActivityService childActivityService;
     private final MissionService missionService;
     private final MissionQuestionSetFactory missionQuestionSetFactory;
-    private final QuestionServingQualityGuard questionServingQualityGuard;
     private final MissionQuestionProperties missionQuestionProperties;
     private final QuestionTermHintService questionTermHintService;
     private final ObjectMapper objectMapper;
@@ -65,7 +63,6 @@ public class QuizService {
             ChildActivityService childActivityService,
             MissionService missionService,
             MissionQuestionSetFactory missionQuestionSetFactory,
-            QuestionServingQualityGuard questionServingQualityGuard,
             MissionQuestionProperties missionQuestionProperties,
             QuestionTermHintService questionTermHintService,
             ObjectMapper objectMapper
@@ -79,7 +76,6 @@ public class QuizService {
         this.childActivityService = childActivityService;
         this.missionService = missionService;
         this.missionQuestionSetFactory = missionQuestionSetFactory;
-        this.questionServingQualityGuard = questionServingQualityGuard;
         this.missionQuestionProperties = missionQuestionProperties;
         this.questionTermHintService = questionTermHintService;
         this.objectMapper = objectMapper;
@@ -92,7 +88,6 @@ public class QuizService {
             ChildActivityService childActivityService,
             MissionService missionService,
             MissionQuestionSetFactory missionQuestionSetFactory,
-            QuestionServingQualityGuard questionServingQualityGuard,
             MissionQuestionProperties missionQuestionProperties,
             ObjectMapper objectMapper
     ) {
@@ -105,7 +100,6 @@ public class QuizService {
         this.childActivityService = childActivityService;
         this.missionService = missionService;
         this.missionQuestionSetFactory = missionQuestionSetFactory;
-        this.questionServingQualityGuard = questionServingQualityGuard;
         this.missionQuestionProperties = missionQuestionProperties;
         this.questionTermHintService = new QuestionTermHintService();
         this.objectMapper = objectMapper;
@@ -259,14 +253,7 @@ public class QuizService {
                 KstDateUtils.today()
         ).isPresent();
         List<QuestionBank> selectedQuestions = missionQuestionSetFactory.create(mission.getId(), childId, isReview);
-        if (missionQuestionProperties.servingAutoQuarantineEnabled()) {
-            QuestionServingQualityGuard.ServingValidationResult validationResult =
-                    questionServingQualityGuard.validateForServing(mission, selectedQuestions);
-            if (validationResult.validQuestions().size() != missionQuestionProperties.setSize()) {
-                throw new AimongException(ErrorCode.MISSION_SET_NOT_READY);
-            }
-            selectedQuestions = validationResult.validQuestions();
-        }
+        ensureQuestionSetReady(selectedQuestions);
         QuizAttempt quizAttempt = QuizAttempt.create(
                 childId,
                 mission.getId(),
@@ -295,47 +282,21 @@ public class QuizService {
     }
 
     private List<QuestionBank> createServingReadyQuestionSet(MissionSet missionSet, Mission mission, UUID childId, boolean isReview) {
-        if (!missionQuestionProperties.servingAutoQuarantineEnabled()) {
-            return missionQuestionSetFactory.create(missionSet.getSetId(), mission.getId(), missionSet.getStarLevel(), childId, isReview);
-        }
+        List<QuestionBank> selectedQuestions = missionQuestionSetFactory.create(
+                missionSet.getSetId(),
+                mission.getId(),
+                missionSet.getStarLevel(),
+                childId,
+                isReview
+        );
+        ensureQuestionSetReady(selectedQuestions);
+        return selectedQuestions;
+    }
 
-        for (int attempt = 0; attempt < 2; attempt++) {
-            long startedAt = System.nanoTime();
-            List<QuestionBank> selectedQuestions = missionQuestionSetFactory.create(
-                    missionSet.getSetId(),
-                    mission.getId(),
-                    missionSet.getStarLevel(),
-                    childId,
-                    isReview
-            );
-            QuestionServingQualityGuard.ServingValidationResult validationResult =
-                    questionServingQualityGuard.validateForServing(mission, selectedQuestions);
-            if (validationResult.validQuestions().size() == missionQuestionProperties.setSize()) {
-                log.info(
-                        "mission-question-selection validated missionId={} setId={} starLevel={} attempt={} candidateCount={} validationRejected={} totalMs={}",
-                        mission.getId(),
-                        missionSet.getSetId(),
-                        missionSet.getStarLevel(),
-                        attempt + 1,
-                        selectedQuestions.size(),
-                        validationResult.invalidQuestionIds().size(),
-                        elapsedMillis(startedAt, System.nanoTime())
-                );
-                return validationResult.validQuestions();
-            }
-            log.warn(
-                    "mission-question-selection rejected missionId={} setId={} starLevel={} attempt={} candidateCount={} validCount={} invalidQuestionIds={} totalMs={}",
-                    mission.getId(),
-                    missionSet.getSetId(),
-                    missionSet.getStarLevel(),
-                    attempt + 1,
-                    selectedQuestions.size(),
-                    validationResult.validQuestions().size(),
-                    validationResult.invalidQuestionIds(),
-                    elapsedMillis(startedAt, System.nanoTime())
-            );
+    private void ensureQuestionSetReady(List<QuestionBank> selectedQuestions) {
+        if (selectedQuestions.size() != missionQuestionProperties.setSize()) {
+            throw new AimongException(ErrorCode.MISSION_SET_NOT_READY);
         }
-        throw new AimongException(ErrorCode.MISSION_SET_NOT_READY);
     }
 
     private long elapsedMillis(long fromNanos, long toNanos) {

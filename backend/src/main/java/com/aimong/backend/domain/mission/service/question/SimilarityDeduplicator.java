@@ -1,4 +1,4 @@
-package com.aimong.backend.domain.mission.service.generation;
+package com.aimong.backend.domain.mission.service.question;
 
 import java.util.Arrays;
 import java.util.LinkedHashSet;
@@ -14,7 +14,6 @@ public class SimilarityDeduplicator {
     private static final double CORE_TOKEN_THRESHOLD = 0.68d;
     private static final double CHARACTER_NGRAM_THRESHOLD = 0.68d;
     private static final double TOKEN_CONTAINMENT_THRESHOLD = 0.82d;
-    private static final double GOLD_EXAMPLE_WARNING_THRESHOLD = 0.72d;
     private static final int MIN_COMPACT_CONTAINMENT_LENGTH = 12;
     private static final List<String> BOILERPLATE_TOKENS = List.of(
             "\uB2E4\uC74C", "\uC911", "\uBCF4\uAE30", "\uBB38\uC81C", "\uC815\uB2F5",
@@ -48,49 +47,6 @@ public class SimilarityDeduplicator {
                 .findFirst()
                 .stream()
                 .toList();
-    }
-
-    public SimilarityCheckResult validate(
-            StructuredQuestionSchema candidate,
-            List<String> existingTexts,
-            List<String> goldExampleTexts
-    ) {
-        String question = candidate.question() == null ? "" : candidate.question();
-
-        List<String> hardFails = existingTexts.stream()
-                .filter(existing -> isDuplicateOrNearDuplicate(question, existing))
-                .map(existing -> "originality.duplicate_or_near_duplicate")
-                .findFirst()
-                .stream()
-                .toList();
-
-        List<String> warnings = goldExampleTexts.stream()
-                .filter(existing -> similarityScore(question, existing) >= GOLD_EXAMPLE_WARNING_THRESHOLD)
-                .map(existing -> "originality.too_close_to_gold_example")
-                .findFirst()
-                .stream()
-                .toList();
-
-        List<String> repairHints = hardFails.isEmpty() && warnings.isEmpty()
-                ? List.of()
-                : List.of("Change the scenario, stem, distractors, and explanation pattern to make the item more original.");
-
-        int originalityScore = hardFails.isEmpty()
-                ? Math.max(0, 100 - warnings.size() * 20)
-                : 0;
-        boolean escalateSuggested = !hardFails.isEmpty() && candidate.difficulty() >= 4;
-
-        return new SimilarityCheckResult(
-                originalityScore,
-                hardFails,
-                warnings,
-                repairHints,
-                escalateSuggested
-        );
-    }
-
-    String normalize(String value) {
-        return ValidationTextUtils.normalize(value);
     }
 
     public boolean isDuplicateOrNearDuplicate(String candidate, String existing) {
@@ -127,7 +83,7 @@ public class SimilarityDeduplicator {
             return 0d;
         }
         return Math.max(
-                jaccard(ValidationTextUtils.tokenSet(normalizedLeft), ValidationTextUtils.tokenSet(normalizedRight)),
+                tokenJaccard(tokenSet(normalizedLeft), tokenSet(normalizedRight)),
                 Math.max(
                         coreTokenSimilarity(normalizedLeft, normalizedRight),
                         characterNgramSimilarity(normalizedLeft, normalizedRight)
@@ -135,12 +91,8 @@ public class SimilarityDeduplicator {
         );
     }
 
-    private double jaccard(java.util.Set<String> left, java.util.Set<String> right) {
-        return ValidationTextUtils.tokenJaccard(String.join(" ", left), String.join(" ", right));
-    }
-
     private double coreTokenSimilarity(String left, String right) {
-        return jaccard(tokenSet(coreNormalize(left)), tokenSet(coreNormalize(right)));
+        return tokenJaccard(tokenSet(coreNormalize(left)), tokenSet(coreNormalize(right)));
     }
 
     private double characterNgramSimilarity(String left, String right) {
@@ -149,7 +101,7 @@ public class SimilarityDeduplicator {
         if (leftCompact.length() < 6 || rightCompact.length() < 6) {
             return 0d;
         }
-        return jaccard(ngrams(leftCompact, 2), ngrams(rightCompact, 2));
+        return tokenJaccard(ngrams(leftCompact, 2), ngrams(rightCompact, 2));
     }
 
     private boolean compactContainment(String left, String right) {
@@ -211,6 +163,16 @@ public class SimilarityDeduplicator {
         return current;
     }
 
+    private String normalize(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.toLowerCase(Locale.ROOT)
+                .replaceAll("[^\\p{IsAlphabetic}\\p{IsDigit}\\s]", " ")
+                .replaceAll("\\s+", " ")
+                .trim();
+    }
+
     private Set<String> tokenSet(String value) {
         if (value == null || value.isBlank()) {
             return Set.of();
@@ -229,15 +191,14 @@ public class SimilarityDeduplicator {
         return result;
     }
 
-    public record SimilarityCheckResult(
-            int originalityScore,
-            List<String> hardFailReasons,
-            List<String> softWarnings,
-            List<String> repairHints,
-            boolean escalateSuggested
-    ) {
-        static SimilarityCheckResult clean() {
-            return new SimilarityCheckResult(100, List.of(), List.of(), List.of(), false);
+    private double tokenJaccard(Set<String> left, Set<String> right) {
+        if (left.isEmpty() || right.isEmpty()) {
+            return 0d;
         }
+        Set<String> intersection = new LinkedHashSet<>(left);
+        intersection.retainAll(right);
+        Set<String> union = new LinkedHashSet<>(left);
+        union.addAll(right);
+        return union.isEmpty() ? 0d : intersection.size() / (double) union.size();
     }
 }

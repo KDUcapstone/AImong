@@ -1,4 +1,4 @@
-package com.aimong.backend.domain.mission.service.generation;
+package com.aimong.backend.domain.mission.service.question;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

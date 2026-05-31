@@ -1,8 +1,10 @@
 package com.aimong.backend.domain.gacha.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -21,7 +23,10 @@ import com.aimong.backend.domain.pet.entity.Pet;
 import com.aimong.backend.domain.pet.entity.PetGrade;
 import com.aimong.backend.domain.pet.repository.PetRepository;
 import com.aimong.backend.domain.pet.service.PetService;
+import com.aimong.backend.global.exception.AimongException;
+import com.aimong.backend.global.exception.ErrorCode;
 import com.aimong.backend.infra.fcm.FcmService;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -136,8 +141,7 @@ class GachaPullServiceTest {
         when(childProfileRepository.findWithLockById(childProfile.getId())).thenReturn(Optional.of(childProfile));
         when(gachaProbabilityService.isValidPetTypeForGrade(PetGrade.NORMAL, "pet_normal_005")).thenReturn(true);
         when(petRepository.existsByChildIdAndPetType(childProfile.getId(), "pet_normal_005")).thenReturn(false);
-        when(fragmentRepository.findWithLockByChildIdAndGrade(childProfile.getId(), PetGrade.NORMAL))
-                .thenReturn(Optional.of(fragment));
+        when(fragmentRepository.findWithLockByChildId(childProfile.getId())).thenReturn(List.of(fragment));
         when(petService.grantPet(childProfile.getId(), "pet_normal_005", PetGrade.NORMAL)).thenReturn(grantedPet);
 
         GachaExchangeResponse response = gachaPullService.exchange(childProfile.getId(), PetGrade.NORMAL, "pet_normal_005");
@@ -147,5 +151,70 @@ class GachaPullServiceTest {
         assertThat(response.petType()).isEqualTo("pet_normal_005");
         assertThat(response.grade()).isEqualTo("NORMAL");
         assertThat(response.stage()).isEqualTo("EGG");
+    }
+
+    @Test
+    void exchangeChecksFragmentBalanceBeforeOwnedPet() {
+        ParentAccount parentAccount = ParentAccount.create("firebase-uid", "parent@example.com");
+        ChildProfile childProfile = ChildProfile.create(parentAccount, "child", "482917");
+        Fragment fragment = Fragment.create(childProfile.getId(), PetGrade.NORMAL);
+        fragment.add(9);
+
+        when(childProfileRepository.findWithLockById(childProfile.getId())).thenReturn(Optional.of(childProfile));
+        when(gachaProbabilityService.isValidPetTypeForGrade(PetGrade.NORMAL, "pet_normal_005")).thenReturn(true);
+        when(fragmentRepository.findWithLockByChildId(childProfile.getId())).thenReturn(List.of(fragment));
+
+        assertThatThrownBy(() -> gachaPullService.exchange(childProfile.getId(), PetGrade.NORMAL, "pet_normal_005"))
+                .isInstanceOf(AimongException.class)
+                .extracting(exception -> ((AimongException) exception).getErrorCode())
+                .isEqualTo(ErrorCode.BAD_REQUEST);
+
+        assertThat(fragment.getCount()).isEqualTo(9);
+        verify(petRepository, never()).existsByChildIdAndPetType(childProfile.getId(), "pet_normal_005");
+        verify(petService, never()).grantPet(childProfile.getId(), "pet_normal_005", PetGrade.NORMAL);
+    }
+
+    @Test
+    void exchangeRejectsOwnedPetWithoutSpendingFragments() {
+        ParentAccount parentAccount = ParentAccount.create("firebase-uid", "parent@example.com");
+        ChildProfile childProfile = ChildProfile.create(parentAccount, "child", "482917");
+        Fragment fragment = Fragment.create(childProfile.getId(), PetGrade.NORMAL);
+        fragment.add(10);
+
+        when(childProfileRepository.findWithLockById(childProfile.getId())).thenReturn(Optional.of(childProfile));
+        when(gachaProbabilityService.isValidPetTypeForGrade(PetGrade.NORMAL, "pet_normal_005")).thenReturn(true);
+        when(fragmentRepository.findWithLockByChildId(childProfile.getId())).thenReturn(List.of(fragment));
+        when(petRepository.existsByChildIdAndPetType(childProfile.getId(), "pet_normal_005")).thenReturn(true);
+
+        assertThatThrownBy(() -> gachaPullService.exchange(childProfile.getId(), PetGrade.NORMAL, "pet_normal_005"))
+                .isInstanceOf(AimongException.class)
+                .extracting(exception -> ((AimongException) exception).getErrorCode())
+                .isEqualTo(ErrorCode.CONFLICT);
+
+        assertThat(fragment.getCount()).isEqualTo(10);
+        verify(petService, never()).grantPet(childProfile.getId(), "pet_normal_005", PetGrade.NORMAL);
+    }
+
+    @Test
+    void exchangeSpendsCommonFragmentsAcrossGrades() {
+        ParentAccount parentAccount = ParentAccount.create("firebase-uid", "parent@example.com");
+        ChildProfile childProfile = ChildProfile.create(parentAccount, "child", "482917");
+        Fragment normalFragment = Fragment.create(childProfile.getId(), PetGrade.NORMAL);
+        Fragment rareFragment = Fragment.create(childProfile.getId(), PetGrade.RARE);
+        normalFragment.add(2);
+        rareFragment.add(30);
+        Pet grantedPet = Pet.create(childProfile.getId(), "pet_normal_005", PetGrade.NORMAL);
+
+        when(childProfileRepository.findWithLockById(childProfile.getId())).thenReturn(Optional.of(childProfile));
+        when(gachaProbabilityService.isValidPetTypeForGrade(PetGrade.NORMAL, "pet_normal_005")).thenReturn(true);
+        when(fragmentRepository.findWithLockByChildId(childProfile.getId()))
+                .thenReturn(List.of(normalFragment, rareFragment));
+        when(petRepository.existsByChildIdAndPetType(childProfile.getId(), "pet_normal_005")).thenReturn(false);
+        when(petService.grantPet(childProfile.getId(), "pet_normal_005", PetGrade.NORMAL)).thenReturn(grantedPet);
+
+        GachaExchangeResponse response = gachaPullService.exchange(childProfile.getId(), PetGrade.NORMAL, "pet_normal_005");
+
+        assertThat(response.petId()).isEqualTo(grantedPet.getId());
+        assertThat(normalFragment.getCount() + rareFragment.getCount()).isEqualTo(22);
     }
 }

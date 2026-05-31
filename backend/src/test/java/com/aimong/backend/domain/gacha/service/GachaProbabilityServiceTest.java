@@ -14,13 +14,17 @@ class GachaProbabilityServiceTest {
     @Test
     void validatesDocumentedPetTypeCodeByGrade() {
         assertThat(service.isValidPetTypeForGrade(PetGrade.NORMAL, "pet_normal_005")).isTrue();
+        assertThat(service.isValidPetTypeForGrade(PetGrade.NORMAL, "pet_normal_010")).isTrue();
         assertThat(service.isValidPetTypeForGrade(PetGrade.RARE, "pet_rare_003")).isTrue();
+        assertThat(service.isValidPetTypeForGrade(PetGrade.RARE, "pet_rare_006")).isTrue();
+        assertThat(service.isValidPetTypeForGrade(PetGrade.EPIC, "pet_epic_004")).isTrue();
+        assertThat(service.isValidPetTypeForGrade(PetGrade.LEGEND, "pet_legend_002")).isTrue();
         assertThat(service.isValidPetTypeForGrade(PetGrade.NORMAL, "pet_rare_003")).isFalse();
     }
 
     @Test
     void returnsDisplayNameForPetTypeCode() {
-        assertThat(service.petNameOf("pet_rare_003")).isEqualTo("번개몽");
+        assertThat(service.petNameOf("pet_rare_003")).isEqualTo("수정사슴");
         assertThat(service.petNameOf("unknown_pet")).isEqualTo("unknown_pet");
     }
 

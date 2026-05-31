@@ -4,7 +4,6 @@ import com.aimong.backend.domain.mission.config.MissionQuestionProperties;
 import com.aimong.backend.domain.mission.entity.DifficultyBand;
 import com.aimong.backend.domain.mission.entity.QuestionBank;
 import com.aimong.backend.domain.mission.repository.MissionAnswerResultRepository;
-import com.aimong.backend.domain.mission.service.generation.SimilarityDeduplicator;
 import com.aimong.backend.global.exception.AimongException;
 import com.aimong.backend.global.exception.ErrorCode;
 import java.util.Collections;
