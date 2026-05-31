@@ -13,6 +13,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.snackbar.Snackbar
+import com.kduniv.aimong.BuildConfig
 import com.kduniv.aimong.MainActivity
 import com.kduniv.aimong.R
 import com.kduniv.aimong.core.dev.UiMode
@@ -20,6 +21,7 @@ import com.kduniv.aimong.core.navigation.ChildTopLevelNav.onChildBottomNavTap
 import com.kduniv.aimong.core.ui.BaseFragment
 import com.kduniv.aimong.core.util.UiPerfLog
 import com.kduniv.aimong.databinding.FragmentHomeBinding
+import com.kduniv.aimong.feature.home.domain.ChildHomeBootstrapGate
 import com.kduniv.aimong.feature.mission.domain.model.normalizeToThreeLevels
 import com.kduniv.aimong.feature.onboarding.child.ChildGachaOnboardingDialogs
 import com.kduniv.aimong.feature.onboarding.child.ChildGachaOnboardingController
@@ -35,6 +37,9 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
 
     @Inject
     lateinit var childGachaOnboardingController: ChildGachaOnboardingController
+
+    @Inject
+    lateinit var childHomeBootstrapGate: ChildHomeBootstrapGate
 
     private val viewModel: HomeViewModel by activityViewModels()
     private lateinit var homeLayoutBinder: HomeLayoutBinder
@@ -92,35 +97,53 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
                             val initialStars = viewModel.initialMissionStarLevelsForPicker(nav.missionId)
                                 .normalizeToThreeLevels()
                             val pickerMark = UiPerfLog.mark("home_difficulty_picker")
-                            missionDifficultyPicker.show(
+                            val shown = missionDifficultyPicker.show(
                                 title,
                                 nav,
                                 initialStars,
                                 unlockMode,
                                 anchor,
                                 missionKey,
-                            ) { picked, resolvedMode ->
-                                missionPickerStarLevelsJob?.cancel()
-                                navigateToQuizAfterValidation(picked, resolvedMode)
-                            }
-                            UiPerfLog.measureFrom(
-                                "home_difficulty_picker",
-                                pickerMark,
-                                "home_click_to_difficulty_picker_ms",
+                                onPicked = { picked, resolvedMode ->
+                                    missionPickerStarLevelsJob?.cancel()
+                                    if (BuildConfig.DEBUG) {
+                                        UiPerfLog.mark(
+                                            "home_difficulty_pick mission=${picked.missionId} star=${picked.starLevel}",
+                                        )
+                                    }
+                                    navigateToQuizAfterValidation(picked, resolvedMode)
+                                },
+                                onPopupLaidOut = {
+                                    UiPerfLog.measureFrom(
+                                        "home_difficulty_picker",
+                                        pickerMark,
+                                        "home_difficulty_popup_visible_ms",
+                                    )
+                                    if (nav.missionId.isNotBlank()) {
+                                        missionPickerStarLevelsJob?.cancel()
+                                        missionPickerStarLevelsJob =
+                                            viewLifecycleOwner.lifecycleScope.launch {
+                                                val starLevels =
+                                                    viewModel.ensureMissionStarLevels(nav.missionId)
+                                                if (!isAdded) return@launch
+                                                if (!viewModel.isMissionUnlocked(nav.missionId)) {
+                                                    missionDifficultyPicker.dismissAnimated()
+                                                    showMissionHint(getString(R.string.quiz_mission_locked))
+                                                    return@launch
+                                                }
+                                                if (missionDifficultyPicker.isShowing()) {
+                                                    missionDifficultyPicker.updateStarLevels(
+                                                        starLevels,
+                                                        unlockMode,
+                                                        nav,
+                                                    )
+                                                }
+                                            }
+                                    }
+                                },
                             )
-                            if (nav.missionId.isNotBlank()) {
-                                missionPickerStarLevelsJob = viewLifecycleOwner.lifecycleScope.launch {
-                                    val starLevels = viewModel.ensureMissionStarLevels(nav.missionId)
-                                    if (!isAdded) return@launch
-                                    if (!viewModel.isMissionUnlocked(nav.missionId)) {
-                                        missionDifficultyPicker.dismissAnimated()
-                                        showMissionHint(getString(R.string.quiz_mission_locked))
-                                        return@launch
-                                    }
-                                    if (missionDifficultyPicker.isShowing()) {
-                                        missionDifficultyPicker.updateStarLevels(starLevels, unlockMode, nav)
-                                    }
-                                }
+                            if (!shown) {
+                                showMissionHint(getString(R.string.home_difficulty_picker_failed))
                             }
                         }
                     }
@@ -168,13 +191,15 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
                 viewModel.onHomeResumed()
             }
         }
+        updateHomeBootstrapOverlay(viewModel.uiState.value)
     }
 
-    /** 첫 홈 로드: 앱 아이콘만 보이고, API·경로 준비 후 홈 UI를 한 번에 표시 */
+    /** 첫 홈 로드: 앱 아이콘만 보이고, API·경로 준비 후 홈 UI·하단 탭을 한 번에 표시 */
     private fun updateHomeBootstrapOverlay(state: HomeUiState) {
         val showBootstrap =
             state.isLoading && state.pathItems.isEmpty() && state.errorMessage.isNullOrBlank()
         binding.layoutHomeBootstrap.root.isVisible = showBootstrap
+        childHomeBootstrapGate.setSuppressChildBottomNav(showBootstrap)
     }
 
     private fun applyHomeTopChromeInsets() {
@@ -196,12 +221,12 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
 
     private fun openMissionLearnFromQuest() {
         viewLifecycleOwner.lifecycleScope.launch {
-            val state = viewModel.uiState.first { !it.isLoading }
-            openMissionLearnFromQuest(state)
+            viewModel.uiState.first { !it.isLoading }
+            openMissionLearnFromQuestAfterLoad()
         }
     }
 
-    private fun openMissionLearnFromQuest(state: HomeUiState) {
+    private suspend fun openMissionLearnFromQuestAfterLoad() {
         val entry = viewModel.resolveQuestLearnEntry()
         if (entry == null) {
             showMissionHint(getString(R.string.mission_no_playable_star_level))
@@ -256,6 +281,7 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
     }
 
     override fun onDestroyView() {
+        childHomeBootstrapGate.setSuppressChildBottomNav(false)
         missionPickerStarLevelsJob?.cancel()
         missionPickerStarLevelsJob = null
         if (this::homeLayoutBinder.isInitialized) {

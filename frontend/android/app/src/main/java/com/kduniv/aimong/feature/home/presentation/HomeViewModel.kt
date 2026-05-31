@@ -3,8 +3,10 @@ package com.kduniv.aimong.feature.home.presentation
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.kduniv.aimong.BuildConfig
 import com.kduniv.aimong.R
 import com.kduniv.aimong.core.dev.UiMode
+import com.kduniv.aimong.core.util.UiPerfLog
 import com.kduniv.aimong.core.network.AimongApiService
 import com.kduniv.aimong.core.network.ApiErrorMapper
 import com.kduniv.aimong.core.network.toResult
@@ -15,6 +17,7 @@ import com.kduniv.aimong.feature.home.domain.repository.AppBootstrapRepository
 import com.kduniv.aimong.feature.home.domain.repository.HomeRepository
 import com.kduniv.aimong.feature.home.domain.HomePathBuilder
 import com.kduniv.aimong.feature.home.domain.MissionPathDevHelper
+import com.kduniv.aimong.feature.home.domain.QuestLearnEntryResolver
 import com.kduniv.aimong.feature.home.presentation.resolveUnlockModeForPick
 import com.kduniv.aimong.feature.mission.data.MissionStatusCache
 import com.kduniv.aimong.feature.mission.data.model.MissionStarLevelDto
@@ -620,20 +623,37 @@ class HomeViewModel @Inject constructor(
             )
         }.normalizeToThreeLevels()
 
-    /** 퀘스트 「미션 학습하기」 — 오늘/다음 시작 가능 미션 + 별 단계·진입 모드 */
-    fun resolveQuestLearnEntry(): Pair<HomeQuizNavigation, DifficultyUnlockMode>? {
-        val items = _uiState.value.pathItems
-        val today = items.filterIsInstance<HomePathItem.TodayStart>().firstOrNull()
-        if (today != null) {
-            return today.quizNav to today.unlockMode
+    /**
+     * 퀘스트 「학습하기」:
+     * 마지막으로 별1을 전부 깬 스테이지의 **다음 스테이지** 첫 소단원 · **난이도 1**로 진입.
+     */
+    suspend fun resolveQuestLearnEntry(): Pair<HomeQuizNavigation, DifficultyUnlockMode>? {
+        if (!UiMode.useStubNav) {
+            val raw = missionRepository.getMissionsFlow().first()
+            if (raw.isNotEmpty()) {
+                val missions = MissionPathDevHelper.applyPathUnlockGuarantees(raw)
+                QuestLearnEntryResolver.resolve(missions)?.let { return it }
+            }
         }
-        val startItem = items.filterIsInstance<HomePathItem.Start>().firstOrNull() ?: return null
-        val nav = resolveQuizNavWithSelectableStar(startItem.quizNav) ?: return null
-        val mode = missionStarLevels(nav.missionId)
-            .firstOrNull { it.starLevel == nav.starLevel }
-            ?.resolveUnlockModeForPick()
-            ?: DifficultyUnlockMode.NEW_PLAY
-        return nav to mode
+        return resolveQuestLearnEntryFromPath()
+    }
+
+    /** missions 목록이 없을 때 경로 노드 기준 폴백 */
+    private fun resolveQuestLearnEntryFromPath(): Pair<HomeQuizNavigation, DifficultyUnlockMode>? {
+        val items = _uiState.value.pathItems
+        val startItem = items.filterIsInstance<HomePathItem.Start>().firstOrNull()
+            ?: items.filterIsInstance<HomePathItem.TodayStart>().firstOrNull()
+        if (startItem is HomePathItem.TodayStart) {
+            val nav = resolveQuizNavWithSelectableStar(startItem.quizNav) ?: return null
+            return nav to startItem.unlockMode
+        }
+        if (startItem is HomePathItem.Start) {
+            val nav = resolveQuizNavWithSelectableStar(
+                startItem.quizNav.copy(starLevel = 1),
+            ) ?: return null
+            return nav to DifficultyUnlockMode.NEW_PLAY
+        }
+        return null
     }
 
     fun resolveQuizNavWithSelectableStar(base: HomeQuizNavigation): HomeQuizNavigation? {
@@ -672,6 +692,9 @@ class HomeViewModel @Inject constructor(
             return validateMissionQuizNavLocal(nav, unlockMode)
         }
         return try {
+            if (BuildConfig.DEBUG) {
+                UiPerfLog.mark("home_validate_mission_status GET missions/${nav.missionId}/status")
+            }
             val status = getMissionStatus(nav.missionId)
                 ?: return Result.failure(Exception(appContext.getString(R.string.home_missions_refresh_failed)))
             val stars = missionStarLevels(nav.missionId)

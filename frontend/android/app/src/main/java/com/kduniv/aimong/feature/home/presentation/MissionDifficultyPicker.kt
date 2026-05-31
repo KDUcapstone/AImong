@@ -2,12 +2,12 @@ package com.kduniv.aimong.feature.home.presentation
 
 import android.animation.AnimatorListenerAdapter
 import android.animation.ValueAnimator
-import android.graphics.Rect
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
-import android.view.View.MeasureSpec
 import android.view.ViewGroup
+import com.kduniv.aimong.BuildConfig
+import com.kduniv.aimong.core.util.UiPerfLog
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -38,6 +38,9 @@ class MissionDifficultyPicker(
                 }
             }
         }
+
+        fun isPopupOpenIn(missionPath: ViewGroup): Boolean =
+            missionPath.findViewById<View>(R.id.mission_diff_popup_root) != null
     }
 
     private var popupView: View? = null
@@ -87,15 +90,19 @@ class MissionDifficultyPicker(
         }
     }
 
+    /**
+     * @return 팝업이 경로에 붙었으면 true. false면 앵커 행을 찾지 못한 경우(경로 재구성 직후 등).
+     */
     fun show(
         missionTitle: String,
         base: HomeQuizNavigation,
         starLevels: List<MissionStarLevel>,
         unlockMode: DifficultyUnlockMode,
-        anchorRow: View,
+        anchorRow: View?,
         missionKey: String,
         onPicked: (HomeQuizNavigation, DifficultyUnlockMode) -> Unit,
-    ) {
+        onPopupLaidOut: (() -> Unit)? = null,
+    ): Boolean {
         heightAnimator?.cancel()
         heightAnimator = null
         popupView = null
@@ -105,10 +112,18 @@ class MissionDifficultyPicker(
         dismissAllPopupsInPath(binding.layoutMissionPath)
         val parent = binding.layoutMissionPath
         val scroll = binding.scrollPath
-        val idx = parent.indexOfChild(anchorRow)
-        if (idx < 0) return
+        val idx = resolveAnchorIndex(parent, anchorRow, base.missionId)
+        if (idx < 0) {
+            if (BuildConfig.DEBUG) {
+                UiPerfLog.mark(
+                    "home_difficulty_picker_failed idx=-1 mission=${base.missionId} key=$missionKey",
+                )
+            }
+            return false
+        }
 
         openMissionKey = missionKey.takeIf { it.isNotBlank() }
+        val anchorForScroll = parent.getChildAt(idx)
 
         val popup = layoutInflater.inflate(R.layout.mission_difficulty_popup, parent, false)
         popup.findViewById<TextView>(R.id.tv_mission_title).text = missionTitle
@@ -124,11 +139,32 @@ class MissionDifficultyPicker(
         installOutsideDismiss()
 
         popup.post {
+            onPopupLaidOut?.invoke()
             val popupHeight = popup.height.coerceAtLeast(popup.measuredHeight)
             if (popupHeight > 0) {
-                scrollToShowPopup(scroll, anchorRow, popupHeight)
+                scrollToShowPopup(scroll, anchorForScroll, popupHeight)
             }
         }
+        return true
+    }
+
+    /** 경로 전체 재구성 후에도 missionId 태그로 행을 다시 찾는다. */
+    private fun resolveAnchorIndex(
+        parent: ViewGroup,
+        anchorRow: View?,
+        missionId: String,
+    ): Int {
+        if (anchorRow != null) {
+            val direct = parent.indexOfChild(anchorRow)
+            if (direct >= 0) return direct
+        }
+        if (missionId.isBlank()) return -1
+        for (i in 0 until parent.childCount) {
+            val child = parent.getChildAt(i)
+            if (child.findViewById<View>(R.id.mission_diff_popup_root) != null) continue
+            if (child.getTag(R.id.home_path_mission_id_tag) == missionId) return i
+        }
+        return -1
     }
 
     fun updateStarLevels(
@@ -193,13 +229,8 @@ class MissionDifficultyPicker(
     private fun installOutsideDismiss() {
         clearOutsideDismiss()
         val pathScroll = binding.scrollPath as? MissionPathNestedScrollView
-        if (pathScroll != null) {
-            pathScroll.popupBoundsInScroll = {
-                popupView?.let { p -> rectRelativeToAncestor(p, pathScroll) }
-            }
-            pathScroll.onOutsidePopupAction = {
-                if (popupView != null) dismissAnimated()
-            }
+        pathScroll?.onOutsidePopupAction = {
+            if (popupView != null) dismissAnimated()
         }
 
         val topChromeTouch = View.OnTouchListener { _, e ->
@@ -217,26 +248,11 @@ class MissionDifficultyPicker(
     }
 
     private fun clearOutsideDismiss() {
-        (binding.scrollPath as? MissionPathNestedScrollView)?.apply {
-            popupBoundsInScroll = null
-            onOutsidePopupAction = null
-        }
+        (binding.scrollPath as? MissionPathNestedScrollView)?.onOutsidePopupAction = null
         binding.scrollTopChips.setOnTouchListener(null)
         binding.cardFloatingSection.setOnTouchListener(null)
         binding.cardFloatPet.setOnTouchListener(null)
         binding.fabChildQuest.setOnTouchListener(null)
-    }
-
-    private fun rectRelativeToAncestor(view: View, ancestor: ViewGroup): Rect {
-        var l = 0
-        var t = 0
-        var v: View? = view
-        while (v != null && v !== ancestor) {
-            l += v.left
-            t += v.top
-            v = v.parent as? View
-        }
-        return Rect(l, t, l + view.width, t + view.height)
     }
 
     private fun bindDifficultyCard(

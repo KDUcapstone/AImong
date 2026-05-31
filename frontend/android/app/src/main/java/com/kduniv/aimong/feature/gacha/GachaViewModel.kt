@@ -247,9 +247,18 @@ class GachaViewModel @Inject constructor(
     }
 
     fun exchange(grade: String, petType: String) {
+        val target = GachaPetCatalog.resolveExchangeTarget(grade, petType)
+        if (target == null) {
+            _state.update {
+                it.copy(
+                    transientMessage = appContext.getString(R.string.gacha_exchange_invalid_pet_type),
+                )
+            }
+            return
+        }
         viewModelScope.launch {
             _state.update { it.copy(loading = true, transientMessage = null) }
-            gachaRepository.exchange(grade.uppercase(), petType.trim()).fold(
+            gachaRepository.exchange(target.grade, target.petType).fold(
                 onSuccess = {
                     var err: String? = null
                     val petData = petRepository.getPets().onFailure { err = it.message }.getOrNull()
@@ -345,11 +354,13 @@ class GachaViewModel @Inject constructor(
 
     private fun countOwnedInCatalog(pets: PetListData?): Int {
         if (pets == null) return 0
-        val ownedTypes = buildSet {
-            pets.pets.forEach { add(it.petType) }
-            pets.equippedPet?.let { add(it.petType) }
+        val ownedKeys = buildSet {
+            pets.pets.forEach { add(GachaPetCatalog.normalizePetTypeKey(it.petType)) }
+            pets.equippedPet?.let { add(GachaPetCatalog.normalizePetTypeKey(it.petType)) }
         }
-        return GachaPetCatalog.entries.count { it.petType in ownedTypes }
+        return GachaPetCatalog.entries.count {
+            GachaPetCatalog.normalizePetTypeKey(it.petType) in ownedKeys
+        }
     }
 
     private fun buildEncyclopediaCards(
@@ -358,11 +369,15 @@ class GachaViewModel @Inject constructor(
     ): List<GachaPetCardUi> {
         val equippedId = pets?.equippedPet?.id
         val ownedByType = buildMap {
-            pets?.pets.orEmpty().forEach { put(it.petType, it) }
-            pets?.equippedPet?.let { put(it.petType, it) }
+            pets?.pets.orEmpty().forEach { pet ->
+                put(GachaPetCatalog.normalizePetTypeKey(pet.petType), pet)
+            }
+            pets?.equippedPet?.let { pet ->
+                put(GachaPetCatalog.normalizePetTypeKey(pet.petType), pet)
+            }
         }
         return GachaPetCatalog.entries.map { entry ->
-            val owned = ownedByType[entry.petType]
+            val owned = ownedByType[GachaPetCatalog.normalizePetTypeKey(entry.petType)]
             val isLocked = owned == null
             val (count, threshold) = if (owned != null) {
                 GachaUiMapper.fragmentProgress(owned, balance)
@@ -377,9 +392,7 @@ class GachaViewModel @Inject constructor(
                 displayName = GachaUiMapper.displayNameForPetType(entry.petType, entry.grade),
                 emoji = entry.emoji,
                 grade = entry.grade,
-                levelLabel = owned?.let { pet ->
-                    GachaUiMapper.displayCardLevelLabel(appContext, pet)
-                }.orEmpty(),
+                levelLabel = "",
                 fragmentCount = count,
                 fragmentThreshold = threshold,
             )

@@ -85,9 +85,6 @@ class GachaPetAdapter(
                     if (item.isLocked) R.color.quiz_text_secondary else R.color.quiz_text_primary
                 )
             )
-            binding.tvPetLevel.text = item.levelLabel
-            binding.tvPetLevel.isVisible = item.levelLabel.isNotBlank()
-
             val threshold = item.fragmentThreshold.coerceAtLeast(1)
             val count = item.fragmentCount.coerceAtLeast(0)
             val progress = ((count.toFloat() / threshold) * 100f).toInt().coerceIn(0, 100)

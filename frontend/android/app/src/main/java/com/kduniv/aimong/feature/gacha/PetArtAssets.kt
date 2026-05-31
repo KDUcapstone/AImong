@@ -19,17 +19,6 @@ import java.util.concurrent.ConcurrentHashMap
  */
 object PetArtAssets {
 
-    /**
-     * drawable-nodpi 가 아직 없는 petType → 동일 등급·비슷한 번호의 에셋으로 목업·도감 표시.
-     * (예: pet_normal_001 → pet_normal_002)
-     */
-    private val ART_PET_TYPE_ALIASES = mapOf(
-        "pet_normal_001" to "pet_normal_002",
-        "pet_rare_002" to "pet_rare_001",
-        "pet_epic_001" to "pet_epic_002",
-        "pet_legend_001" to "pet_legend_002",
-    )
-
     /** [ConcurrentHashMap] 은 null 값을 허용하지 않음 — 미발견은 0으로 캐시 */
     private const val DRAWABLE_CACHE_MISS = 0
     private val drawableResCache = ConcurrentHashMap<String, Int>()
@@ -38,11 +27,8 @@ object PetArtAssets {
         drawableResCache.clear()
     }
 
-    fun resolveArtPetType(petType: String): String {
-        val base = petType.trim().lowercase().replace('-', '_')
-        if (base.isBlank()) return base
-        return ART_PET_TYPE_ALIASES[base] ?: base
-    }
+    fun resolveArtPetType(petType: String): String =
+        petType.trim().lowercase().replace('-', '_')
 
     fun stageSuffix(stage: String?): String = when (stage?.trim()?.uppercase()) {
         "AIMONG", "ADULT", "MATURE", "FINAL" -> "aimong"

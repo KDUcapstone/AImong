@@ -4,7 +4,7 @@ import com.google.gson.annotations.SerializedName
 
 data class PetDto(
     @SerializedName("id") val id: String,
-    @SerializedName("petType") val petType: String,
+    @SerializedName(value = "petType", alternate = ["pet_type"]) val petType: String,
     @SerializedName("grade") val grade: String,
     @SerializedName("xp") val xp: Int,
     @SerializedName("stage") val stage: String,
@@ -26,7 +26,7 @@ data class PetEquipRequest(
 
 data class PetEquipData(
     @SerializedName("equippedPetId") val equippedPetId: String,
-    @SerializedName("petType") val petType: String,
+    @SerializedName(value = "petType", alternate = ["pet_type"]) val petType: String,
     @SerializedName("grade") val grade: String,
     @SerializedName("stage") val stage: String
 )

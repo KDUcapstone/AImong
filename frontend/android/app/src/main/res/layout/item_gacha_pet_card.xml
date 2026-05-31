@@ -21,11 +21,10 @@
             android:id="@+id/tv_pet_level"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textColor="@color/quiz_text_secondary"
-            android:textSize="10sp"
+            android:visibility="gone"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            tools:text="Lv.12" />
+            tools:visibility="gone" />
 
         <TextView
             android:id="@+id/tv_badge_equipped"
@@ -50,7 +49,7 @@
             android:foregroundGravity="center"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tv_pet_level">
+            app:layout_constraintTop_toTopOf="parent">
 
             <ImageView
                 android:id="@+id/iv_pet_sprite"
@@ -91,7 +90,7 @@
             android:id="@+id/tv_pet_name"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
+            android:layout_marginTop="2dp"
             android:ellipsize="end"
             android:gravity="center"
             android:maxLines="1"
@@ -107,7 +106,7 @@
             style="?android:attr/progressBarStyleHorizontal"
             android:layout_width="0dp"
             android:layout_height="7dp"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="6dp"
             android:max="100"
             android:progressDrawable="@drawable/bg_gacha_fragment_progress"
             app:layout_constraintEnd_toEndOf="parent"

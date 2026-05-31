@@ -113,6 +113,22 @@ class HomeLayoutBinder(
         val structureKey = state.pathItems.pathStructureKey()
         val starsKey = state.pathItems.pathStarsKey()
         val hasPath = binding.layoutMissionPath.childCount > 0
+        val popupOpen = MissionDifficultyPicker.isPopupOpenIn(binding.layoutMissionPath)
+
+        if (popupOpen) {
+            val structureUnchanged = structureKey == lastPathStructureKey && hasPath
+            if (!structureUnchanged) {
+                MissionDifficultyPicker.dismissAllPopupsInPath(binding.layoutMissionPath)
+                renderMissionPath(state)
+                lastPathStructureKey = structureKey
+                lastPathStarsKey = starsKey
+            } else if (starsKey != lastPathStarsKey) {
+                patchPathStarLevels(state.pathItems)
+                lastPathStarsKey = starsKey
+            }
+            return
+        }
+
         val structureUnchanged = structureKey == lastPathStructureKey && hasPath
         val starsUnchanged = starsKey == lastPathStarsKey
         when {
@@ -153,13 +169,13 @@ class HomeLayoutBinder(
 
     private fun applyFloatingSection(section: HomePathItem.SectionHeader) {
         binding.ivFloatingIslandIcon.setImageResource(section.islandIconRes)
-        binding.tvFloatingSectionTitle.text = section.islandName
+        binding.tvFloatingSectionTitle.text = section.themeHint
         binding.tvFloatingSectionSubtitle.text = binding.root.context.getString(
             R.string.home_island_progress_fmt,
             section.progressCompleted,
             section.progressTotal
         )
-        binding.tvFloatingSectionTheme.text = section.themeHint
+        binding.tvFloatingSectionTheme.isVisible = false
         binding.layoutFloatingBannerInner.setBackgroundResource(section.bannerDrawableRes)
     }
 

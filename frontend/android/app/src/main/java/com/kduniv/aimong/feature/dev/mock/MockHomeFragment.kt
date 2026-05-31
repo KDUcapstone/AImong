@@ -88,22 +88,23 @@ class MockHomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::
                     } else {
                         missionDifficultyPicker.dismissImmediate()
                         missionDifficultyPicker.show(
-                            title,
-                            nav,
-                            emptyList(),
-                            unlockMode,
-                            anchor,
-                            missionKey,
-                        ) { picked, _ ->
-                            findNavController().navigate(
-                                R.id.quizFragment,
-                                androidx.core.os.bundleOf(
-                                    "entrySetId" to picked.entrySetId,
-                                    "missionId" to picked.missionId,
-                                    "starLevel" to picked.starLevel,
-                                ),
-                            )
-                        }
+                            missionTitle = title,
+                            base = nav,
+                            starLevels = emptyList(),
+                            unlockMode = unlockMode,
+                            anchorRow = anchor,
+                            missionKey = missionKey,
+                            onPicked = { picked, _ ->
+                                findNavController().navigate(
+                                    R.id.quizFragment,
+                                    androidx.core.os.bundleOf(
+                                        "entrySetId" to picked.entrySetId,
+                                        "missionId" to picked.missionId,
+                                        "starLevel" to picked.starLevel,
+                                    ),
+                                )
+                            },
+                        )
                     }
                 }
             },

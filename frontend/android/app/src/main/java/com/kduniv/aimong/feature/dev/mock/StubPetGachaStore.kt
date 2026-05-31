@@ -223,21 +223,26 @@ object StubPetGachaStore {
     }
 
     fun exchange(grade: String, petType: String): Result<GachaExchangeData> = synchronized(lock) {
-        if (ownedPets.any { it.petType == petType }) {
+        val target = com.kduniv.aimong.feature.gacha.GachaPetCatalog.resolveExchangeTarget(grade, petType)
+            ?: return Result.failure(Exception("유효하지 않은 펫 종류에요"))
+        if (ownedPets.any {
+                com.kduniv.aimong.feature.gacha.GachaPetCatalog.normalizePetTypeKey(it.petType) ==
+                    com.kduniv.aimong.feature.gacha.GachaPetCatalog.normalizePetTypeKey(target.petType)
+            }) {
             return Result.failure(Exception("이미 보유한 펫이에요"))
         }
-        val threshold = exchangeThresholdFor(grade)
+        val threshold = exchangeThresholdFor(target.grade)
         if (totalFragmentCount < threshold) {
             return Result.failure(Exception("조각이 부족해요!"))
         }
         totalFragmentCount -= threshold
 
-        val newId = "stub-ex-${petType.hashCode()}"
+        val newId = "stub-ex-${target.petType.hashCode()}"
         ownedPets.add(
             PetDto(
                 id = newId,
-                petType = petType,
-                grade = grade,
+                petType = target.petType,
+                grade = target.grade,
                 xp = 0,
                 stage = "EGG",
                 mood = "IDLE",
@@ -246,6 +251,14 @@ object StubPetGachaStore {
                 obtainedAt = "2026-05-06T12:00:00Z"
             )
         )
-        Result.success(GachaExchangeData(petId = newId, petType = petType, grade = grade, stage = "EGG"))
+        Result.success(
+            GachaExchangeData(
+                petId = newId,
+                petType = target.petType,
+                grade = target.grade,
+                stage = "EGG",
+            ),
+        )
     }
+
 }

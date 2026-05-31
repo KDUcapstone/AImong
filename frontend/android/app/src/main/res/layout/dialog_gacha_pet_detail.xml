@@ -49,6 +49,17 @@
         android:textSize="14sp"
         tools:text="등급 · 레어" />
 
+    <TextView
+        android:id="@+id/tv_pet_growth"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textColor="@color/quiz_text_secondary"
+        android:textSize="13sp"
+        android:visibility="gone"
+        tools:text="몽 · 12/80 XP"
+        tools:visibility="visible" />
+
     <LinearLayout
         android:id="@+id/layout_fragment_exchange"
         android:layout_width="match_parent"

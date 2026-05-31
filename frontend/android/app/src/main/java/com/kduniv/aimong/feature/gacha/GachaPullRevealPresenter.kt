@@ -39,7 +39,7 @@ object GachaPullRevealPresenter {
             image = binding.ivRevealSprite,
             emojiFallback = binding.tvRevealEmoji,
             petType = reveal.petType,
-            stage = if (reveal.isNew) "EGG" else "GROWTH",
+            stage = "EGG",
             emoji = reveal.emoji,
         )
         binding.tvRevealName.text = reveal.displayName

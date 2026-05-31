@@ -10,6 +10,7 @@ import com.google.android.material.card.MaterialCardView
 import com.kduniv.aimong.R
 import com.kduniv.aimong.feature.gacha.PetArtAssets
 import com.kduniv.aimong.feature.pet.domain.PetGrowthRules
+import com.kduniv.aimong.feature.pet.presentation.PetStageLabels
 
 /** 홈·목업 공통 — 펫 통계 바텀시트 바인딩 */
 object PetStatsSheetUi {
@@ -49,7 +50,10 @@ object PetStatsSheetUi {
         cardMessage.isVisible = message.isNotEmpty()
         tvMessage.text = message
 
-        tvLevel.text = root.context.getString(R.string.home_pet_level_fmt, state.petLevel)
+        tvLevel.text = root.context.getString(
+            R.string.home_pet_level_fmt,
+            PetStageLabels.label(root.context, effectiveStage),
+        )
 
         val showXp = state.showPetXpProgress
         progress.isVisible = showXp
@@ -66,13 +70,6 @@ object PetStatsSheetUi {
         }
     }
 
-    private fun stageLabel(root: View, stage: String): String {
-        val ctx = root.context
-        return when (stage.trim().uppercase()) {
-            "EGG" -> ctx.getString(R.string.gacha_stage_egg)
-            "HATCH", "BABY", "GROWTH" -> ctx.getString(R.string.gacha_stage_growth)
-            "AIMONG", "ADULT", "MATURE", "FINAL" -> ctx.getString(R.string.gacha_stage_aimong)
-            else -> ctx.getString(R.string.gacha_stage_growth)
-        }
-    }
+    private fun stageLabel(root: View, stage: String): String =
+        PetStageLabels.label(root.context, stage)
 }

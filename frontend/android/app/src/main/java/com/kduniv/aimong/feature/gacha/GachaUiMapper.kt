@@ -5,6 +5,7 @@ import androidx.annotation.ColorInt
 import com.kduniv.aimong.R
 import com.kduniv.aimong.feature.pet.data.model.PetDto
 import com.kduniv.aimong.feature.pet.domain.PetGrowthRules
+import com.kduniv.aimong.feature.pet.presentation.PetStageLabels
 
 object GachaUiMapper {
 
@@ -21,23 +22,21 @@ object GachaUiMapper {
     fun petEmoji(pet: PetDto): String =
         GachaPetCatalog.emojiFor(pet.petType, pet.grade)
 
-    fun displayLevel(pet: PetDto): String {
-        val level = PetGrowthRules.displayStageLevel(pet.stage, pet.xp)
-        return "Lv.$level"
-    }
+    fun displayLevel(context: Context, pet: PetDto): String =
+        PetStageLabels.label(context, pet.stage, pet.xp)
 
-    /** 도감·가챠 카드 상단 — 아이몽은 XP 대신 왕관 해금 */
-    fun displayCardLevelLabel(context: Context, pet: PetDto): String {
+    /** 보유 펫 상세 — 등급 아래 단계·XP (아이몽은 단계만) */
+    fun displayPetGrowthDetail(context: Context, pet: PetDto): String {
         val effectiveStage = PetGrowthRules.resolveEffectiveStageString(pet.stage, pet.xp)
+        val stageLabel = PetStageLabels.label(context, effectiveStage)
         if (!PetGrowthRules.showsXpProgress(pet.stage, pet.xp)) {
-            return context.getString(R.string.gacha_pet_crown_unlocked)
+            return stageLabel
         }
-        val lv = PetGrowthRules.displayStageLevel(pet.stage, pet.xp)
         val maxXp = PetGrowthRules.progressMaxXp(pet.grade, effectiveStage)
             ?: PetGrowthRules.EGG_EVOLUTION_XP
         return context.getString(
             R.string.gacha_pet_level_xp_fmt,
-            lv,
+            stageLabel,
             pet.xp.coerceAtLeast(0),
             maxXp,
         )

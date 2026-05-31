@@ -148,7 +148,7 @@
                 android:textColor="@color/child_nav_item_selected"
                 android:textSize="15sp"
                 android:textStyle="bold"
-                tools:text="Lv.3" />
+                tools:text="몽" />
         </LinearLayout>
 
         <ProgressBar

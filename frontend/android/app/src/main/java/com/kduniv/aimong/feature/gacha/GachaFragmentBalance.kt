@@ -12,7 +12,7 @@ data class GachaFragmentBalance(
     val thresholdsByGrade: Map<String, Int>,
 ) {
     fun thresholdFor(grade: String): Int =
-        thresholdsByGrade[normalizeGrade(grade)]
+        thresholdsByGrade[GachaPetCatalog.normalizeExchangeGrade(grade)]
             ?: defaultThreshold(grade)
 
     fun progressForExchange(grade: String): Pair<Int, Int> {
@@ -43,7 +43,6 @@ data class GachaFragmentBalance(
                 g == "ALL" || g == "COMMON" || g == "TOTAL"
             }
             if (pooled != null) return pooled.count
-            // 구 API: 등급별 count가 내려오면 공통 풀로 합산 (서버는 totalCount 권장)
             return rows
                 .filter { row ->
                     row.grade.uppercase() !in setOf("ALL", "COMMON", "TOTAL")
@@ -57,7 +56,10 @@ data class GachaFragmentBalance(
                     val g = row.grade.uppercase()
                     g !in setOf("ALL", "COMMON", "TOTAL")
                 }
-                .associate { normalizeGrade(it.grade) to it.exchangeThreshold.coerceAtLeast(1) }
+                .associate {
+                    GachaPetCatalog.normalizeExchangeGrade(it.grade) to
+                        it.exchangeThreshold.coerceAtLeast(1)
+                }
             if (fromApi.isNotEmpty()) return fromApi
             return defaultThresholds()
         }
@@ -67,15 +69,9 @@ data class GachaFragmentBalance(
             "RARE" to 30,
             "EPIC" to 80,
             "LEGEND" to 200,
-            "LEGENDARY" to 200,
         )
 
-        private fun normalizeGrade(grade: String): String = when (grade.uppercase()) {
-            "LEGENDARY" -> "LEGEND"
-            else -> grade.uppercase()
-        }
-
-        private fun defaultThreshold(grade: String): Int = when (normalizeGrade(grade)) {
+        private fun defaultThreshold(grade: String): Int = when (GachaPetCatalog.normalizeExchangeGrade(grade)) {
             "RARE" -> 30
             "EPIC" -> 80
             "LEGEND" -> 200

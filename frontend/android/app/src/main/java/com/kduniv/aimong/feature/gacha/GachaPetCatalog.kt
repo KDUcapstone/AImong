@@ -19,12 +19,29 @@ object GachaPetCatalog {
         fun introNameForChat(): String = displayName + copulaYa
     }
 
+    data class ExchangeTarget(
+        val petType: String,
+        val grade: String,
+    )
+
     /** GET /pet 의 petType 과 도감 행 매칭 (대소문자·공백 무시) */
     fun entryFor(petType: String?): Entry? {
         if (petType.isNullOrBlank()) return null
         val key = normalizePetTypeKey(petType)
         return entries.firstOrNull { normalizePetTypeKey(it.petType) == key }
     }
+
+    /** POST /gacha/exchange — 서버 허용 코드·등급과 도감 정의를 맞춘다 */
+    fun resolveExchangeTarget(grade: String, petType: String): ExchangeTarget? {
+        val entry = entryFor(petType) ?: return null
+        val requestGrade = normalizeExchangeGrade(grade)
+        val catalogGrade = normalizeExchangeGrade(entry.grade)
+        if (requestGrade != catalogGrade) return null
+        return ExchangeTarget(petType = entry.petType, grade = catalogGrade)
+    }
+
+    fun normalizePetTypeKey(petType: String): String =
+        petType.trim().lowercase().replace('-', '_')
 
     fun displayNameFor(petType: String, grade: String = "NORMAL"): String =
         entryFor(petType)?.displayName ?: fallbackDisplayName(petType, grade)
@@ -40,8 +57,10 @@ object GachaPetCatalog {
     fun emojiFor(petType: String, grade: String = "NORMAL"): String =
         entryFor(petType)?.emoji ?: fallbackEmoji(grade)
 
-    private fun normalizePetTypeKey(petType: String): String =
-        petType.trim().lowercase().replace('-', '_')
+    fun normalizeExchangeGrade(grade: String): String = when (grade.uppercase()) {
+        "LEGENDARY" -> "LEGEND"
+        else -> grade.uppercase()
+    }
 
     private fun fallbackDisplayName(petType: String, grade: String): String {
         val tail = petType.substringAfterLast('_', "").filter { it.isDigit() }

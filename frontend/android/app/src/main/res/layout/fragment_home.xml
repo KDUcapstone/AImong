@@ -54,7 +54,7 @@
                     android:textColor="@color/white"
                     android:textSize="17sp"
                     android:textStyle="bold"
-                    tools:text="시작의 섬" />
+                    tools:text="AI가 뭐예요?" />
 
                 <TextView
                     android:id="@+id/tv_floating_section_subtitle"
@@ -73,6 +73,7 @@
                     android:layout_marginTop="3dp"
                     android:textColor="#E5F9D6"
                     android:textSize="12sp"
+                    android:visibility="gone"
                     tools:text="AI가 뭐예요?" />
             </LinearLayout>
 

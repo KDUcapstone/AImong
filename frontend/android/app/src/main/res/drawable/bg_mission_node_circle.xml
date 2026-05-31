@@ -3,7 +3,7 @@
     <!-- 3D 그림자 (하단) -->
     <item android:top="4dp">
         <shape android:shape="oval">
-            <solid android:color="#2E7D32" />
+            <solid android:color="@color/mission_node_shadow" />
         </shape>
     </item>
 
@@ -12,8 +12,8 @@
         <shape android:shape="oval">
             <gradient
                 android:angle="90"
-                android:startColor="#4CAF50"
-                android:endColor="#81C784"
+                android:startColor="@color/quiz_mint"
+                android:endColor="@color/mission_node_surface_light"
                 android:type="linear" />
         </shape>
     </item>

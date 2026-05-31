@@ -24,8 +24,8 @@
     <!-- 수집 · 도감 그리드 -->
     <dimen name="gacha_encyclopedia_grid_spacing">10dp</dimen>
     <dimen name="gacha_pet_card_margin">5dp</dimen>
-    <dimen name="gacha_pet_card_padding">10dp</dimen>
-    <dimen name="gacha_pet_card_art_height">96dp</dimen>
+    <dimen name="gacha_pet_card_padding">8dp</dimen>
+    <dimen name="gacha_pet_card_art_height">80dp</dimen>
 
     <!-- 펫 누끼(스프라이트) 표시 크기 — 화면별 통일 -->
     <dimen name="pet_sprite_gacha_header">104dp</dimen>

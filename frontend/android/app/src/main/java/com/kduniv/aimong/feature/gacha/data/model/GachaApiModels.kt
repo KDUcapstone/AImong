@@ -47,12 +47,26 @@ data class GachaFragmentsData(
 
 data class GachaExchangeRequest(
     @SerializedName("grade") val grade: String,
-    @SerializedName("petType") val petType: String
+    @SerializedName(value = "petType", alternate = ["pet_type"]) val petType: String,
 )
 
 data class GachaExchangeData(
-    @SerializedName("petId") val petId: String,
-    @SerializedName("petType") val petType: String,
+    @SerializedName("petId") val petId: String? = null,
+    @SerializedName(value = "petType", alternate = ["pet_type"]) val petType: String? = null,
+    @SerializedName("grade") val grade: String? = null,
+    @SerializedName("stage") val stage: String? = null,
+    /** 레거시 응답: `{ "pet": { id, petType, grade, stage } }` */
+    @SerializedName("pet") val pet: GachaExchangePetDto? = null,
+) {
+    fun resolvedPetId(): String = petId ?: pet?.id.orEmpty()
+    fun resolvedPetType(): String = petType ?: pet?.petType.orEmpty()
+    fun resolvedGrade(): String = grade ?: pet?.grade.orEmpty()
+    fun resolvedStage(): String = stage ?: pet?.stage.orEmpty()
+}
+
+data class GachaExchangePetDto(
+    @SerializedName("id") val id: String,
+    @SerializedName(value = "petType", alternate = ["pet_type"]) val petType: String,
     @SerializedName("grade") val grade: String,
-    @SerializedName("stage") val stage: String
+    @SerializedName("stage") val stage: String,
 )

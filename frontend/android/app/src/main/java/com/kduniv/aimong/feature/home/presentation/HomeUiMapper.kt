@@ -98,7 +98,7 @@ internal object HomeUiMapper {
     private fun petMessage(data: HomeScreenData): String {
         if (data.equippedPet == null) return ""
         if (data.returnReward.hasReward) {
-            return "다시 만나서 반가워요! 보상을 확인해 보세요."
+            return "다시 만나서 반가워요! 퀘스트를 확인해보세요."
         }
         val m = data.missionSummary
         if (!m.canStartMission && m.todayCompletedCount >= m.todayTargetCount && m.todayTargetCount > 0) {

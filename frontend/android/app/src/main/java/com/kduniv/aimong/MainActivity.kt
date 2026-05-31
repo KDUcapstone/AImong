@@ -52,6 +52,7 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.snackbar.Snackbar
 import com.kduniv.aimong.databinding.ActivityMainBinding
 import com.kduniv.aimong.feature.chat.ChatHintNotifier
+import com.kduniv.aimong.feature.home.domain.ChildHomeBootstrapGate
 import com.kduniv.aimong.feature.onboarding.child.ChildGachaOnboardingController
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.first
@@ -103,6 +104,9 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var childGachaOnboardingController: ChildGachaOnboardingController
+
+    @Inject
+    lateinit var childHomeBootstrapGate: ChildHomeBootstrapGate
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var navController: NavController
@@ -356,7 +360,13 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
 
-                binding.bottomNav.visibility = View.VISIBLE
+                lifecycleScope.launch {
+                    repeatOnLifecycle(Lifecycle.State.STARTED) {
+                        childHomeBootstrapGate.suppressChildBottomNav.collect {
+                            updateChildBottomNavVisibility()
+                        }
+                    }
+                }
                 // 선택 탭만 복원되고 Nav 화면은 홈으로 남으면 MY 재탭 시 popBackStack만 호출되어 진입이 막힐 수 있음
                 binding.bottomNav.isSaveEnabled = false
                 binding.bottomNav.menu.clear()
@@ -369,8 +379,7 @@ class MainActivity : AppCompatActivity() {
                 binding.bottomNav.isItemActiveIndicatorEnabled = false
 
                 val childDestListener = NavController.OnDestinationChangedListener { _, destination, _ ->
-                    binding.bottomNav.visibility =
-                        if (ChildTopLevelNav.shouldHideBottomNav(destination.id)) View.GONE else View.VISIBLE
+                    updateChildBottomNavVisibility()
                     if (suppressChildBottomNavItemSelected) return@OnDestinationChangedListener
                     val menuId = ChildTopLevelNav.mapDestinationToTab(destination.id)
                         ?: return@OnDestinationChangedListener
@@ -378,10 +387,7 @@ class MainActivity : AppCompatActivity() {
                 }
                 childNavDestinationListener = childDestListener
                 navController.addOnDestinationChangedListener(childDestListener)
-                navController.currentDestination?.id?.let { currentId ->
-                    binding.bottomNav.visibility =
-                        if (ChildTopLevelNav.shouldHideBottomNav(currentId)) View.GONE else View.VISIBLE
-                }
+                updateChildBottomNavVisibility()
                 ChildTopLevelNav.mapDestinationToTab(navController.currentDestination?.id)?.let { initial ->
                     syncChildBottomNavTabSelection(binding.bottomNav, initial)
                 }
@@ -509,6 +515,15 @@ class MainActivity : AppCompatActivity() {
             syncChildBottomNavTabSelection(binding.bottomNav, R.id.homeFragment)
             suppressChildBottomNavItemSelected = false
         }
+    }
+
+    private fun updateChildBottomNavVisibility() {
+        if (navigationUserRole != "CHILD" || !::navController.isInitialized) return
+        val destId = navController.currentDestination?.id
+        val hideForScreen = ChildTopLevelNav.shouldHideBottomNav(destId)
+        val hideForHomeBootstrap = childHomeBootstrapGate.suppressChildBottomNav.value
+        binding.bottomNav.visibility =
+            if (hideForScreen || hideForHomeBootstrap) View.GONE else View.VISIBLE
     }
 
     /** MY 등 화면과 하단 탭 선택 상태가 어긋날 때 Fragment에서 호출 */
