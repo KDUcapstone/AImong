@@ -2,20 +2,24 @@ package com.kduniv.aimong.feature.settings.presentation
 
 import android.os.Bundle
 import android.view.View
+import android.widget.CompoundButton
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.isVisible
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.snackbar.Snackbar
+import com.google.android.material.switchmaterial.SwitchMaterial
 import com.kduniv.aimong.R
 import com.kduniv.aimong.core.network.model.NotificationSettingsPatchRequest
 import com.kduniv.aimong.core.ui.BaseFragment
 import com.kduniv.aimong.databinding.FragmentNotificationSettingsBinding
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
@@ -26,6 +30,12 @@ class NotificationSettingsFragment :
 
     private var restoredStatusBarColor: Int? = null
     private var restoredLightStatusBars: Boolean? = null
+    private var suppressAutoSave = false
+
+    private val autoSaveListener = CompoundButton.OnCheckedChangeListener { _, _ ->
+        if (suppressAutoSave || !viewModel.canEdit.value) return@OnCheckedChangeListener
+        persistCurrentSettings()
+    }
 
     override fun shouldApplySystemBarInsets(): Boolean = false
 
@@ -41,8 +51,9 @@ class NotificationSettingsFragment :
 
     override fun initView() {
         binding.btnBack.setOnClickListener { requireActivity().onBackPressedDispatcher.onBackPressed() }
-        binding.btnSave.setOnClickListener { saveCurrent() }
+        binding.btnSave.isVisible = false
         binding.progress.visibility = View.VISIBLE
+        installAutoSaveListeners()
         viewModel.load()
     }
 
@@ -51,49 +62,99 @@ class NotificationSettingsFragment :
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
                     viewModel.isParentRole.collect { isParent ->
-                        val accent = ContextCompat.getColor(
-                            requireContext(),
-                            if (isParent) R.color.parent_mock_blue else R.color.quiz_mint,
+                        binding.switchPrivacy.isVisible = isParent
+                        binding.tvChildReadonlyHint.isVisible = !isParent
+                        binding.tvFcmGatingHint.setText(
+                            if (isParent) {
+                                R.string.notification_settings_fcm_gating_hint
+                            } else {
+                                R.string.notification_settings_fcm_gating_hint_child
+                            },
                         )
-                        binding.btnSave.backgroundTintList =
-                            android.content.res.ColorStateList.valueOf(accent)
+                        if (!isParent) {
+                            binding.tvChildReadonlyHint.text =
+                                getString(R.string.notification_settings_child_hint)
+                        }
                     }
                 }
                 launch {
                     viewModel.canEdit.collect { editable ->
-                        binding.btnSave.visibility = if (editable) View.VISIBLE else View.GONE
-                        binding.tvChildReadonlyHint.visibility =
-                            if (editable) View.GONE else View.VISIBLE
-                        val switches = listOf(
-                            binding.switchPrivacy,
-                            binding.switchStudy,
-                            binding.switchReturnReward,
-                            binding.switchQuestReward,
-                            binding.switchMarketing,
-                        )
-                        switches.forEach { it.isEnabled = editable }
+                        editableSwitches().forEach { it.isEnabled = editable }
                     }
                 }
                 launch {
                     viewModel.settings.collect { s ->
                         if (s == null) return@collect
+                        suppressAutoSave = true
                         binding.switchPrivacy.isChecked = s.privacyAlertEnabled
                         binding.switchStudy.isChecked = s.studyReminderEnabled
                         binding.switchReturnReward.isChecked = s.returnRewardEnabled
                         binding.switchQuestReward.isChecked = s.questRewardEnabled
                         binding.switchMarketing.isChecked = s.marketingEnabled
+                        suppressAutoSave = false
                         binding.progress.visibility = View.GONE
                     }
                 }
                 launch {
+                    combine(viewModel.isSaving, viewModel.settings) { saving, settings ->
+                        saving to (settings != null)
+                    }.collect { (saving, loaded) ->
+                        binding.progress.isVisible = saving || !loaded
+                    }
+                }
+                launch {
                     viewModel.messageEvent.collect { msg ->
-                        binding.progress.visibility = View.GONE
                         Snackbar.make(binding.root, msg, Snackbar.LENGTH_SHORT).show()
                     }
                 }
             }
         }
     }
+
+    private fun installAutoSaveListeners() {
+        editableSwitches().forEach { it.setOnCheckedChangeListener(autoSaveListener) }
+    }
+
+    private fun editableSwitches(): List<SwitchMaterial> =
+        if (viewModel.isParentRole.value) {
+            listOf(
+                binding.switchPrivacy,
+                binding.switchStudy,
+                binding.switchReturnReward,
+                binding.switchQuestReward,
+                binding.switchMarketing,
+            )
+        } else {
+            listOf(
+                binding.switchStudy,
+                binding.switchReturnReward,
+                binding.switchQuestReward,
+                binding.switchMarketing,
+            )
+        }
+
+    private fun persistCurrentSettings() {
+        viewModel.save(buildPatchFromUi())
+    }
+
+    private fun buildPatchFromUi(): NotificationSettingsPatchRequest =
+        if (viewModel.isParentRole.value) {
+            NotificationSettingsPatchRequest(
+                privacyAlertEnabled = binding.switchPrivacy.isChecked,
+                studyReminderEnabled = binding.switchStudy.isChecked,
+                returnRewardEnabled = binding.switchReturnReward.isChecked,
+                questRewardEnabled = binding.switchQuestReward.isChecked,
+                marketingEnabled = binding.switchMarketing.isChecked,
+            )
+        } else {
+            NotificationSettingsPatchRequest(
+                privacyAlertEnabled = null,
+                studyReminderEnabled = binding.switchStudy.isChecked,
+                returnRewardEnabled = binding.switchReturnReward.isChecked,
+                questRewardEnabled = binding.switchQuestReward.isChecked,
+                marketingEnabled = binding.switchMarketing.isChecked,
+            )
+        }
 
     private fun applyBrightSystemChrome() {
         val window = activity?.window ?: return
@@ -131,18 +192,5 @@ class NotificationSettingsFragment :
         }
         restoredStatusBarColor = null
         restoredLightStatusBars = null
-    }
-
-    private fun saveCurrent() {
-        binding.progress.visibility = View.VISIBLE
-        viewModel.save(
-            NotificationSettingsPatchRequest(
-                privacyAlertEnabled = binding.switchPrivacy.isChecked,
-                studyReminderEnabled = binding.switchStudy.isChecked,
-                returnRewardEnabled = binding.switchReturnReward.isChecked,
-                questRewardEnabled = binding.switchQuestReward.isChecked,
-                marketingEnabled = binding.switchMarketing.isChecked
-            )
-        )
     }
 }

@@ -3,6 +3,7 @@ package com.kduniv.aimong.feature.parent.presentation
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -12,7 +13,8 @@ import com.kduniv.aimong.databinding.ItemParentChildSheetRowBinding
 
 class ParentChildSheetAdapter(
     private val onSelectChild: (String) -> Unit,
-    private val onChildLongPress: ((ParentChildItem) -> Unit)? = null
+    private val onChildManage: ((ParentChildItem) -> Unit)? = null,
+    private val onChildLongPress: ((ParentChildItem) -> Unit)? = null,
 ) : ListAdapter<ParentChildSheetRow, ParentChildSheetAdapter.ViewHolder>(DiffCallback) {
 
     var selectedChildId: String? = null
@@ -54,6 +56,10 @@ class ParentChildSheetAdapter(
             binding.root.setOnLongClickListener {
                 onChildLongPress?.invoke(item)
                 onChildLongPress != null
+            }
+            binding.btnChildSheetManage.isVisible = onChildManage != null
+            binding.btnChildSheetManage.setOnClickListener {
+                onChildManage?.invoke(item)
             }
         }
     }

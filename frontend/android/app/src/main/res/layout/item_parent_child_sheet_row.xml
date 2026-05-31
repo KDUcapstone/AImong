@@ -59,6 +59,19 @@
                 tools:text="등록일: 2026-05-01" />
         </LinearLayout>
 
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_child_sheet_manage"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="4dp"
+            android:minHeight="36dp"
+            android:minWidth="0dp"
+            android:paddingHorizontal="8dp"
+            android:text="@string/parent_child_sheet_manage"
+            android:textColor="@color/parent_mock_indigo_accent"
+            android:textSize="13sp" />
+
         <ImageView
             android:id="@+id/iv_selected_check"
             android:layout_width="24dp"

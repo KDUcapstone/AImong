@@ -41,7 +41,10 @@ class GachaFragment : BaseFragment<FragmentGachaBinding>(FragmentGachaBinding::i
 
     override fun onResume() {
         super.onResume()
-        if (!childGachaOnboardingController.isActive) {
+        if (childGachaOnboardingController.isActive) {
+            viewModel.syncTicketsFromHome()
+            viewModel.seedTicketsIfEmpty(childGachaOnboardingController.onboardingTicketHint)
+        } else {
             viewModel.onGachaResumed()
         }
     }
@@ -113,6 +116,9 @@ class GachaFragment : BaseFragment<FragmentGachaBinding>(FragmentGachaBinding::i
                     childGachaOnboardingController.phase.collect { phase ->
                         when (phase) {
                             ChildGachaOnboardingPhase.GachaPullCoachmark -> {
+                                viewModel.seedTicketsIfEmpty(
+                                    childGachaOnboardingController.onboardingTicketHint,
+                                )
                                 viewModel.refresh()
                                 binding.root.post { showPullCoachmarkIfNeeded() }
                             }

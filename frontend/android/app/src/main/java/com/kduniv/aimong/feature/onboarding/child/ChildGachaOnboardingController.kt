@@ -24,9 +24,14 @@ class ChildGachaOnboardingController @Inject constructor(
     private val sessionManager: SessionManager,
     @ApplicationContext context: Context,
 ) {
-    private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    /** [evaluateEntry]에서 확인한 티켓 수 — 수집 탭 진입 직후 API 응답 전 뽑기 버튼 활성화용 */
+    var onboardingTicketHint: Int = 0
+        private set
+
     /** [evaluateEntry]·로그인 시 확정 — [markCompleted]에서 동기 접근 */
     private var activeChildId: String? = null
+
+    private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     private val _phase = MutableStateFlow(ChildGachaOnboardingPhase.Inactive)
     val phase: StateFlow<ChildGachaOnboardingPhase> = _phase.asStateFlow()
@@ -81,7 +86,10 @@ class ChildGachaOnboardingController @Inject constructor(
         }
         return when {
             tickets <= 0 -> ChildGachaOnboardingEntry.NoTickets
-            else -> ChildGachaOnboardingEntry.StartWelcome(tickets)
+            else -> {
+                onboardingTicketHint = tickets
+                ChildGachaOnboardingEntry.StartWelcome(tickets)
+            }
         }
     }
 
@@ -118,6 +126,7 @@ class ChildGachaOnboardingController @Inject constructor(
     /** 로그아웃·역할 전환 시 진행 중 코치마크만 초기화(자녀별 완료 플래그는 유지). */
     fun resetActivePhase() {
         activeChildId = null
+        onboardingTicketHint = 0
         _phase.value = ChildGachaOnboardingPhase.Inactive
     }
 

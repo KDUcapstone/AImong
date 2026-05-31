@@ -362,6 +362,9 @@ class ParentDashboardViewModel @Inject constructor(
         viewModelScope.launch {
             parentRepository.regenerateChildCode(childId).fold(
                 onSuccess = { newCode ->
+                    if (_selectedChildId.value == childId) {
+                        refreshAllDashboardForChild(childId)
+                    }
                     _messageEvent.emit("코드가 성공적으로 재발급되었습니다: $newCode")
                 },
                 onFailure = { e ->

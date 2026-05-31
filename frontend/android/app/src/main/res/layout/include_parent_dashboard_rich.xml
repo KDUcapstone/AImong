@@ -97,6 +97,44 @@
                     android:textStyle="bold"
                     tools:text="482916" />
             </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/layout_dashboard_child_actions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:orientation="horizontal"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_dashboard_regenerate_code"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="6dp"
+                    android:layout_weight="1"
+                    android:minHeight="44dp"
+                    android:text="@string/parent_child_manage_regenerate_code"
+                    android:textColor="@color/parent_mock_text_primary"
+                    android:textSize="13sp"
+                    app:cornerRadius="10dp"
+                    app:strokeColor="@color/parent_mock_border_strong" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_dashboard_child_manage"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:layout_weight="1"
+                    android:minHeight="44dp"
+                    android:text="@string/parent_dashboard_child_manage"
+                    android:textColor="@color/parent_mock_text_primary"
+                    android:textSize="13sp"
+                    app:cornerRadius="10dp"
+                    app:strokeColor="@color/parent_mock_border_strong" />
+            </LinearLayout>
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 

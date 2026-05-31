@@ -18,6 +18,7 @@ class TutorialCoachmarkOverlay(
     private val host: ViewGroup,
 ) {
     private var root: FrameLayout? = null
+    private var tapTarget: View? = null
     private var scrollListener: ViewTreeObserver.OnScrollChangedListener? = null
     private val highlightPaddingPx =
         (12 * host.resources.displayMetrics.density).toInt()
@@ -30,8 +31,9 @@ class TutorialCoachmarkOverlay(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT,
             )
-            isClickable = true
-            isFocusable = true
+            // 전체 루트가 clickable이면 하이라이트 구멍 터치도 여기서 소비되어 대상 버튼에 닿지 않음
+            isClickable = false
+            isFocusable = false
         }
         root = overlayRoot
 
@@ -47,8 +49,18 @@ class TutorialCoachmarkOverlay(
 
         val ring = View(host.context).apply {
             setBackgroundResource(R.drawable.bg_tutorial_coachmark_ring)
+            isClickable = false
+            isFocusable = false
         }
         overlayRoot.addView(ring)
+
+        val tapTargetView = View(host.context).apply {
+            isClickable = true
+            importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+            setOnClickListener { target.performClick() }
+        }
+        tapTarget = tapTargetView
+        overlayRoot.addView(tapTargetView)
 
         val pad = (18 * density).toInt()
         val padV = (14 * density).toInt()
@@ -88,7 +100,7 @@ class TutorialCoachmarkOverlay(
         host.addView(overlayRoot)
 
         val reposition = {
-            positionAroundTarget(target, top, bottom, left, right, ring, messageCard)
+            positionAroundTarget(target, top, bottom, left, right, ring, tapTargetView, messageCard)
         }
         target.post(reposition)
         scrollListener = ViewTreeObserver.OnScrollChangedListener { reposition() }
@@ -104,6 +116,7 @@ class TutorialCoachmarkOverlay(
         scrollListener = null
         root?.let { host.removeView(it) }
         root = null
+        tapTarget = null
     }
 
     private fun positionAroundTarget(
@@ -113,6 +126,7 @@ class TutorialCoachmarkOverlay(
         left: View,
         right: View,
         ring: View,
+        tapTarget: View,
         messageCard: View,
     ) {
         if (!target.isShown) return
@@ -141,10 +155,13 @@ class TutorialCoachmarkOverlay(
             leftMargin = rightX
         }
 
-        ring.layoutParams = FrameLayout.LayoutParams(
-            rightX - leftX,
-            bottomY - topY,
-        ).apply {
+        val highlightWidth = rightX - leftX
+        val highlightHeight = bottomY - topY
+        ring.layoutParams = FrameLayout.LayoutParams(highlightWidth, highlightHeight).apply {
+            leftMargin = leftX
+            topMargin = topY
+        }
+        tapTarget.layoutParams = FrameLayout.LayoutParams(highlightWidth, highlightHeight).apply {
             leftMargin = leftX
             topMargin = topY
         }

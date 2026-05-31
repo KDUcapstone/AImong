@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -33,11 +34,18 @@ class NotificationSettingsViewModel @Inject constructor(
     private val _isParentRole = MutableStateFlow(false)
     val isParentRole = _isParentRole.asStateFlow()
 
+    private val _isSaving = MutableStateFlow(false)
+    val isSaving = _isSaving.asStateFlow()
+
+    private var saveJob: Job? = null
+
     fun load() {
         viewModelScope.launch {
-            val isParent = sessionManager.userRole.first() == "PARENT"
+            val role = sessionManager.userRole.first()
+            val isParent = role == "PARENT"
             _isParentRole.value = isParent
-            _canEdit.value = isParent
+            // 부모·자녀 각각 JWT로 본인 알림 설정을 GET·PATCH (서버에 자녀별·부모별로 분리 저장).
+            _canEdit.value = role == "PARENT" || role == "CHILD"
             repo.getSettings().fold(
                 onSuccess = { _settings.value = it },
                 onFailure = { _messageEvent.emit(it.message ?: "알림 설정을 불러오지 못했습니다.") }
@@ -47,7 +55,9 @@ class NotificationSettingsViewModel @Inject constructor(
 
     fun save(patch: NotificationSettingsPatchRequest) {
         if (!_canEdit.value) return
-        viewModelScope.launch {
+        saveJob?.cancel()
+        saveJob = viewModelScope.launch {
+            _isSaving.value = true
             repo.patchSettings(patch).fold(
                 onSuccess = {
                     _settings.value = it
@@ -55,6 +65,7 @@ class NotificationSettingsViewModel @Inject constructor(
                 },
                 onFailure = { _messageEvent.emit(it.message ?: "저장에 실패했습니다.") }
             )
+            _isSaving.value = false
         }
     }
 }

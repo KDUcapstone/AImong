@@ -107,6 +107,13 @@ class ParentDashboardFragment :
         } else {
             rich.layoutDashboardChildCode.visibility = View.GONE
         }
+        rich.layoutDashboardChildActions.visibility =
+            if (id != null) View.VISIBLE else View.GONE
+    }
+
+    private fun selectedChildOrNull(): ParentChildItem? {
+        val id = latestSelectedChildId ?: return null
+        return latestChildren.firstOrNull { it.childId == id }
     }
 
     private fun isChildLinked(detail: ParentChildDetailData?): Boolean =
@@ -159,6 +166,13 @@ class ParentDashboardFragment :
         rich.rowDashboardChildSelector.setOnClickListener { showChildSelectSheet() }
         binding.cardEmptyChildren.setOnClickListener { showChildSelectSheet() }
 
+        rich.btnDashboardRegenerateCode.setOnClickListener {
+            selectedChildOrNull()?.let { confirmRegenerateCode(it.childId) }
+        }
+        rich.btnDashboardChildManage.setOnClickListener {
+            selectedChildOrNull()?.let { showChildManageDialog(it) }
+        }
+
         binding.btnSettings.setOnClickListener {
             findNavController().navigate(R.id.action_parentDashboardFragment_to_parentSettingsFragment)
         }
@@ -195,7 +209,8 @@ class ParentDashboardFragment :
 
     private fun showChildSelectSheet() {
         ParentChildSelectBottomSheet.newInstance(
-            onChildLongPress = { showChildManageDialog(it) }
+            onChildManage = { showChildManageDialog(it) },
+            onChildLongPress = { showChildManageDialog(it) },
         ).show(childFragmentManager, ParentChildSelectBottomSheet.TAG)
     }
 

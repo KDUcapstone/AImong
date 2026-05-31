@@ -136,6 +136,15 @@ class GachaViewModel @Inject constructor(
         _state.update { it.copy(tickets = RemainingTicketsDto(normal = count)) }
     }
 
+    /** 온보딩 진입 직후 홈에서 확인한 티켓으로 뽑기 버튼을 먼저 켬 */
+    fun seedTicketsIfEmpty(normal: Int) {
+        if (normal <= 0) return
+        _state.update { s ->
+            if ((s.tickets?.normal ?: 0) > 0) s
+            else s.copy(tickets = RemainingTicketsDto(normal = normal))
+        }
+    }
+
     /** 홈·다른 탭에서 장착이 바뀐 뒤 수집 상단 장착 영역 동기화 */
     fun reloadEquippedPet() {
         viewModelScope.launch {

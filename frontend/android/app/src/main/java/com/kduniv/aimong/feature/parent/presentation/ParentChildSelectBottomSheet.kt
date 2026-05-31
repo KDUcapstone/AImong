@@ -32,6 +32,7 @@ class ParentChildSelectBottomSheet : BottomSheetDialogFragment() {
 
     private lateinit var adapter: ParentChildSheetAdapter
 
+    private var onChildManage: ((ParentChildItem) -> Unit)? = null
     private var onChildLongPress: ((ParentChildItem) -> Unit)? = null
 
     override fun getTheme(): Int = R.style.AimongBottomSheetDialogTheme
@@ -53,7 +54,11 @@ class ParentChildSelectBottomSheet : BottomSheetDialogFragment() {
                 dashboardViewModel.selectChild(childId)
                 dismiss()
             },
-            onChildLongPress = onChildLongPress
+            onChildManage = { child ->
+                dismiss()
+                view?.post { onChildManage?.invoke(child) }
+            },
+            onChildLongPress = onChildLongPress,
         )
         binding.rvSheetChildren.layoutManager = LinearLayoutManager(requireContext())
         binding.rvSheetChildren.adapter = adapter
@@ -86,6 +91,7 @@ class ParentChildSelectBottomSheet : BottomSheetDialogFragment() {
         adapter.submitList(rows)
         binding.tvSheetEmpty.isVisible = rows.isEmpty()
         binding.rvSheetChildren.isVisible = rows.isNotEmpty()
+        binding.tvSheetManageHint.isVisible = rows.isNotEmpty() && onChildManage != null
         val atLimit = children.size >= ParentAuthPolicy.MAX_CHILDREN
         binding.btnAddChildSheet.isEnabled = !atLimit
         binding.btnAddChildSheet.alpha = if (atLimit) 0.45f else 1f
@@ -101,8 +107,10 @@ class ParentChildSelectBottomSheet : BottomSheetDialogFragment() {
         const val TAG = "parent_child_select_sheet"
 
         fun newInstance(
-            onChildLongPress: ((ParentChildItem) -> Unit)? = null
+            onChildManage: ((ParentChildItem) -> Unit)? = null,
+            onChildLongPress: ((ParentChildItem) -> Unit)? = null,
         ): ParentChildSelectBottomSheet = ParentChildSelectBottomSheet().apply {
+            this.onChildManage = onChildManage
             this.onChildLongPress = onChildLongPress
         }
     }
