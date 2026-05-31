@@ -1,15 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:background="@drawable/bg_gacha_pet_detail_dialog"
     android:gravity="center_horizontal"
     android:orientation="vertical"
-    android:padding="24dp">
+    android:paddingHorizontal="24dp"
+    android:paddingTop="24dp"
+    android:paddingBottom="20dp">
 
     <FrameLayout
-        android:layout_width="@dimen/pet_sprite_detail_dialog"
-        android:layout_height="@dimen/pet_sprite_detail_dialog">
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:background="@drawable/bg_gacha_pet_detail_sprite_stage"
+        android:padding="10dp">
 
         <ImageView
             android:id="@+id/iv_pet_sprite"
@@ -26,36 +32,43 @@
             android:layout_height="match_parent"
             android:layout_gravity="center"
             android:gravity="center"
-            android:textSize="68sp"
+            android:textSize="56sp"
             tools:text="⭐" />
     </FrameLayout>
-
-    <TextView
-        android:id="@+id/tv_pet_name"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:textColor="@color/quiz_text_primary"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        tools:text="반짝이" />
 
     <TextView
         android:id="@+id/tv_pet_grade"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:textColor="@color/quiz_text_secondary"
-        android:textSize="14sp"
+        android:layout_marginTop="14dp"
+        android:background="@drawable/bg_gacha_equipped_badge"
+        android:paddingHorizontal="10dp"
+        android:paddingVertical="4dp"
+        android:textColor="@color/quiz_mint_dark"
+        android:textSize="12sp"
+        android:textStyle="bold"
         tools:text="등급 · 레어" />
 
     <TextView
-        android:id="@+id/tv_pet_growth"
+        android:id="@+id/tv_pet_name"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
+        android:layout_marginTop="10dp"
+        android:gravity="center"
+        android:textColor="@color/quiz_text_primary"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        tools:text="반짝이" />
+
+    <TextView
+        android:id="@+id/tv_pet_growth"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:gravity="center"
+        android:lineSpacingExtra="2dp"
         android:textColor="@color/quiz_text_secondary"
-        android:textSize="13sp"
+        android:textSize="14sp"
         android:visibility="gone"
         tools:text="몽 · 12/80 XP"
         tools:visibility="visible" />
@@ -64,8 +77,11 @@
         android:id="@+id/layout_fragment_exchange"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="18dp"
+        android:background="@drawable/bg_gacha_pet_detail_fragment_panel"
         android:orientation="vertical"
+        android:paddingHorizontal="14dp"
+        android:paddingVertical="12dp"
         android:visibility="gone"
         tools:visibility="visible">
 
@@ -74,15 +90,16 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/gacha_fragment_exchange_label"
-            android:textColor="@color/quiz_text_secondary"
-            android:textSize="13sp" />
+            android:textColor="@color/quiz_text_primary"
+            android:textSize="13sp"
+            android:textStyle="bold" />
 
         <ProgressBar
             android:id="@+id/pb_fragments"
             style="?android:attr/progressBarStyleHorizontal"
             android:layout_width="match_parent"
-            android:layout_height="8dp"
-            android:layout_marginTop="8dp"
+            android:layout_height="10dp"
+            android:layout_marginTop="10dp"
             android:max="100"
             android:progressDrawable="@drawable/bg_gacha_fragment_progress"
             tools:progress="70" />
@@ -93,8 +110,9 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
             android:gravity="end"
-            android:textColor="@color/quiz_text_grey"
+            android:textColor="@color/quiz_mint_dark"
             android:textSize="12sp"
+            android:textStyle="bold"
             tools:text="7 / 10" />
 
         <TextView
@@ -102,6 +120,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
+            android:lineSpacingExtra="2dp"
             android:text="@string/gacha_exchange_manual_hint"
             android:textColor="@color/quiz_text_secondary"
             android:textSize="12sp" />
@@ -109,26 +128,44 @@
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btn_exchange"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
+        android:minHeight="48dp"
         android:text="@string/gacha_exchange_button"
+        android:textColor="@color/quiz_mint_dark"
+        android:textSize="15sp"
+        android:textStyle="bold"
         android:visibility="gone"
+        app:cornerRadius="14dp"
+        app:strokeColor="@color/quiz_mint"
+        app:strokeWidth="1.5dp"
         tools:visibility="visible" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btn_equip"
-        style="@style/Widget.MaterialComponents.Button"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="52dp"
         android:layout_marginTop="12dp"
-        android:text="@string/gacha_equip_action" />
+        android:background="@drawable/bg_gacha_pull_enabled"
+        android:text="@string/gacha_equip_action"
+        android:textColor="@color/quiz_on_accent"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:backgroundTint="@null"
+        app:cornerRadius="14dp" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btn_close"
         style="@style/Widget.MaterialComponents.Button.TextButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:minHeight="40dp"
         android:text="@string/gacha_close"
-        android:visibility="gone" />
+        android:textColor="@color/quiz_text_grey"
+        android:textSize="14sp"
+        android:visibility="gone"
+        tools:visibility="visible" />
 </LinearLayout>

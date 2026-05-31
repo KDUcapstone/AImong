@@ -57,14 +57,25 @@ class MissionDifficultyPicker(
     fun isShowingForMission(missionKey: String): Boolean =
         isShowing() && !missionKey.isBlank() && openMissionKey == missionKey
 
-    fun dismissImmediate() {
-        heightAnimator?.cancel()
+    private fun stopHeightAnimatorSafely() {
+        val animator = heightAnimator ?: return
         heightAnimator = null
+        animator.removeAllListeners()
+        animator.removeAllUpdateListeners()
+        animator.cancel()
+    }
+
+    private fun disposePopupState() {
         popupView = null
         openMissionKey = null
         onPickedCallback = null
         clearOutsideDismiss()
         dismissAllPopupsInPath(binding.layoutMissionPath)
+    }
+
+    fun dismissImmediate() {
+        stopHeightAnimatorSafely()
+        disposePopupState()
     }
 
     fun dismissAnimated() {
@@ -75,7 +86,7 @@ class MissionDifficultyPicker(
             dismissImmediate()
             return
         }
-        heightAnimator?.cancel()
+        stopHeightAnimatorSafely()
         heightAnimator = ValueAnimator.ofInt(startH, 0).apply {
             duration = 180
             interpolator = FastOutSlowInInterpolator()
@@ -86,11 +97,13 @@ class MissionDifficultyPicker(
             }
             addListener(object : AnimatorListenerAdapter() {
                 override fun onAnimationEnd(animation: android.animation.Animator) {
-                    dismissImmediate()
+                    heightAnimator = null
+                    disposePopupState()
                 }
 
                 override fun onAnimationCancel(animation: android.animation.Animator) {
-                    dismissImmediate()
+                    heightAnimator = null
+                    disposePopupState()
                 }
             })
             start()
@@ -110,13 +123,8 @@ class MissionDifficultyPicker(
         onPicked: (HomeQuizNavigation, DifficultyUnlockMode) -> Unit,
         onPopupLaidOut: (() -> Unit)? = null,
     ): Boolean {
-        heightAnimator?.cancel()
-        heightAnimator = null
-        popupView = null
-        openMissionKey = null
-        onPickedCallback = null
-        clearOutsideDismiss()
-        dismissAllPopupsInPath(binding.layoutMissionPath)
+        stopHeightAnimatorSafely()
+        disposePopupState()
         val parent = binding.layoutMissionPath
         val scroll = binding.scrollPath
         val idx = resolveAnchorIndex(parent, base.missionId)

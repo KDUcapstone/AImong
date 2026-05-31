@@ -1,10 +1,9 @@
 package com.kduniv.aimong.feature.onboarding.child
 
-import android.content.Context
 import com.kduniv.aimong.core.local.SessionManager
 import com.kduniv.aimong.feature.home.data.PetRepository
 import com.kduniv.aimong.feature.home.domain.GetHomeStatusUseCase
-import dagger.hilt.android.qualifiers.ApplicationContext
+import com.kduniv.aimong.feature.pet.data.model.PetListData
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,16 +21,13 @@ class ChildGachaOnboardingController @Inject constructor(
     private val petRepository: PetRepository,
     private val getHomeStatusUseCase: GetHomeStatusUseCase,
     private val sessionManager: SessionManager,
-    @ApplicationContext context: Context,
 ) {
     /** [evaluateEntry]에서 확인한 티켓 수 — 수집 탭 진입 직후 API 응답 전 뽑기 버튼 활성화용 */
     var onboardingTicketHint: Int = 0
         private set
 
-    /** [evaluateEntry]·로그인 시 확정 — [markCompleted]에서 동기 접근 */
+    /** [evaluateEntry]·로그인 시 확정 */
     private var activeChildId: String? = null
-
-    private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     private val _phase = MutableStateFlow(ChildGachaOnboardingPhase.Inactive)
     val phase: StateFlow<ChildGachaOnboardingPhase> = _phase.asStateFlow()
@@ -49,11 +45,6 @@ class ChildGachaOnboardingController @Inject constructor(
     val isActive: Boolean
         get() = _phase.value != ChildGachaOnboardingPhase.Inactive
 
-    suspend fun isCompletedForCurrentChild(): Boolean {
-        val childId = sessionManager.currentChildId() ?: return false
-        return prefs.getBoolean(completedKey(childId), false)
-    }
-
     /**
      * @param homeTicketHint 홈 API가 이미 로드된 경우 티켓 수(재시도·레이스 완화).
      */
@@ -70,14 +61,13 @@ class ChildGachaOnboardingController @Inject constructor(
             sessionManager.saveChildId(childId)
         }
         activeChildId = childId
-        if (prefs.getBoolean(completedKey(childId), false)) {
-            return ChildGachaOnboardingEntry.Skip
-        }
+
         val pets = petRepository.getPets().getOrNull()
-        if (pets?.equippedPet != null) {
-            markCompleted()
+        if (pets.hasAnyPet()) {
+            finishOnboardingIfNeeded()
             return ChildGachaOnboardingEntry.Skip
         }
+
         val home = getHomeStatusUseCase().getOrNull()
         val tickets = when {
             home != null -> home.tickets.normal
@@ -94,11 +84,11 @@ class ChildGachaOnboardingController @Inject constructor(
     }
 
     suspend fun refreshEquippedFromServer(): Boolean {
-        val equipped = petRepository.getPets().getOrNull()?.equippedPet != null
-        if (equipped) {
-            markCompleted()
+        val hasPet = petRepository.getPets().getOrNull().hasAnyPet()
+        if (hasPet) {
+            finishOnboardingIfNeeded()
         }
-        return equipped
+        return hasPet
     }
 
     fun onWelcomeShown() {
@@ -118,21 +108,22 @@ class ChildGachaOnboardingController @Inject constructor(
     }
 
     fun markCompleted() {
-        val childId = activeChildId ?: return
-        prefs.edit().putBoolean(completedKey(childId), true).apply()
-        _phase.value = ChildGachaOnboardingPhase.Inactive
+        finishOnboardingIfNeeded()
     }
 
-    /** 로그아웃·역할 전환 시 진행 중 코치마크만 초기화(자녀별 완료 플래그는 유지). */
+    /** 로그아웃·역할 전환 시 진행 중 코치마크만 초기화 */
     fun resetActivePhase() {
         activeChildId = null
         onboardingTicketHint = 0
         _phase.value = ChildGachaOnboardingPhase.Inactive
     }
 
-    private fun completedKey(childId: String): String = "completed_$childId"
+    private fun finishOnboardingIfNeeded() {
+        _phase.value = ChildGachaOnboardingPhase.Inactive
+    }
 
-    companion object {
-        private const val PREFS_NAME = "child_gacha_onboarding"
+    private fun PetListData?.hasAnyPet(): Boolean {
+        if (this == null) return false
+        return totalPetCount > 0 || pets.isNotEmpty() || equippedPet != null
     }
 }

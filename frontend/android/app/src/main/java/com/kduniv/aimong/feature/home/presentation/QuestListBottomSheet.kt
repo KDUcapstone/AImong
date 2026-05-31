@@ -194,7 +194,6 @@ class QuestListBottomSheet : BottomSheetDialogFragment() {
                     bundleOf(),
                 )
                 dismiss()
-                navigateChildTopLevel(R.id.homeFragment)
             }
             QuestSheetPrimaryAction.GO_CHAT -> {
                 dismiss()

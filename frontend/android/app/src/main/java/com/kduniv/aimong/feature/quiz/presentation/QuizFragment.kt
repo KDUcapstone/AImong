@@ -31,6 +31,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.core.os.bundleOf
 import androidx.navigation.fragment.findNavController
 import com.kduniv.aimong.R
+import com.kduniv.aimong.core.navigation.ChildTopLevelNav.navigateToChildTopLevel
 import com.kduniv.aimong.core.ui.BaseFragment
 import com.kduniv.aimong.core.ui.CelebrationDialogWindow
 import com.kduniv.aimong.databinding.FragmentQuizBinding
@@ -45,10 +46,12 @@ import com.kduniv.aimong.feature.quiz.domain.model.TermHint
 import com.kduniv.aimong.feature.gacha.EquippedPetVisual
 import com.kduniv.aimong.feature.gacha.PetArtAssets
 import com.kduniv.aimong.feature.pet.domain.PetGrowthRules
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AlertDialog
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 import android.graphics.drawable.GradientDrawable
 
 @AndroidEntryPoint
@@ -108,12 +111,16 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
     }
 
     override fun initView() {
+        requireActivity().onBackPressedDispatcher.addCallback(
+            viewLifecycleOwner,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    exitQuiz("USER_EXIT")
+                }
+            },
+        )
         binding.ivBack.setOnClickListener {
-            // v2.4: 진행 중 attempt가 있으면 중도 이탈 기록 후 종료
-            lifecycleScope.launch {
-                viewModel.abandonCurrentAttemptIfAny("USER_EXIT")
-                findNavController().popBackStack()
-            }
+            exitQuiz("USER_EXIT")
         }
         binding.btnResViewSolutions.setOnClickListener {
             binding.layoutQuizResult.visibility = View.GONE
@@ -143,10 +150,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             viewModel.retryQuiz()
         }
         binding.btnResFinish.setOnClickListener {
-            lifecycleScope.launch {
-                viewModel.abandonCurrentAttemptIfAny("USER_EXIT")
-                findNavController().popBackStack()
-            }
+            exitQuiz("USER_EXIT")
         }
         binding.btnNextQuestion.setOnClickListener {
             // 결과 화면에서 "다시하기"를 누른 직후(두 번째 텀 로딩 중)엔 이전 텀의 피드백/전이와 충돌하지 않게 막는다.
@@ -458,6 +462,19 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         return "정답: $ca"
     }
 
+    private fun exitQuiz(reason: String) {
+        lifecycleScope.launch {
+            try {
+                withTimeout(3_000) {
+                    viewModel.abandonCurrentAttemptIfAny(reason)
+                }
+            } catch (_: Exception) {
+            }
+            if (!isAdded) return@launch
+            navigateQuizBackToHome()
+        }
+    }
+
     private fun popQuizToHomeAfterAbandon(reason: String) {
         lifecycleScope.launch {
             try {
@@ -484,10 +501,13 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
 
     private fun navigateQuizBackToHome() {
         if (!isAdded) return
-            val nav = findNavController()
-            val popped = runCatching { nav.popBackStack(R.id.homeFragment, false) }.getOrDefault(false)
-            if (!popped) {
-                nav.popBackStack()
+        val nav = findNavController()
+        if (nav.currentDestination?.id != R.id.quizFragment) return
+        val popped = runCatching {
+            nav.popBackStack(R.id.homeFragment, false) || nav.popBackStack()
+        }.getOrDefault(false)
+        if (!popped) {
+            runCatching { nav.navigateToChildTopLevel(R.id.homeFragment) }
         }
     }
 
@@ -1455,7 +1475,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             val btnClose = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btn_mission_not_ready_close)
             btnClose?.setOnClickListener {
                 dialog.dismiss()
-                findNavController().popBackStack()
+                navigateQuizBackToHome()
             }
 
             val visual = viewModel.equippedPetVisual.value
@@ -1472,7 +1492,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             CelebrationDialogWindow.apply(dialog, requireContext(), dimAmount = 0.5f)
         } catch (e: Exception) {
             Toast.makeText(requireContext(), "문제 세트를 준비하는 데 실패했습니다. 잠시 후 다시 시도해주세요.", Toast.LENGTH_LONG).show()
-            findNavController().popBackStack()
+            navigateQuizBackToHome()
         }
     }
 

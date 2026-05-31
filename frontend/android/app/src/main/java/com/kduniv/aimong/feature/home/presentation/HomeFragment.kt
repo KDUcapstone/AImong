@@ -55,6 +55,7 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
 
     override fun onResume() {
         super.onResume()
+        dismissMissionDifficultyPickerForTabLeave()
         homePerfResumeMark = UiPerfLog.mark("home_first_interaction")
         homePerfFirstTouchLogged = false
         viewModel.onHomeResumed()
@@ -70,6 +71,19 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
                 viewModel.consumeAimongCelebration()
             }
         }
+    }
+
+    override fun onPause() {
+        dismissMissionDifficultyPickerForTabLeave()
+        super.onPause()
+    }
+
+    /** 다른 탭·화면 이탈 시 팝업을 닫고, 복귀 후에는 노드를 다시 눌러야 연다. */
+    private fun dismissMissionDifficultyPickerForTabLeave() {
+        if (!missionDifficultyPicker.isShowing()) return
+        missionPickerStarLevelsJob?.cancel()
+        missionPickerStarLevelsJob = null
+        missionDifficultyPicker.dismissImmediate()
     }
 
     override fun initView() {
@@ -348,7 +362,6 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
 
     private suspend fun tryStartChildGachaOnboardingWhenReady() {
         if (!isAdded || UiMode.useStubNav) return
-        if (childGachaOnboardingController.isCompletedForCurrentChild()) return
         val state = viewModel.uiState.value
         if (state.isLoading && state.pathItems.isEmpty()) return
         val childId = viewModel.currentChildId()

@@ -60,6 +60,9 @@ class ParentDashboardViewModel @Inject constructor(
     private val _childRegisteredEvent = MutableSharedFlow<ParentRegisterResponse>()
     val childRegisteredEvent = _childRegisteredEvent.asSharedFlow()
 
+    private val _childCodeRegeneratedEvent = MutableSharedFlow<String>()
+    val childCodeRegeneratedEvent = _childCodeRegeneratedEvent.asSharedFlow()
+
     private val _selectedChildId = MutableStateFlow<String?>(null)
     val selectedChildId: StateFlow<String?> = _selectedChildId
 
@@ -365,7 +368,7 @@ class ParentDashboardViewModel @Inject constructor(
                     if (_selectedChildId.value == childId) {
                         refreshAllDashboardForChild(childId)
                     }
-                    _messageEvent.emit("코드가 성공적으로 재발급되었습니다: $newCode")
+                    _childCodeRegeneratedEvent.emit(newCode)
                 },
                 onFailure = { e ->
                     _messageEvent.emit(e.message ?: "코드 재발급에 실패했습니다.")

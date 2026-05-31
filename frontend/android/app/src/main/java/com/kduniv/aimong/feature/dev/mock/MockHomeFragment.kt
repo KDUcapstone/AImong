@@ -169,9 +169,20 @@ class MockHomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::
 
     override fun onResume() {
         super.onResume()
+        dismissMissionDifficultyPickerForTabLeave()
         if (::homeLayoutBinder.isInitialized) {
             bindHome()
         }
+    }
+
+    override fun onPause() {
+        dismissMissionDifficultyPickerForTabLeave()
+        super.onPause()
+    }
+
+    private fun dismissMissionDifficultyPickerForTabLeave() {
+        if (!missionDifficultyPicker.isShowing()) return
+        missionDifficultyPicker.dismissImmediate()
     }
 
     override fun initObserver() {

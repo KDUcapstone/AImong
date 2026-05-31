@@ -1,17 +1,19 @@
 package com.kduniv.aimong.feature.gacha
 
 import android.view.LayoutInflater
+import androidx.appcompat.app.AlertDialog
+import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.GridLayoutManager
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.kduniv.aimong.MainActivity
 import com.kduniv.aimong.R
 import com.kduniv.aimong.core.ui.BaseFragment
+import com.kduniv.aimong.core.ui.CelebrationDialogWindow
 import com.kduniv.aimong.core.ui.TutorialCoachmarkOverlay
 import com.kduniv.aimong.databinding.DialogGachaPetDetailBinding
 import com.kduniv.aimong.databinding.FragmentGachaBinding
@@ -314,11 +316,13 @@ class GachaFragment : BaseFragment<FragmentGachaBinding>(FragmentGachaBinding::i
 
     private fun showPetDetailDialog(item: GachaPetCardUi) {
         coachmarkOverlay?.dismiss()
+        val ctx = requireContext()
         val dialogBinding =
-            DialogGachaPetDetailBinding.inflate(LayoutInflater.from(requireContext()))
+            DialogGachaPetDetailBinding.inflate(LayoutInflater.from(ctx))
 
-        val dialog = MaterialAlertDialogBuilder(requireContext())
+        val dialog = AlertDialog.Builder(ctx, R.style.TransparentDialog)
             .setView(dialogBinding.root)
+            .setCancelable(true)
             .create()
 
         if (item.isLocked) {
@@ -328,12 +332,13 @@ class GachaFragment : BaseFragment<FragmentGachaBinding>(FragmentGachaBinding::i
         }
 
         dialog.show()
+        CelebrationDialogWindow.apply(dialog, ctx, dimAmount = 0.45f)
     }
 
     private fun showLockedPetDetail(
         dialogBinding: DialogGachaPetDetailBinding,
         item: GachaPetCardUi,
-        dialog: androidx.appcompat.app.AlertDialog,
+        dialog: AlertDialog,
     ) {
         dialogBinding.tvPetGrowth.isVisible = false
         PetArtAssets.bindSprite(
@@ -385,9 +390,10 @@ class GachaFragment : BaseFragment<FragmentGachaBinding>(FragmentGachaBinding::i
     private fun showOwnedPetDetail(
         dialogBinding: DialogGachaPetDetailBinding,
         item: GachaPetCardUi,
-        dialog: androidx.appcompat.app.AlertDialog,
+        dialog: AlertDialog,
     ) {
         val pet = item.pet ?: return
+        val ctx = dialogBinding.root.context
 
         val effectiveStage = com.kduniv.aimong.feature.pet.domain.PetGrowthRules
             .resolveEffectiveStageString(pet.stage, pet.xp)
@@ -410,12 +416,17 @@ class GachaFragment : BaseFragment<FragmentGachaBinding>(FragmentGachaBinding::i
 
         dialogBinding.layoutFragmentExchange.isVisible = false
         dialogBinding.btnExchange.isVisible = false
-        dialogBinding.btnClose.isVisible = false
         dialogBinding.btnEquip.isVisible = true
+        dialogBinding.btnClose.isVisible = true
+        dialogBinding.btnClose.setOnClickListener { dialog.dismiss() }
 
         if (item.isEquipped) {
             dialogBinding.btnEquip.isEnabled = false
             dialogBinding.btnEquip.text = getString(R.string.gacha_equipped_now)
+            dialogBinding.btnEquip.setBackgroundResource(R.drawable.bg_gacha_action_disabled)
+            dialogBinding.btnEquip.setTextColor(
+                ContextCompat.getColor(ctx, R.color.quiz_text_secondary),
+            )
         } else {
             dialogBinding.btnEquip.setOnClickListener {
                 dialog.dismiss()

@@ -248,61 +248,37 @@ class ParentDashboardFragment :
     }
 
     private fun showChildManageDialog(child: ParentChildItem) {
-        val options = arrayOf(
-            getString(R.string.parent_child_manage_edit_nickname),
-            getString(R.string.parent_child_manage_regenerate_code),
-            getString(R.string.parent_child_manage_delete)
+        ParentChildManageDialogs.showManageMenu(
+            fragment = this,
+            child = child,
+            onEditNickname = { showEditNicknameDialog(it) },
+            onRegenerateCode = { confirmRegenerateCode(it) },
+            onDelete = { confirmDeleteChild(it) },
         )
-        AlertDialog.Builder(requireContext())
-            .setTitle(child.nickname)
-            .setItems(options) { _, which ->
-                when (which) {
-                    0 -> showEditNicknameDialog(child)
-                    1 -> confirmRegenerateCode(child.childId)
-                    2 -> confirmDeleteChild(child)
-                }
-            }
-            .show()
     }
 
     private fun showEditNicknameDialog(child: ParentChildItem) {
-        val input = EditText(requireContext()).apply {
-            setText(child.nickname)
-            hint = getString(R.string.parent_add_child_hint)
-        }
-        AlertDialog.Builder(requireContext())
-            .setTitle(R.string.parent_child_manage_edit_nickname)
-            .setView(input)
-            .setPositiveButton(android.R.string.ok) { _, _ ->
-                val name = input.text?.toString()?.trim().orEmpty()
-                when {
-                    name.isBlank() ->
-                        Snackbar.make(binding.root, R.string.auth_error_nickname_empty, Snackbar.LENGTH_SHORT).show()
-                    name.length > 20 ->
-                        Snackbar.make(binding.root, R.string.auth_error_nickname_length, Snackbar.LENGTH_SHORT).show()
-                    else -> viewModel.updateChildNickname(child.childId, name)
-                }
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
+        ParentChildManageDialogs.showEditNickname(
+            fragment = this,
+            child = child,
+            anchor = binding.root,
+            onSave = { name -> viewModel.updateChildNickname(child.childId, name) },
+        )
     }
 
     private fun confirmRegenerateCode(childId: String) {
-        AlertDialog.Builder(requireContext())
-            .setMessage(R.string.parent_child_regenerate_code_confirm)
-            .setPositiveButton(android.R.string.ok) { _, _ -> viewModel.regenerateChildCode(childId) }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
+        ParentChildManageDialogs.showRegenerateConfirm(
+            fragment = this,
+            onConfirm = { viewModel.regenerateChildCode(childId) },
+        )
     }
 
     private fun confirmDeleteChild(child: ParentChildItem) {
-        AlertDialog.Builder(requireContext())
-            .setMessage(getString(R.string.parent_child_delete_confirm, child.nickname))
-            .setPositiveButton(R.string.parent_child_manage_delete) { _, _ ->
-                viewModel.deleteChild(child.childId)
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
+        ParentChildManageDialogs.showDeleteConfirm(
+            fragment = this,
+            child = child,
+            onConfirm = { viewModel.deleteChild(child.childId) },
+        )
     }
 
     private fun applyRichSummary(s: ParentChildSummaryResponseData?) {
@@ -972,6 +948,15 @@ class ParentDashboardFragment :
                 launch {
                     viewModel.messageEvent.collect { message ->
                         Snackbar.make(binding.root, message, Snackbar.LENGTH_LONG).show()
+                    }
+                }
+                launch {
+                    viewModel.childCodeRegeneratedEvent.collect { newCode ->
+                        ParentChildManageDialogs.showCodeRegenerated(
+                            fragment = this@ParentDashboardFragment,
+                            newCode = newCode,
+                            anchor = binding.root,
+                        )
                     }
                 }
                 launch {
