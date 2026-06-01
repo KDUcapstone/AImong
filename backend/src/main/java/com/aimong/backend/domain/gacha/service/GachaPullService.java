@@ -20,8 +20,6 @@ import com.aimong.backend.global.exception.AimongException;
 import com.aimong.backend.global.exception.ErrorCode;
 import com.aimong.backend.infra.fcm.FcmService;
 import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -93,8 +91,8 @@ public class GachaPullService {
             }
         } else {
             fragmentsGot = FRAGMENT_REWARDS.get(drawResult.grade());
-            Fragment fragment = fragmentRepository.findWithLockByChildIdAndGrade(childId, drawResult.grade())
-                    .orElseGet(() -> Fragment.create(childId, drawResult.grade()));
+            Fragment fragment = fragmentRepository.findWithLockByChildId(childId)
+                    .orElseGet(() -> Fragment.create(childId));
             fragment.add(fragmentsGot);
             fragmentRepository.save(fragment);
         }
@@ -130,18 +128,13 @@ public class GachaPullService {
     public FragmentListResponse getFragments(UUID childId) {
         childProfileRepository.findById(childId)
                 .orElseThrow(() -> new AimongException(ErrorCode.CHILD_NOT_FOUND));
-        List<Fragment> fragments = fragmentRepository.findByChildId(childId);
-        int totalCount = fragments.stream()
-                .mapToInt(Fragment::getCount)
-                .sum();
+        int totalCount = fragmentRepository.findByChildId(childId)
+                .map(Fragment::getCount)
+                .orElse(0);
         return new FragmentListResponse(totalCount, Arrays.stream(PetGrade.values())
                 .map(grade -> new FragmentListResponse.FragmentSummary(
                         grade.name(),
-                        fragments.stream()
-                                .filter(fragment -> fragment.getGrade() == grade)
-                                .findFirst()
-                                .map(Fragment::getCount)
-                                .orElse(0),
+                        totalCount,
                         EXCHANGE_THRESHOLDS.get(grade)
                 ))
                 .toList());
@@ -155,11 +148,10 @@ public class GachaPullService {
             throw new AimongException(ErrorCode.BAD_REQUEST, "유효하지 않은 펫 종류예요");
         }
 
-        List<Fragment> fragments = fragmentRepository.findWithLockByChildId(childId);
+        Fragment fragment = fragmentRepository.findWithLockByChildId(childId)
+                .orElse(null);
         int threshold = EXCHANGE_THRESHOLDS.get(grade);
-        int totalCount = fragments.stream()
-                .mapToInt(Fragment::getCount)
-                .sum();
+        int totalCount = fragment == null ? 0 : fragment.getCount();
         if (totalCount < threshold) {
             throw new AimongException(ErrorCode.BAD_REQUEST, "조각이 부족해요!");
         }
@@ -167,26 +159,9 @@ public class GachaPullService {
             throw new AimongException(ErrorCode.CONFLICT, "이미 보유한 펫이에요");
         }
 
-        spendFragments(fragments, threshold);
+        fragment.spend(threshold);
         Pet pet = petService.grantPet(childId, petType, grade);
         return new GachaExchangeResponse(pet.getId(), pet.getPetType(), pet.getGrade().name(), pet.getStage().name());
-    }
-
-    private void spendFragments(List<Fragment> fragments, int amount) {
-        int remaining = amount;
-        List<Fragment> spendTargets = fragments.stream()
-                .sorted(Comparator.comparing(Fragment::getGrade))
-                .toList();
-        for (Fragment fragment : spendTargets) {
-            if (remaining <= 0) {
-                return;
-            }
-            int spend = Math.min(fragment.getCount(), remaining);
-            if (spend > 0) {
-                fragment.spend(spend);
-                remaining -= spend;
-            }
-        }
     }
 
     private boolean crossedGachaLevelBoundary(int beforePullCount, int afterPullCount) {

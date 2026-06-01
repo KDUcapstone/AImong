@@ -14,7 +14,6 @@ import com.aimong.backend.domain.pet.entity.PetGrade;
 import com.aimong.backend.global.exception.AimongException;
 import com.aimong.backend.global.exception.ErrorCode;
 import java.util.Arrays;
-import java.util.List;
 import java.util.UUID;
 import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
@@ -37,11 +36,10 @@ public class DevGachaGrantService {
                 .orElseThrow(() -> new AimongException(ErrorCode.CHILD_NOT_FOUND));
 
         grantTickets(childId, TicketType.NORMAL, request.normalTickets());
-
-        grantFragments(childId, PetGrade.NORMAL, request.normalFragments());
-        grantFragments(childId, PetGrade.RARE, request.rareFragments());
-        grantFragments(childId, PetGrade.EPIC, request.epicFragments());
-        grantFragments(childId, PetGrade.LEGEND, request.legendFragments());
+        grantFragments(childId, request.normalFragments()
+                + request.rareFragments()
+                + request.epicFragments()
+                + request.legendFragments());
 
         return new DevGachaGrantResponse(remainingTickets(childId), fragments(childId));
     }
@@ -55,12 +53,12 @@ public class DevGachaGrantService {
                 .toList());
     }
 
-    private void grantFragments(UUID childId, PetGrade grade, int count) {
+    private void grantFragments(UUID childId, int count) {
         if (count <= 0) {
             return;
         }
-        Fragment fragment = fragmentRepository.findWithLockByChildIdAndGrade(childId, grade)
-                .orElseGet(() -> Fragment.create(childId, grade));
+        Fragment fragment = fragmentRepository.findWithLockByChildId(childId)
+                .orElseGet(() -> Fragment.create(childId));
         fragment.add(count);
         fragmentRepository.save(fragment);
     }
@@ -72,18 +70,13 @@ public class DevGachaGrantService {
     }
 
     private FragmentListResponse fragments(UUID childId) {
-        List<Fragment> fragments = fragmentRepository.findByChildId(childId);
-        int totalCount = fragments.stream()
-                .mapToInt(Fragment::getCount)
-                .sum();
+        int totalCount = fragmentRepository.findByChildId(childId)
+                .map(Fragment::getCount)
+                .orElse(0);
         return new FragmentListResponse(totalCount, Arrays.stream(PetGrade.values())
                 .map(grade -> new FragmentListResponse.FragmentSummary(
                         grade.name(),
-                        fragments.stream()
-                                .filter(fragment -> fragment.getGrade() == grade)
-                                .findFirst()
-                                .map(Fragment::getCount)
-                                .orElse(0),
+                        totalCount,
                         exchangeThreshold(grade)
                 ))
                 .toList());

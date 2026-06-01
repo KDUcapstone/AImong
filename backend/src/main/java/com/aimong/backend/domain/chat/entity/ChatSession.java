@@ -21,6 +21,9 @@ public class ChatSession {
     @Column(name = "child_id", nullable = false)
     private UUID childId;
 
+    @Column(name = "summary")
+    private String summary;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -37,6 +40,7 @@ public class ChatSession {
         ChatSession session = new ChatSession();
         session.id = UUID.randomUUID();
         session.childId = childId;
+        session.summary = null;
         session.createdAt = now;
         session.updatedAt = now;
         session.expiresAt = now.plus(ttl);
