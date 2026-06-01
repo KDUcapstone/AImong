@@ -43,9 +43,8 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
 
     private val viewModel: HomeViewModel by activityViewModels()
     private lateinit var homeLayoutBinder: HomeLayoutBinder
-    private val missionDifficultyPicker: MissionDifficultyPicker by lazy {
-        MissionDifficultyPicker(binding, layoutInflater)
-    }
+    /** [initView]마다 현재 [binding]으로 재생성 — lazy면 탭 복귀 후 파괴된 레이아웃에 팝업이 붙음 */
+    private lateinit var missionDifficultyPicker: MissionDifficultyPicker
     private var missionPickerStarLevelsJob: Job? = null
     private var lastHomePathStructureKey: String? = null
     private var homePerfResumeMark: Long? = null
@@ -87,6 +86,7 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
     }
 
     override fun initView() {
+        missionDifficultyPicker = MissionDifficultyPicker(binding, layoutInflater)
         applyHomeTopChromeInsets()
         binding.swipeHomeRefresh.setColorSchemeColors(
             ContextCompat.getColor(requireContext(), R.color.child_streak_accent),
@@ -306,7 +306,7 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
         childHomeBootstrapGate.setSuppressChildBottomNav(false)
         missionPickerStarLevelsJob?.cancel()
         missionPickerStarLevelsJob = null
-        if (this::homeLayoutBinder.isInitialized) {
+        if (this::missionDifficultyPicker.isInitialized) {
             missionDifficultyPicker.dismissImmediate()
         }
         lastHomePathStructureKey = null

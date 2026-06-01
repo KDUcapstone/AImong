@@ -36,11 +36,10 @@ class MockHomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::
 
     private lateinit var homeLayoutBinder: HomeLayoutBinder
     private val sampleState get() = MockUiSamples.homeUiState()
-    private val missionDifficultyPicker: MissionDifficultyPicker by lazy {
-        MissionDifficultyPicker(binding, layoutInflater)
-    }
+    private lateinit var missionDifficultyPicker: MissionDifficultyPicker
 
     override fun initView() {
+        missionDifficultyPicker = MissionDifficultyPicker(binding, layoutInflater)
         childFragmentManager.setFragmentResultListener(
             EnergyBottomSheet.REQUEST_KEY,
             viewLifecycleOwner
@@ -203,7 +202,7 @@ class MockHomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::
     }
 
     override fun onDestroyView() {
-        if (::homeLayoutBinder.isInitialized) {
+        if (::missionDifficultyPicker.isInitialized) {
             missionDifficultyPicker.dismissImmediate()
         }
         super.onDestroyView()
