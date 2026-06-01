@@ -445,8 +445,11 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
                         val pathKey = state.pathItems.pathStructureKey()
                         if (pathKey != lastHomePathStructureKey) {
                             missionPickerStarLevelsJob?.cancel()
-                            missionDifficultyPicker.dismissImmediate()
                             lastHomePathStructureKey = pathKey
+                            // 패널이 열려 있을 때는 경로 바인더가 처리 — 여기서 닫으면 열리자마자 사라짐
+                            if (!missionDifficultyPicker.isShowing()) {
+                                missionDifficultyPicker.dismissImmediate()
+                            }
                         }
                         binding.swipeHomeRefresh.isRefreshing = state.isRefreshing
                         updateHomeBootstrapOverlay(state)

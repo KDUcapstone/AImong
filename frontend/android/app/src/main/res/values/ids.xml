@@ -2,6 +2,7 @@
 <resources>
     <item name="home_path_section_tag" type="id" />
     <item name="home_path_mission_id_tag" type="id" />
+    <item name="home_path_entry_set_id_tag" type="id" />
     <item name="home_path_stars_tag" type="id" />
     <item name="pet_art_bind_key" type="id" />
 </resources>

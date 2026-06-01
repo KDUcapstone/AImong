@@ -41,12 +41,15 @@ class MissionDifficultyPicker(
 
         fun isPopupOpenIn(missionPath: ViewGroup): Boolean =
             missionPath.findViewById<View>(R.id.mission_diff_popup_root) != null
+
+        private const val OUTSIDE_DISMISS_GRACE_MS = 280L
     }
 
     private var popupView: View? = null
     private var openMissionKey: String? = null
     private var heightAnimator: ValueAnimator? = null
     private var onPickedCallback: ((HomeQuizNavigation, DifficultyUnlockMode) -> Unit)? = null
+    private var outsideDismissIgnoreUntilUptimeMs: Long = 0L
 
     fun isShowing(): Boolean {
         val v = popupView ?: return false
@@ -118,7 +121,7 @@ class MissionDifficultyPicker(
         base: HomeQuizNavigation,
         starLevels: List<MissionStarLevel>,
         unlockMode: DifficultyUnlockMode,
-        @Suppress("UNUSED_PARAMETER") anchorRow: View?,
+        anchorRow: View?,
         missionKey: String,
         onPicked: (HomeQuizNavigation, DifficultyUnlockMode) -> Unit,
         onPopupLaidOut: (() -> Unit)? = null,
@@ -127,11 +130,12 @@ class MissionDifficultyPicker(
         disposePopupState()
         val parent = binding.layoutMissionPath
         val scroll = binding.scrollPath
-        val idx = resolveAnchorIndex(parent, base.missionId)
+        val idx = resolveAnchorIndex(parent, base.missionId, base.entrySetId, anchorRow)
         if (idx < 0) {
             if (BuildConfig.DEBUG) {
                 UiPerfLog.mark(
-                    "home_difficulty_picker_failed idx=-1 mission=${base.missionId} key=$missionKey",
+                    "home_difficulty_picker_failed idx=-1 mission=${base.missionId} " +
+                        "set=${base.entrySetId} key=$missionKey children=${parent.childCount}",
                 )
             }
             return false
@@ -151,7 +155,14 @@ class MissionDifficultyPicker(
         )
         parent.addView(popup, idx + 1, lp)
         popupView = popup
+        outsideDismissIgnoreUntilUptimeMs =
+            android.os.SystemClock.uptimeMillis() + Companion.OUTSIDE_DISMISS_GRACE_MS
         installOutsideDismiss()
+        if (BuildConfig.DEBUG) {
+            UiPerfLog.mark(
+                "home_difficulty_picker_shown idx=$idx mission=${base.missionId} set=${base.entrySetId}",
+            )
+        }
 
         popup.post {
             onPopupLaidOut?.invoke()
@@ -163,13 +174,33 @@ class MissionDifficultyPicker(
         return true
     }
 
-    /** 경로 재구성·로딩 후에도 missionId 태그로 행을 찾는다(클릭 시 넘긴 anchor 뷰는 신뢰하지 않음). */
-    private fun resolveAnchorIndex(parent: ViewGroup, missionId: String): Int {
-        if (missionId.isBlank()) return -1
-        for (i in 0 until parent.childCount) {
-            val child = parent.getChildAt(i)
-            if (child.findViewById<View>(R.id.mission_diff_popup_root) != null) continue
-            if (child.getTag(R.id.home_path_mission_id_tag) == missionId) return i
+    /**
+     * 클릭한 행 뷰를 우선 사용하고, 없으면 missionId·entrySetId 태그로 찾는다.
+     */
+    private fun resolveAnchorIndex(
+        parent: ViewGroup,
+        missionId: String,
+        entrySetId: String,
+        anchorRow: View?,
+    ): Int {
+        if (anchorRow != null) {
+            for (i in 0 until parent.childCount) {
+                if (parent.getChildAt(i) === anchorRow) return i
+            }
+        }
+        if (missionId.isNotBlank()) {
+            for (i in 0 until parent.childCount) {
+                val child = parent.getChildAt(i)
+                if (child.findViewById<View>(R.id.mission_diff_popup_root) != null) continue
+                if (child.getTag(R.id.home_path_mission_id_tag) == missionId) return i
+            }
+        }
+        if (entrySetId.isNotBlank()) {
+            for (i in 0 until parent.childCount) {
+                val child = parent.getChildAt(i)
+                if (child.findViewById<View>(R.id.mission_diff_popup_root) != null) continue
+                if (child.getTag(R.id.home_path_entry_set_id_tag) == entrySetId) return i
+            }
         }
         return -1
     }
@@ -237,13 +268,13 @@ class MissionDifficultyPicker(
         clearOutsideDismiss()
         val pathScroll = binding.scrollPath as? MissionPathNestedScrollView
         pathScroll?.onOutsidePopupAction = {
-            if (popupView != null) dismissAnimated()
+            if (popupView != null && !isWithinOutsideDismissGrace()) dismissAnimated()
         }
 
         val topChromeTouch = View.OnTouchListener { _, e ->
             if (popupView == null) return@OnTouchListener false
             if (e.actionMasked == MotionEvent.ACTION_DOWN) {
-                dismissAnimated()
+                if (!isWithinOutsideDismissGrace()) dismissAnimated()
                 return@OnTouchListener true
             }
             false
@@ -292,6 +323,9 @@ class MissionDifficultyPicker(
             }
         }
     }
+
+    private fun isWithinOutsideDismissGrace(): Boolean =
+        android.os.SystemClock.uptimeMillis() < outsideDismissIgnoreUntilUptimeMs
 
     private fun scrollToShowPopup(scroll: NestedScrollView, anchor: View, popupHeight: Int) {
         val content = scroll.getChildAt(0) ?: return

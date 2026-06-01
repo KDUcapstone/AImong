@@ -23,11 +23,23 @@ class MissionPathNestedScrollView @JvmOverloads constructor(
     override fun onInterceptTouchEvent(ev: MotionEvent): Boolean {
         if (ev.actionMasked == MotionEvent.ACTION_DOWN) {
             val popup = findOpenDifficultyPopup()
-            if (popup != null && !isTouchInsideView(popup, ev)) {
+            if (popup != null && !isTouchInsideView(popup, ev) && !isTouchOnMissionPathRow(ev)) {
                 post { onOutsidePopupAction?.invoke() }
             }
         }
         return super.onInterceptTouchEvent(ev)
+    }
+
+    /** 팝업 직후 같은 제스처로 미션 노드를 눌렀을 때 바깥 터치로 오인하지 않음 */
+    private fun isTouchOnMissionPathRow(ev: MotionEvent): Boolean {
+        val content = getChildAt(0) as? ViewGroup ?: return false
+        val path = content.findViewById<ViewGroup>(R.id.layout_mission_path) ?: return false
+        for (i in 0 until path.childCount) {
+            val row = path.getChildAt(i)
+            if (row.findViewById<View>(R.id.mission_diff_popup_root) != null) continue
+            if (isTouchInsideView(row, ev)) return true
+        }
+        return false
     }
 
     private fun findOpenDifficultyPopup(): View? {
