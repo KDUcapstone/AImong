@@ -56,17 +56,12 @@ object PetStatsSheetUi {
         )
 
         val showXp = state.showPetXpProgress
-        progress.isVisible = showXp
+        layoutXpCard.isVisible = showXp
         if (showXp) {
             val maxXp = state.petMaxXp.coerceAtLeast(1)
             val pct = ((state.petXp.toFloat() / maxXp) * 100f).toInt().coerceIn(0, 100)
             progress.progress = pct
             tvXp.text = root.context.getString(R.string.home_pet_xp_fmt, state.petXp, maxXp)
-        } else if (state.petCrownUnlocked) {
-            progress.isVisible = false
-            tvXp.text = root.context.getString(R.string.home_pet_aimong_crown_hint)
-        } else {
-            layoutXpCard.isVisible = false
         }
     }
 

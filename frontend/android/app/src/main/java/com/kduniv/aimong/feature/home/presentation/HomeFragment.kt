@@ -222,6 +222,12 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(FragmentHomeBinding::infl
             state.isLoading && state.pathItems.isEmpty() && state.errorMessage.isNullOrBlank()
         binding.layoutHomeBootstrap.root.isVisible = showBootstrap
         childHomeBootstrapGate.setSuppressChildBottomNav(showBootstrap)
+        val statusColor = if (showBootstrap) {
+            ContextCompat.getColor(requireContext(), R.color.ic_launcher_background)
+        } else {
+            ContextCompat.getColor(requireContext(), R.color.child_home_gradient_top)
+        }
+        requireActivity().window.statusBarColor = statusColor
     }
 
     private fun applyHomeTopChromeInsets() {

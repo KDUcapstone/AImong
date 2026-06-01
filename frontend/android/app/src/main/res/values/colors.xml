@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- 기본 시스템 색상 (themes.xml 참조용) -->
-    <!-- 적응형 아이콘·스플래시 — ic_launcher_foreground.png 배경과 동일 톤 -->
-    <color name="ic_launcher_background">#007BFF</color>
+    <!-- 적응형 아이콘·스플래시·홈 부트스트랩 — ic_launcher_foreground 배경과 동일 톤 -->
+    <color name="ic_launcher_background">#16A34A</color>
 
     <color name="aimong_primary">#7C4DFF</color>
     <color name="aimong_primary_variant">#5E35B1</color>
@@ -73,6 +73,10 @@
     <color name="chat_privacy_sensitive_text">#C2410C</color>
 
     <!-- 수집(가챠) 도감 카드 등급 테두리 -->
+    <!-- 도감 카드 — 보유 펫 XP 바 (조각 민트 바와 구분) -->
+    <color name="gacha_pet_xp_progress_start">#93C5FD</color>
+    <color name="gacha_pet_xp_progress_end">#3B82F6</color>
+
     <color name="gacha_rarity_normal">#F97316</color>
     <color name="gacha_rarity_rare">#3B82F6</color>
     <color name="gacha_rarity_epic">#A855F7</color>

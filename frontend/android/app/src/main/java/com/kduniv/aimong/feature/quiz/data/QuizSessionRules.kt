@@ -12,6 +12,16 @@ import java.time.format.DateTimeParseException
 internal object QuizSessionRules {
     const val EXPECTED_QUESTION_COUNT = 10
 
+    /** OX 피드백 패널 등 — API `correctAnswer`가 true/false일 때 O/X로 표시 */
+    fun formatOxAnswerForDisplay(raw: String): String {
+        when (raw.trim().lowercase()) {
+            "true" -> return "O"
+            "false" -> return "X"
+        }
+        val upper = raw.trim().uppercase()
+        return if (upper == "O" || upper == "X") upper else raw.trim()
+    }
+
     fun parseQuestionType(raw: String): kotlin.Result<QuestionType> {
         val t = raw.trim().uppercase()
         return runCatching { QuestionType.valueOf(t) }.fold(

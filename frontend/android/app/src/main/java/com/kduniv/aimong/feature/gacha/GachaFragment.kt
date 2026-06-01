@@ -340,7 +340,8 @@ class GachaFragment : BaseFragment<FragmentGachaBinding>(FragmentGachaBinding::i
         item: GachaPetCardUi,
         dialog: AlertDialog,
     ) {
-        dialogBinding.tvPetGrowth.isVisible = false
+        dialogBinding.tvPetStage.isVisible = false
+        dialogBinding.layoutPetGrowthXp.isVisible = false
         PetArtAssets.bindSprite(
             image = dialogBinding.ivPetSprite,
             emojiFallback = dialogBinding.tvPetEmoji,
@@ -410,9 +411,14 @@ class GachaFragment : BaseFragment<FragmentGachaBinding>(FragmentGachaBinding::i
             R.string.gacha_pet_grade_fmt,
             GachaUiMapper.gradeLabel(pet.grade),
         )
-        val growthLine = GachaUiMapper.displayPetGrowthDetail(requireContext(), pet)
-        dialogBinding.tvPetGrowth.isVisible = growthLine.isNotBlank()
-        dialogBinding.tvPetGrowth.text = growthLine
+        GachaUiMapper.bindPetDetailGrowth(
+            stageView = dialogBinding.tvPetStage,
+            xpLayout = dialogBinding.layoutPetGrowthXp,
+            xpProgressBar = dialogBinding.pbPetGrowthXp,
+            xpLabelView = dialogBinding.tvPetXpProgress,
+            context = ctx,
+            pet = pet,
+        )
 
         dialogBinding.layoutFragmentExchange.isVisible = false
         dialogBinding.btnExchange.isVisible = false

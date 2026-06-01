@@ -85,13 +85,32 @@ class GachaPetAdapter(
                     if (item.isLocked) R.color.quiz_text_secondary else R.color.quiz_text_primary
                 )
             )
-            val threshold = item.fragmentThreshold.coerceAtLeast(1)
-            val count = item.fragmentCount.coerceAtLeast(0)
-            val progress = ((count.toFloat() / threshold) * 100f).toInt().coerceIn(0, 100)
-            binding.pbFragments.progress = progress
-            binding.pbFragments.alpha = if (item.isLocked) 0.55f else 1f
-            binding.tvFragmentCount.text =
-                ctx.getString(R.string.gacha_fragment_progress_fmt, count, threshold)
+            if (item.isLocked) {
+                binding.pbFragments.isVisible = true
+                binding.tvFragmentCount.isVisible = true
+                binding.pbPetXp.isVisible = false
+                binding.tvPetXpCount.isVisible = false
+                val threshold = item.fragmentThreshold.coerceAtLeast(1)
+                val count = item.fragmentCount.coerceAtLeast(0)
+                val progress = ((count.toFloat() / threshold) * 100f).toInt().coerceIn(0, 100)
+                binding.pbFragments.progress = progress
+                binding.pbFragments.alpha = 0.55f
+                binding.tvFragmentCount.text =
+                    ctx.getString(R.string.gacha_fragment_progress_fmt, count, threshold)
+            } else {
+                binding.pbFragments.isVisible = false
+                binding.tvFragmentCount.isVisible = false
+                binding.pbPetXp.isVisible = true
+                binding.tvPetXpCount.isVisible = true
+                item.pet?.let { pet ->
+                    GachaUiMapper.bindPetCardXp(
+                        binding.pbPetXp,
+                        binding.tvPetXpCount,
+                        ctx,
+                        pet,
+                    )
+                }
+            }
 
             binding.root.setOnClickListener { onPetClick(item) }
             binding.root.isClickable = true

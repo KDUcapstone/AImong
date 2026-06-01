@@ -61,17 +61,43 @@
         tools:text="반짝이" />
 
     <TextView
-        android:id="@+id/tv_pet_growth"
+        android:id="@+id/tv_pet_stage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:gravity="center"
+        android:textColor="@color/quiz_mint_dark"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        tools:text="몽" />
+
+    <LinearLayout
+        android:id="@+id/layout_pet_growth_xp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
-        android:gravity="center"
-        android:lineSpacingExtra="2dp"
-        android:textColor="@color/quiz_text_secondary"
-        android:textSize="14sp"
-        android:visibility="gone"
-        tools:text="몽 · 12/80 XP"
-        tools:visibility="visible" />
+        android:layout_marginTop="10dp"
+        android:orientation="vertical"
+        tools:visibility="visible">
+
+        <ProgressBar
+            android:id="@+id/pb_pet_growth_xp"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="10dp"
+            android:max="100"
+            android:progressDrawable="@drawable/bg_gacha_fragment_progress"
+            tools:progress="45" />
+
+        <TextView
+            android:id="@+id/tv_pet_xp_progress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:gravity="center"
+            android:textColor="@color/quiz_text_secondary"
+            android:textSize="13sp"
+            tools:text="12 / 80 XP" />
+    </LinearLayout>
 
     <LinearLayout
         android:id="@+id/layout_fragment_exchange"

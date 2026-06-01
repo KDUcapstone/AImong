@@ -23,7 +23,7 @@
     <string name="home_streak_praise_short">대단해요! %1$d일 연속 성장 중!</string>
     <string name="home_streak_calendar_no_completion_data">이번 달 완료 날짜는 표시할 수 없어요. 잠시 후 다시 열어 보세요.</string>
     <string name="home_streak_status_summary_fmt">연속 %1$d일 · 오늘 %2$d회 · 쉴드 %3$d</string>
-    <string name="home_streak_encourage_continue">오늘 일반 학습을 1세트 이상 완료하면 스트릭이 유지돼요!</string>
+    <string name="home_streak_encourage_continue">오늘 일반 학습을 1세트 이상 완료하면 연속 학습이 유지돼요!</string>
     <string name="home_streak_encourage_start">지금 연속 학습 기록을 시작해 보세요!</string>
     <string name="home_streak_partner_fmt">파트너 %1$s · 오늘 완료: %2$s</string>
     <string name="home_yes">예</string>
@@ -49,7 +49,6 @@
     <string name="home_pet_level_fmt">%1$s</string>
     <string name="home_pet_xp_fmt">%1$d / %2$d XP</string>
     <string name="home_pet_mood_sad_icon_cd">펫 슬픔 상태</string>
-    <string name="home_pet_aimong_crown_hint">아이몽 달성 · 왕관 영구 해금</string>
     <string name="gacha_pet_crown_unlocked">왕관 해금</string>
     <string name="gacha_pet_level_xp_fmt">%1$s · %2$d/%3$d XP</string>
     <string name="aimong_celebration_title_fmt">%1$s이(가) 아이몽이 됐어요!</string>

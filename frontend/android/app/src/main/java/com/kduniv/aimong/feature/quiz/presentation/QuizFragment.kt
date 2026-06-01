@@ -35,6 +35,7 @@ import com.kduniv.aimong.core.navigation.ChildTopLevelNav.navigateToChildTopLeve
 import com.kduniv.aimong.core.ui.BaseFragment
 import com.kduniv.aimong.core.ui.CelebrationDialogWindow
 import com.kduniv.aimong.databinding.FragmentQuizBinding
+import com.kduniv.aimong.feature.quiz.data.QuizSessionRules
 import com.kduniv.aimong.feature.quiz.domain.model.Question
 import com.kduniv.aimong.feature.quiz.domain.model.QuestionDifficulty
 import com.kduniv.aimong.feature.quiz.domain.model.QuestionType
@@ -454,6 +455,9 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
 
     private fun formatCorrectAnswerLine(question: Question, correctAnswer: String?): String? {
         val ca = correctAnswer?.trim()?.takeIf { it.isNotBlank() } ?: return null
+        if (question.type == QuestionType.OX) {
+            return "정답: ${QuizSessionRules.formatOxAnswerForDisplay(ca)}"
+        }
         val opts = question.options
         val num = ca.toIntOrNull()
         if (opts != null && num != null && num in 1..opts.size) {

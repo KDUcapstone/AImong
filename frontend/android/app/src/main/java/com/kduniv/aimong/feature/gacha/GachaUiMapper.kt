@@ -1,7 +1,12 @@
 package com.kduniv.aimong.feature.gacha
 
 import android.content.Context
+import android.view.View
+import android.widget.ProgressBar
+import android.widget.TextView
 import androidx.annotation.ColorInt
+import androidx.core.content.ContextCompat
+import androidx.core.view.isVisible
 import com.kduniv.aimong.R
 import com.kduniv.aimong.feature.pet.data.model.PetDto
 import com.kduniv.aimong.feature.pet.domain.PetGrowthRules
@@ -25,7 +30,60 @@ object GachaUiMapper {
     fun displayLevel(context: Context, pet: PetDto): String =
         PetStageLabels.label(context, pet.stage, pet.xp)
 
-    /** 보유 펫 상세 — 등급 아래 단계·XP (아이몽은 단계만) */
+    /** 펫 상세 다이얼로그 — 단계 라벨 + XP 진행 바 */
+    fun bindPetDetailGrowth(
+        stageView: TextView,
+        xpLayout: View,
+        xpProgressBar: ProgressBar,
+        xpLabelView: TextView,
+        context: Context,
+        pet: PetDto,
+    ) {
+        val effectiveStage = PetGrowthRules.resolveEffectiveStageString(pet.stage, pet.xp)
+        stageView.isVisible = true
+        stageView.text = PetStageLabels.label(context, effectiveStage)
+
+        val showXp = PetGrowthRules.showsXpProgress(pet.stage, pet.xp)
+        xpLayout.isVisible = showXp
+        if (!showXp) return
+
+        val maxXp = (
+            PetGrowthRules.progressMaxXp(pet.grade, effectiveStage)
+                ?: PetGrowthRules.EGG_EVOLUTION_XP
+            ).coerceAtLeast(1)
+        val current = pet.xp.coerceAtLeast(0)
+        xpProgressBar.progress =
+            ((current.toFloat() / maxXp) * 100f).toInt().coerceIn(0, 100)
+        xpLabelView.text = context.getString(R.string.home_pet_xp_fmt, current, maxXp)
+    }
+
+    /** 도감 카드 — 보유 펫 XP 바 (미보유는 조각 바) */
+    fun bindPetCardXp(
+        xpProgressBar: ProgressBar,
+        xpLabelView: TextView,
+        context: Context,
+        pet: PetDto,
+    ) {
+        val effectiveStage = PetGrowthRules.resolveEffectiveStageString(pet.stage, pet.xp)
+        val showXp = PetGrowthRules.showsXpProgress(pet.stage, pet.xp)
+        xpProgressBar.isVisible = showXp
+        if (showXp) {
+            val maxXp = (
+                PetGrowthRules.progressMaxXp(pet.grade, effectiveStage)
+                    ?: PetGrowthRules.EGG_EVOLUTION_XP
+                ).coerceAtLeast(1)
+            val current = pet.xp.coerceAtLeast(0)
+            xpProgressBar.progress =
+                ((current.toFloat() / maxXp) * 100f).toInt().coerceIn(0, 100)
+            xpLabelView.text = context.getString(R.string.home_pet_xp_fmt, current, maxXp)
+            xpLabelView.setTextColor(ContextCompat.getColor(context, R.color.gacha_pet_xp_progress_end))
+        } else {
+            xpLabelView.text = PetStageLabels.label(context, effectiveStage)
+            xpLabelView.setTextColor(ContextCompat.getColor(context, R.color.quiz_text_secondary))
+        }
+    }
+
+    /** 장착 슬롯 등 한 줄 요약 */
     fun displayPetGrowthDetail(context: Context, pet: PetDto): String {
         val effectiveStage = PetGrowthRules.resolveEffectiveStageString(pet.stage, pet.xp)
         val stageLabel = PetStageLabels.label(context, effectiveStage)
