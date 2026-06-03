@@ -12,5 +12,5 @@ package com.kduniv.aimong.core.dev
  */
 object UiMode {
     /** `true`: 목업 네비 + 퀴즈/퀘스트 등 Retrofit 스텁([com.kduniv.aimong.core.di.StubRepositoryModule]). `false`: 전부 실제 네비·API. */
-    const val useStubNav: Boolean = true
+    const val useStubNav: Boolean = false
 }
