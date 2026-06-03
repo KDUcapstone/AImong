@@ -108,7 +108,7 @@ class QuestListBottomSheet : BottomSheetDialogFragment() {
                 }
                 launch {
                     viewModel.loading.collect { loading ->
-                        binding.pbQuestLoading.visibility = if (loading) View.VISIBLE else View.GONE
+                        binding.layoutQuestLoadingOverlay.isVisible = loading
                         adapter.setSheetLoading(loading)
                         setQuestTabsEnabled(binding.tabQuestPeriod, !loading)
                     }

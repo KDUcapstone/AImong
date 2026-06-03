@@ -252,7 +252,8 @@
     <string name="quest_auto_no_claim">완료 버튼을 눌러 보상을 받아 주세요</string>
     <string name="quest_reward_generic">보상을 받았어요</string>
     <string name="quest_reward_celebration_title">보상을 받았어요!</string>
-    <string name="quest_reward_celebration_subtitle">「%1$s」 퀘스트</string>
+    <string name="quest_reward_celebration_subtitle">「%1$s」 퀘스트를 완료했어요</string>
+    <string name="quest_reward_celebration_rewards_heading">받은 보상</string>
     <string name="quest_reward_celebration_confirm">확인</string>
     <string name="quest_reward_line_ticket">뽑기 티켓</string>
     <string name="quest_reward_line_exp">경험치</string>

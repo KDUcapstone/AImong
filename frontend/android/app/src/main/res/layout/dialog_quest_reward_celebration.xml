@@ -1,51 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@drawable/bg_glass_card"
+    android:background="@drawable/bg_child_center_dialog"
     android:clipChildren="false"
     android:clipToPadding="false"
-    android:padding="24dp">
+    android:gravity="center_horizontal"
+    android:orientation="vertical"
+    android:paddingHorizontal="22dp"
+    android:paddingTop="24dp"
+    android:paddingBottom="22dp">
 
-    <com.airbnb.lottie.LottieAnimationView
-        android:id="@+id/lav_quest_reward"
-        android:layout_width="match_parent"
-        android:layout_height="156dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:lottie_autoPlay="true"
-        app:lottie_loop="true"
-        app:lottie_rawRes="@raw/pet_idle" />
+    <FrameLayout
+        android:id="@+id/layout_quest_reward_hero"
+        android:layout_width="72dp"
+        android:layout_height="72dp"
+        android:background="@drawable/bg_quest_reward_hero">
 
-    <TextView
-        android:id="@+id/tv_quest_reward_emoji"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:lineSpacingExtra="4dp"
-        android:paddingVertical="8dp"
-        android:text="🎁"
-        android:textSize="48sp"
-        app:layout_constraintBottom_toBottomOf="@id/lav_quest_reward"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@id/lav_quest_reward" />
+        <ImageView
+            android:id="@+id/iv_quest_reward_hero"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_gravity="center"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_check_circle"
+            app:tint="@color/quiz_mint_dark" />
+    </FrameLayout>
 
     <TextView
         android:id="@+id/tv_quest_reward_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
+        android:layout_marginTop="14dp"
         android:gravity="center"
         android:text="@string/quest_reward_celebration_title"
-        android:textColor="#FFD600"
-        android:textSize="22sp"
-        android:textStyle="bold"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/lav_quest_reward" />
+        android:textColor="@color/child_quest_sheet_text_primary"
+        android:textSize="20sp"
+        android:textStyle="bold" />
 
     <TextView
         android:id="@+id/tv_quest_reward_subtitle"
@@ -53,46 +46,48 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
         android:gravity="center"
-        android:textColor="@color/white"
+        android:lineSpacingExtra="2dp"
+        android:textColor="@color/child_quest_sheet_text_secondary"
         android:textSize="14sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_quest_reward_title"
         tools:text="「미션 1회 완료」 퀘스트" />
 
     <LinearLayout
         android:id="@+id/card_quest_rewards"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
-        android:background="@drawable/bg_child_quest_row"
+        android:layout_marginTop="18dp"
+        android:background="@drawable/bg_quest_reward_lines_card"
         android:orientation="vertical"
-        android:paddingHorizontal="12dp"
-        android:paddingVertical="8dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_quest_reward_subtitle">
+        android:paddingHorizontal="4dp"
+        android:paddingVertical="4dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="12dp"
+            android:paddingTop="10dp"
+            android:paddingBottom="4dp"
+            android:text="@string/quest_reward_celebration_rewards_heading"
+            android:textColor="@color/child_quest_sheet_text_secondary"
+            android:textSize="12sp"
+            android:textStyle="bold" />
 
         <LinearLayout
             android:id="@+id/ll_quest_reward_lines"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical" />
+            android:orientation="vertical"
+            android:paddingBottom="6dp" />
     </LinearLayout>
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btn_quest_reward_close"
         android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:layout_marginTop="20dp"
-        android:backgroundTint="#00FFB2"
+        android:layout_height="52dp"
+        android:layout_marginTop="18dp"
+        android:backgroundTint="@color/child_nav_item_selected"
         android:text="@string/quest_reward_celebration_confirm"
-        android:textColor="#0A1633"
+        android:textColor="@color/white"
         android:textStyle="bold"
-        app:cornerRadius="16dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/card_quest_rewards" />
-
-</androidx.constraintlayout.widget.ConstraintLayout>
+        app:cornerRadius="14dp" />
+</LinearLayout>

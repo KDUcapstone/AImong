@@ -16,8 +16,8 @@ object QuestRewardCelebrationMapper {
             .ifEmpty {
                 listOf(
                     QuestRewardCelebrationLine(
-                        iconRes = R.drawable.ic_star_filled,
-                        amountText = "✓",
+                        iconRes = R.drawable.ic_check_circle,
+                        amountText = "+1",
                         labelText = context.getString(R.string.quest_reward_generic),
                     ),
                 )

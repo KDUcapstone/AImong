@@ -8,9 +8,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
-import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
-import com.airbnb.lottie.LottieDrawable
 import com.kduniv.aimong.R
 import com.kduniv.aimong.core.ui.CelebrationDialogWindow
 
@@ -27,12 +25,21 @@ object QuestRewardCelebrationDialog {
                 .setCancelable(true)
                 .create()
 
-            dialogView.findViewById<com.airbnb.lottie.LottieAnimationView>(R.id.lav_quest_reward).apply {
-                setAnimation(R.raw.pet_idle)
-                repeatCount = LottieDrawable.INFINITE
-                alpha = 0.35f
-                playAnimation()
-            }
+            val heroIcon = dialogView.findViewById<ImageView>(R.id.iv_quest_reward_hero)
+            val primaryLine = ui.lines.firstOrNull()
+            heroIcon.setImageResource(primaryLine?.iconRes ?: R.drawable.ic_check_circle)
+
+            val hero = dialogView.findViewById<View>(R.id.layout_quest_reward_hero)
+            hero.scaleX = 0.7f
+            hero.scaleY = 0.7f
+            hero.alpha = 0f
+            hero.animate()
+                .scaleX(1f)
+                .scaleY(1f)
+                .alpha(1f)
+                .setDuration(320L)
+                .setInterpolator(OvershootInterpolator(1.15f))
+                .start()
 
             dialogView.findViewById<TextView>(R.id.tv_quest_reward_subtitle).text =
                 ctx.getString(R.string.quest_reward_celebration_subtitle, ui.questTitle)
@@ -49,22 +56,23 @@ object QuestRewardCelebrationDialog {
             }
 
             val rewardsCard = dialogView.findViewById<View>(R.id.card_quest_rewards)
-            rewardsCard.scaleX = 0.85f
-            rewardsCard.scaleY = 0.85f
+            rewardsCard.scaleX = 0.92f
+            rewardsCard.scaleY = 0.92f
             rewardsCard.alpha = 0f
             rewardsCard.animate()
                 .scaleX(1f)
                 .scaleY(1f)
                 .alpha(1f)
-                .setDuration(380L)
-                .setInterpolator(OvershootInterpolator(1.1f))
+                .setStartDelay(80L)
+                .setDuration(340L)
+                .setInterpolator(OvershootInterpolator(1.08f))
                 .start()
 
             dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btn_quest_reward_close)
                 .setOnClickListener { dialog.dismiss() }
 
             dialog.show()
-            CelebrationDialogWindow.apply(dialog, ctx)
+            CelebrationDialogWindow.apply(dialog, ctx, dimAmount = 0.42f)
         } catch (_: Exception) {
             val fallback = ui.lines.joinToString(" · ") { "${it.amountText} ${it.labelText}" }
                 .ifBlank { ctx.getString(R.string.quest_reward_generic) }

@@ -60,6 +60,7 @@
     <color name="child_home_gradient_bottom">#ECFEFF</color>
     <color name="child_home_top_bar">#F8FAFC</color>
     <color name="child_quest_sheet_bg">#F0F9FF</color>
+    <color name="quest_sheet_loading_scrim">#B3F0F9FF</color>
     <color name="child_quest_sheet_text_primary">#0F172A</color>
     <color name="child_quest_sheet_text_secondary">#64748B</color>
     <!-- 스트릭 시트 — 홈 스트릭 칩(오렌지)과 동일 톤 -->
@@ -69,6 +70,8 @@
     <color name="child_streak_accent_stroke">#FDBA74</color>
     <color name="text_grey">#9E9E9E</color>
     <color name="text_sub_grey">#757575</color>
+    <color name="chat_image_toggle_bg_off">#E0F2FE</color>
+    <color name="chat_image_toggle_stroke_off">#7DD3FC</color>
     <color name="chat_privacy_highlight">#4DFF6D00</color>
     <color name="chat_privacy_sensitive_text">#C2410C</color>
 

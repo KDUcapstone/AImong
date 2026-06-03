@@ -2,6 +2,7 @@ package com.kduniv.aimong.feature.home.presentation
 
 import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.widget.LinearLayout
 import androidx.core.view.isVisible
 import com.kduniv.aimong.R
@@ -37,6 +38,7 @@ class HomeLayoutBinder(
     private var lastTopChipsKey: String? = null
     private var lastPetVisualKey: String? = null
     private var lastQuestBadgeKey: String? = null
+    private var lastAppliedScrollExtentBottom: Int = -1
 
     fun bind(state: HomeUiState) {
         pathItemsForScroll = state.pathItems
@@ -58,6 +60,7 @@ class HomeLayoutBinder(
         bindMissionPath(state)
         with(binding) {
             firstSectionFromPath(state.pathItems)?.let { applyFloatingSection(it) }
+            applyMissionPathScrollExtent()
             binding.root.post { updateFloatingSectionForScroll(binding.scrollPath.scrollY) }
             if (!scrollHooked) {
                 scrollHooked = true
@@ -152,6 +155,7 @@ class HomeLayoutBinder(
         items.firstOrNull { it is HomePathItem.SectionHeader } as? HomePathItem.SectionHeader
 
     private fun updateFloatingSectionForScroll(scrollY: Int) {
+        val pathScrollY = (scrollY - missionPathScrollContentYOffset()).coerceAtLeast(0)
         val parent = binding.layoutMissionPath
         var cumulative = 0
         var chosen: HomePathItem.SectionHeader? = firstSectionFromPath(pathItemsForScroll)
@@ -162,12 +166,77 @@ class HomeLayoutBinder(
             val top = cumulative + lp.topMargin
             val bottom = top + child.height
             val tag = child.getTag(R.id.home_path_section_tag) as? HomePathItem.SectionHeader
-            if (tag != null && top <= scrollY) {
+            if (tag != null && top <= pathScrollY) {
                 chosen = tag
             }
             cumulative = bottom + lp.bottomMargin
         }
         chosen?.let { applyFloatingSection(it) }
+    }
+
+    /** 스크롤 좌표 = frame 상단 여백·패딩 이후 미션 경로 기준 */
+    private fun missionPathScrollContentYOffset(): Int {
+        val frame = binding.frameClickArea
+        val marginTop = (frame.layoutParams as? ViewGroup.MarginLayoutParams)?.topMargin ?: 0
+        return marginTop + frame.paddingTop
+    }
+
+    /** 마지막 섹션 플로팅 헤더가 바뀌려면 필요한 최소 scrollY */
+    private fun missionPathLastSectionScrollThreshold(): Int {
+        val lastSection = pathItemsForScroll.lastOrNull { it is HomePathItem.SectionHeader }
+            as? HomePathItem.SectionHeader ?: return 0
+        val parent = binding.layoutMissionPath
+        var cumulative = 0
+        for (i in 0 until parent.childCount) {
+            val child = parent.getChildAt(i)
+            if (child.visibility != View.VISIBLE) continue
+            val lp = child.layoutParams as LinearLayout.LayoutParams
+            val top = cumulative + lp.topMargin
+            val tag = child.getTag(R.id.home_path_section_tag) as? HomePathItem.SectionHeader
+            if (tag === lastSection) {
+                return missionPathScrollContentYOffset() + top
+            }
+            cumulative = top + child.height + lp.bottomMargin
+        }
+        return 0
+    }
+
+    /**
+     * 태블릿 등 뷰포트가 큰 기기에서 maxScrollY가 마지막 섹션 헤더 임계값보다 작아지는 문제 보정.
+     */
+    private fun applyMissionPathScrollExtent() {
+        binding.scrollPath.post {
+            val scroll = binding.scrollPath
+            val frame = binding.frameClickArea
+            if (scroll.height <= 0) return@post
+
+            val res = frame.resources
+            val baseBottom = res.getDimensionPixelSize(R.dimen.home_path_scroll_padding_bottom)
+            val buffer = res.getDimensionPixelSize(R.dimen.home_path_scroll_extent_buffer)
+            val threshold = missionPathLastSectionScrollThreshold()
+            if (threshold <= 0) {
+                if (frame.paddingBottom != baseBottom) {
+                    frame.setPadding(frame.paddingLeft, frame.paddingTop, frame.paddingRight, baseBottom)
+                    lastAppliedScrollExtentBottom = baseBottom
+                }
+                return@post
+            }
+
+            val maxScroll = (scroll.computeVerticalScrollRange() - scroll.computeVerticalScrollExtent())
+                .coerceAtLeast(0)
+            val targetBottom = if (threshold > maxScroll) {
+                baseBottom + (threshold - maxScroll) + buffer
+            } else {
+                baseBottom
+            }
+            if (targetBottom != lastAppliedScrollExtentBottom) {
+                lastAppliedScrollExtentBottom = targetBottom
+                frame.setPadding(frame.paddingLeft, frame.paddingTop, frame.paddingRight, targetBottom)
+                if (threshold > maxScroll) {
+                    scroll.post { applyMissionPathScrollExtent() }
+                }
+            }
+        }
     }
 
     private fun applyFloatingSection(section: HomePathItem.SectionHeader) {
@@ -230,6 +299,7 @@ class HomeLayoutBinder(
     private fun renderMissionPath(state: HomeUiState) {
         onMissionPathWillRebuild()
         binding.layoutMissionPath.removeAllViews()
+        lastAppliedScrollExtentBottom = -1
         lastPathStructureKey = state.pathItems.pathStructureKey()
         val inflater = layoutInflater
         val items = state.pathItems
@@ -407,6 +477,7 @@ class HomeLayoutBinder(
                 else -> Unit
             }
         }
+        applyMissionPathScrollExtent()
     }
 
     private fun addInterStageRewardChest(item: HomePathItem.InterStageRewardChest, density: Float) {
