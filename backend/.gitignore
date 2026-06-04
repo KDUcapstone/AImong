@@ -44,6 +44,9 @@ firebase_key.json
 google-services.json
 
 ### Private Docs And Generated Artifacts ###
+.cache/
+__pycache__/
+*.pyc
 _generated/
 !_generated/
 _generated/*

@@ -20,7 +20,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -76,6 +75,7 @@ public class MissionService {
         List<MissionSet> missionSets = activeMissionSets();
         Map<String, MissionSetProgress> progressBySetId = progressBySetId(childId, missionSets);
         StageProgressResponse stageProgress = stageProgress(missionSets, progressBySetId);
+        StageUnlockThresholds stageUnlockThresholds = StageUnlockThresholds.from(missionSets);
 
         List<MissionListResponse.StageResponse> stages = missionSets.stream()
                 .collect(Collectors.groupingBy(
@@ -85,7 +85,13 @@ public class MissionService {
                 ))
                 .entrySet()
                 .stream()
-                .map(entry -> toStageResponse(entry.getKey(), entry.getValue(), progressBySetId, stageProgress))
+                .map(entry -> toStageResponse(
+                        entry.getKey(),
+                        entry.getValue(),
+                        progressBySetId,
+                        stageProgress,
+                        stageUnlockThresholds
+                ))
                 .toList();
 
         long completedSetCount = progressBySetId.size();
@@ -126,7 +132,7 @@ public class MissionService {
     public boolean isUnlocked(UUID childId, MissionSet missionSet) {
         List<MissionSet> missionSets = activeMissionSets();
         StageProgressResponse stageProgress = stageProgress(missionSets, progressBySetId(childId, missionSets));
-        return isStageUnlocked(missionSet.getStage(), stageProgress);
+        return isStageUnlocked(missionSet.getStage(), stageProgress, StageUnlockThresholds.from(missionSets));
     }
 
     public boolean isStarLevelPlayable(UUID childId, UUID missionId, int starLevel) {
@@ -172,13 +178,14 @@ public class MissionService {
                 .filter(set -> !availability.progressBySetId().containsKey(set.getSetId()))
                 .toList();
         List<MissionSet> pool = incomplete.isEmpty() ? unlocked : incomplete;
-        return pool.get(ThreadLocalRandom.current().nextInt(pool.size()));
+        return pool.get(0);
     }
 
     public MissionSetAvailability missionSetAvailability(UUID childId) {
         List<MissionSet> missionSets = activeMissionSets();
         Map<String, MissionSetProgress> progressBySetId = progressBySetId(childId, missionSets);
         StageProgressResponse stageProgress = stageProgress(missionSets, progressBySetId);
+        StageUnlockThresholds stageUnlockThresholds = StageUnlockThresholds.from(missionSets);
         Map<UUID, Map<Integer, List<MissionSet>>> setsByStarLevelByMissionId = missionSets.stream()
                 .collect(Collectors.groupingBy(
                         MissionSet::getMissionId,
@@ -186,7 +193,7 @@ public class MissionService {
                         Collectors.collectingAndThen(Collectors.toList(), this::groupByStarLevel)
                 ));
         List<MissionSet> playableSets = missionSets.stream()
-                .filter(set -> isStageUnlocked(set.getStage(), stageProgress))
+                .filter(set -> isStageUnlocked(set.getStage(), stageProgress, stageUnlockThresholds))
                 .filter(set -> isStarLevelUnlocked(
                         set.getStarLevel(),
                         setsByStarLevelByMissionId.getOrDefault(set.getMissionId(), Map.of()),
@@ -228,7 +235,8 @@ public class MissionService {
             short stage,
             List<MissionSet> missionSets,
             Map<String, MissionSetProgress> progressBySetId,
-            StageProgressResponse stageProgress
+            StageProgressResponse stageProgress,
+            StageUnlockThresholds stageUnlockThresholds
     ) {
         List<MissionListResponse.MissionResponse> missions = missionSets.stream()
                 .collect(Collectors.groupingBy(
@@ -238,7 +246,7 @@ public class MissionService {
                 ))
                 .values()
                 .stream()
-                .map(sets -> toMissionResponse(stage, sets, progressBySetId, stageProgress))
+                .map(sets -> toMissionResponse(stage, sets, progressBySetId, stageProgress, stageUnlockThresholds))
                 .sorted(Comparator.comparing(MissionListResponse.MissionResponse::missionCode,
                         Comparator.nullsLast(String::compareTo)))
                 .toList();
@@ -249,12 +257,13 @@ public class MissionService {
             short stage,
             List<MissionSet> missionSets,
             Map<String, MissionSetProgress> progressBySetId,
-            StageProgressResponse stageProgress
+            StageProgressResponse stageProgress,
+            StageUnlockThresholds stageUnlockThresholds
     ) {
         MissionSet first = missionSets.stream()
                 .min(Comparator.comparing(MissionSet::getDisplayOrder).thenComparing(MissionSet::getSetId))
                 .orElseThrow();
-        boolean missionUnlocked = isStageUnlocked(stage, stageProgress);
+        boolean missionUnlocked = isStageUnlocked(stage, stageProgress, stageUnlockThresholds);
         Map<Integer, List<MissionSet>> setsByStarLevel = groupByStarLevel(missionSets);
         List<MissionListResponse.StarLevelResponse> starLevels = setsByStarLevel
                 .entrySet()
@@ -328,6 +337,40 @@ public class MissionService {
             case 3 -> stageProgress.stage2Completed() >= STAGE_3_REQUIRED_STAGE_2_STAR1_CLEARS;
             default -> false;
         };
+    }
+
+    private boolean isStageUnlocked(
+            short stage,
+            StageProgressResponse stageProgress,
+            StageUnlockThresholds stageUnlockThresholds
+    ) {
+        return switch (stage) {
+            case 1 -> true;
+            case 2 -> stageProgress.stage1Completed() >= stageUnlockThresholds.stage1StarOneMissionCount();
+            case 3 -> stageProgress.stage2Completed() >= stageUnlockThresholds.stage2StarOneMissionCount();
+            default -> false;
+        };
+    }
+
+    private record StageUnlockThresholds(
+            long stage1StarOneMissionCount,
+            long stage2StarOneMissionCount
+    ) {
+        private static StageUnlockThresholds from(Collection<MissionSet> missionSets) {
+            return new StageUnlockThresholds(
+                    countStageStarOneMissionIds(missionSets, (short) 1),
+                    countStageStarOneMissionIds(missionSets, (short) 2)
+            );
+        }
+
+        private static long countStageStarOneMissionIds(Collection<MissionSet> missionSets, short stage) {
+            return missionSets.stream()
+                    .filter(set -> set.getStage() == stage)
+                    .filter(set -> set.getStarLevel() == 1)
+                    .map(MissionSet::getMissionId)
+                    .distinct()
+                    .count();
+        }
     }
 
     private Map<Integer, List<MissionSet>> groupByStarLevel(List<MissionSet> missionSets) {

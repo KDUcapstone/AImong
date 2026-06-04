@@ -38,10 +38,89 @@ public interface QuestionBankRepository extends JpaRepository<QuestionBank, UUID
               AND difficulty = CAST(:difficulty AS question_difficulty_enum)
               AND is_active = TRUE
               AND question_pool_status = CAST('ACTIVE' AS question_pool_status_enum)
+            ORDER BY
+                COALESCE(pack_no, 0) ASC,
+                created_at ASC,
+                id ASC
             """, nativeQuery = true)
     List<QuestionBank> findAllFromSafeViewByMissionIdAndDifficulty(
             @Param("missionId") UUID missionId,
             @Param("difficulty") String difficulty
+    );
+
+    @Query(value = """
+            SELECT
+                id,
+                mission_id,
+                set_id,
+                question_type,
+                prompt,
+                options,
+                content_tags,
+                curriculum_ref,
+                difficulty,
+                source_type,
+                generation_phase,
+                pack_no,
+                question_pool_status,
+                created_at,
+                is_active
+            FROM public.question_bank
+            WHERE set_id = :setId
+              AND mission_id = :missionId
+              AND is_active = TRUE
+              AND question_pool_status = CAST('ACTIVE' AS question_pool_status_enum)
+            ORDER BY
+                CASE CAST(difficulty AS TEXT)
+                    WHEN 'LOW' THEN 1
+                    WHEN 'MEDIUM' THEN 2
+                    WHEN 'HIGH' THEN 3
+                    ELSE 4
+                END ASC,
+                COALESCE(pack_no, 0) ASC,
+                created_at ASC,
+                id ASC
+            """, nativeQuery = true)
+    List<QuestionBank> findAllFromSafeViewBySetIdAndMissionId(
+            @Param("setId") String setId,
+            @Param("missionId") UUID missionId
+    );
+
+    @Query(value = """
+            SELECT
+                id,
+                mission_id,
+                set_id,
+                question_type,
+                prompt,
+                options,
+                content_tags,
+                curriculum_ref,
+                difficulty,
+                source_type,
+                generation_phase,
+                pack_no,
+                question_pool_status,
+                created_at,
+                is_active
+            FROM public.question_bank
+            WHERE mission_id = :missionId
+              AND pack_no = :packNo
+              AND is_active = TRUE
+              AND question_pool_status = CAST('ACTIVE' AS question_pool_status_enum)
+            ORDER BY
+                CASE CAST(difficulty AS TEXT)
+                    WHEN 'LOW' THEN 1
+                    WHEN 'MEDIUM' THEN 2
+                    WHEN 'HIGH' THEN 3
+                    ELSE 4
+                END ASC,
+                created_at ASC,
+                id ASC
+            """, nativeQuery = true)
+    List<QuestionBank> findAllFromSafeViewByMissionIdAndPackNo(
+            @Param("missionId") UUID missionId,
+            @Param("packNo") short packNo
     );
 
     List<QuestionBank> findAllByMissionIdAndIsActiveTrueAndQuestionPoolStatus(UUID missionId, QuestionPoolStatus questionPoolStatus);

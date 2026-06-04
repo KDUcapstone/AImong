@@ -120,7 +120,7 @@ class MissionServiceTest {
                 missionSet("S0102-1-1", stage1Mission2, "S0102", (short) 1, 1, 2),
                 missionSet("S0103-1-1", stage1Mission3, "S0103", (short) 1, 1, 3),
                 missionSet("S0104-1-1", stage1Mission4, "S0104", (short) 1, 1, 4),
-                missionSet("S0105-2-1", stage1Mission5, "S0105", (short) 1, 2, 5),
+                missionSet("S0105-1-1", stage1Mission5, "S0105", (short) 1, 1, 5),
                 missionSet("S0201-1-1", stage2MissionId, "S0201", (short) 2, 1, 6)
         );
         when(missionSetRepository.findAllByActiveTrueOrderByStageAscDisplayOrderAscStarLevelAscVariantNoAscSetIdAsc())
@@ -130,8 +130,7 @@ class MissionServiceTest {
                         progress(childId, "S0101-1-1", stage1Mission1, 1, 1),
                         progress(childId, "S0102-1-1", stage1Mission2, 1, 1),
                         progress(childId, "S0103-1-1", stage1Mission3, 1, 1),
-                        progress(childId, "S0104-1-1", stage1Mission4, 1, 1),
-                        progress(childId, "S0105-2-1", stage1Mission5, 1, 2)
+                        progress(childId, "S0104-1-1", stage1Mission4, 1, 1)
                 ));
 
         MissionListResponse response = missionService.getMissions(childId);
@@ -141,6 +140,60 @@ class MissionServiceTest {
             assertThat(mission.isUnlocked()).isFalse();
             assertThat(mission.starLevels().getFirst().isPlayable()).isFalse();
         });
+    }
+
+    @Test
+    void stageUnlockThresholdUsesActiveStageStarOneMissionCount() {
+        MissionService missionService = new MissionService(
+                missionSetRepository,
+                missionSetProgressRepository,
+                childActivityService
+        );
+        UUID childId = UUID.randomUUID();
+        UUID stage2MissionId = UUID.randomUUID();
+        List<MissionSet> missionSets = new java.util.ArrayList<>();
+        List<MissionSetProgress> progress = new java.util.ArrayList<>();
+        for (int index = 1; index <= 10; index++) {
+            UUID missionId = UUID.randomUUID();
+            String setId = "S01%02d-1-1".formatted(index);
+            missionSets.add(missionSet(setId, missionId, "S01%02d".formatted(index), (short) 1, 1, index));
+            if (index <= 5) {
+                progress.add(progress(childId, setId, missionId, 1, 1));
+            }
+        }
+        missionSets.add(missionSet("S0201-1-1", stage2MissionId, "S0201", (short) 2, 1, 11));
+        when(missionSetRepository.findAllByActiveTrueOrderByStageAscDisplayOrderAscStarLevelAscVariantNoAscSetIdAsc())
+                .thenReturn(missionSets);
+        when(missionSetProgressRepository.findAllByChildIdAndSetIdIn(eq(childId), anyCollection()))
+                .thenReturn(progress);
+
+        MissionListResponse response = missionService.getMissions(childId);
+
+        assertThat(response.stages().get(1).missions()).singleElement().satisfies(mission -> {
+            assertThat(mission.missionCode()).isEqualTo("S0201");
+            assertThat(mission.isUnlocked()).isFalse();
+        });
+    }
+
+    @Test
+    void resolvePlayableSetChoosesFirstIncompleteSetInServingOrder() {
+        MissionService missionService = new MissionService(
+                missionSetRepository,
+                missionSetProgressRepository,
+                childActivityService
+        );
+        UUID childId = UUID.randomUUID();
+        UUID missionId = UUID.randomUUID();
+        MissionSet first = missionSet("S0101-L1", missionId, "S0101", (short) 1, 1, 1);
+        MissionSet second = missionSet("S0101-L2", missionId, "S0101", (short) 1, 1, 2);
+        when(missionSetRepository.findAllByActiveTrueOrderByStageAscDisplayOrderAscStarLevelAscVariantNoAscSetIdAsc())
+                .thenReturn(List.of(first, second));
+        when(missionSetProgressRepository.findAllByChildIdAndSetIdIn(eq(childId), anyCollection()))
+                .thenReturn(List.of());
+
+        MissionSet resolved = missionService.resolvePlayableSet(childId, missionId, 1);
+
+        assertThat(resolved.getSetId()).isEqualTo("S0101-L1");
     }
 
     private MissionSet missionSet(String setId, UUID missionId, String missionCode, short stage, int starLevel, int displayOrder) {
