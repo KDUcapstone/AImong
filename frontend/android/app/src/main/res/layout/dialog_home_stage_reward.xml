@@ -39,7 +39,7 @@
         android:gravity="center"
         android:textColor="@color/child_quest_sheet_text_secondary"
         android:textSize="14sp"
-        tools:text="AI가 뭐예요?" />
+        tools:text="AI 알아보기" />
 
     <LinearLayout
         android:id="@+id/card_parent_promise"

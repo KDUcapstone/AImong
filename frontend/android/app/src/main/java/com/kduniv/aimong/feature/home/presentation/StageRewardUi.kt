@@ -1,6 +1,7 @@
 package com.kduniv.aimong.feature.home.presentation
 
 import com.kduniv.aimong.feature.home.data.model.ChildStageRewardDto
+import com.kduniv.aimong.feature.home.domain.HomeStageTitles
 
 data class StageRewardUi(
     val stageNumber: Int,
@@ -14,15 +15,9 @@ data class StageRewardUi(
         get() = !parentPromise.isNullOrBlank()
 
     companion object {
-        private val STAGE_THEMES = mapOf(
-            1 to "AI가 뭐예요?",
-            2 to "AI 잘 쓰기",
-            3 to "비판적으로 생각하기",
-        )
-
         fun fromDto(dto: ChildStageRewardDto): StageRewardUi = StageRewardUi(
             stageNumber = dto.stageNumber,
-            stageThemeTitle = STAGE_THEMES[dto.stageNumber] ?: "${dto.stageNumber}단계",
+            stageThemeTitle = HomeStageTitles.title(dto.stageNumber),
             parentPromise = dto.rewardText?.trim()?.takeIf { it.isNotEmpty() },
             defaultGear = dto.defaultGearReward.coerceAtLeast(0),
             normalTickets = dto.normalTicketReward.coerceAtLeast(0),

@@ -47,7 +47,7 @@
                     android:textColor="@color/white"
                     android:textSize="18sp"
                     android:textStyle="bold"
-                    tools:text="AI가 뭐예요?" />
+                    tools:text="AI 알아보기" />
 
                 <TextView
                     android:id="@+id/tv_section_subtitle"
@@ -67,7 +67,7 @@
                     android:textColor="#E5F9D6"
                     android:textSize="12sp"
                     android:visibility="gone"
-                    tools:text="AI가 뭐예요?" />
+                    tools:text="AI 알아보기" />
             </LinearLayout>
 
             <ImageView

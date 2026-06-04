@@ -21,12 +21,6 @@ import com.kduniv.aimong.feature.mission.domain.model.toDisplayMissionTitle
  */
 object HomePathBuilder {
 
-    private val STAGE_TITLES = mapOf(
-        1 to "AI가 뭐예요?",
-        2 to "AI 잘 쓰기",
-        3 to "비판적으로 생각하기"
-    )
-
     private data class IslandMeta(
         @DrawableRes val iconRes: Int,
         val name: String,
@@ -69,7 +63,7 @@ object HomePathBuilder {
             val sortedMissions = stageMissions
                 .sortedBy { missionOrderKey(it.missionCode, it.title) }
 
-            val stageTitle = STAGE_TITLES[stage] ?: "단계 $stage"
+            val stageTitle = HomeStageTitles.title(stage)
             val meta = ISLAND_META.getOrNull(stage - 1) ?: ISLAND_META.first()
             // v2.11: 섬 진행 = 활성 별1 미션 중 ★1 세트 전부 완료 수 (별2·3은 해금 조건 제외)
             val star1Missions = sortedMissions.filter { it.hasActiveStar1() }

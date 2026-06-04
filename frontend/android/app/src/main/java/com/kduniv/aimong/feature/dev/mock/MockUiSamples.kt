@@ -1,6 +1,7 @@
 package com.kduniv.aimong.feature.dev.mock
 
 import com.kduniv.aimong.R
+import com.kduniv.aimong.feature.home.domain.HomeStageTitles
 import com.kduniv.aimong.feature.home.presentation.HomePathItem
 import com.kduniv.aimong.feature.home.presentation.HomeQuizNavigation
 import com.kduniv.aimong.feature.gacha.GachaPetCatalog
@@ -81,7 +82,7 @@ object MockUiSamples {
                         islandName = "시작의 섬",
                         progressCompleted = 3,
                         progressTotal = 5,
-                        themeHint = "AI가 뭐예요?",
+                        themeHint = HomeStageTitles.title(1),
                         bannerDrawableRes = R.drawable.bg_home_section_banner_stage1,
                     )
                 )
@@ -155,7 +156,7 @@ object MockUiSamples {
                         islandName = "탐험의 화산섬",
                         progressCompleted = 0,
                         progressTotal = 1,
-                        themeHint = "AI 잘 쓰기",
+                        themeHint = HomeStageTitles.title(2),
                         bannerDrawableRes = R.drawable.bg_home_section_banner_stage2,
                     )
                 )
@@ -172,7 +173,7 @@ object MockUiSamples {
                         afterStageNumber = 1,
                         reward = StageRewardUi(
                             stageNumber = 1,
-                            stageThemeTitle = "AI 잘 쓰기",
+                            stageThemeTitle = HomeStageTitles.title(2),
                             parentPromise = "주말에 놀이공원 가기",
                             defaultGear = 50,
                             normalTickets = 0,
@@ -186,7 +187,7 @@ object MockUiSamples {
                         islandName = "마스터의 별섬",
                         progressCompleted = 0,
                         progressTotal = 1,
-                        themeHint = "비판적으로 생각하기",
+                        themeHint = HomeStageTitles.title(3),
                         bannerDrawableRes = R.drawable.bg_home_section_banner_stage3,
                     )
                 )
