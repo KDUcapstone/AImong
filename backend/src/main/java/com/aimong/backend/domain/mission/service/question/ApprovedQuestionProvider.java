@@ -7,5 +7,13 @@ import java.util.UUID;
 
 public interface ApprovedQuestionProvider {
 
+    default List<QuestionBank> findActiveQuestionsBySetIdAndMissionId(String setId, UUID missionId) {
+        return List.of();
+    }
+
+    default List<QuestionBank> findActiveQuestionsByMissionIdAndPackNo(UUID missionId, short packNo) {
+        return List.of();
+    }
+
     List<QuestionBank> findActiveQuestionsByMissionIdAndDifficulty(UUID missionId, DifficultyBand difficulty);
 }

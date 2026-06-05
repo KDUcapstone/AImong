@@ -3,7 +3,6 @@ package com.aimong.backend.domain.mission.service.question;
 import com.aimong.backend.domain.mission.config.MissionQuestionProperties;
 import com.aimong.backend.domain.mission.entity.DifficultyBand;
 import com.aimong.backend.domain.mission.entity.QuestionBank;
-import com.aimong.backend.domain.mission.repository.MissionAnswerResultRepository;
 import com.aimong.backend.global.exception.AimongException;
 import com.aimong.backend.global.exception.ErrorCode;
 import java.util.Collections;
@@ -11,27 +10,28 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
 public class MissionQuestionSetFactory {
 
+    private static final Pattern SET_PACK_NO_PATTERN = Pattern.compile(".*-L(\\d+)$");
+
     private final ApprovedQuestionProvider approvedQuestionProvider;
     private final MissionQuestionProperties missionQuestionProperties;
-    private final MissionAnswerResultRepository missionAnswerResultRepository;
     private final SimilarityDeduplicator similarityDeduplicator;
 
     @Autowired
     public MissionQuestionSetFactory(
             ApprovedQuestionProvider approvedQuestionProvider,
             MissionQuestionProperties missionQuestionProperties,
-            MissionAnswerResultRepository missionAnswerResultRepository,
             SimilarityDeduplicator similarityDeduplicator
     ) {
         this.approvedQuestionProvider = approvedQuestionProvider;
         this.missionQuestionProperties = missionQuestionProperties;
-        this.missionAnswerResultRepository = missionAnswerResultRepository;
         this.similarityDeduplicator = similarityDeduplicator;
     }
 
@@ -41,7 +41,6 @@ public class MissionQuestionSetFactory {
     ) {
         this.approvedQuestionProvider = approvedQuestionProvider;
         this.missionQuestionProperties = missionQuestionProperties;
-        this.missionAnswerResultRepository = null;
         this.similarityDeduplicator = new SimilarityDeduplicator();
     }
 
@@ -50,6 +49,21 @@ public class MissionQuestionSetFactory {
     }
 
     public List<QuestionBank> create(String setId, UUID missionId, int starLevel, UUID childId, boolean isReview) {
+        validateStarLevel(starLevel);
+
+        List<QuestionBank> setPool = safeList(approvedQuestionProvider.findActiveQuestionsBySetIdAndMissionId(setId, missionId));
+        if (!setPool.isEmpty()) {
+            return selectFixedQuestionSet(setPool);
+        }
+
+        Short packNo = packNoFromSetId(setId);
+        if (packNo != null && packNo == starLevel) {
+            List<QuestionBank> packPool = safeList(approvedQuestionProvider.findActiveQuestionsByMissionIdAndPackNo(missionId, packNo));
+            if (!packPool.isEmpty()) {
+                return selectFixedQuestionSet(packPool);
+            }
+        }
+
         return create(missionId, childId, starLevel, isReview);
     }
 
@@ -58,66 +72,23 @@ public class MissionQuestionSetFactory {
     }
 
     public List<QuestionBank> create(UUID missionId, UUID childId, int starLevel, boolean isReview) {
-        List<QuestionBank> lowPool = approvedQuestionProvider.findActiveQuestionsByMissionIdAndDifficulty(missionId, DifficultyBand.LOW);
-        List<QuestionBank> mediumPool = approvedQuestionProvider.findActiveQuestionsByMissionIdAndDifficulty(missionId, DifficultyBand.MEDIUM);
-        List<QuestionBank> highPool = approvedQuestionProvider.findActiveQuestionsByMissionIdAndDifficulty(missionId, DifficultyBand.HIGH);
-        return selectQuestionSet(missionId, childId, starLevel, lowPool, mediumPool, highPool);
+        DifficultyBand difficulty = difficultyForStarLevel(starLevel);
+        List<QuestionBank> pool = safeList(approvedQuestionProvider.findActiveQuestionsByMissionIdAndDifficulty(missionId, difficulty));
+        return selectFixedQuestionSet(pool);
     }
 
-    private List<QuestionBank> selectQuestionSet(
-            UUID missionId,
-            UUID childId,
-            int starLevel,
-            List<QuestionBank> lowPool,
-            List<QuestionBank> mediumPool,
-            List<QuestionBank> highPool
-    ) {
-        DifficultyQuota quota = DifficultyQuota.forStarLevel(starLevel);
-        Set<UUID> attemptedQuestionIds = attemptedQuestionIds(childId, missionId);
+    private List<QuestionBank> selectFixedQuestionSet(List<QuestionBank> candidates) {
         Set<String> selectedPromptKeys = new HashSet<>();
         List<QuestionBank> selected = new java.util.ArrayList<>(missionQuestionProperties.setSize());
-        selected.addAll(selectByQuota(lowPool, attemptedQuestionIds, selectedPromptKeys, quota.low()));
-        selected.addAll(selectByQuota(mediumPool, attemptedQuestionIds, selectedPromptKeys, quota.medium()));
-        selected.addAll(selectByQuota(highPool, attemptedQuestionIds, selectedPromptKeys, quota.high()));
-        return shuffleFinalSet(selected);
-    }
-
-    private Set<UUID> attemptedQuestionIds(UUID childId, UUID missionId) {
-        if (missionAnswerResultRepository == null) {
-            return new HashSet<>();
-        }
-        return new HashSet<>(missionAnswerResultRepository.findNormalAttemptedQuestionIds(childId, missionId));
-    }
-
-    private List<QuestionBank> selectByQuota(
-            List<QuestionBank> pool,
-            Set<UUID> attemptedQuestionIds,
-            Set<String> selectedPromptKeys,
-            int quota
-    ) {
-        List<QuestionBank> available = pool.stream()
-                .filter(question -> isPromptOriginal(question, selectedPromptKeys))
-                .toList();
-        if (available.size() < quota) {
+        addUniquePrompts(selected, selectedPromptKeys, candidates, missionQuestionProperties.setSize());
+        if (selected.size() != missionQuestionProperties.setSize()) {
             throw new AimongException(ErrorCode.MISSION_SET_NOT_READY);
         }
-        List<QuestionBank> unattempted = available.stream()
-                .filter(question -> !attemptedQuestionIds.contains(question.getId()))
-                .collect(java.util.stream.Collectors.toCollection(java.util.ArrayList::new));
-        List<QuestionBank> attempted = available.stream()
-                .filter(question -> attemptedQuestionIds.contains(question.getId()))
-                .collect(java.util.stream.Collectors.toCollection(java.util.ArrayList::new));
+        return shuffleWithinDifficultyBands(selected);
+    }
 
-        Collections.shuffle(unattempted);
-        Collections.shuffle(attempted);
-
-        List<QuestionBank> selected = new java.util.ArrayList<>(quota);
-        addUniquePrompts(selected, selectedPromptKeys, unattempted, quota);
-        addUniquePrompts(selected, selectedPromptKeys, attempted, quota);
-        if (selected.size() != quota) {
-            throw new AimongException(ErrorCode.MISSION_SET_NOT_READY);
-        }
-        return selected;
+    private List<QuestionBank> safeList(List<QuestionBank> questions) {
+        return questions == null ? List.of() : questions;
     }
 
     private void addUniquePrompts(
@@ -163,23 +134,49 @@ public class MissionQuestionSetFactory {
         return similarityDeduplicator.nearDuplicateKey(prompt);
     }
 
-    private List<QuestionBank> shuffleFinalSet(List<QuestionBank> questionSet) {
-        List<QuestionBank> shuffled = new java.util.ArrayList<>(questionSet);
-        Collections.shuffle(shuffled);
-        if (shuffled.size() != missionQuestionProperties.setSize()) {
+    private List<QuestionBank> shuffleWithinDifficultyBands(List<QuestionBank> questionSet) {
+        if (questionSet.size() != missionQuestionProperties.setSize()) {
             throw new AimongException(ErrorCode.MISSION_SET_NOT_READY);
         }
-        return List.copyOf(shuffled);
+        List<QuestionBank> ordered = new java.util.ArrayList<>(questionSet.size());
+        for (DifficultyBand difficulty : DifficultyBand.values()) {
+            List<QuestionBank> bandQuestions = questionSet.stream()
+                    .filter(question -> question.getDifficulty() == difficulty)
+                    .collect(java.util.stream.Collectors.toCollection(java.util.ArrayList::new));
+            Collections.shuffle(bandQuestions);
+            ordered.addAll(bandQuestions);
+        }
+        if (ordered.size() != questionSet.size()) {
+            throw new AimongException(ErrorCode.MISSION_SET_NOT_READY);
+        }
+        return List.copyOf(ordered);
     }
 
-    private record DifficultyQuota(int low, int medium, int high) {
-        private static DifficultyQuota forStarLevel(int starLevel) {
-            return switch (starLevel) {
-                case 1 -> new DifficultyQuota(7, 2, 1);
-                case 2 -> new DifficultyQuota(3, 5, 2);
-                case 3 -> new DifficultyQuota(2, 3, 5);
-                default -> throw new AimongException(ErrorCode.INVALID_STAR_LEVEL);
-            };
+    private DifficultyBand difficultyForStarLevel(int starLevel) {
+        return switch (starLevel) {
+            case 1 -> DifficultyBand.LOW;
+            case 2 -> DifficultyBand.MEDIUM;
+            case 3 -> DifficultyBand.HIGH;
+            default -> throw new AimongException(ErrorCode.INVALID_STAR_LEVEL);
+        };
+    }
+
+    private void validateStarLevel(int starLevel) {
+        difficultyForStarLevel(starLevel);
+    }
+
+    private Short packNoFromSetId(String setId) {
+        if (setId == null || setId.isBlank()) {
+            return null;
+        }
+        Matcher matcher = SET_PACK_NO_PATTERN.matcher(setId);
+        if (!matcher.matches()) {
+            return null;
+        }
+        try {
+            return Short.valueOf(matcher.group(1));
+        } catch (NumberFormatException exception) {
+            return null;
         }
     }
 }

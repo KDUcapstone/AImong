@@ -15,20 +15,25 @@ public class StaticQuestionProvider implements ApprovedQuestionProvider {
     private final QuestionBankRepository questionBankRepository;
 
     @Override
+    public List<QuestionBank> findActiveQuestionsBySetIdAndMissionId(String setId, UUID missionId) {
+        return copy(questionBankRepository.findAllFromSafeViewBySetIdAndMissionId(setId, missionId));
+    }
+
+    @Override
+    public List<QuestionBank> findActiveQuestionsByMissionIdAndPackNo(UUID missionId, short packNo) {
+        return copy(questionBankRepository.findAllFromSafeViewByMissionIdAndPackNo(missionId, packNo));
+    }
+
+    @Override
     public List<QuestionBank> findActiveQuestionsByMissionIdAndDifficulty(UUID missionId, DifficultyBand difficulty) {
         List<QuestionBank> questions = questionBankRepository.findAllFromSafeViewByMissionIdAndDifficulty(
                 missionId,
                 difficulty.name()
         );
-        return shuffleIfNeeded(questions);
+        return copy(questions);
     }
 
-    private List<QuestionBank> shuffleIfNeeded(List<QuestionBank> questions) {
-        if (questions.size() <= 1) {
-            return List.copyOf(questions);
-        }
-        java.util.ArrayList<QuestionBank> shuffled = new java.util.ArrayList<>(questions);
-        java.util.Collections.shuffle(shuffled);
-        return List.copyOf(shuffled);
+    private List<QuestionBank> copy(List<QuestionBank> questions) {
+        return questions == null ? List.of() : List.copyOf(questions);
     }
 }

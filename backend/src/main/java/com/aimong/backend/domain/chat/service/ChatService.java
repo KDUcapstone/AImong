@@ -56,10 +56,11 @@ public class ChatService {
             "homework", "help", "answer", "solve"
     );
     private static final String DEVELOPER_PROMPT = """
-            너는 초등학생이 AI를 안전하고 비판적으로 연습하도록 돕는 AImong의 AI 친구다.
-            한국어로 2~4문장 안에서 쉽고 친절하게 답한다.
-            숙제나 글쓰기를 대신 완성해 달라는 요청에는 정답 전체를 대신 작성하지 말고 힌트, 생각 순서, 확인 방법을 안내한다.
-            개인정보를 묻거나 저장하려 하지 말고, 위험한 개인정보가 보이면 공유하지 말라고 부드럽게 알려준다.
+            너는 초등학생 전용 AI 학습 도우미야.
+            욕설, 폭력, 성인 내용은 절대 포함하지 않는다.
+            모든 답변은 초등학교 5학년 수준으로 쉽게 설명한다.
+            숙제나 글쓰기를 대신 완성해 달라는 요청에는 정답 전체를 대신 작성하지 말고 방법과 힌트를 알려준다.
+            답변은 3~5문장 이내로 한다.
             """;
 
     private final ChatUsageRepository chatUsageRepository;
@@ -68,6 +69,7 @@ public class ChatService {
     private final ChildProfileRepository childProfileRepository;
     private final ChildActivityService childActivityService;
     private final PrivacyMaskingService privacyMaskingService;
+    private final ChatSafetyFilterService chatSafetyFilterService;
     private final PrivacyEventRepository privacyEventRepository;
     private final OpenAiClient openAiClient;
     private final OpenAiProperties openAiProperties;
@@ -91,6 +93,31 @@ public class ChatService {
         ChatPreflight preflight = transactionTemplate.execute(status ->
                 prepareChat(childId, sessionId, imageRequested));
         boolean hintTriggered = isHintTriggered(maskingResult.sanitizedMessage());
+        ChatSafetyFilterService.FilterDecision safetyDecision = chatSafetyFilterService.evaluate(
+                maskingResult.sanitizedMessage(),
+                imageRequested
+        );
+
+        if (!safetyDecision.allowed()) {
+            ChatCommit commit = transactionTemplate.execute(status -> commitChat(
+                    childId,
+                    maskingResult,
+                    masked,
+                    preflight.sessionId(),
+                    safetyDecision.safeReply(),
+                    false,
+                    false
+            ));
+            return new ChatResponse(
+                    safetyDecision.safeReply(),
+                    commit.remainingCalls(),
+                    null,
+                    commit.sessionId(),
+                    commit.sessionExpiresAt(),
+                    null,
+                    imageRequested ? commit.remainingImageCalls() : null
+            );
+        }
 
         ChatResponse.GeneratedImageResponse generatedImage = null;
         String safeReply;
@@ -111,7 +138,8 @@ public class ChatService {
                 masked,
                 preflight.sessionId(),
                 safeReply,
-                imageRequested
+                imageRequested,
+                true
         ));
 
         return new ChatResponse(
@@ -146,7 +174,8 @@ public class ChatService {
             boolean masked,
             UUID requestedSessionId,
             String safeReply,
-            boolean imageRequested
+            boolean imageRequested,
+            boolean rewardEligible
     ) {
         ChildProfile childProfile = childProfileRepository.findWithLockById(childId)
                 .filter(profile -> profile.getDeletedAt() == null)
@@ -163,21 +192,25 @@ public class ChatService {
         chatMessageRepository.save(ChatMessage.user(chatSession, maskingResult.sanitizedMessage(), now));
         chatMessageRepository.save(ChatMessage.assistant(chatSession, safeReply, Instant.now()));
 
-        boolean firstSuccessToday = usage.getCount() == 0;
-        usage.increment();
-        if (imageRequested) {
-            usage.incrementImage();
+        boolean firstSuccessToday = rewardEligible && usage.getCount() == 0;
+        if (rewardEligible) {
+            usage.increment();
+            if (imageRequested) {
+                usage.incrementImage();
+            }
         }
 
-        if (firstSuccessToday) {
+        if (rewardEligible && firstSuccessToday) {
             childProfile.applyMissionXp(FIRST_CHAT_XP, KstDateUtils.today(), KstDateUtils.currentWeekStart());
             childProfile.refreshProfileImageType();
             petGrowthService.applyMissionReward(childId, FIRST_CHAT_XP);
         }
 
-        dailyQuestService.updateForChatSuccess(childId);
-        weeklyQuestService.updateForChatSuccess(childId);
-        achievementService.unlockByTotalXp(childId, childProfile);
+        if (rewardEligible) {
+            dailyQuestService.updateForChatSuccess(childId);
+            weeklyQuestService.updateForChatSuccess(childId);
+            achievementService.unlockByTotalXp(childId, childProfile);
+        }
 
         return new ChatCommit(
                 chatSession.getId(),

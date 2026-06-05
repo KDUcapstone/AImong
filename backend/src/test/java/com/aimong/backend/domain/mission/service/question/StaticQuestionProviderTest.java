@@ -35,6 +35,37 @@ class StaticQuestionProviderTest {
         verify(questionBankRepository).findAllFromSafeViewByMissionIdAndDifficulty(missionId, DifficultyBand.LOW.name());
     }
 
+    @Test
+    void readsOnlyActiveQuestionsForRequestedSet() {
+        StaticQuestionProvider provider = new StaticQuestionProvider(questionBankRepository);
+        UUID missionId = UUID.randomUUID();
+        String setId = "S0101-L1";
+        List<QuestionBank> questions = List.of(question(DifficultyBand.LOW), question(DifficultyBand.LOW));
+
+        when(questionBankRepository.findAllFromSafeViewBySetIdAndMissionId(setId, missionId))
+                .thenReturn(questions);
+
+        List<QuestionBank> selected = provider.findActiveQuestionsBySetIdAndMissionId(setId, missionId);
+
+        assertThat(selected).containsExactlyElementsOf(questions);
+        verify(questionBankRepository).findAllFromSafeViewBySetIdAndMissionId(setId, missionId);
+    }
+
+    @Test
+    void readsOnlyActiveQuestionsForRequestedPack() {
+        StaticQuestionProvider provider = new StaticQuestionProvider(questionBankRepository);
+        UUID missionId = UUID.randomUUID();
+        List<QuestionBank> questions = List.of(question(DifficultyBand.MEDIUM), question(DifficultyBand.MEDIUM));
+
+        when(questionBankRepository.findAllFromSafeViewByMissionIdAndPackNo(missionId, (short) 2))
+                .thenReturn(questions);
+
+        List<QuestionBank> selected = provider.findActiveQuestionsByMissionIdAndPackNo(missionId, (short) 2);
+
+        assertThat(selected).containsExactlyElementsOf(questions);
+        verify(questionBankRepository).findAllFromSafeViewByMissionIdAndPackNo(missionId, (short) 2);
+    }
+
     private QuestionBank question(DifficultyBand difficulty) {
         return org.mockito.Mockito.mock(QuestionBank.class);
     }
