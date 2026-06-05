@@ -336,7 +336,7 @@ class QuizRepositoryImpl @Inject constructor(
             },
             currentLevel = data.currentLevel ?: 1,
             currentXp = progressXp,
-            nextLevelXp = data.nextLevelXp ?: 100
+            nextLevelXp = data.nextLevelXp ?: 0,
         )
     }
 
@@ -401,7 +401,7 @@ class QuizRepositoryImpl @Inject constructor(
             },
             currentLevel = 1,
             currentXp = 0,
-            nextLevelXp = 100
+            nextLevelXp = 0
         )
     }
 

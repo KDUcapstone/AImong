@@ -69,6 +69,36 @@ object ParentChildManageDialogs {
         }
     }
 
+    fun showAddChild(
+        fragment: Fragment,
+        anchor: View,
+        onAdd: (String) -> Unit,
+    ) {
+        val ctx = fragment.requireContext()
+        val dialogView = LayoutInflater.from(ctx)
+            .inflate(R.layout.dialog_parent_child_add, null, false)
+        val input = dialogView.findViewById<TextInputEditText>(R.id.input_add_child_nickname)
+        val dialog = openCardDialog(fragment, dialogView)
+        input.requestFocus()
+
+        dialogView.findViewById<MaterialButton>(R.id.btn_add_child_cancel).setOnClickListener {
+            dialog.dismiss()
+        }
+        dialogView.findViewById<MaterialButton>(R.id.btn_add_child_confirm).setOnClickListener {
+            val name = input.text?.toString()?.trim().orEmpty()
+            when {
+                name.isBlank() ->
+                    Snackbar.make(anchor, R.string.auth_error_nickname_empty, Snackbar.LENGTH_SHORT).show()
+                name.length > 20 ->
+                    Snackbar.make(anchor, R.string.auth_error_nickname_length, Snackbar.LENGTH_SHORT).show()
+                else -> {
+                    dialog.dismiss()
+                    onAdd(name)
+                }
+            }
+        }
+    }
+
     fun showEditNickname(
         fragment: Fragment,
         child: ParentChildItem,

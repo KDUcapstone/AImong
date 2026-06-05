@@ -6,7 +6,6 @@ import android.app.TimePickerDialog
 import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
-import android.widget.EditText
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
@@ -227,24 +226,11 @@ class ParentDashboardFragment :
             ).show()
             return
         }
-        val input = EditText(requireContext()).apply {
-            hint = getString(R.string.parent_add_child_hint)
-        }
-        AlertDialog.Builder(requireContext())
-            .setTitle(R.string.parent_add_child_dialog_title)
-            .setView(input)
-            .setPositiveButton(android.R.string.ok) { _, _ ->
-                val name = input.text?.toString()?.trim().orEmpty()
-                when {
-                    name.isBlank() ->
-                        Snackbar.make(binding.root, R.string.auth_error_nickname_empty, Snackbar.LENGTH_SHORT).show()
-                    name.length > 20 ->
-                        Snackbar.make(binding.root, R.string.auth_error_nickname_length, Snackbar.LENGTH_SHORT).show()
-                    else -> viewModel.addChild(name)
-                }
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
+        ParentChildManageDialogs.showAddChild(
+            fragment = this,
+            anchor = binding.root,
+            onAdd = { name -> viewModel.addChild(name) },
+        )
     }
 
     private fun showChildManageDialog(child: ParentChildItem) {

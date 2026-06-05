@@ -29,6 +29,9 @@ class ChildGachaOnboardingController @Inject constructor(
     /** [evaluateEntry]·로그인 시 확정 */
     private var activeChildId: String? = null
 
+    /** 튜토리얼 장착 단계 — 서버 자동 장착이어도 사용자가 장착 버튼을 누를 때까지 완료하지 않음 */
+    private var manualEquipConfirmed: Boolean = false
+
     private val _phase = MutableStateFlow(ChildGachaOnboardingPhase.Inactive)
     val phase: StateFlow<ChildGachaOnboardingPhase> = _phase.asStateFlow()
 
@@ -100,7 +103,15 @@ class ChildGachaOnboardingController @Inject constructor(
     }
 
     fun onGachaEquipCoachmark() {
+        manualEquipConfirmed = false
         _phase.value = ChildGachaOnboardingPhase.GachaEquipCoachmark
+    }
+
+    fun requiresManualEquipBeforeComplete(): Boolean =
+        _phase.value == ChildGachaOnboardingPhase.GachaEquipCoachmark && !manualEquipConfirmed
+
+    fun onManualEquipConfirmed() {
+        manualEquipConfirmed = true
     }
 
     fun onCompleting() {
@@ -115,6 +126,7 @@ class ChildGachaOnboardingController @Inject constructor(
     fun resetActivePhase() {
         activeChildId = null
         onboardingTicketHint = 0
+        manualEquipConfirmed = false
         _phase.value = ChildGachaOnboardingPhase.Inactive
     }
 

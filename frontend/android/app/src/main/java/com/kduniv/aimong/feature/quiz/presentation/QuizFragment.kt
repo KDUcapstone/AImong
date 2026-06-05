@@ -730,7 +730,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         
         // 알→성장 등 중간 진화만 퀴즈 결과 화면에서 연출 (아이몽은 홈 축하 팝업)
         if (result.petEvolved && !isAimongEvolution(result)) {
-            showEvolutionCelebration()
+            showEvolutionCelebration(resolveResultPetVisual(result))
         }
 
         bindEquippedPetSprites(resolveResultPetVisual(result))
@@ -789,8 +789,8 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
 
         binding.tvResPetBonus.text = formatMissionXpBonusLine(result, isReviewSubmit)
         
-        // XP 애니메이션
-        animateXpGain(result.xpEarned, result.currentXp, result.nextLevelXp, result.currentLevel)
+        // XP 애니메이션 — 장착 펫 성장(알 80 / 몽 250) 기준
+        animatePetXpGain(result)
 
         // 스트릭·티켓 (remainingTickets는 서버 스냅샷)
         val streakLine = if (result.streakDays > 0) {
@@ -853,28 +853,38 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         return parts.joinToString(" · ").ifBlank { "+${result.xpEarned} XP" }
     }
 
-    private fun animateXpGain(gainedXp: Int, currentXp: Int, maxXp: Int, level: Int) {
+    private fun animatePetXpGain(result: QuizResult) {
+        val gainedXp = result.xpEarned
+        val endXp = result.currentXp.coerceAtLeast(0)
+        val safeMax = result.nextLevelXp.coerceAtLeast(1)
+        val stageLabel = com.kduniv.aimong.feature.pet.presentation.PetStageLabels.label(
+            requireContext(),
+            result.petStage ?: "EGG",
+            endXp,
+        )
+
         binding.tvResXpGain.text = "+$gainedXp XP"
-        val safeMax = maxXp.coerceAtLeast(1)
         if (gainedXp <= 0) {
             binding.pbResXpProgress.max = safeMax
-            binding.pbResXpProgress.progress = currentXp.coerceIn(0, safeMax)
-            binding.tvResXpStatus.text = "LV.$level (${currentXp.coerceIn(0, safeMax)} / $safeMax)"
+            binding.pbResXpProgress.progress = endXp.coerceIn(0, safeMax)
+            binding.tvResXpStatus.text = formatResultPetXpStatus(stageLabel, endXp.coerceIn(0, safeMax), safeMax)
             return
         }
-        val endXp = if (currentXp >= gainedXp) currentXp else gainedXp
         val startXp = (endXp - gainedXp).coerceAtLeast(0)
         ValueAnimator.ofInt(startXp, endXp).apply {
             duration = 1500
-            addUpdateListener { 
+            addUpdateListener {
                 val value = it.animatedValue as Int
                 binding.pbResXpProgress.progress = value
                 binding.pbResXpProgress.max = safeMax
-                binding.tvResXpStatus.text = "LV.$level ($value / $safeMax)"
+                binding.tvResXpStatus.text = formatResultPetXpStatus(stageLabel, value, safeMax)
             }
             start()
         }
     }
+
+    private fun formatResultPetXpStatus(stageLabel: String, current: Int, max: Int): String =
+        getString(R.string.gacha_pet_level_xp_fmt, stageLabel, current, max)
 
     private fun getBonusReasonText(reason: String?): String {
         return when (reason) {
@@ -1432,13 +1442,15 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
     }
 
     private fun resolveResultPetVisual(result: QuizResult): EquippedPetVisual {
-        if (!result.petEvolved) return viewModel.displayPetVisual(evolved = false)
-        val serverStage = result.petStage?.takeIf { it.isNotBlank() } ?: return viewModel.displayPetVisual(evolved = true)
         val base = viewModel.equippedPetVisual.value
-        return base.copy(stage = serverStage)
+        val stage = PetGrowthRules.resolveEffectiveStageString(
+            result.petStage?.takeIf { it.isNotBlank() } ?: base.stage,
+            result.currentXp,
+        )
+        return base.copy(stage = stage)
     }
 
-    private fun showEvolutionCelebration() {
+    private fun showEvolutionCelebration(visual: EquippedPetVisual) {
         try {
             val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_evolution, null)
             val dialog = androidx.appcompat.app.AlertDialog.Builder(requireContext(), R.style.TransparentDialog)
@@ -1446,13 +1458,12 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                 .setCancelable(true)
                 .create()
 
-            val evolved = viewModel.displayPetVisual(evolved = true)
             PetArtAssets.bindEquipped(
                 image = dialogView.findViewById(R.id.iv_evolution_pet_sprite),
                 emojiFallback = dialogView.findViewById(R.id.tv_evolution_pet_emoji),
-                petType = evolved.petType,
-                stage = evolved.stage,
-                grade = evolved.grade,
+                petType = visual.petType,
+                stage = visual.stage,
+                grade = visual.grade,
                 lottie = dialogView.findViewById(R.id.lav_evolution_effect),
             )
 

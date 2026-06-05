@@ -60,18 +60,16 @@ object PetGrowthRules {
     /**
      * UI·도감 표시용 단계.
      * - AIMONG 은 [stage] 정본 (달성 후 xp=0 리셋)
-     * - 그 외는 stage·xp 구간(80/250) 중 더 진행된 쪽 — BE stage 미갱신 대비
+     * - 그 외는 pet.xp 구간(80/250) 기준 — BE stage가 xp보다 앞서 있는 비정상 응답도 보정
      */
     fun resolveEffectiveStage(stage: String, xp: Int): PetStage {
-        val server = normalizeStage(stage)
-        if (server == PetStage.AIMONG) return PetStage.AIMONG
+        if (normalizeStage(stage) == PetStage.AIMONG) return PetStage.AIMONG
         val safeXp = xp.coerceAtLeast(0)
-        val fromXp = when {
+        return when {
             safeXp >= GROWTH_EVOLUTION_XP -> PetStage.AIMONG
             safeXp >= EGG_EVOLUTION_XP -> PetStage.GROWTH
             else -> PetStage.EGG
         }
-        return if (fromXp.ordinal > server.ordinal) fromXp else server
     }
 
     fun resolveEffectiveStageString(stage: String, xp: Int): String =

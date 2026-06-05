@@ -204,7 +204,7 @@ class QuizRepositoryStub @Inject constructor() : QuizRepository {
                 results = results,
                 currentLevel = 2,
                 currentXp = petXpAfter,
-                nextLevelXp = 100
+                nextLevelXp = 0
             )
         )
     }
@@ -323,7 +323,7 @@ class QuizRepositoryStub @Inject constructor() : QuizRepository {
                 },
                 currentLevel = 2,
                 currentXp = 50,
-                nextLevelXp = 100
+                nextLevelXp = 0
             )
         )
     }

@@ -29,6 +29,7 @@ import com.kduniv.aimong.feature.mission.domain.model.mergePreservingHigherUnloc
 import com.kduniv.aimong.feature.mission.domain.model.normalizeToThreeLevels
 import com.kduniv.aimong.feature.mission.domain.model.openDifficultyCount
 import com.kduniv.aimong.feature.mission.domain.repository.MissionRepository
+import com.kduniv.aimong.feature.pet.domain.PetGrowthRules
 import com.kduniv.aimong.feature.quest.domain.QuestNotificationHelper
 import com.kduniv.aimong.feature.quest.domain.repository.QuestRepository
 import com.kduniv.aimong.feature.streak.data.StreakRepository
@@ -186,11 +187,24 @@ class HomeViewModel @Inject constructor(
                 xpEarned > 0 && s.hasEquippedPet && s.showPetXpProgress -> s.petXp + xpEarned
                 else -> s.petXp
             }
+            val petStage = PetGrowthRules.resolveEffectiveStageString(s.petStage, petXp)
+            val showPetXpProgress = s.hasEquippedPet &&
+                PetGrowthRules.showsXpProgress(petStage, petXp)
+            val petMaxXp = if (showPetXpProgress) {
+                PetGrowthRules.progressMaxXp(s.equippedPetGrade, petStage, petXp)
+                    ?: PetGrowthRules.EGG_EVOLUTION_XP
+            } else {
+                0
+            }
             s.copy(
                 topStatusXp = userXp,
                 totalXp = userXp,
                 userLevel = 1 + (userXp / 80).coerceIn(0, 99),
                 petXp = petXp,
+                petStage = petStage,
+                petLevel = PetGrowthRules.displayStageLevel(petStage, petXp),
+                petMaxXp = petMaxXp,
+                showPetXpProgress = showPetXpProgress,
             )
         }
     }

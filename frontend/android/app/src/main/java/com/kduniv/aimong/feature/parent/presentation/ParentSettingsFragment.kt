@@ -55,7 +55,7 @@ class ParentSettingsFragment :
             AlertDialog.Builder(requireContext())
                 .setMessage(R.string.parent_logout_confirm)
                 .setPositiveButton(R.string.parent_logout) { _, _ -> viewModel.logout() }
-                .setNegativeButton(R.string.chat_privacy_action_cancel, null)
+                .setNegativeButton(R.string.parent_dialog_cancel, null)
                 .show()
         }
 
@@ -64,7 +64,7 @@ class ParentSettingsFragment :
                 .setTitle(R.string.parent_delete_account)
                 .setMessage(R.string.parent_delete_account_confirm)
                 .setPositiveButton(R.string.parent_delete_account) { _, _ -> viewModel.deleteAccount() }
-                .setNegativeButton(R.string.chat_privacy_action_cancel, null)
+                .setNegativeButton(R.string.parent_dialog_cancel, null)
                 .show()
         }
         viewModel.load()

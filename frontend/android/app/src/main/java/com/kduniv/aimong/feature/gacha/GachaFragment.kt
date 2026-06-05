@@ -116,6 +116,9 @@ class GachaFragment : BaseFragment<FragmentGachaBinding>(FragmentGachaBinding::i
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
                     childGachaOnboardingController.phase.collect { phase ->
+                        viewModel.setOnboardingManualEquipGate(
+                            childGachaOnboardingController.requiresManualEquipBeforeComplete(),
+                        )
                         when (phase) {
                             ChildGachaOnboardingPhase.GachaPullCoachmark -> {
                                 viewModel.seedTicketsIfEmpty(
@@ -133,13 +136,16 @@ class GachaFragment : BaseFragment<FragmentGachaBinding>(FragmentGachaBinding::i
                 viewModel.state.collect { s ->
                     binding.pbGacha.isVisible = s.loading && !pullRevealShowing
 
-                    val eq = s.pets?.equippedPet
+                    val suppressEquipUi =
+                        childGachaOnboardingController.requiresManualEquipBeforeComplete()
+                    val eq = if (suppressEquipUi) null else s.pets?.equippedPet
                     val hasEquipped = eq != null
                     binding.layoutEquippedPet.isVisible = hasEquipped
                     binding.tvEquipEmpty.isVisible = !hasEquipped
                     binding.tvEquipBanner.isVisible = !hasEquipped
 
-                    resolveEquippedPet(s.pets)?.let { equipped ->
+                    val petsForEquippedSlot = if (suppressEquipUi) null else s.pets
+                    resolveEquippedPet(petsForEquippedSlot)?.let { equipped ->
                         val bindKey = "${equipped.id}|${equipped.petType}|${equipped.stage}"
                         if (bindKey != lastEquippedBindKey) {
                             lastEquippedBindKey = bindKey
@@ -199,13 +205,6 @@ class GachaFragment : BaseFragment<FragmentGachaBinding>(FragmentGachaBinding::i
                         petAdapter.submitList(s.petCards)
                     }
                     bindPullButton(s)
-
-                    if (childGachaOnboardingController.phase.value ==
-                        ChildGachaOnboardingPhase.GachaEquipCoachmark &&
-                        s.pets?.equippedPet != null
-                    ) {
-                        maybeCompleteOnboarding()
-                    }
 
                     s.transientMessage?.let { msg ->
                         Snackbar.make(binding.root, msg, Snackbar.LENGTH_LONG).show()
@@ -426,7 +425,8 @@ class GachaFragment : BaseFragment<FragmentGachaBinding>(FragmentGachaBinding::i
         dialogBinding.btnClose.isVisible = true
         dialogBinding.btnClose.setOnClickListener { dialog.dismiss() }
 
-        if (item.isEquipped) {
+        val awaitingManualEquip = childGachaOnboardingController.requiresManualEquipBeforeComplete()
+        if (item.isEquipped && !awaitingManualEquip) {
             dialogBinding.btnEquip.isEnabled = false
             dialogBinding.btnEquip.text = getString(R.string.gacha_equipped_now)
             dialogBinding.btnEquip.setBackgroundResource(R.drawable.bg_gacha_action_disabled)
@@ -436,7 +436,18 @@ class GachaFragment : BaseFragment<FragmentGachaBinding>(FragmentGachaBinding::i
         } else {
             dialogBinding.btnEquip.setOnClickListener {
                 dialog.dismiss()
-                binding.root.post { viewModel.equipPet(pet.id) }
+                binding.root.post {
+                    viewModel.equipPet(pet.id) {
+                        if (childGachaOnboardingController.phase.value !=
+                            ChildGachaOnboardingPhase.GachaEquipCoachmark
+                        ) {
+                            return@equipPet
+                        }
+                        childGachaOnboardingController.onManualEquipConfirmed()
+                        viewModel.setOnboardingManualEquipGate(false)
+                        maybeCompleteOnboarding()
+                    }
+                }
             }
         }
     }

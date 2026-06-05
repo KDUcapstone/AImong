@@ -62,6 +62,9 @@ class GachaViewModel @Inject constructor(
     private val _state = MutableStateFlow(UiState())
     val state: StateFlow<UiState> = _state.asStateFlow()
 
+    /** 튜토리얼 장착 단계 — 서버가 첫 펫을 자동 장착해도 UI에는 미장착으로 표시 */
+    private var suppressEquippedForOnboarding = false
+
     init {
         refresh()
         prewarmPetArtCache()
@@ -102,6 +105,15 @@ class GachaViewModel @Inject constructor(
 
     fun consumePullReveal() {
         _state.update { it.copy(pullReveal = null) }
+    }
+
+    fun setOnboardingManualEquipGate(suppress: Boolean) {
+        if (suppressEquippedForOnboarding == suppress) return
+        suppressEquippedForOnboarding = suppress
+        _state.update { s ->
+            val lists = buildPetLists(s.pets, s.fragmentBalance)
+            s.copy(petCards = lists.encyclopedia)
+        }
     }
 
     /**
@@ -173,7 +185,7 @@ class GachaViewModel @Inject constructor(
     /** 장착 변경 시 도감 전체를 다시 그리지 않고 장착 배지만 갱신 */
     private fun applyEquippedPetChange(petData: PetListData?, message: String?) {
         _state.update { s ->
-            val equippedId = petData?.equippedPet?.id
+            val equippedId = effectiveEquippedPetId(petData)
             val cards = if (s.petCards.isNotEmpty() && petData != null) {
                 s.petCards.map { card ->
                     card.copy(isEquipped = card.pet?.id == equippedId)
@@ -237,16 +249,18 @@ class GachaViewModel @Inject constructor(
         }
     }
 
-    fun equipPet(petId: String) {
+    fun equipPet(petId: String, onSuccess: (() -> Unit)? = null) {
         viewModelScope.launch {
             petRepository.equipPet(petId).fold(
                 onSuccess = {
+                    suppressEquippedForOnboarding = false
                     val petData = withContext(Dispatchers.IO) { petRepository.getPets().getOrNull() }
                     applyEquippedPetChange(
                         petData = petData,
                         message = appContext.getString(R.string.gacha_equip_done),
                     )
                     homeRefreshBus.notify(HomeRefreshTrigger.Full)
+                    onSuccess?.invoke()
                 },
                 onFailure = { e ->
                     _state.update { it.copy(transientMessage = e.message) }
@@ -372,11 +386,14 @@ class GachaViewModel @Inject constructor(
         }
     }
 
+    private fun effectiveEquippedPetId(pets: PetListData?): String? =
+        if (suppressEquippedForOnboarding) null else pets?.equippedPet?.id
+
     private fun buildEncyclopediaCards(
         pets: PetListData?,
         balance: GachaFragmentBalance,
     ): List<GachaPetCardUi> {
-        val equippedId = pets?.equippedPet?.id
+        val equippedId = effectiveEquippedPetId(pets)
         val ownedByType = buildMap {
             pets?.pets.orEmpty().forEach { pet ->
                 put(GachaPetCatalog.normalizePetTypeKey(pet.petType), pet)
