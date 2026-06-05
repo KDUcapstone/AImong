@@ -43,7 +43,7 @@ class MissionListFragment : BaseFragment<FragmentMissionListBinding>(FragmentMis
     }
 
     private fun showStarLevelPicker(mission: Mission) {
-        val candidates = mission.starLevels.filter { it.isPlayable || it.isReviewable }
+        val candidates = mission.starLevels.filter { it.isPlayable || it.isReviewOnly }
             .sortedBy { it.starLevel }
         if (candidates.isEmpty()) {
             Toast.makeText(requireContext(), R.string.mission_no_playable_star_level, Toast.LENGTH_SHORT).show()

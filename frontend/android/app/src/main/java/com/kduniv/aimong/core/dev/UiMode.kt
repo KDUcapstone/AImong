@@ -6,10 +6,11 @@ package com.kduniv.aimong.core.dev
  * | 값 | 인증·역할 | 자녀 탭 | 부모 |
  * |----|-----------|---------|------|
  * | `false` | `nav_main` (실제 Firebase/API) | `nav_child` | `nav_parent` |
- * | `true` | `nav_main_stub` — **실제와 동일 XML**의 [com.kduniv.aimong.feature.dev.mock] 목업 | `nav_child_stub` — 홈·학습은 동일 레이아웃 목업, 나머지는 실제 Fragment | `nav_parent_stub` — 실제 부모 Fragment(현재와 동일 UI) |
+ * | `true` | `nav_main_stub` — **실제와 동일 XML**의 [com.kduniv.aimong.feature.dev.mock] 목업 | `nav_child_stub` — 홈은 목업, 퀴즈·퀘스트·챗·가챠·펫은 [StubRepositoryModule]로 **로컬 스텁**(Retrofit 미호출) | `nav_parent_stub` — 실제 부모 Fragment(API 호출) |
  *
  * @see com.kduniv.aimong.MainActivity
  */
 object UiMode {
-    const val useStubNav: Boolean = true
+    /** `true`: 목업 네비 + 퀴즈/퀘스트 등 Retrofit 스텁([com.kduniv.aimong.core.di.StubRepositoryModule]). `false`: 전부 실제 네비·API. */
+    const val useStubNav: Boolean = false
 }

@@ -9,16 +9,21 @@ import com.kduniv.aimong.core.local.entity.QuizMetadataEntity
 import com.kduniv.aimong.core.local.entity.QuizQuestionEntity
 import com.kduniv.aimong.core.network.ApiErrorMapper
 import com.kduniv.aimong.core.network.AimongApiService
+import com.kduniv.aimong.core.network.toResult
 import com.kduniv.aimong.feature.quiz.data.model.MissionAttemptAbandonRequest
 import com.kduniv.aimong.feature.quiz.data.model.MissionAttemptAbandonResponseData
+import com.kduniv.aimong.feature.quiz.data.model.MissionAttemptReviveRequest
+import com.kduniv.aimong.feature.quiz.data.model.MissionAttemptReviveResponseData
 import com.kduniv.aimong.feature.quiz.data.model.MissionAttemptResponseData
 import com.kduniv.aimong.feature.quiz.data.model.MissionSetAnswerItem
 import com.kduniv.aimong.feature.quiz.data.model.MissionSetCheckRequest
 import com.kduniv.aimong.feature.quiz.data.model.MissionSetCheckResponseData
+import com.kduniv.aimong.feature.quiz.data.model.MissionSetReportResponseData
 import com.kduniv.aimong.feature.quiz.data.model.MissionSetSubmitRequest
 import com.kduniv.aimong.feature.quiz.data.model.QuestionReportRequest
 import com.kduniv.aimong.feature.quiz.data.model.QuizQuestionsResponse
 import com.kduniv.aimong.feature.quiz.data.model.QuizSubmitResponse
+import com.kduniv.aimong.feature.quiz.data.model.RewardResponse
 import com.kduniv.aimong.feature.quiz.domain.model.Question
 import com.kduniv.aimong.feature.quiz.domain.model.QuestionReportResult
 import com.kduniv.aimong.feature.quiz.domain.model.QuestionResult
@@ -26,6 +31,9 @@ import com.kduniv.aimong.feature.quiz.domain.model.QuizQuestions
 import com.kduniv.aimong.feature.quiz.domain.model.QuizResult
 import com.kduniv.aimong.feature.quiz.domain.model.QuizReward
 import com.kduniv.aimong.feature.quiz.domain.model.RemainingTickets
+import com.kduniv.aimong.feature.quiz.domain.model.AttemptStatus
+import com.kduniv.aimong.feature.quiz.domain.model.normalizeAttemptStatus
+import com.kduniv.aimong.feature.quiz.domain.model.normalizeRewardType
 import com.kduniv.aimong.feature.quiz.domain.repository.QuizRepository
 import retrofit2.HttpException
 import java.io.IOException
@@ -41,12 +49,10 @@ class QuizRepositoryImpl @Inject constructor(
 
     override suspend fun getQuestionsBySetId(setId: String): kotlin.Result<QuizQuestions> {
         return try {
-            val response = apiService.getMissionSetQuestions(setId)
-            if (response.success) {
-                mapAndPersist(response.data).also { }
-            } else {
-                kotlin.Result.failure(Exception(ApiErrorMapper.userMessageForApiError(response.error)))
-            }
+            apiService.getMissionSetQuestions(setId).toResult().fold(
+                onSuccess = { mapAndPersist(it) },
+                onFailure = { kotlin.Result.failure(it) }
+            )
         } catch (e: HttpException) {
             fallbackCacheOr(setId) { Exception(ApiErrorMapper.userMessageForHttpException(e)) }
         } catch (e: Exception) {
@@ -56,12 +62,10 @@ class QuizRepositoryImpl @Inject constructor(
 
     override suspend fun getQuestionsByMission(missionId: String, starLevel: Int): kotlin.Result<QuizQuestions> {
         return try {
-            val response = apiService.getMissionQuestions(missionId, starLevel)
-            if (response.success) {
-                mapAndPersist(response.data)
-            } else {
-                kotlin.Result.failure(Exception(ApiErrorMapper.userMessageForApiError(response.error)))
-            }
+            apiService.getMissionQuestions(missionId, starLevel).toResult().fold(
+                onSuccess = { mapAndPersist(it) },
+                onFailure = { kotlin.Result.failure(it) }
+            )
         } catch (e: HttpException) {
             kotlin.Result.failure(Exception(ApiErrorMapper.userMessageForHttpException(e)))
         } catch (e: Exception) {
@@ -70,9 +74,9 @@ class QuizRepositoryImpl @Inject constructor(
     }
 
     private suspend fun mapAndPersist(data: QuizQuestionsResponse): kotlin.Result<QuizQuestions> {
-        val setId = data.setId?.toString()?.takeIf { it != "0" && it.isNotBlank() }
+        val setId = data.setId?.trim()?.takeIf { it != "0" && it.isNotBlank() }
             ?: return kotlin.Result.failure(Exception("세트 정보가 없습니다."))
-        val missionId = data.missionId?.toString().orEmpty()
+        val missionId = data.missionId?.trim().orEmpty()
         val title = data.missionTitle?.takeIf { it.isNotBlank() }
             ?: data.label.orEmpty().ifBlank { "학습" }
         val expiresAt = data.expiresAt?.takeIf { it.isNotBlank() } ?: "2099-12-31T23:59:59Z"
@@ -156,7 +160,8 @@ class QuizRepositoryImpl @Inject constructor(
                     id = entity.id,
                     type = type,
                     question = entity.question,
-                    options = opts
+                    options = opts,
+                    difficulty = null
                 )
             )
         }
@@ -179,8 +184,7 @@ class QuizRepositoryImpl @Inject constructor(
         answers: Map<String, String>
     ): kotlin.Result<QuizResult> {
         val items = answers.mapNotNull { (qid, ans) ->
-            val id = qid.toLongOrNull() ?: return@mapNotNull null
-            MissionSetAnswerItem(questionId = id, answer = ans)
+            MissionSetAnswerItem(questionId = qid, answer = ans)
         }
         if (items.size != answers.size) {
             return kotlin.Result.failure(Exception("답안 형식이 올바르지 않습니다."))
@@ -188,12 +192,10 @@ class QuizRepositoryImpl @Inject constructor(
         val request = MissionSetSubmitRequest(answers = items)
 
         return try {
-            val response = apiService.submitMissionSet(setId, request)
-            if (response.success) {
-                kotlin.Result.success(mapSubmitResponse(response.data))
-            } else {
-                kotlin.Result.failure(Exception(ApiErrorMapper.userMessageForApiError(response.error)))
-            }
+            apiService.submitMissionSet(setId, request).toResult().fold(
+                onSuccess = { kotlin.Result.success(mapSubmitResponse(it)) },
+                onFailure = { kotlin.Result.failure(it) }
+            )
         } catch (e: HttpException) {
             kotlin.Result.failure(Exception(ApiErrorMapper.userMessageForHttpException(e)))
         } catch (e: IOException) {
@@ -217,28 +219,28 @@ class QuizRepositoryImpl @Inject constructor(
 
     override suspend fun checkAnswer(
         setId: String,
-        questionId: Long,
+        questionId: String,
         answer: String
     ): kotlin.Result<MissionSetCheckResponseData> {
         return try {
-            val response = apiService.checkMissionSetAnswer(setId, MissionSetCheckRequest(questionId, answer))
-            if (response.success) kotlin.Result.success(response.data)
-            else kotlin.Result.failure(Exception(ApiErrorMapper.userMessageForApiError(response.error)))
+            kotlin.Result.success(
+                apiService.checkMissionSetAnswer(setId, MissionSetCheckRequest(questionId, answer))
+                    .toResult()
+                    .getOrThrow()
+            )
         } catch (e: HttpException) {
             kotlin.Result.failure(Exception(ApiErrorMapper.userMessageForHttpException(e)))
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             kotlin.Result.failure(e)
         }
     }
 
     override suspend fun getAttempt(attemptId: String): kotlin.Result<MissionAttemptResponseData> {
         return try {
-            val response = apiService.getMissionAttempt(attemptId)
-            if (response.success) kotlin.Result.success(response.data)
-            else kotlin.Result.failure(Exception(ApiErrorMapper.userMessageForApiError(response.error)))
+            kotlin.Result.success(apiService.getMissionAttempt(attemptId).toResult().getOrThrow())
         } catch (e: HttpException) {
             kotlin.Result.failure(Exception(ApiErrorMapper.userMessageForHttpException(e)))
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             kotlin.Result.failure(e)
         }
     }
@@ -248,49 +250,82 @@ class QuizRepositoryImpl @Inject constructor(
         reason: String
     ): kotlin.Result<MissionAttemptAbandonResponseData> {
         return try {
-            val response = apiService.abandonMissionAttempt(attemptId, MissionAttemptAbandonRequest(reason))
-            if (response.success) kotlin.Result.success(response.data)
-            else kotlin.Result.failure(Exception(ApiErrorMapper.userMessageForApiError(response.error)))
+            kotlin.Result.success(
+                apiService.abandonMissionAttempt(attemptId, MissionAttemptAbandonRequest(reason))
+                    .toResult()
+                    .getOrThrow()
+            )
         } catch (e: HttpException) {
             kotlin.Result.failure(Exception(ApiErrorMapper.userMessageForHttpException(e)))
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
+            kotlin.Result.failure(e)
+        }
+    }
+
+    override suspend fun reviveAttempt(attemptId: String): kotlin.Result<MissionAttemptReviveResponseData> {
+        return try {
+            kotlin.Result.success(
+                apiService.reviveMissionAttempt(attemptId, MissionAttemptReviveRequest(useCurrency = true))
+                    .toResult()
+                    .getOrThrow()
+            )
+        } catch (e: HttpException) {
+            kotlin.Result.failure(Exception(ApiErrorMapper.userMessageForHttpException(e)))
+        } catch (e: Throwable) {
             kotlin.Result.failure(e)
         }
     }
 
     private fun mapSubmitResponse(data: QuizSubmitResponse): QuizResult {
         val total = data.questionCount ?: data.total ?: 10
-        val correct = data.correctCount ?: 0
-        val score = data.score ?: if (total > 0) correct * 100 / total else 0
+        val correct = data.correctCount
+            ?: data.results?.count { it.isCorrect }
+            ?: 0
+        // v2.11: score는 100점 환산, correctCount는 정답 개수
+        val scorePercent = data.score
+            ?: if (total > 0) (correct * 100 / total).coerceIn(0, 100) else 0
         val wrong = data.wrongCount ?: (total - correct).coerceAtLeast(0)
-        val rewardsList = data.rewards.orEmpty()
+        val xpFromRewardList = data.rewards.orEmpty()
+            .filter { normalizeRewardType(it.type) == "EXP" }
+            .sumOf { it.count }
+        val isReview = data.mode == "review" || data.isReview == true
+        val isPassed = data.isPassed == true
+        val xpEarnedResolved = when {
+            isReview || !isPassed -> 0
+            else -> (data.xpEarned ?: data.exp ?: xpFromRewardList).coerceAtLeast(0)
+        }
+        val bonusXpResolved = when {
+            isReview || !isPassed -> 0
+            else -> data.bonusXp ?: 0
+        }
+        val progressXp = data.currentXp ?: data.equippedPetXp ?: 0
         return QuizResult(
-            mode = data.mode ?: "normal",
-            progressApplied = data.progressApplied ?: true,
-            attemptState = data.attemptState ?: "submitted",
+            mode = if (isReview) "review" else (data.mode ?: "normal"),
+            progressApplied = when {
+                isReview -> false
+                else -> data.progressApplied ?: isPassed
+            },
+            attemptState = normalizeAttemptStatus(data.attemptState),
             streakBonusApplied = data.streakBonusApplied ?: false,
-            score = score,
+            score = scorePercent,
+            correctCount = correct,
             total = total,
             wrongCount = wrong,
-            isPassed = data.isPassed ?: (correct * 10 >= total * 6),
+            isPassed = isPassed,
             isPerfect = data.isPerfect ?: (correct == total && wrong == 0),
+            isFirstClear = data.isFirstClear == true,
             equippedPetGrade = data.equippedPetGrade,
-            xpEarned = data.xpEarned ?: data.exp ?: 0,
-            bonusXp = data.bonusXp ?: 0,
+            xpEarned = xpEarnedResolved,
+            bonusXp = bonusXpResolved,
             bonusReason = data.bonusReason,
             petEvolved = data.petEvolved ?: false,
+            petStage = data.petStage,
+            equippedPetType = null,
             streakDays = data.streakDays ?: 0,
-            todayMissionCount = data.todayMissionCount ?: 0,
-            rewards = rewardsList.map {
-                QuizReward(
-                    type = it.type,
-                    ticketType = it.ticketType,
-                    count = it.count,
-                    reason = it.reason
-                )
-            },
+            todaySetCount = data.todaySetCount ?: 0,
+            rewards = mapRewardsToDomain(data.rewards),
             remainingTickets = data.remainingTickets?.let {
-                RemainingTickets(normal = it.normal, rare = it.rare, epic = it.epic)
+                RemainingTickets(normal = it.normal)
             },
             results = data.results.orEmpty().map {
                 QuestionResult(
@@ -300,9 +335,85 @@ class QuizRepositoryImpl @Inject constructor(
                 )
             },
             currentLevel = data.currentLevel ?: 1,
-            currentXp = data.currentXp ?: 0,
+            currentXp = progressXp,
             nextLevelXp = data.nextLevelXp ?: 100
         )
+    }
+
+    private fun mapRewardsToDomain(rewards: List<RewardResponse>?): List<QuizReward> =
+        rewards.orEmpty().map {
+            QuizReward(
+                type = normalizeRewardType(it.type),
+                ticketType = it.ticketType,
+                count = it.count,
+                reason = it.reason
+            )
+        }
+
+    private fun mapReportResponseToQuizResult(data: MissionSetReportResponseData): QuizResult {
+        val total = data.questionCount
+            ?: (data.results?.takeIf { it.isNotEmpty() }?.size)
+            ?: 10
+        val correct = data.correctCount
+            ?: (data.results?.count { it.isCorrect } ?: 0)
+        val wrong = data.wrongCount ?: (total - correct).coerceAtLeast(0)
+        val scorePercent = data.score
+            ?: if (total > 0) (correct * 100 / total).coerceIn(0, 100) else 0
+        val xpFromRewards = data.rewards.orEmpty()
+            .filter { normalizeRewardType(it.type) == "EXP" }
+            .sumOf { it.count }
+        val isReview = data.isReview
+        val isPassed = data.isPassed == true
+        val xpEarnedResolved = when {
+            isReview || !isPassed -> 0
+            else -> xpFromRewards.coerceAtLeast(0)
+        }
+        return QuizResult(
+            mode = if (isReview) "review" else "normal",
+            progressApplied = !isReview && isPassed,
+            attemptState = AttemptStatus.SUBMITTED.name,
+            streakBonusApplied = false,
+            score = scorePercent,
+            correctCount = correct,
+            total = total,
+            wrongCount = wrong,
+            isPassed = isPassed,
+            isPerfect = data.isPerfect ?: (correct == total && wrong == 0),
+            isFirstClear = data.isFirstClear == true,
+            equippedPetGrade = null,
+            xpEarned = xpEarnedResolved,
+            bonusXp = 0,
+            bonusReason = null,
+            petEvolved = false,
+            streakDays = 0,
+            todaySetCount = 0,
+            rewards = mapRewardsToDomain(data.rewards),
+            remainingTickets = null,
+            results = data.results.orEmpty().map { r ->
+                QuestionResult(
+                    questionId = r.questionId?.toString().orEmpty(),
+                    isCorrect = r.isCorrect,
+                    explanation = r.explanation.orEmpty(),
+                    questionNo = r.questionNo,
+                    correctAnswer = r.correctAnswer,
+                    submittedAnswer = r.submittedAnswer
+                )
+            },
+            currentLevel = 1,
+            currentXp = 0,
+            nextLevelXp = 100
+        )
+    }
+
+    override suspend fun getMissionSetReport(setId: String): kotlin.Result<QuizResult> {
+        return try {
+            val data = apiService.getMissionSetReport(setId).toResult().getOrThrow()
+            kotlin.Result.success(mapReportResponseToQuizResult(data))
+        } catch (e: HttpException) {
+            kotlin.Result.failure(Exception(ApiErrorMapper.userMessageForHttpException(e)))
+        } catch (e: Throwable) {
+            kotlin.Result.failure(e)
+        }
     }
 
     override suspend fun reportQuestion(
@@ -312,27 +423,22 @@ class QuizRepositoryImpl @Inject constructor(
         detail: String?
     ): kotlin.Result<QuestionReportResult> {
         return try {
-            val response = apiService.reportQuestion(
+            val d = apiService.reportQuestion(
                 missionId,
                 questionId,
                 QuestionReportRequest(reasonCode = reasonCode, detail = detail)
-            )
-            if (response.success) {
-                val d = response.data
-                kotlin.Result.success(
-                    QuestionReportResult(
-                        questionId = d.questionId,
-                        issueId = d.issueId,
-                        issueStatus = d.issueStatus,
-                        quarantined = d.quarantined
-                    )
+            ).toResult().getOrThrow()
+            kotlin.Result.success(
+                QuestionReportResult(
+                    questionId = d.questionId,
+                    issueId = d.issueId,
+                    issueStatus = d.issueStatus,
+                    quarantined = d.quarantined
                 )
-            } else {
-                kotlin.Result.failure(Exception(ApiErrorMapper.userMessageForApiError(response.error)))
-            }
+            )
         } catch (e: HttpException) {
             kotlin.Result.failure(Exception(ApiErrorMapper.userMessageForHttpException(e)))
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             kotlin.Result.failure(e)
         }
     }
@@ -344,8 +450,7 @@ class QuizRepositoryImpl @Inject constructor(
                 val answersType = object : TypeToken<List<MissionSetAnswerItem>>() {}.type
                 val answers: List<MissionSetAnswerItem> = gson.fromJson(mission.answersJson, answersType)
                 val request = MissionSetSubmitRequest(answers = answers)
-                val response = apiService.submitMissionSet(mission.setId, request)
-                if (response.success) {
+                if (apiService.submitMissionSet(mission.setId, request).toResult().isSuccess) {
                     offlineDao.markAsSynced(mission.id)
                 }
             }

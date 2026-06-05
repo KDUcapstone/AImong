@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="24dp"
+    android:layout_margin="0dp"
     app:cardBackgroundColor="#1A1025"
     app:cardCornerRadius="24dp"
     app:cardElevation="0dp"
@@ -17,13 +18,36 @@
         android:orientation="vertical"
         android:padding="24dp">
 
-        <com.airbnb.lottie.LottieAnimationView
-            android:id="@+id/lav_mission_not_ready_effect"
-            android:layout_width="160dp"
-            android:layout_height="160dp"
-            app:lottie_autoPlay="true"
-            app:lottie_loop="true"
-            app:lottie_rawRes="@raw/pet_idle" />
+        <FrameLayout
+            android:layout_width="@dimen/pet_sprite_mission_dialog"
+            android:layout_height="@dimen/pet_sprite_mission_dialog">
+
+            <com.airbnb.lottie.LottieAnimationView
+                android:id="@+id/lav_mission_not_ready_effect"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:visibility="gone"
+                app:lottie_autoPlay="true"
+                app:lottie_loop="true"
+                app:lottie_rawRes="@raw/pet_idle" />
+
+            <ImageView
+                android:id="@+id/iv_mission_not_ready_pet_sprite"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:contentDescription="@null"
+                android:scaleType="fitCenter"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/tv_mission_not_ready_pet_emoji"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:textSize="64sp"
+                android:visibility="gone"
+                tools:text="✨" />
+        </FrameLayout>
 
         <TextView
             android:id="@+id/tv_not_ready_title"
@@ -41,7 +65,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:gravity="center"
-            android:text="아이몽이 새로운 문제들을\n열심히 고르고 있어요 몽!\n잠시 후 다시 시도해 주세요 💦"
+            android:text="@string/mission_not_ready_body"
             android:textColor="#E0E0E0"
             android:textSize="15sp" />
 

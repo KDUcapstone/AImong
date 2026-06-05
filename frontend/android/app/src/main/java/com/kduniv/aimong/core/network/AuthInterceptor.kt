@@ -3,6 +3,7 @@ package com.kduniv.aimong.core.network
 import android.content.Context
 import android.content.Intent
 import com.kduniv.aimong.MainActivity
+import com.kduniv.aimong.core.auth.FirebaseParentTokenProvider
 import com.kduniv.aimong.core.local.SessionManager
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.first
@@ -14,6 +15,7 @@ import javax.inject.Inject
 
 class AuthInterceptor @Inject constructor(
     private val sessionManager: SessionManager,
+    private val firebaseParentTokenProvider: FirebaseParentTokenProvider,
     @ApplicationContext private val context: Context
 ) : Interceptor {
 
@@ -26,13 +28,22 @@ class AuthInterceptor @Inject constructor(
 
         val requestBuilder = original.newBuilder()
 
-        if (original.header("Authorization") == null && token?.isNotBlank() == true) {
-            requestBuilder.addHeader("Authorization", "Bearer $token")
+        if (original.header("Authorization") == null) {
+            when {
+                role == "PARENT" -> {
+                    val firebaseToken = runBlocking { firebaseParentTokenProvider.getIdTokenOrNull() }
+                    if (!firebaseToken.isNullOrBlank()) {
+                        requestBuilder.addHeader("Authorization", "Bearer $firebaseToken")
+                    }
+                }
+                token?.isNotBlank() == true ->
+                    requestBuilder.addHeader("Authorization", "Bearer $token")
+            }
         }
 
         val response = chain.proceed(requestBuilder.build())
 
-        if (response.code == 401 || response.code == 403) {
+        if (response.code == 401) {
             runBlocking { sessionManager.clearSession() }
             if (role == "CHILD" || role == "PARENT") {
                 navigateToLoginOnce()

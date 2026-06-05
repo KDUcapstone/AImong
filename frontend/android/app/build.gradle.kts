@@ -101,7 +101,9 @@ hilt {
 }
 
 dependencies {
+    implementation("androidx.activity:activity-ktx:1.9.3")
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.core.splashscreen)
     // Plain Maven coordinates: Cursor/Kotlin LSP often fails to attach version-catalog deps to the IDE classpath.
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation(libs.material)
@@ -119,6 +121,7 @@ dependencies {
 
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.swiperefreshlayout)
     implementation(libs.androidx.hilt.work)
     ksp(libs.androidx.hilt.compiler)
 

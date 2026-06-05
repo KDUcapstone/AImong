@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -25,6 +26,7 @@ class SessionManager @Inject constructor(
         private val KEY_AUTH_TOKEN = stringPreferencesKey("auth_token")
         private val KEY_PARENT_CHILDREN_JSON = stringPreferencesKey("parent_children_json")
         private val KEY_PARENT_NICKNAME = stringPreferencesKey("parent_nickname")
+        private val KEY_CHILD_ID = stringPreferencesKey("child_id")
     }
 
     val userRole: Flow<String?> = context.dataStore.data.map { preferences ->
@@ -48,6 +50,12 @@ class SessionManager @Inject constructor(
         preferences[KEY_PARENT_NICKNAME]
     }
 
+    val childId: Flow<String?> = context.dataStore.data.map { preferences ->
+        preferences[KEY_CHILD_ID]
+    }
+
+    suspend fun currentChildId(): String? = childId.first()
+
     suspend fun saveParentChildrenJson(json: String) {
         context.dataStore.edit { preferences ->
             preferences[KEY_PARENT_CHILDREN_JSON] = json
@@ -69,6 +77,16 @@ class SessionManager @Inject constructor(
             preferences[KEY_USER_ROLE] = role
             preferences[KEY_SESSION_VERSION] = version
             preferences[KEY_AUTH_TOKEN] = token
+            if (role != "CHILD") {
+                preferences.remove(KEY_CHILD_ID)
+            }
+        }
+    }
+
+    suspend fun saveChildId(childId: String) {
+        if (childId.isBlank()) return
+        context.dataStore.edit { preferences ->
+            preferences[KEY_CHILD_ID] = childId
         }
     }
 

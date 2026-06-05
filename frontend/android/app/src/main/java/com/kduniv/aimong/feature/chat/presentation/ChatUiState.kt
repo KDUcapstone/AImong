@@ -9,6 +9,13 @@ data class ChatPrivacyPrompt(
 
 data class ChatUiState(
     val messages: List<ChatMessage> = emptyList(),
+    /** 장착 펫 이름 — 말풍선·헤더에 표시 */
+    val petDisplayName: String = "에이몽",
+    val petStage: String = "GROWTH",
+    val petType: String = "",
+    val petGrade: String = "NORMAL",
+    val petAvatarEmoji: String = "✨",
+    val hasEquippedPet: Boolean = false,
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
     /** 개인정보 감지 시 입력창 하이라이트(전체 문자열 기준). */
@@ -19,10 +26,20 @@ data class ChatUiState(
     val pendingInputClear: Boolean = false,
     /** 서버에서 온 오늘 남은 호출 수. null이면 아직 미수신(첫 전송 전). */
     val remainingCalls: Int? = null,
+    /** 이미지 생성 일일 잔여(최대 5). null이면 아직 미수신. */
+    val remainingImageCalls: Int? = null,
+    val sessionId: String? = null,
+    /** true면 다음 전송에 `imageRequested: true` */
+    val imageRequestMode: Boolean = false,
     val inputCharCount: Int = 0
 ) {
     val sendEnabled: Boolean
-        get() = (remainingCalls == null || remainingCalls > 0) && !isLoading
+        get() {
+            if (isLoading) return false
+            if (remainingCalls == 0) return false
+            if (imageRequestMode && remainingImageCalls == 0) return false
+            return remainingCalls == null || remainingCalls > 0
+        }
 
     val status: ChatStatus
         get() = when {

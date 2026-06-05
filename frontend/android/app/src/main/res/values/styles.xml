@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 한글·이모지 descender 잘림 방지 (전역 TextView) -->
+    <style name="Widget.AImong.TextView" parent="Widget.AppCompat.TextView">
+        <item name="android:includeFontPadding">true</item>
+        <item name="android:lineSpacingExtra">2dp</item>
+    </style>
+
+  <!-- MaterialButton 상·하 inset으로 글자가 잘리는 경우 완화 -->
+    <style name="Widget.AImong.MaterialButton" parent="Widget.MaterialComponents.Button">
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:minHeight">48dp</item>
+        <item name="android:paddingTop">10dp</item>
+        <item name="android:paddingBottom">10dp</item>
+        <item name="android:includeFontPadding">true</item>
+    </style>
+
+    <style name="Widget.AImong.MaterialButton.Outlined" parent="Widget.MaterialComponents.Button.OutlinedButton">
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:minHeight">48dp</item>
+        <item name="android:includeFontPadding">true</item>
+    </style>
+
+    <style name="Widget.AImong.ParentDialogEditText" parent="Widget.MaterialComponents.TextInputEditText.OutlinedBox">
+        <item name="android:gravity">center</item>
+        <item name="android:textAlignment">center</item>
+        <item name="android:textColor">@color/parent_mock_text_primary</item>
+        <item name="android:textColorHint">@color/parent_mock_text_muted</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:includeFontPadding">false</item>
+        <item name="android:paddingTop">0dp</item>
+        <item name="android:paddingBottom">0dp</item>
+    </style>
+
+    <style name="Widget.AImong.ParentDialogEditText.SingleLine" parent="Widget.AImong.ParentDialogEditText">
+        <item name="android:minHeight">52dp</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:scrollHorizontally">true</item>
+    </style>
+
+    <style name="Widget.AImong.ParentDialogEditText.MultiLine" parent="Widget.AImong.ParentDialogEditText">
+        <item name="android:minHeight">72dp</item>
+        <item name="android:minLines">2</item>
+        <item name="android:maxLines">4</item>
+        <item name="android:gravity">center</item>
+    </style>
+</resources>

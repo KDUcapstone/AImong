@@ -20,7 +20,8 @@ class ChildLoginViewModel @Inject constructor(
             return Result.failure(result.exceptionOrNull() ?: Exception("로그인에 실패했습니다."))
         }
         val data = result.getOrThrow()
-        sessionManager.saveSession("CHILD", 1, data.sessionToken)
+        sessionManager.saveSession("CHILD", data.sessionVersion ?: 1, data.sessionToken)
+        sessionManager.saveChildId(data.childId)
         registerChildFcmTokenUseCase(requireChildSession = true)
         return Result.success(Unit)
     }

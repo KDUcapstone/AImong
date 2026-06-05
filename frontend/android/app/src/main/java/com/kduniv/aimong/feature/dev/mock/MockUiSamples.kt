@@ -1,79 +1,134 @@
 package com.kduniv.aimong.feature.dev.mock
 
+import com.kduniv.aimong.R
+import com.kduniv.aimong.feature.home.domain.HomeStageTitles
 import com.kduniv.aimong.feature.home.presentation.HomePathItem
 import com.kduniv.aimong.feature.home.presentation.HomeQuizNavigation
+import com.kduniv.aimong.feature.gacha.GachaPetCatalog
 import com.kduniv.aimong.feature.home.presentation.HomeUiState
+import com.kduniv.aimong.feature.home.presentation.StageRewardUi
+import com.kduniv.aimong.feature.home.presentation.WalletBalanceDefaults
 import com.kduniv.aimong.feature.home.presentation.QuestItemUiState
+import com.kduniv.aimong.feature.pet.domain.PetGrowthRules
 
 object MockUiSamples {
 
+    /** 목업 홈·에너지 시트에서만 사용. `addMockEnergy`로 변경 가능 */
+    var mockEnergyCurrent: Int = 12
+        private set
+
+    const val MOCK_ENERGY_MAX: Int = 20
+
+    fun addMockEnergy(amount: Int) {
+        mockEnergyCurrent = (mockEnergyCurrent + amount).coerceIn(0, MOCK_ENERGY_MAX)
+    }
+
     fun homeUiState(): HomeUiState {
+        val userXp = MockXpLedger.userTotalXp
+        val equipped = StubPetGachaStore.getPetList().equippedPet
+        val petType = equipped?.petType?.takeIf { it.isNotBlank() } ?: "pet_normal_002"
+        val petGrade = equipped?.grade?.takeIf { it.isNotBlank() } ?: "NORMAL"
+        val petStage = equipped?.stage?.takeIf { it.isNotBlank() } ?: "GROWTH"
+        val petLevel = PetGrowthRules.displayStageLevel(petStage)
+        val showPetXp = PetGrowthRules.showsXpProgress(petStage)
+        val petMax = if (showPetXp) {
+            PetGrowthRules.progressMaxXp(petGrade, petStage)
+                ?: PetGrowthRules.EGG_EVOLUTION_XP
+        } else {
+            0
+        }
         return HomeUiState(
             nickname = "목업",
+            totalXp = userXp,
             streakDays = 5,
             profileType = "SPROUT",
-            userLevel = 4,
-            petName = "별이",
-            petXp = 120,
-            petMaxXp = 200,
-            petLevel = 3,
+            userLevel = 1 + (userXp / 80).coerceIn(0, 99),
+            petName = GachaPetCatalog.displayNameFor(petType, petGrade),
+            petXp = MockXpLedger.petXp,
+            petMaxXp = petMax,
+            showPetXpProgress = showPetXp,
+            petCrownUnlocked = equipped?.crownUnlocked == true,
+            hasEquippedPet = equipped != null,
+            equippedPetType = petType,
+            equippedPetGrade = petGrade,
+            petStage = petStage,
+            petLevel = petLevel,
             petMessage = "오늘도 AI 탐험 화이팅!",
-            heartCount = 3,
-            topStatusXp = 1520,
+            energyCurrent = mockEnergyCurrent,
+            energyMax = MOCK_ENERGY_MAX,
+            gearBalance = MockGearBalance.gear,
+            heartReviveCost = WalletBalanceDefaults.HEART_REVIVE_COST,
+            streakShieldCost = WalletBalanceDefaults.STREAK_SHIELD_COST,
+            missionStartCost = HomeUiState.DEFAULT_MISSION_START_COST,
+            nextEnergyRecoverAt = null,
+            topStatusXp = userXp,
             normalTickets = 2,
             topTicketCount = 4,
-            gachaDescription = "목업: 실제 연동 시 서버 문구가 표시됩니다.",
+            canStartMission = true,
             todayQuestProgress = "2/3",
+            dailyQuestClaimableCount = 1,
+            hasPendingCustomQuest = true,
+            parentCustomQuestNotifyCount = 2,
             quests = listOf(
                 QuestItemUiState("q1", "출석하기", "+10 XP", null, isCompleted = false, canStart = true),
                 QuestItemUiState("q2", "친구와 대화", "+15 XP", null, isCompleted = true, canStart = false),
-                QuestItemUiState("q3", "복습 미션", "+20 XP", null, isCompleted = false, canStart = false)
+                QuestItemUiState("q3", "복습 미션", "EXP 없음", null, isCompleted = false, canStart = false)
             ),
             pathItems = buildList {
-                add(HomePathItem.SectionHeader(1, "AI가 뭐예요?"))
                 add(
-                    HomePathItem.Completed(
-                        1,
-                        "입문 미션 완료",
-                        "mock-a",
-                        HomeQuizNavigation("", "mock-a", 1),
-                        "📖"
+                    HomePathItem.SectionHeader(
+                        stage = 1,
+                        islandIconRes = R.drawable.ic_nav_home_color,
+                        islandName = "시작의 섬",
+                        progressCompleted = 3,
+                        progressTotal = 5,
+                        themeHint = HomeStageTitles.title(1),
+                        bannerDrawableRes = R.drawable.bg_home_section_banner_stage1,
                     )
                 )
                 add(
                     HomePathItem.Completed(
-                        2,
-                        "AI 란 무엇인가",
-                        "mock-b",
-                        HomeQuizNavigation("", "mock-b", 1),
-                        "🤖"
+                        order = 1,
+                        title = "입문 미션 완료",
+                        missionId = "mock-a",
+                        quizNav = HomeQuizNavigation("", "mock-a", 1),
+                        starsFilled = 3,
                     )
                 )
                 add(
                     HomePathItem.Completed(
-                        3,
-                        "데이터의 이해",
-                        "mock-c",
-                        HomeQuizNavigation("", "mock-c", 1),
-                        "📊"
+                        order = 2,
+                        title = "AI 란 무엇인가",
+                        missionId = "mock-b",
+                        quizNav = HomeQuizNavigation("", "mock-b", 1),
+                        starsFilled = 2,
                     )
                 )
                 add(
                     HomePathItem.Completed(
-                        4,
-                        "머신러닝의 기초",
-                        "mock-d",
-                        HomeQuizNavigation("", "mock-d", 1),
-                        "🧠"
+                        order = 3,
+                        title = "데이터의 이해",
+                        missionId = "mock-c",
+                        quizNav = HomeQuizNavigation("", "mock-c", 1),
+                        starsFilled = 1,
                     )
                 )
                 add(
                     HomePathItem.Completed(
-                        5,
-                        "딥러닝 알아보기",
-                        "mock-e",
-                        HomeQuizNavigation("", "mock-e", 1),
-                        "💡"
+                        order = 4,
+                        title = "머신러닝의 기초",
+                        missionId = "mock-d",
+                        quizNav = HomeQuizNavigation("", "mock-d", 1),
+                        starsFilled = 0,
+                    )
+                )
+                add(
+                    HomePathItem.Completed(
+                        order = 5,
+                        title = "딥러닝 알아보기",
+                        missionId = "mock-e",
+                        quizNav = HomeQuizNavigation("", "mock-e", 1),
+                        starsFilled = 0,
                     )
                 )
                 add(
@@ -81,24 +136,69 @@ object MockUiSamples {
                         quizNav = HomeQuizNavigation("100", "mock-mission-1", -1),
                         missionTitle = "오늘의 AI 탐험",
                         enabled = true,
-                        icon = "🌟"
+                        starsFilled = 0,
                     )
                 )
                 add(
                     HomePathItem.Review(
                         quizNav = HomeQuizNavigation("", "mock-mission-2", 2),
-                        subtitle = "틀린 문제 복습"
+                        subtitle = "틀린 문제 복습",
+                        starsFilled = 2,
                     )
                 )
                 add(HomePathItem.Locked(hint = "내일 열림"))
                 add(HomePathItem.Locked(hint = "이후 오픈"))
                 add(HomePathItem.Locked(hint = "다음 챕터"))
-                add(HomePathItem.SectionHeader(2, "AI 잘 쓰기"))
-                add(HomePathItem.InterStageDivider)
-                repeat(10) { add(HomePathItem.Locked(hint = "준비 중")) }
-                add(HomePathItem.SectionHeader(3, "비판적으로 생각하기"))
-                add(HomePathItem.InterStageDivider)
-                repeat(10) { add(HomePathItem.Locked(hint = "준비 중")) }
+                add(
+                    HomePathItem.SectionHeader(
+                        stage = 2,
+                        islandIconRes = R.drawable.ic_nav_ai_color,
+                        islandName = "탐험의 화산섬",
+                        progressCompleted = 0,
+                        progressTotal = 1,
+                        themeHint = HomeStageTitles.title(2),
+                        bannerDrawableRes = R.drawable.bg_home_section_banner_stage2,
+                    )
+                )
+                add(
+                    HomePathItem.Start(
+                        quizNav = HomeQuizNavigation("", "mock-stage2", 1),
+                        missionTitle = "2단계 체험 미션",
+                        enabled = true,
+                        starsFilled = 0,
+                    )
+                )
+                add(
+                    HomePathItem.InterStageRewardChest(
+                        afterStageNumber = 1,
+                        reward = StageRewardUi(
+                            stageNumber = 1,
+                            stageThemeTitle = HomeStageTitles.title(2),
+                            parentPromise = "주말에 놀이공원 가기",
+                            defaultGear = 50,
+                            normalTickets = 0,
+                        ),
+                    ),
+                )
+                add(
+                    HomePathItem.SectionHeader(
+                        stage = 3,
+                        islandIconRes = R.drawable.ic_nav_study_color,
+                        islandName = "마스터의 별섬",
+                        progressCompleted = 0,
+                        progressTotal = 1,
+                        themeHint = HomeStageTitles.title(3),
+                        bannerDrawableRes = R.drawable.bg_home_section_banner_stage3,
+                    )
+                )
+                add(
+                    HomePathItem.Start(
+                        quizNav = HomeQuizNavigation("", "mock-stage3", 1),
+                        missionTitle = "3단계 체험 미션",
+                        enabled = true,
+                        starsFilled = 0,
+                    )
+                )
             }
         )
     }

@@ -5,12 +5,14 @@ import com.google.gson.reflect.TypeToken
 import com.kduniv.aimong.core.local.dao.MissionChapterDao
 import com.kduniv.aimong.core.local.entity.MissionChapterEntity
 import com.kduniv.aimong.core.network.AimongApiService
+import com.kduniv.aimong.core.network.toResult
 import com.kduniv.aimong.feature.mission.domain.model.Mission
 import com.kduniv.aimong.feature.mission.domain.model.MissionProgress
 import com.kduniv.aimong.feature.mission.domain.model.MissionStarLevel
 import com.kduniv.aimong.feature.mission.domain.model.Question
 import com.kduniv.aimong.feature.mission.domain.model.QuizResult
 import com.kduniv.aimong.feature.mission.domain.repository.MissionRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -38,9 +40,7 @@ class MissionRepositoryImpl @Inject constructor(
 
     override suspend fun refreshMissions(): Result<MissionProgress> {
         return try {
-            val response = apiService.getMissions()
-            if (response.success) {
-                val data = response.data
+            apiService.getMissions().toResult().map { data ->
                 val chapters = data.stages.flatMap { stageDto ->
                     stageDto.missions.map { m ->
                         val stars = m.starLevels.map { s ->
@@ -54,7 +54,7 @@ class MissionRepositoryImpl @Inject constructor(
                             )
                         }
                         MissionChapterEntity(
-                            missionId = m.missionId.toString(),
+                            missionId = m.missionId,
                             missionCode = m.missionCode,
                             stage = stageDto.stage,
                             title = m.title,
@@ -68,15 +68,13 @@ class MissionRepositoryImpl @Inject constructor(
                 missionChapterDao.insertChapters(chapters)
 
                 val p = data.progress
-                Result.success(
-                    MissionProgress(
-                        completedSetCount = p?.completedSetCount ?: 0,
-                        totalSetCount = p?.totalSetCount ?: 0
-                    )
+                MissionProgress(
+                    completedSetCount = p?.completedSetCount ?: 0,
+                    totalSetCount = p?.totalSetCount ?: 0
                 )
-            } else {
-                Result.failure(Exception("미션 데이터를 가져오는데 실패했습니다."))
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Result.failure(e)
         }

@@ -2,6 +2,12 @@ package com.kduniv.aimong.feature.home.presentation
 
 import com.kduniv.aimong.feature.home.data.model.DailyQuestItemDto
 import com.kduniv.aimong.feature.home.data.model.HomeScreenData
+import com.kduniv.aimong.feature.home.data.model.ProfileDto
+import com.kduniv.aimong.feature.home.data.model.TopStatusDto
+import com.kduniv.aimong.feature.home.domain.TicketTotals
+import com.kduniv.aimong.feature.gacha.GachaPetCatalog
+import com.kduniv.aimong.feature.pet.domain.PetGrowthRules
+import com.kduniv.aimong.feature.pet.domain.PetMoodRules
 
 internal object HomeUiMapper {
 
@@ -13,90 +19,87 @@ internal object HomeUiMapper {
         val quests = data.dailyQuestSummary
         val tickets = data.tickets
         val pet = data.equippedPet
+        val hasEquippedPet = pet != null
 
-        val userLevel = userLevelFromXp(profile.totalXp)
-        val petStage = pet?.stage ?: "EGG"
-        val petLv = stageToDisplayLevel(petStage)
-        val petMax = maxXpForStage(petStage)
-        val petXp = pet?.xp?.coerceIn(0, petMax) ?: 0
+        val userTotalXp = resolveUserTotalXp(profile, top)
+        val userLevel = userLevelFromXp(userTotalXp)
+        val petXp = pet?.xp?.coerceAtLeast(0) ?: 0
+        val petStage = pet?.let {
+            PetGrowthRules.resolveEffectiveStageString(it.stage, petXp)
+        } ?: "EGG"
+        val petLv = if (pet != null) PetGrowthRules.displayStageLevel(petStage, petXp) else 1
+        val showPetXpProgress = pet != null && PetGrowthRules.showsXpProgress(pet.stage, petXp)
+        val petMax = if (showPetXpProgress) {
+            PetGrowthRules.progressMaxXp(pet.grade, petStage, petXp)
+                ?: PetGrowthRules.EGG_EVOLUTION_XP
+        } else {
+            0
+        }
 
         val todayDone = "${quests.completedCount}/${quests.totalCount}"
 
-        val homeState = when {
-            mission.todayCompletedCount > 0 || streak.todayMissionCount > 0 -> HomeState.HAPPY
-            else -> HomeState.IDLE
-        }
+        val todayActivityCount = maxOf(
+            streak.todaySetCount,
+            mission.todayCompletedCount,
+            quests.completedCount,
+        )
+        val homeState = PetMoodRules.resolveHomeState(
+            mood = pet?.mood,
+            todaySetCount = todayActivityCount,
+            todayCompletedCount = todayActivityCount,
+            lastCompletedDate = streak.lastCompletedDate,
+            serverDate = data.serverDate,
+        )
 
         return HomeUiState(
+            childId = profile.childId,
             nickname = profile.nickname,
-            totalXp = profile.totalXp,
+            totalXp = userTotalXp,
             /** 스펙: topStatus.streakDays ≡ streak.continuousDays — streak 객체 우선 */
             streakDays = streak.continuousDays,
             profileType = profile.profileImageType,
             userLevel = userLevel,
-            petName = pet?.let { petDisplayName(it.petType, it.grade) } ?: "",
+            petName = pet?.let { GachaPetCatalog.displayNameFor(it.petType, it.grade) } ?: "",
             petXp = petXp,
             petMaxXp = petMax,
+            showPetXpProgress = showPetXpProgress,
+            petCrownUnlocked = pet?.crownUnlocked == true,
             petLevel = petLv,
             petStage = petStage,
+            equippedPetType = pet?.petType.orEmpty(),
+            equippedPetGrade = pet?.grade ?: "NORMAL",
+            hasEquippedPet = hasEquippedPet,
             homeState = homeState,
             petMessage = petMessage(data),
             normalTickets = tickets.normal,
             shieldCount = streak.shieldCount,
-            heartCount = top.heartCount,
-            /** 스펙: topStatus.xp ≡ profile.totalXp — 프로필을 단일 표시 소스로 */
-            topStatusXp = profile.totalXp,
-            srBonus = tickets.rare + tickets.epic,
-            gachaDescription = gachaDescription(tickets),
+            energyCurrent = top.energy,
+            energyMax = top.maxEnergy ?: 20,
+            nextEnergyRecoverAt = top.nextEnergyRecoverAt,
+            topStatusXp = userTotalXp,
             todayQuestProgress = todayDone,
             quests = quests.quests.map { mapQuest(it, mission.canStartMission) },
             isLoading = false,
             errorMessage = null,
             serverDate = data.serverDate,
-            topTicketCount = top.ticketCount,
+            topTicketCount = TicketTotals.displayTotal(top, tickets),
             canStartMission = mission.canStartMission,
             returnRewardPending = data.returnReward.hasReward,
             dailyQuestClaimableCount = quests.claimableCount
         )
     }
 
+    /** BE가 topStatus.xp / profile.totalXp 중 하나만 갱신하는 경우 대비 */
+    private fun resolveUserTotalXp(profile: ProfileDto, top: TopStatusDto): Int =
+        maxOf(profile.totalXp, top.xp)
+
     private fun userLevelFromXp(totalXp: Int): Int =
         1 + (totalXp / 80).coerceIn(0, 99)
 
-    private fun petDisplayName(petType: String, grade: String): String {
-        val tail = petType.substringAfterLast('_', "")
-        val short = tail.filter { it.isDigit() }.takeIf { it.isNotBlank() }
-        return buildString {
-            append(when (grade.uppercase()) {
-                "COMMON" -> "커먼 "
-                "RARE" -> "레어 "
-                "EPIC" -> "에픽 "
-                else -> ""
-            })
-            append(short ?: tail.takeIf { it.isNotBlank() } ?: "펫")
-        }.trim()
-    }
-
-    private fun stageToDisplayLevel(stage: String): Int =
-        when (stage.uppercase()) {
-            "EGG" -> 1
-            "HATCH", "BABY" -> 2
-            "GROWTH" -> 3
-            "ADULT", "MATURE" -> 4
-            else -> 2
-        }
-
-    private fun maxXpForStage(stage: String): Int =
-        when (stage.uppercase()) {
-            "EGG" -> 100
-            "GROWTH" -> 300
-            "HATCH", "BABY" -> 200
-            else -> 500
-        }
-
     private fun petMessage(data: HomeScreenData): String {
+        if (data.equippedPet == null) return ""
         if (data.returnReward.hasReward) {
-            return "다시 만나서 반가워요! 보상을 확인해 보세요."
+            return "다시 만나서 반가워요! 퀘스트를 확인해보세요."
         }
         val m = data.missionSummary
         if (!m.canStartMission && m.todayCompletedCount >= m.todayTargetCount && m.todayTargetCount > 0) {
@@ -112,16 +115,8 @@ internal object HomeUiMapper {
         return ""
     }
 
-    private fun gachaDescription(t: com.kduniv.aimong.feature.home.data.model.TicketsDto): String {
-        if (t.normal == 0 && t.rare == 0 && t.epic == 0) return ""
-        return "일반 ${t.normal} · 레어 ${t.rare} · 에픽 ${t.epic}"
-    }
-
     private fun mapQuest(q: DailyQuestItemDto, canStartMission: Boolean): QuestItemUiState {
-        val lineComplete = when (q.claimType.uppercase()) {
-            "MANUAL" -> q.completed && q.rewardClaimed
-            else -> q.completed
-        }
+        val lineComplete = q.completed && q.rewardClaimed
         val missionLike = q.questType.contains("MISSION", ignoreCase = true)
         val canStart = !lineComplete &&
             if (missionLike) canStartMission else true

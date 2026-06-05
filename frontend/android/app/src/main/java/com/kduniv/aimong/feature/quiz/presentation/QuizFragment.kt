@@ -2,7 +2,9 @@ package com.kduniv.aimong.feature.quiz.presentation
 
 import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
+import android.content.res.ColorStateList
 import android.graphics.Color
+import androidx.annotation.ColorRes
 import android.graphics.Typeface
 import android.os.CountDownTimer
 import android.text.Spannable
@@ -11,32 +13,46 @@ import android.text.style.ForegroundColorSpan
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.view.animation.CycleInterpolator
 import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.RelativeLayout
 import android.widget.TextView
 import android.widget.EditText
 import android.widget.Toast
 import android.util.Log
 import androidx.core.content.ContextCompat
+import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.chip.Chip
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.core.os.bundleOf
 import androidx.navigation.fragment.findNavController
-import com.google.android.material.chip.Chip
 import com.kduniv.aimong.R
+import com.kduniv.aimong.core.navigation.ChildTopLevelNav.navigateToChildTopLevel
 import com.kduniv.aimong.core.ui.BaseFragment
+import com.kduniv.aimong.core.ui.CelebrationDialogWindow
 import com.kduniv.aimong.databinding.FragmentQuizBinding
+import com.kduniv.aimong.feature.quiz.data.QuizSessionRules
 import com.kduniv.aimong.feature.quiz.domain.model.Question
+import com.kduniv.aimong.feature.quiz.domain.model.QuestionDifficulty
 import com.kduniv.aimong.feature.quiz.domain.model.QuestionType
+import com.kduniv.aimong.feature.quiz.domain.model.MissionXpRules
 import com.kduniv.aimong.feature.quiz.domain.model.QuizResult
 import com.kduniv.aimong.feature.quiz.domain.model.QuizReward
 import com.kduniv.aimong.feature.quiz.domain.model.QuizQuestions
+import com.kduniv.aimong.feature.quiz.domain.model.TermHint
+import com.kduniv.aimong.feature.gacha.EquippedPetVisual
+import com.kduniv.aimong.feature.gacha.PetArtAssets
+import com.kduniv.aimong.feature.pet.domain.PetGrowthRules
+import androidx.activity.OnBackPressedCallback
+import androidx.appcompat.app.AlertDialog
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 import android.graphics.drawable.GradientDrawable
 
 @AndroidEntryPoint
@@ -44,7 +60,13 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
 
     private val viewModel: QuizViewModel by viewModels()
 
+    private fun quizColor(@ColorRes resId: Int): Int =
+        ContextCompat.getColor(requireContext(), resId)
+
     private var lives = 3
+    private var heartsAtQuizStart = 3
+    /** 세션 누적 하트 소모(부활로 잔량이 회복되어도 감소하지 않음) */
+    private var totalHeartsLost = 0
     private var maxPlayedIndex = 0
     private var timer: CountDownTimer? = null
     private var questionTimeLeftMs: Long = 30000L
@@ -75,7 +97,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                 if (millisUntilFinished <= 10000) {
                     binding.tvTimer.setTextColor(Color.RED)
                 } else {
-                    binding.tvTimer.setTextColor(Color.parseColor("#8A96AD"))
+                    binding.tvTimer.setTextColor(quizColor(R.color.quiz_text_grey))
                 }
             }
             override fun onFinish() {
@@ -90,12 +112,16 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
     }
 
     override fun initView() {
+        requireActivity().onBackPressedDispatcher.addCallback(
+            viewLifecycleOwner,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    exitQuiz("USER_EXIT")
+                }
+            },
+        )
         binding.ivBack.setOnClickListener {
-            // v2.4: 진행 중 attempt가 있으면 중도 이탈 기록 후 종료
-            lifecycleScope.launch {
-                viewModel.abandonCurrentAttemptIfAny("USER_EXIT")
-                findNavController().popBackStack()
-            }
+            exitQuiz("USER_EXIT")
         }
         binding.btnResViewSolutions.setOnClickListener {
             binding.layoutQuizResult.visibility = View.GONE
@@ -109,9 +135,12 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             timer?.cancel()
             questionTimeLeftMs = 30000L
             lives = 3
+            heartsAtQuizStart = 3
+            totalHeartsLost = 0
             maxPlayedIndex = 0
 
             binding.layoutFeedbackPanel.visibility = View.GONE
+            binding.btnFeedbackRefillHearts.visibility = View.GONE
             binding.layoutQuizResult.visibility = View.GONE
             unlockOptionsForNewQuestion()
             resetOxButtons()
@@ -122,19 +151,18 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             viewModel.retryQuiz()
         }
         binding.btnResFinish.setOnClickListener {
-            lifecycleScope.launch {
-                viewModel.abandonCurrentAttemptIfAny("USER_EXIT")
-                findNavController().popBackStack()
-            }
+            exitQuiz("USER_EXIT")
         }
         binding.btnNextQuestion.setOnClickListener {
             // 결과 화면에서 "다시하기"를 누른 직후(두 번째 텀 로딩 중)엔 이전 텀의 피드백/전이와 충돌하지 않게 막는다.
             if (isRetryingFromResult) return@setOnClickListener
             binding.layoutFeedbackPanel.visibility = View.GONE
+            binding.btnFeedbackRefillHearts.visibility = View.GONE
+            restoreDefaultFeedbackButtonStyles()
             viewModel.nextQuestion()
         }
-        binding.btnFeedbackRetry.setOnClickListener {
-            binding.layoutFeedbackPanel.visibility = View.GONE
+        binding.btnFeedbackRefillHearts.setOnClickListener {
+            requestReviveWithGear()
         }
         binding.btnOxO.setOnClickListener { 
             animateSelection(it)
@@ -146,30 +174,6 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             applyOxPendingSelection("X")
             handleOptionClick("X") 
         }
-        parentFragmentManager.setFragmentResultListener(
-            QuizReportBottomSheet.REQUEST_KEY_SUBMIT,
-            viewLifecycleOwner
-        ) { _, bundle ->
-            val reasonCode = bundle.getString(QuizReportBottomSheet.RESULT_REASON_CODE) ?: return@setFragmentResultListener
-            val detail = bundle.getString(QuizReportBottomSheet.RESULT_DETAIL)
-            submitQuestionReport(reasonCode, detail)
-        }
-        parentFragmentManager.setFragmentResultListener(
-            QuizReportBottomSheet.REQUEST_KEY_DISMISS,
-            viewLifecycleOwner
-        ) { _, _ ->
-            // dismiss 시 타이머 즉시 재개
-            viewModel.resumeSessionTimerAfterOverlay()
-            if (!viewModel.isSolutionMode.value &&
-                binding.layoutQuizResult.visibility != View.VISIBLE &&
-                binding.layoutFeedbackPanel.visibility != View.VISIBLE
-            ) {
-                if (questionTimeLeftMs > 0) startTimer(reset = false)
-            }
-        }
-
-        binding.btnReportQuestion.setOnClickListener { showQuestionReportReasonDialog() }
-        updateReportButtonVisibility()
     }
 
     override fun initObserver() {
@@ -195,11 +199,19 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                             if (binding.layoutQuizResult.visibility == View.VISIBLE) View.GONE
                             else if (isReview) View.VISIBLE
                             else View.GONE
-                        if (isReview) {
-                            binding.tvExpInfo.text = "복습 시 EXP 50% 획득"
-                            binding.tvExpInfo.setTextColor(Color.parseColor("#FFD600"))
-                        }
                         updateQuizModeBanner()
+                    }
+                }
+                launch {
+                    viewModel.sessionLives.collect { count ->
+                        if (!viewModel.isSolutionMode.value && binding.layoutFeedbackPanel.visibility != View.VISIBLE) {
+                            updateHearts(count.coerceIn(0, 3), forceReset = true)
+                        }
+                    }
+                }
+                launch {
+                    viewModel.equippedPetVisual.collect { visual ->
+                        bindEquippedPetSprites(visual)
                     }
                 }
                 launch {
@@ -208,7 +220,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                             // 풀이 모드에서는 문항 30초 타이머 정지 + 잔상 제거
                             timer?.cancel()
                             binding.tvTimer.text = "풀이 보기"
-                            binding.tvTimer.setTextColor(Color.parseColor("#8A96AD"))
+                            binding.tvTimer.setTextColor(quizColor(R.color.quiz_text_grey))
                         }
                     }
                 }
@@ -218,14 +230,32 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
 
     private fun handleUiState(state: QuizUiState) {
         when (state) {
-            is QuizUiState.Loading -> {
-                // 로딩 표시
-            }
+            is QuizUiState.Loading -> setQuizLoadingOverlay(
+                visible = true,
+                messageRes = R.string.quiz_loading_questions,
+            )
+            is QuizUiState.Submitting -> setQuizLoadingOverlay(
+                visible = true,
+                messageRes = R.string.quiz_submitting_result,
+            )
+            else -> setQuizLoadingOverlay(visible = false)
+        }
+        when (state) {
+            is QuizUiState.Loading, is QuizUiState.Submitting -> Unit
             is QuizUiState.QuestionLoaded -> {
                 if (isRetryingFromResult) {
                     isRetryingFromResult = false
                     binding.btnResRetry.isEnabled = true
                     binding.btnResRetry.alpha = 1f
+                }
+                // Error 상태에서 '다시 시도'로 덮어쓴 리스너/텍스트가 남아있을 수 있어 원복
+                if (binding.btnNextQuestion.text?.toString() == "다시 시도") {
+                    binding.btnNextQuestion.text = getString(R.string.quiz_btn_next)
+                    binding.btnNextQuestion.setOnClickListener {
+                        binding.layoutFeedbackPanel.visibility = View.GONE
+                        binding.btnFeedbackRefillHearts.visibility = View.GONE
+                        viewModel.nextQuestion()
+                    }
                 }
                 updateQuestion(viewModel.currentQuestionIndex.value)
             }
@@ -240,7 +270,11 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                         state.explanation,
                         state.userAnswer,
                         state.correctAnswer,
-                        state.deferImmediateCorrectness
+                        state.deferImmediateCorrectness,
+                        state.remainingLives,
+                        state.canRevive,
+                        state.reviveCost,
+                        state.gearBalance
                     )
                 } else {
                     // 캐시가 비어있으면 기존 동작(최소한 패널은 띄우지 않고 토스트만)
@@ -262,7 +296,9 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                     binding.btnResRetry.isEnabled = true
                     binding.btnResRetry.alpha = 1f
                 }
-                if (state.message == "세션이 만료되었습니다.") {
+                if (QuizViewModel.isInsufficientEnergyMessage(requireContext(), state.message)) {
+                    popQuizToHomeForInsufficientEnergy()
+                } else if (state.message == "세션이 만료되었습니다.") {
                     showFeedback("만료", state.message)
                 } else if (state.message.contains("문제 세트를 준비하는 데 실패했습니다")) {
                     showMissionSetNotReadyDialog()
@@ -273,6 +309,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                     binding.btnNextQuestion.text = "다시 시도"
                     binding.btnNextQuestion.setOnClickListener {
                         binding.layoutFeedbackPanel.visibility = View.GONE
+                        binding.btnFeedbackRefillHearts.visibility = View.GONE
                         unlockOptionsForNewQuestion()
                         // 문항 타이머는 현 문항에서 이어서 진행
                         if (!viewModel.isSolutionMode.value && binding.layoutQuizResult.visibility != View.VISIBLE) {
@@ -283,45 +320,11 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                 }
             }
         }
-        updateReportButtonVisibility()
     }
 
-    private fun updateReportButtonVisibility() {
-        binding.btnReportQuestion.visibility = when (viewModel.uiState.value) {
-            is QuizUiState.Loading, is QuizUiState.Finished -> View.GONE
-            else -> View.VISIBLE
-        }
-    }
-
-    private fun showQuestionReportReasonDialog() {
-        // 앱 테마에 맞는 바텀시트로 노출
-        timer?.cancel()
-        viewModel.pauseSessionTimerForOverlay()
-        QuizReportBottomSheet.newInstance()
-            .show(parentFragmentManager, "QuizReportBottomSheet")
-    }
-
-    private fun submitQuestionReport(reasonCode: String, detail: String?) {
-        val q = currentQuestionForReport() ?: run {
-            Toast.makeText(requireContext(), R.string.quiz_report_no_question, Toast.LENGTH_SHORT).show()
-            return
-        }
-        lifecycleScope.launch {
-            viewModel.reportQuestion(q.id, reasonCode, detail)
-                .onSuccess {
-                    Toast.makeText(requireContext(), R.string.quiz_report_success, Toast.LENGTH_SHORT).show()
-                }
-                .onFailure {
-                    Toast.makeText(requireContext(), it.message.orEmpty(), Toast.LENGTH_SHORT).show()
-                }
-        }
-    }
-
-    private fun currentQuestionForReport(): Question? {
-        return when (val s = viewModel.uiState.value) {
-            is QuizUiState.SolutionLoaded -> s.question
-            else -> getCurrentQuestion()
-        }
+    private fun setQuizLoadingOverlay(visible: Boolean, messageRes: Int? = null) {
+        binding.layoutQuizLoadingOverlay.visibility = if (visible) View.VISIBLE else View.GONE
+        messageRes?.let { binding.tvQuizLoadingOverlay.setText(it) }
     }
 
     private fun showSolution(state: QuizUiState.SolutionLoaded) {
@@ -329,6 +332,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         val total = (viewModel.uiState.value as? QuizUiState.QuestionLoaded)?.quizQuestions?.questions?.size ?: 10
         
         binding.tvQuestionCount.text = "${index + 1} / $total 문제"
+        bindQuestionDifficultyStars(state.question.difficulty)
         binding.tvQuizQuestion.text = state.question.question
         binding.pbQuizProgress.progress = index + 1
         
@@ -338,14 +342,14 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         markCorrectAnswer(state.question, state.userAnswer, state.isCorrect)
         
         showAnswerFeedback(state.question, state.isCorrect, state.explanation, state.userAnswer, null, false)
-        binding.btnFeedbackRetry.visibility = View.GONE // 풀이 모드에선 다시보기 불필요
-        
+
         val targetSize = if (lives <= 0) maxPlayedIndex else total - 1
         val isLast = index >= targetSize
         binding.btnNextQuestion.text = if (isLast) "결과로 돌아가기" else "다음 풀이 →"
         
         binding.btnNextQuestion.setOnClickListener {
             binding.layoutFeedbackPanel.visibility = View.GONE
+            binding.btnFeedbackRefillHearts.visibility = View.GONE
             if (isLast) {
                 viewModel.finishQuizEarly() // 결과 화면으로 전환
             } else {
@@ -362,62 +366,254 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         if (question.type == QuestionType.FILL) {
             val typeLabel = "단어 채우기"
             val originalText = question.question
+            val displayWord = choiceIndexToDisplayText(question, userAnswer) ?: userAnswer
             val replacedText = when {
-                originalText.contains("_____") -> originalText.replace("_____", " $userAnswer ")
-                originalText.contains("[      ]") -> originalText.replace("[      ]", " $userAnswer ")
+                originalText.contains("_____") -> originalText.replace("_____", " $displayWord ")
+                originalText.contains("[      ]") -> originalText.replace("[      ]", " $displayWord ")
                 else -> originalText
             }
             val fullText = "[$typeLabel] $replacedText"
             setHighlightedText(binding.tvQuizQuestion, fullText)
             // 문제 본문 색은 정오와 무관하게 고정(옵션 영역에서만 정오 표시)
-            binding.tvQuizQuestion.setTextColor(Color.WHITE)
+            binding.tvQuizQuestion.setTextColor(quizColor(R.color.quiz_text_primary))
         }
 
-        // OX 유형
+        // OX 유형 — 내가 고른 보기만 강조(오답 시 반대쪽 테두리 X)
         if (question.type == QuestionType.OX) {
-            // 이전 문항/모드의 스트로크 잔상 제거 후 정오 표시
-            resetOxButtons()
-            val correctLabel = if (isCorrect) userAnswer else (if (userAnswer == "O") "X" else "O")
-            if (correctLabel == "O") {
-                binding.btnOxO.setStrokeColor(android.content.res.ColorStateList.valueOf(Color.parseColor("#00FFB2")))
-                binding.btnOxO.setStrokeWidth((8 * density).toInt())
-            } else {
-                binding.btnOxX.setStrokeColor(android.content.res.ColorStateList.valueOf(Color.parseColor("#00FFB2")))
-                binding.btnOxX.setStrokeWidth((8 * density).toInt())
-            }
-            
-            if (!isCorrect) {
-                if (userAnswer == "O") {
-                    binding.btnOxO.setStrokeColor(android.content.res.ColorStateList.valueOf(Color.parseColor("#FF4B4B")))
-                    binding.btnOxO.setStrokeWidth((8 * density).toInt())
-                } else {
-                    binding.btnOxX.setStrokeColor(android.content.res.ColorStateList.valueOf(Color.parseColor("#FF4B4B")))
-                    binding.btnOxX.setStrokeWidth((8 * density).toInt())
-                }
-            }
-        } 
-        // 객관식(MULTIPLE): 내가 고른 보기만 민트로 표시
-        else if (question.type == QuestionType.MULTIPLE) {
-            val selectedKey = userAnswer.trim()
-            // XML 고정 카드 기반 표시
-            applyMultipleFixedSelection(selectedKey)
+            applyOxAnswerFeedback(userAnswer, isCorrect)
         }
-        // Chip 유형 (FILL, SITUATION)
+        // 객관식·단어채우기·상황판단: 동일 카드 UI
         else {
-            for (i in 0 until binding.layoutOptionsChips.childCount) {
-                val chip = binding.layoutOptionsChips.getChildAt(i) as? Chip ?: continue
-                if (chip.text == userAnswer) {
-                    // 풀이 모드에서는 정오와 무관하게 '내가 고른 보기'만 민트로 통일
-                    if (isSolutionMode || isCorrect) {
-                        chip.setChipBackgroundColorResource(R.color.quiz_mint)
-                        chip.setTextColor(Color.parseColor("#0A1633"))
-                        chip.chipStrokeWidth = 0f
-                    } else {
-                        chip.setChipBackgroundColorResource(R.color.quiz_red)
-                        chip.setTextColor(Color.WHITE)
-                    }
-                }
+            val idx = choiceIndexFromUserAnswer(question, userAnswer) ?: return
+            applyChoiceCardAnswerHighlight(idx.coerceIn(0, 3), isCorrect, isSolutionMode)
+        }
+    }
+
+    private fun applyChoiceCardAnswerHighlight(selectedIndex: Int, isCorrect: Boolean, isSolutionMode: Boolean) {
+        val cards = listOf(
+            binding.btnQuizMultOpt1,
+            binding.btnQuizMultOpt2,
+            binding.btnQuizMultOpt3,
+            binding.btnQuizMultOpt4,
+        )
+        val texts = listOf(binding.tvOpt1, binding.tvOpt2, binding.tvOpt3, binding.tvOpt4)
+        val density = resources.displayMetrics.density
+        if (selectedIndex !in cards.indices) return
+        val positive = isSolutionMode || isCorrect
+        val bgColor = ContextCompat.getColor(
+            requireContext(),
+            if (positive) R.color.quiz_mint else R.color.quiz_red,
+        )
+        cards.forEachIndexed { idx, card ->
+            if (idx == selectedIndex) {
+                card.setCardBackgroundColor(bgColor)
+                card.strokeWidth = (3 * density).toInt()
+                card.strokeColor = bgColor
+                texts[idx].setTextColor(Color.WHITE)
             }
+        }
+    }
+
+    /** 객관식 고정 카드: 선택 인덱스 0..3 */
+    private fun applyMultipleFixedSelectionByIndex(selectedIndex: Int) {
+        val cards = listOf(
+            binding.btnQuizMultOpt1,
+            binding.btnQuizMultOpt2,
+            binding.btnQuizMultOpt3,
+            binding.btnQuizMultOpt4
+        )
+        val texts = listOf(binding.tvOpt1, binding.tvOpt2, binding.tvOpt3, binding.tvOpt4)
+        val density = resources.displayMetrics.density
+        if (selectedIndex !in cards.indices) return
+        cards.forEachIndexed { idx, card ->
+            if (idx == selectedIndex) {
+                card.setCardBackgroundColor(ContextCompat.getColor(requireContext(), R.color.quiz_mint))
+                card.strokeWidth = (3 * density).toInt()
+                card.strokeColor = ContextCompat.getColor(requireContext(), R.color.quiz_mint)
+                texts[idx].setTextColor(Color.WHITE)
+            }
+        }
+    }
+
+    /** 사용자 답(번호 문자열 또는 보기 문구) → options 내 0-based 인덱스 */
+    private fun choiceIndexFromUserAnswer(question: Question, userAnswer: String): Int? {
+        val t = userAnswer.trim()
+        val opts = question.options ?: return null
+        val n = t.toIntOrNull()
+        if (n != null && n in 1..opts.size) return n - 1
+        val i = opts.indexOfFirst { it == t }
+        return i.takeIf { it >= 0 }
+    }
+
+    private fun choiceIndexToDisplayText(question: Question, answerKey: String): String? {
+        val t = answerKey.trim()
+        if (t.isEmpty()) return null
+        t.toIntOrNull()?.minus(1)?.let { i -> question.options?.getOrNull(i)?.let { return it } }
+        if (question.options?.any { it == t } == true) return t
+        return t
+    }
+
+    private fun formatCorrectAnswerLine(question: Question, correctAnswer: String?): String? {
+        val ca = correctAnswer?.trim()?.takeIf { it.isNotBlank() } ?: return null
+        if (question.type == QuestionType.OX) {
+            return "정답: ${QuizSessionRules.formatOxAnswerForDisplay(ca)}"
+        }
+        val opts = question.options
+        val num = ca.toIntOrNull()
+        if (opts != null && num != null && num in 1..opts.size) {
+            return "정답: ${opts[num - 1]}"
+        }
+        return "정답: $ca"
+    }
+
+    private fun exitQuiz(reason: String) {
+        lifecycleScope.launch {
+            try {
+                withTimeout(3_000) {
+                    viewModel.abandonCurrentAttemptIfAny(reason)
+                }
+            } catch (_: Exception) {
+            }
+            if (!isAdded) return@launch
+            navigateQuizBackToHome()
+        }
+    }
+
+    private fun popQuizToHomeAfterAbandon(reason: String) {
+        lifecycleScope.launch {
+            try {
+                viewModel.abandonCurrentAttemptIfAny(reason)
+            } catch (_: Exception) {
+            }
+            if (!isAdded) return@launch
+            Toast.makeText(requireContext(), R.string.quiz_hearts_exhausted_toast, Toast.LENGTH_SHORT).show()
+            navigateQuizBackToHome()
+        }
+    }
+
+    private fun popQuizToHomeForInsufficientEnergy() {
+        binding.layoutQuizResult.visibility = View.GONE
+        binding.layoutFeedbackPanel.visibility = View.GONE
+        setQuizLoadingOverlay(visible = false)
+        Toast.makeText(
+            requireContext(),
+            getString(R.string.quiz_insufficient_energy),
+            Toast.LENGTH_LONG,
+        ).show()
+        navigateQuizBackToHome()
+    }
+
+    private fun navigateQuizBackToHome() {
+        if (!isAdded) return
+        val nav = findNavController()
+        if (nav.currentDestination?.id != R.id.quizFragment) return
+        val popped = runCatching {
+            nav.popBackStack(R.id.homeFragment, false) || nav.popBackStack()
+        }.getOrDefault(false)
+        if (!popped) {
+            runCatching { nav.navigateToChildTopLevel(R.id.homeFragment) }
+        }
+    }
+
+    private fun bindLivesExhaustedFeedbackActions(canRevive: Boolean, reviveCost: Int?, gearBalance: Int?) {
+        if (canRevive) {
+        binding.btnFeedbackRefillHearts.visibility = View.VISIBLE
+            val cost = reviveCost ?: com.kduniv.aimong.feature.home.presentation.WalletBalanceDefaults.HEART_REVIVE_COST
+            val balance = gearBalance ?: 0
+            binding.btnFeedbackRefillHearts.text = getString(R.string.quiz_revive_cost_fmt, cost, balance)
+            styleFeedbackGearButtonPrimary()
+        } else {
+            binding.btnFeedbackRefillHearts.visibility = View.GONE
+        }
+        styleFeedbackHomeButtonSecondary()
+        binding.btnNextQuestion.text = getString(R.string.quiz_btn_return_home)
+        binding.btnNextQuestion.setOnClickListener {
+            binding.layoutFeedbackPanel.visibility = View.GONE
+            binding.btnFeedbackRefillHearts.visibility = View.GONE
+            restoreDefaultFeedbackButtonStyles()
+            popQuizToHomeAfterAbandon("LIVES_EXHAUSTED")
+        }
+    }
+
+    /** 하트 소진 시: 홈으로 돌아가기 — 회색 보조 버튼 */
+    private fun styleFeedbackHomeButtonSecondary() {
+        binding.btnNextQuestion.backgroundTintList =
+            ColorStateList.valueOf(quizColor(R.color.quiz_button_secondary_bg))
+        binding.btnNextQuestion.setTextColor(quizColor(R.color.quiz_text_grey))
+        binding.btnNextQuestion.strokeWidth = 0
+    }
+
+    /** 하트 소진 시: 톱니바퀴 부활 — 초록 강조 버튼 */
+    private fun styleFeedbackGearButtonPrimary() {
+        binding.btnFeedbackRefillHearts.backgroundTintList =
+            ColorStateList.valueOf(quizColor(R.color.quiz_mint))
+        binding.btnFeedbackRefillHearts.setTextColor(quizColor(R.color.quiz_on_accent))
+        binding.btnFeedbackRefillHearts.strokeWidth = 0
+        binding.btnFeedbackRefillHearts.strokeColor =
+            ColorStateList.valueOf(quizColor(R.color.quiz_mint))
+    }
+
+    private fun restoreDefaultFeedbackButtonStyles() {
+        binding.btnNextQuestion.backgroundTintList =
+            ColorStateList.valueOf(quizColor(R.color.quiz_mint))
+        binding.btnNextQuestion.setTextColor(quizColor(R.color.quiz_on_accent))
+        binding.btnNextQuestion.strokeWidth = 0
+        val strokePx = (1f * resources.displayMetrics.density).toInt().coerceAtLeast(1)
+        binding.btnFeedbackRefillHearts.backgroundTintList =
+            ColorStateList.valueOf(Color.TRANSPARENT)
+        binding.btnFeedbackRefillHearts.setTextColor(quizColor(R.color.quiz_feedback_text))
+        binding.btnFeedbackRefillHearts.strokeWidth = strokePx
+        binding.btnFeedbackRefillHearts.strokeColor =
+            ColorStateList.valueOf(quizColor(R.color.quiz_text_grey))
+    }
+
+    private fun requestReviveWithGear() {
+        lifecycleScope.launch {
+            viewModel.reviveCurrentAttempt().fold(
+                onSuccess = { data ->
+                    resumeQuizAfterGearRevive(data.remainingLives.coerceIn(0, 3))
+                    Toast.makeText(requireContext(), getString(R.string.quiz_btn_refill_hearts), Toast.LENGTH_SHORT).show()
+                },
+                onFailure = { e ->
+                    Toast.makeText(
+                        requireContext(),
+                        e.message ?: getString(R.string.quiz_hearts_exhausted_toast),
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            )
+        }
+    }
+
+    /** 톱니 부활 성공 후 피드백·타이머·선택지를 복구해 같은 문항을 이어서 푼다. */
+    private fun resumeQuizAfterGearRevive(remainingLives: Int) {
+        binding.layoutFeedbackPanel.visibility = View.GONE
+        binding.btnFeedbackRefillHearts.visibility = View.GONE
+        restoreDefaultFeedbackButtonStyles()
+        updateHearts(remainingLives, forceReset = true)
+        lives = remainingLives
+        viewModel.resumeAfterGearRevive()
+
+        val question = viewModel.getCurrentCachedQuestion() ?: getCurrentQuestion() ?: return
+        resetOxButtons()
+        resetMultipleFixedOptions()
+        setupOptions(question)
+        binding.tvAttemptRecoverBanner.visibility = View.GONE
+
+        val total = (viewModel.uiState.value as? QuizUiState.QuestionLoaded)
+            ?.quizQuestions?.questions?.size ?: binding.pbQuizProgress.max
+        val index = viewModel.currentQuestionIndex.value
+        val isLast = index >= total - 1
+        binding.btnNextQuestion.text =
+            if (isLast) getString(R.string.quiz_btn_view_result) else getString(R.string.quiz_btn_next)
+        binding.btnNextQuestion.setOnClickListener {
+            binding.layoutFeedbackPanel.visibility = View.GONE
+            restoreDefaultFeedbackButtonStyles()
+            viewModel.nextQuestion()
+        }
+
+        if (!viewModel.isSolutionMode.value && binding.layoutQuizResult.visibility != View.VISIBLE) {
+            startTimer(reset = true)
         }
     }
 
@@ -427,35 +623,45 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         explanation: String,
         userAnswer: String,
         correctAnswer: String? = null,
-        deferImmediateCorrectness: Boolean = false
+        deferImmediateCorrectness: Boolean = false,
+        serverRemainingLives: Int? = null,
+        canRevive: Boolean = false,
+        reviveCost: Int? = null,
+        gearBalance: Int? = null
     ) {
+        binding.layoutQuizResult.visibility = View.GONE
+        binding.btnFeedbackRefillHearts.visibility = View.GONE
+        if (!viewModel.isSolutionMode.value) {
+            binding.tvQuizModeBanner.visibility = View.GONE
+        }
+
+        val livesExhausted = (serverRemainingLives ?: lives) <= 0 && !viewModel.isSolutionMode.value
+        if (!livesExhausted) {
+            restoreDefaultFeedbackButtonStyles()
+        }
+
         if (deferImmediateCorrectness) {
             binding.layoutFeedbackPanel.visibility = View.VISIBLE
             binding.tvFeedbackTitle.text = getString(R.string.quiz_feedback_answer_saved_title)
-            binding.tvFeedbackTitle.setTextColor(Color.parseColor("#8A96AD"))
+            binding.tvFeedbackTitle.setTextColor(quizColor(R.color.quiz_text_grey))
             binding.layoutFeedbackPanel.setCardBackgroundColor(
-                android.content.res.ColorStateList.valueOf(Color.parseColor("#0D1D41"))
+                android.content.res.ColorStateList.valueOf(quizColor(R.color.quiz_feedback_panel_correct))
             )
             binding.tvFeedbackContent.text = explanation
 
-            val isFailedByLives = lives <= 0
+            serverRemainingLives?.let { updateHearts(it.coerceIn(0, 3), forceReset = true) }
+            val isFailedByLives = (serverRemainingLives ?: lives) <= 0
             val isLast = (viewModel.currentQuestionIndex.value >= (binding.pbQuizProgress.max - 1))
 
-            if (isFailedByLives) {
-                binding.btnNextQuestion.text = getString(R.string.quiz_btn_view_result)
-                binding.btnNextQuestion.setOnClickListener {
-                    binding.layoutFeedbackPanel.visibility = View.GONE
-                    if (viewModel.isReviewMode.value && !viewModel.isSolutionMode.value) {
-                        viewModel.finishReviewImmediatelyOnWrong(explanation)
-                    } else {
-                        viewModel.finishQuizEarly()
-                    }
-                }
+            if (isFailedByLives && !viewModel.isSolutionMode.value) {
+                bindLivesExhaustedFeedbackActions(canRevive, reviveCost, gearBalance)
             } else {
+                restoreDefaultFeedbackButtonStyles()
                 binding.btnNextQuestion.text =
                     if (isLast) getString(R.string.quiz_btn_view_result) else getString(R.string.quiz_btn_next)
                 binding.btnNextQuestion.setOnClickListener {
                     binding.layoutFeedbackPanel.visibility = View.GONE
+                    restoreDefaultFeedbackButtonStyles()
                     viewModel.nextQuestion()
                 }
             }
@@ -465,65 +671,48 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         markCorrectAnswer(question, userAnswer, isCorrect)
 
         binding.layoutFeedbackPanel.visibility = View.VISIBLE
-        
-        if (!isCorrect) {
-            // 풀이 모드에서는 패널티/흔들림/하트 감소 없음
-            if (!viewModel.isSolutionMode.value) {
-                // lives를 먼저 줄이면 updateHearts의 감소 감지가 깨지므로, 현재 lives 기준으로 감소 처리
-                updateHearts(lives - 1)
-                // 하트 감소가 체감되도록 하트 영역도 한번 더 흔들림 트리거
+
+        if (!isCorrect && !viewModel.isSolutionMode.value) {
+            val displayLives = (serverRemainingLives ?: (lives - 1)).coerceIn(0, 3)
+            updateHearts(displayLives, forceReset = true)
                 shakeView(binding.layoutHearts)
                 shakeScreen()
-            }
         }
 
-        // 마지막 문제인 경우 또는 라이프가 0인 경우 버튼 텍스트 변경
-        val questions = viewModel.uiState.value.let { 
-            if (it is QuizUiState.QuestionLoaded) it.quizQuestions.questions 
-            else (viewModel.uiState.value as? QuizUiState.AnswerChecked)?.let { 
-                // 이 시점에는 QuestionLoaded 정보가 캐시되어 있어야 함
-                null // 실제로는 캐시된 정보를 쓰거나 ViewModel에서 확인 필요
-            }
-        }
-        
-        val isFailedByLives = lives <= 0
-        val isLast = (viewModel.currentQuestionIndex.value >= (binding.pbQuizProgress.max - 1))
-        
-        if (isFailedByLives) {
-            binding.btnNextQuestion.text = getString(R.string.quiz_btn_view_result)
-            binding.btnNextQuestion.setOnClickListener {
-                binding.layoutFeedbackPanel.visibility = View.GONE
-                // 복습(하트 1개) 오답으로 실패했을 때도 피드백 패널은 보여주고, 버튼으로 결과로 이동
-                if (viewModel.isReviewMode.value && !viewModel.isSolutionMode.value) {
-                    viewModel.finishReviewImmediatelyOnWrong(explanation)
-                } else {
-                    viewModel.finishQuizEarly()
-                }
-            }
+        val effectiveLives = if (!isCorrect && !viewModel.isSolutionMode.value) {
+            (serverRemainingLives ?: (lives - 1)).coerceIn(0, 3)
         } else {
+            (serverRemainingLives ?: lives).coerceIn(0, 3)
+        }
+        val isFailedByLives = effectiveLives <= 0
+        val isLast = (viewModel.currentQuestionIndex.value >= (binding.pbQuizProgress.max - 1))
+
+        if (isFailedByLives && !viewModel.isSolutionMode.value) {
+            bindLivesExhaustedFeedbackActions(canRevive, reviveCost, gearBalance)
+        } else {
+            restoreDefaultFeedbackButtonStyles()
             binding.btnNextQuestion.text = if (isLast) getString(R.string.quiz_btn_view_result) else getString(R.string.quiz_btn_next)
             binding.btnNextQuestion.setOnClickListener {
                 binding.layoutFeedbackPanel.visibility = View.GONE
+                restoreDefaultFeedbackButtonStyles()
                 viewModel.nextQuestion()
             }
         }
 
         if (isCorrect) {
-            binding.tvFeedbackTitle.text = getString(R.string.quiz_feedback_correct_xp)
-            binding.tvFeedbackTitle.setTextColor(Color.parseColor("#00FFB2"))
-            binding.layoutFeedbackPanel.setCardBackgroundColor(android.content.res.ColorStateList.valueOf(Color.parseColor("#0D1D41")))
+            binding.tvFeedbackTitle.text = getString(R.string.quiz_feedback_correct)
+            binding.tvFeedbackTitle.setTextColor(quizColor(R.color.quiz_mint))
+            binding.layoutFeedbackPanel.setCardBackgroundColor(android.content.res.ColorStateList.valueOf(quizColor(R.color.quiz_feedback_panel_correct)))
         } else {
             if (userAnswer.isEmpty()) {
                 binding.tvFeedbackTitle.text = "시간 초과! ⏱"
             } else {
                 binding.tvFeedbackTitle.text = "${getString(R.string.quiz_feedback_wrong)} ${getString(R.string.quiz_feedback_wrong_hint)}"
             }
-            binding.tvFeedbackTitle.setTextColor(Color.parseColor("#FF4B4B"))
-            binding.layoutFeedbackPanel.setCardBackgroundColor(android.content.res.ColorStateList.valueOf(Color.parseColor("#1A1025")))
+            binding.tvFeedbackTitle.setTextColor(quizColor(R.color.quiz_red))
+            binding.layoutFeedbackPanel.setCardBackgroundColor(android.content.res.ColorStateList.valueOf(quizColor(R.color.quiz_feedback_panel_wrong)))
         }
-        val correctLine = correctAnswer?.takeIf { it.isNotBlank() }?.let { ca ->
-            "정답: $ca"
-        }
+        val correctLine = formatCorrectAnswerLine(question, correctAnswer)
         val exp = explanation.trim()
         binding.tvFeedbackContent.text = listOfNotNull(correctLine, exp.takeIf { it.isNotBlank() })
             .joinToString(separator = "\n\n")
@@ -533,129 +722,155 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         // 어떤 경로로든 결과로 진입 시, 하단 슬라이드(피드백) 정리
         timer?.cancel()
         binding.layoutFeedbackPanel.visibility = View.GONE
+        binding.btnFeedbackRefillHearts.visibility = View.GONE
         binding.cardReviewBadge.visibility = View.GONE
 
         binding.layoutQuizResult.visibility = View.VISIBLE
         binding.layoutQuizResult.bringToFront()
         
-        // 펫 진화 축하 연출
-        if (result.petEvolved) {
+        // 알→성장 등 중간 진화만 퀴즈 결과 화면에서 연출 (아이몽은 홈 축하 팝업)
+        if (result.petEvolved && !isAimongEvolution(result)) {
             showEvolutionCelebration()
         }
 
-        binding.lavResultPet.setAnimation(R.raw.pet_idle)
-        binding.lavResultPet.playAnimation()
+        bindEquippedPetSprites(resolveResultPetVisual(result))
 
-        val isReviewSubmit = result.mode == "review"
+        val isReviewSubmit = result.mode == "review" || viewModel.isReviewMode.value
 
-        val totalCount = result.total.takeIf { it > 0 } ?: result.results.size
-        val correctCount = result.results.count { it.isCorrect }
-        val wrongCount = (result.results.size - correctCount).coerceAtLeast(0)
-
-        // 서버/클라 지표를 함께 사용해 PASS/FAIL을 안전하게 결정
-        // - server veto: isPassed=false 또는 wrongCount>0 이면 무조건 FAIL
-        // - results 기반 교차검증: 모든 문항 정답이어야 PASS
-        val uiPassed =
-            result.isPassed &&
-                (result.wrongCount == 0) &&
-                (wrongCount == 0) &&
-                (correctCount == totalCount)
+        val remainingHearts = viewModel.sessionLives.value.coerceIn(0, 3)
+        val heartsLost = maxOf(
+            totalHeartsLost,
+            (heartsAtQuizStart - remainingHearts).coerceAtLeast(0)
+        )
+        val grade = if (isReviewSubmit) {
+            null
+        } else {
+            MissionHeartGrade.fromHeartsLost(heartsLost)
+        }
+        val missionCleared = grade != MissionHeartGrade.FAIL
 
         binding.tvResultStatus.text = when {
-            !uiPassed -> getString(R.string.quiz_result_fail)
             isReviewSubmit -> "복습 완료!"
+            grade == MissionHeartGrade.FAIL -> getString(R.string.quiz_result_fail)
+            grade == MissionHeartGrade.PERFECT -> getString(R.string.quiz_result_perfect)
             else -> getString(R.string.quiz_result_success)
         }
         binding.tvResultStatus.setTextColor(
-            if (uiPassed) Color.parseColor("#00FFB2")
-            else Color.parseColor("#FF4B4B")
+            if (missionCleared || isReviewSubmit) quizColor(R.color.quiz_mint)
+            else quizColor(R.color.quiz_red)
         )
 
-        binding.tvResultSub.text = when {
-            !uiPassed -> "아쉽게 탈락했어. 다시 한 번 도전해볼까?"
+        val baseSub = when {
+            isReviewSubmit && !result.isPassed ->
+                getString(R.string.quiz_result_review_subtitle_fail)
             isReviewSubmit -> getString(R.string.quiz_result_review_subtitle_pass)
-            else -> "정말 대단해! 리터러시 박사가 다 됐는걸?"
+            grade == MissionHeartGrade.FAIL -> "아쉽게 탈락했어. 다시 한 번 도전해볼까?"
+            grade == MissionHeartGrade.PERFECT -> getString(R.string.quiz_result_perfect_subtitle)
+            grade == MissionHeartGrade.SUCCESS -> getString(R.string.quiz_result_success_subtitle)
+            else -> "아쉽게 탈락했어. 다시 한 번 도전해볼까?"
         }
-        
-        binding.tvResCorrectCount.text = "$correctCount / $totalCount"
-        binding.tvResPassStatus.text = if (uiPassed) "PASS" else "FAIL"
-        binding.tvResPassStatus.setTextColor(
-            if (uiPassed) Color.parseColor("#00FFB2")
-            else Color.parseColor("#FF4B4B")
-        )
+        binding.tvResultSub.text = buildString {
+            if (result.isFirstClear && missionCleared && !isReviewSubmit) {
+                append(getString(R.string.quiz_first_clear_badge))
+                append('\n')
+            }
+            append(baseSub)
+        }.trim()
 
-        // 오답 통계 표시
-        // 오답 수는 결과 화면에서 노출하지 않음
-        binding.layoutWrongStat.visibility = View.GONE
-        binding.layoutStatsContainer.weightSum = 3f
-        if (!uiPassed) {
+        if (!missionCleared && !isReviewSubmit) {
             binding.btnResRetry.visibility = View.VISIBLE
             binding.btnResFinish.text = "다음에 하기"
-            binding.tvResPetBonus.setTextColor(Color.parseColor("#8A96AD"))
+            binding.tvResPetBonus.setTextColor(quizColor(R.color.quiz_text_grey))
         } else {
             binding.btnResRetry.visibility = View.GONE
             binding.btnResFinish.text = "학습 완료"
-            binding.tvResPetBonus.setTextColor(Color.parseColor("#FFD600"))
+            binding.tvResPetBonus.setTextColor(quizColor(R.color.quiz_hint_gold))
         }
 
-        // 보너스 정보 (v1.4: 복습은 bonusXp/xpEarned 0, equippedPetGrade 등)
-        binding.tvResPetBonus.text = when {
-            isReviewSubmit -> getString(R.string.quiz_bonus_review_none)
-            result.equippedPetGrade != null && result.bonusXp > 0 ->
-                getString(R.string.quiz_bonus_pet_grade, result.equippedPetGrade, result.bonusXp)
-            result.bonusXp > 0 -> "+${result.bonusXp} XP"
-            else -> "+0% XP"
-        }
+        binding.tvResPetBonus.text = formatMissionXpBonusLine(result, isReviewSubmit)
         
         // XP 애니메이션
         animateXpGain(result.xpEarned, result.currentXp, result.nextLevelXp, result.currentLevel)
 
         // 스트릭·티켓 (remainingTickets는 서버 스냅샷)
         val streakLine = if (result.streakDays > 0) {
-            "🔥 ${result.streakDays}일 연속 스트릭 유지 중!"
+            getString(R.string.quiz_streak_days_fmt, result.streakDays)
         } else null
         val ticketLine = result.remainingTickets?.let {
-            getString(
-                R.string.quiz_remaining_tickets_line,
-                it.normal,
-                it.rare,
-                it.epic
-            )
+            getString(R.string.quiz_remaining_tickets_fmt, it.normal)
         }
         val streakBlock = listOfNotNull(streakLine, ticketLine).joinToString("\n")
         if (streakBlock.isNotEmpty()) {
             binding.tvStreakInfo.visibility = View.VISIBLE
             binding.tvStreakInfo.text = streakBlock
+            if (result.streakDays > 0) {
+                val pad = (6 * resources.displayMetrics.density).toInt()
+                binding.tvStreakInfo.setCompoundDrawablesRelativeWithIntrinsicBounds(
+                    R.drawable.ic_flame,
+                    0,
+                    0,
+                    0,
+                )
+                binding.tvStreakInfo.compoundDrawablePadding = pad
+            } else {
+                binding.tvStreakInfo.setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, 0, 0)
+            }
         } else {
             binding.tvStreakInfo.visibility = View.GONE
         }
 
-        // 보상 아이템 표시
+        // v2.10: gear는 일반 모드 통과·서버 isPassed일 때만 표시
+        val displayRewards = result.rewards.filter { reward ->
+            when (reward.type.uppercase()) {
+                "GEM", "JEWEL", "DIAMOND" -> false
+                "GEAR" -> !isReviewSubmit && result.isPassed
+                else -> true
+            }
+        }
         binding.layoutRewardsRow.visibility =
-            if (result.isPassed && result.rewards.isNotEmpty()) View.VISIBLE else View.GONE
+            if (missionCleared && displayRewards.isNotEmpty()) View.VISIBLE else View.GONE
         binding.layoutRewardsContainer.removeAllViews()
-        result.rewards.forEach { reward ->
+        displayRewards.forEach { reward ->
             addRewardIcon(reward)
         }
+    }
 
-        if (viewModel.strictSingleLifeRetry.value && !result.isPassed) {
-            updateHearts(0, forceReset = true)
+    private fun formatMissionXpBonusLine(result: QuizResult, isReviewSubmit: Boolean): String {
+        if (isReviewSubmit) return getString(R.string.quiz_bonus_review_no_xp)
+        if (!result.isPassed || result.xpEarned <= 0) return getString(R.string.quiz_bonus_no_xp)
+        if (result.streakBonusApplied) {
+            return getString(R.string.quiz_bonus_streak_xp, result.xpEarned)
         }
-
-        binding.tvWrongCount.text = "오답: ${result.wrongCount}개"
+        val parts = mutableListOf<String>()
+        if (result.isPerfect) {
+            parts.add(getString(R.string.quiz_bonus_perfect_xp, MissionXpRules.PERFECT_BONUS_XP))
+        }
+        if (result.bonusXp > 0 && result.equippedPetGrade != null) {
+            parts.add(getString(R.string.quiz_bonus_pet_grade, result.equippedPetGrade, result.bonusXp))
+        } else if (result.bonusXp > 0) {
+            parts.add("+${result.bonusXp} XP")
+        }
+        return parts.joinToString(" · ").ifBlank { "+${result.xpEarned} XP" }
     }
 
     private fun animateXpGain(gainedXp: Int, currentXp: Int, maxXp: Int, level: Int) {
-        val startXp = (currentXp - gainedXp).coerceAtLeast(0)
         binding.tvResXpGain.text = "+$gainedXp XP"
-        
-        ValueAnimator.ofInt(startXp, currentXp).apply {
+        val safeMax = maxXp.coerceAtLeast(1)
+        if (gainedXp <= 0) {
+            binding.pbResXpProgress.max = safeMax
+            binding.pbResXpProgress.progress = currentXp.coerceIn(0, safeMax)
+            binding.tvResXpStatus.text = "LV.$level (${currentXp.coerceIn(0, safeMax)} / $safeMax)"
+            return
+        }
+        val endXp = if (currentXp >= gainedXp) currentXp else gainedXp
+        val startXp = (endXp - gainedXp).coerceAtLeast(0)
+        ValueAnimator.ofInt(startXp, endXp).apply {
             duration = 1500
             addUpdateListener { 
                 val value = it.animatedValue as Int
                 binding.pbResXpProgress.progress = value
-                binding.pbResXpProgress.max = maxXp
-                binding.tvResXpStatus.text = "LV.$level ($value / $maxXp)"
+                binding.pbResXpProgress.max = safeMax
+                binding.tvResXpStatus.text = "LV.$level ($value / $safeMax)"
             }
             start()
         }
@@ -671,35 +886,102 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         }
     }
 
-    private fun addRewardIcon(reward: QuizReward) {
-        val density = resources.displayMetrics.density
-        val imageView = ImageView(requireContext()).apply {
-            layoutParams = LinearLayout.LayoutParams((40 * density).toInt(), (40 * density).toInt()).apply {
-                setMargins((4 * density).toInt(), 0, (4 * density).toInt(), 0)
-            }
-            // 리워드 타입에 따른 이미지 설정
-            // TODO: 티켓 등급별 리소스(ic_ticket_rare 등) 추가 필요. 우선 기본 별 아이콘 사용
-            val resId = when (reward.ticketType) {
-                "RARE" -> R.drawable.ic_star_filled
-                "EPIC" -> R.drawable.ic_star_filled
-                else -> R.drawable.ic_star_filled
-            }
-            setImageResource(resId)
+    private fun bindTermHints(hints: List<TermHint>) {
+        binding.chipGroupTermHints.removeAllViews()
+        if (hints.isEmpty()) {
+            binding.chipGroupTermHints.visibility = View.GONE
+            return
         }
-        binding.layoutRewardsContainer.addView(imageView)
+        binding.chipGroupTermHints.visibility = View.VISIBLE
+        hints.forEach { hint ->
+            val chip = Chip(requireContext()).apply {
+                text = hint.term
+                isClickable = true
+                isCheckable = false
+                chipBackgroundColor = ColorStateList.valueOf(quizColor(R.color.quiz_button_secondary_bg))
+                setTextColor(quizColor(R.color.quiz_hint_gold))
+                setOnClickListener { showTermHintSheet(hint) }
+            }
+            binding.chipGroupTermHints.addView(chip)
+        }
+    }
+
+    private fun showTermHintSheet(hint: TermHint) {
+        val sheet = BottomSheetDialog(requireContext())
+        val content = layoutInflater.inflate(R.layout.bottom_sheet_term_hint, null, false)
+        content.findViewById<TextView>(R.id.tv_term_title).text = hint.term
+        content.findViewById<TextView>(R.id.tv_term_description).text = hint.description
+        sheet.setContentView(content)
+        sheet.show()
+    }
+
+    private fun addRewardIcon(reward: QuizReward) {
+        when (reward.type.uppercase()) {
+            "GEAR" -> addResultRewardChip(
+                iconRes = R.drawable.ic_chip_gear,
+                amountText = getString(R.string.quiz_reward_amount_fmt, reward.count),
+                tintRes = R.color.quiz_hint_gold,
+            )
+            else -> addResultRewardChip(
+                iconRes = R.drawable.ic_star_filled,
+                amountText = getString(R.string.quiz_reward_amount_fmt, reward.count),
+                tintRes = R.color.quiz_hint_gold,
+            )
+        }
+    }
+
+    private fun addResultRewardChip(
+        iconRes: Int,
+        amountText: String,
+        @ColorRes tintRes: Int,
+    ) {
+        val density = resources.displayMetrics.density
+        val marginH = (8 * density).toInt()
+        val iconSize = (24 * density).toInt()
+        val chip = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            ).apply {
+                setMargins(marginH, 0, marginH, 0)
+            }
+        }
+        val icon = ImageView(requireContext()).apply {
+            layoutParams = LinearLayout.LayoutParams(iconSize, iconSize)
+            setImageResource(iconRes)
+            imageTintList = ColorStateList.valueOf(quizColor(tintRes))
+            contentDescription = amountText
+        }
+        val amount = TextView(requireContext()).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            ).apply {
+                marginStart = (6 * density).toInt()
+            }
+            text = amountText
+            setTextColor(quizColor(R.color.quiz_text_primary))
+            textSize = 14f
+            setTypeface(typeface, Typeface.BOLD)
+        }
+        chip.addView(icon)
+        chip.addView(amount)
+        binding.layoutRewardsContainer.addView(chip)
     }
 
     private fun updateQuestion(index: Int) {
         val state = viewModel.uiState.value
         if (state is QuizUiState.QuestionLoaded) {
             val total = state.quizQuestions.questions.size
-            binding.tvQuestionCount.text = "${index + 1} / $total 문제"
-            
             val question = state.quizQuestions.questions.getOrNull(index)
                 ?: run {
                     Log.e("QuizFragment", "updateQuestion out of bounds: index=$index total=$total")
                     return
                 }
+            binding.tvQuestionCount.text = "${index + 1} / $total 문제"
+            bindQuestionDifficultyStars(question.difficulty)
             
             // v1.3 + v2.3: 유형 라벨 포함 및 하이라이트 적용
             val typeLabel = when(question.type) {
@@ -710,12 +992,15 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             }
             val fullText = "[$typeLabel] ${question.question}"
             setHighlightedText(binding.tvQuizQuestion, fullText)
-            binding.tvQuizQuestion.setTextColor(Color.WHITE)
+            binding.tvQuizQuestion.setTextColor(quizColor(R.color.quiz_text_primary))
+            bindTermHints(question.termHints)
 
             binding.layoutHearts.visibility = View.VISIBLE
-            // 복습 모드도 하트 1개로 시작
-            val maxLives = if (viewModel.isReviewMode.value || viewModel.strictSingleLifeRetry.value) 1 else 3
-            if (index == 0) updateHearts(maxLives, forceReset = true)
+            if (index == 0) {
+                heartsAtQuizStart = 3
+                totalHeartsLost = 0
+                updateHearts(3, forceReset = true)
+            }
             updateQuizModeBanner()
             setupOptions(question)
             // v2.4: 이미 답한 문항(복구)이라면 입력을 막는다.
@@ -724,9 +1009,16 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                 binding.tvAttemptRecoverBanner.visibility = View.VISIBLE
                 binding.tvAttemptRecoverBanner.text = getString(R.string.quiz_attempt_recovered_banner)
                 binding.tvTimer.text = getString(R.string.quiz_timer_recovered_label)
-                binding.tvTimer.setTextColor(Color.parseColor("#8A96AD"))
+                binding.tvTimer.setTextColor(quizColor(R.color.quiz_text_grey))
                 timer?.cancel()
                 timer = null
+                // 복구된 문항에서는 선택 대신 "다음"으로 진행할 수 있게 보장
+                binding.btnNextQuestion.text = getString(R.string.quiz_btn_next)
+                binding.btnNextQuestion.setOnClickListener {
+                    binding.layoutFeedbackPanel.visibility = View.GONE
+                    binding.btnFeedbackRefillHearts.visibility = View.GONE
+                    viewModel.nextQuestion()
+                }
             } else {
                 binding.tvAttemptRecoverBanner.visibility = View.GONE
                 if (!viewModel.isSolutionMode.value) {
@@ -756,8 +1048,8 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
 
     private fun setHighlightedText(view: TextView, text: String) {
         val spannable = SpannableString(text)
-        val highlightColor = Color.parseColor("#00FFB2")
-        val quoteColor = Color.parseColor("#FFD600")
+        val highlightColor = quizColor(R.color.quiz_mint)
+        val quoteColor = quizColor(R.color.quiz_hint_gold)
 
         // 1. 대괄호 [ ... ] 하이라이트 (Mint)
         var bStart = text.indexOf("[")
@@ -798,6 +1090,9 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
     private fun updateHearts(newLives: Int, forceReset: Boolean = false) {
         val hearts = listOf(binding.ivHeart1, binding.ivHeart2, binding.ivHeart3)
         val capped = newLives.coerceIn(0, 3)
+        if (capped < lives) {
+            totalHeartsLost += (lives - capped)
+        }
         if (!forceReset && capped < lives) {
             shakeView(binding.layoutHearts)
         }
@@ -849,13 +1144,9 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             QuestionType.OX -> {
                 binding.layoutOptionsOx.visibility = View.VISIBLE
             }
-            QuestionType.FILL, QuestionType.SITUATION -> {
-                binding.layoutOptionsChips.visibility = View.VISIBLE
-                setupChips(question)
-            }
             else -> {
                 binding.layoutOptionsStandard.visibility = View.VISIBLE
-                setupMultipleFixedOptions(question.options.orEmpty())
+                setupMultipleFixedOptions(question)
             }
         }
     }
@@ -873,14 +1164,6 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             card.alpha = 1f
         }
 
-        // 칩들도 클릭 가능 복구(생성 후에 다시 잠길 수 있음)
-        for (i in 0 until binding.layoutOptionsChips.childCount) {
-            val v = binding.layoutOptionsChips.getChildAt(i)
-            v.isEnabled = true
-            v.isClickable = true
-            v.alpha = 1f
-        }
-
         // OX도 클릭 가능 복구
         binding.btnOxO.isEnabled = true
         binding.btnOxX.isEnabled = true
@@ -890,7 +1173,8 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         binding.btnOxX.alpha = 1f
     }
 
-    private fun setupMultipleFixedOptions(options: List<String>) {
+    private fun setupMultipleFixedOptions(question: Question) {
+        val options = question.options.orEmpty()
         val cards = listOf(
             binding.btnQuizMultOpt1,
             binding.btnQuizMultOpt2,
@@ -906,15 +1190,17 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             } else {
                 card.visibility = View.VISIBLE
                 texts[idx].text = option
+                texts[idx].maxLines = Integer.MAX_VALUE
                 card.isEnabled = true
                 card.isClickable = true
                 card.alpha = 1f
-                // 선택 스타일은 클릭에서 적용, 기본은 초기화 상태 유지
                 card.setOnClickListener {
-                    // 단일 선택 리셋
                     resetMultipleFixedOptions()
-                    applyMultipleFixedSelection(option.trim())
-                    handleOptionClick(option)
+                    applyMultipleFixedSelectionByIndex(idx)
+                    handleOptionClick(
+                        (idx + 1).toString(),
+                        fillDisplayWord = if (question.type == QuestionType.FILL) option else null,
+                    )
                 }
             }
         }
@@ -934,34 +1220,13 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             card.isEnabled = true
             card.isClickable = true
             card.alpha = 1f
-            card.setCardBackgroundColor(ContextCompat.getColor(requireContext(), R.color.home_card_bg))
+            card.setCardBackgroundColor(ContextCompat.getColor(requireContext(), R.color.quiz_card_bg))
             card.strokeWidth = (1 * resources.displayMetrics.density).toInt()
-            card.strokeColor = Color.parseColor("#243B70")
+            card.strokeColor = quizColor(R.color.quiz_option_default_stroke)
             texts[idx].isEnabled = true
             texts[idx].alpha = 1f
-            texts[idx].setTextColor(Color.WHITE)
+            texts[idx].setTextColor(quizColor(R.color.quiz_text_primary))
             checks[idx].visibility = View.GONE
-        }
-    }
-
-    private fun applyMultipleFixedSelection(selectedKey: String) {
-        val cards = listOf(
-            binding.btnQuizMultOpt1,
-            binding.btnQuizMultOpt2,
-            binding.btnQuizMultOpt3,
-            binding.btnQuizMultOpt4
-        )
-        val texts = listOf(binding.tvOpt1, binding.tvOpt2, binding.tvOpt3, binding.tvOpt4)
-        // 체크표시는 사용하지 않음
-        val density = resources.displayMetrics.density
-        cards.forEachIndexed { idx, card ->
-            val key = texts[idx].text?.toString()?.trim().orEmpty()
-            if (key.isNotEmpty() && key == selectedKey) {
-                card.setCardBackgroundColor(ContextCompat.getColor(requireContext(), R.color.quiz_mint))
-                card.strokeWidth = (3 * density).toInt()
-                card.strokeColor = ContextCompat.getColor(requireContext(), R.color.quiz_mint)
-                texts[idx].setTextColor(Color.WHITE)
-            }
         }
     }
 
@@ -971,110 +1236,91 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         binding.btnOxX.isEnabled = true
         binding.btnOxO.isClickable = true
         binding.btnOxX.isClickable = true
-        binding.btnOxO.setCardBackgroundColor(ContextCompat.getColor(requireContext(), R.color.home_card_bg))
-        binding.btnOxX.setCardBackgroundColor(ContextCompat.getColor(requireContext(), R.color.home_card_bg))
-        binding.btnOxO.setStrokeColor(android.content.res.ColorStateList.valueOf(Color.parseColor("#243B70")))
+        binding.btnOxO.alpha = 1f
+        binding.btnOxX.alpha = 1f
+        binding.btnOxO.setCardBackgroundColor(ContextCompat.getColor(requireContext(), R.color.quiz_card_bg))
+        binding.btnOxX.setCardBackgroundColor(ContextCompat.getColor(requireContext(), R.color.quiz_card_bg))
+        binding.btnOxO.setStrokeColor(android.content.res.ColorStateList.valueOf(quizColor(R.color.quiz_option_default_stroke)))
         binding.btnOxO.setStrokeWidth((1 * density).toInt())
-        binding.btnOxX.setStrokeColor(android.content.res.ColorStateList.valueOf(Color.parseColor("#243B70")))
+        binding.btnOxX.setStrokeColor(android.content.res.ColorStateList.valueOf(quizColor(R.color.quiz_option_default_stroke)))
         binding.btnOxX.setStrokeWidth((1 * density).toInt())
+        // applyOxPendingSelection()에서 바꾼 O/X 라벨 색 — 다음 OX 문항으로 넘어갈 때 잔상 제거
+        binding.tvOxOIcon.setTextColor(quizColor(R.color.quiz_mint))
+        binding.tvOxOText.setTextColor(quizColor(R.color.quiz_mint))
+        binding.tvOxXIcon.setTextColor(quizColor(R.color.quiz_red))
+        binding.tvOxXText.setTextColor(quizColor(R.color.quiz_red))
     }
 
-    /** OX 탭 직후(채점 전) '내 선택'을 바로 표시 */
+    /** OX 탭 직후(채점 전) '내 선택'만 강조 — O는 민트, X는 빨강 */
     private fun applyOxPendingSelection(choice: String) {
         val density = resources.displayMetrics.density
-
-        // 기본값으로 리셋 후, '내가 고른 보기'는 전면 민트로 통일 (체크 아이콘/스트로크 강조 대신)
         resetOxButtons()
 
         val mint = ContextCompat.getColor(requireContext(), R.color.quiz_mint)
+        val red = quizColor(R.color.quiz_red)
+        val selectedColor = if (choice == "O") mint else red
         val selected = if (choice == "O") binding.btnOxO else binding.btnOxX
-        selected.setCardBackgroundColor(mint)
-        selected.setStrokeColor(android.content.res.ColorStateList.valueOf(mint))
+        selected.setCardBackgroundColor(selectedColor)
+        selected.setStrokeColor(android.content.res.ColorStateList.valueOf(selectedColor))
         selected.setStrokeWidth((2 * density).toInt())
 
-        // 텍스트 가독성 보강
-        val oIcon = binding.tvOxOIcon
-        val oText = binding.tvOxOText
-        val xIcon = binding.tvOxXIcon
-        val xText = binding.tvOxXText
-
-        val selectedTextColor = Color.WHITE
-        val defaultTextColor = ContextCompat.getColor(requireContext(), R.color.quiz_mint)
         if (choice == "O") {
-            oIcon.setTextColor(selectedTextColor)
-            oText.setTextColor(selectedTextColor)
-            xIcon.setTextColor(defaultTextColor)
-            xText.setTextColor(defaultTextColor)
+            binding.tvOxOIcon.setTextColor(Color.WHITE)
+            binding.tvOxOText.setTextColor(Color.WHITE)
         } else {
-            xIcon.setTextColor(selectedTextColor)
-            xText.setTextColor(selectedTextColor)
-            oIcon.setTextColor(defaultTextColor)
-            oText.setTextColor(defaultTextColor)
+            binding.tvOxXIcon.setTextColor(Color.WHITE)
+            binding.tvOxXText.setTextColor(Color.WHITE)
         }
     }
 
-    private fun setupChips(question: Question) {
+    /** OX 채점 후 — 선택한 보기만 정오 색으로 표시 */
+    private fun applyOxAnswerFeedback(userAnswer: String, isCorrect: Boolean) {
         val density = resources.displayMetrics.density
-        val isSituation = question.type == QuestionType.SITUATION
+        resetOxButtons()
 
-        binding.layoutOptionsChips.chipSpacingVertical = (8 * density).toInt()
-        binding.layoutOptionsChips.chipSpacingHorizontal = (8 * density).toInt()
+        val mint = ContextCompat.getColor(requireContext(), R.color.quiz_mint)
+        val red = quizColor(R.color.quiz_red)
+        val cardBg = ContextCompat.getColor(requireContext(), R.color.quiz_card_bg)
+        val userBtn = if (userAnswer == "O") binding.btnOxO else binding.btnOxX
+        val userIcon = if (userAnswer == "O") binding.tvOxOIcon else binding.tvOxXIcon
+        val userLabel = if (userAnswer == "O") binding.tvOxOText else binding.tvOxXText
 
-        question.options?.forEach { option ->
-            val chip = Chip(requireContext()).apply {
-                text = option
-                textSize = if (isSituation) 14f else 15f
-                typeface = Typeface.create("sans-serif-black", Typeface.BOLD)
-                isSingleLine = false
-                maxLines = 20
-                ellipsize = null
-                isClickable = true
-                isCheckable = false
-                checkedIcon = null
-                textAlignment = View.TEXT_ALIGNMENT_CENTER
-                setTextColor(Color.WHITE)
-                setEnsureMinTouchTargetSize(false)
-
-                if (isSituation) {
-                    layoutParams = LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT
-                    ).apply {
-                        setMargins(0, 0, 0, (8 * density).toInt())
-                    }
-                    minHeight = (60 * density).toInt()
-                    chipStartPadding = 20 * density
-                    chipEndPadding = 20 * density
-                    // SITUATION도 '선택 시 전체 민트'가 명확히 보이도록 Chip 기반 스타일로 통일
-                    setChipBackgroundColorResource(R.color.home_card_bg)
-                    setChipStrokeColorResource(R.color.home_card_stroke)
-                    chipStrokeWidth = 3f * density
+        if (isCorrect) {
+            val selectedColor = if (userAnswer == "O") mint else red
+            userBtn.setCardBackgroundColor(selectedColor)
+            userBtn.setStrokeColor(android.content.res.ColorStateList.valueOf(selectedColor))
+            userBtn.setStrokeWidth((2 * density).toInt())
+            userIcon.setTextColor(Color.WHITE)
+            userLabel.setTextColor(Color.WHITE)
                 } else {
-                    minHeight = (48 * density).toInt()
-                    chipStartPadding = 16 * density
-                    chipEndPadding = 16 * density
-                    setChipBackgroundColorResource(R.color.home_card_bg)
-                    setChipStrokeColorResource(R.color.home_card_stroke)
-                    chipStrokeWidth = 3f * density
-                }
+            userBtn.setCardBackgroundColor(cardBg)
+            userBtn.setStrokeColor(android.content.res.ColorStateList.valueOf(red))
+            userBtn.setStrokeWidth((8 * density).toInt())
+            userIcon.setTextColor(red)
+            userLabel.setTextColor(red)
+        }
+    }
 
-                shapeAppearanceModel = shapeAppearanceModel.toBuilder()
-                    .setAllCornerSizes(if (isSituation) 16 * density else 28 * density)
-                    .build()
-
-                setOnClickListener {
-                    // 시각적 피드백 강화 (애니메이션 및 색상 변경)
-                    animateSelection(this)
-                    
-                    // 체크표시 대신 '선택지 전체 민트'로 통일
-                    setChipBackgroundColorResource(R.color.quiz_mint)
-                    setChipStrokeColorResource(R.color.quiz_mint)
-                    setTextColor(Color.WHITE)
-                    
-                    handleOptionClick(option)
-                }
-            }
-            binding.layoutOptionsChips.addView(chip)
+    /** 문항 난이도 → 문제 카드 상단 별 1~3개 (쉬움·보통·어려움) */
+    private fun bindQuestionDifficultyStars(difficulty: QuestionDifficulty?) {
+        val stars = listOf(
+            binding.ivQuestionDiffStar1,
+            binding.ivQuestionDiffStar2,
+            binding.ivQuestionDiffStar3,
+        )
+        val filledCount = when (difficulty) {
+            QuestionDifficulty.LOW -> 1
+            QuestionDifficulty.MEDIUM -> 2
+            QuestionDifficulty.HIGH -> 3
+            null -> 0
+        }
+        if (filledCount == 0) {
+            binding.layoutQuestionDifficultyStars.visibility = View.GONE
+            return
+        }
+        binding.layoutQuestionDifficultyStars.visibility = View.VISIBLE
+        stars.forEachIndexed { index, star ->
+            star.visibility = if (index < filledCount) View.VISIBLE else View.GONE
         }
     }
 
@@ -1089,88 +1335,7 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             .start()
     }
 
-    private fun addOptionButton(parent: LinearLayout, text: String, index: Int) {
-        val density = resources.displayMetrics.density
-        val relativeLayout = RelativeLayout(requireContext()).apply {
-            tag = text
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                setMargins(0, 0, 0, (8 * density).toInt())
-            }
-            setPadding((14 * density).toInt(), (12 * density).toInt(), (14 * density).toInt(), (12 * density).toInt())
-            isClickable = true
-            isFocusable = true
-        }
-
-        val textView = TextView(requireContext()).apply {
-            layoutParams = RelativeLayout.LayoutParams(
-                RelativeLayout.LayoutParams.WRAP_CONTENT,
-                RelativeLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                addRule(RelativeLayout.CENTER_VERTICAL)
-            }
-            this.text = "${index + 1}  $text"
-            setTextColor(Color.WHITE)
-            textSize = 13f
-            tag = "option_text"
-        }
-
-        applyMultipleRowStyle(relativeLayout, isSelected = false)
-        relativeLayout.addView(textView)
-        
-        relativeLayout.setOnClickListener {
-            // 단일 선택: 기존 선택 스타일 리셋
-            for (i in 0 until parent.childCount) {
-                val row = parent.getChildAt(i) as? RelativeLayout ?: continue
-                applyMultipleRowStyle(row, isSelected = false)
-            }
-
-            // 내가 선택한 보기: 민트로 채우기
-            applyMultipleRowStyle(relativeLayout, isSelected = true)
-            handleOptionClick(text)
-        }
-
-        parent.addView(relativeLayout)
-    }
-
-    private fun applyMultipleRowStyle(row: RelativeLayout, isSelected: Boolean) {
-        val density = resources.displayMetrics.density
-        val radius = 16f * density
-        val strokeW = (1f * density).toInt()
-
-        val bgColor = if (isSelected) {
-            ContextCompat.getColor(requireContext(), R.color.quiz_mint)
-        } else {
-            ContextCompat.getColor(requireContext(), R.color.home_card_bg)
-        }
-        val strokeColor = if (isSelected) {
-            ContextCompat.getColor(requireContext(), R.color.quiz_mint)
-        } else {
-            Color.parseColor("#243B70")
-        }
-
-        val drawable = GradientDrawable().apply {
-            shape = GradientDrawable.RECTANGLE
-            cornerRadius = radius
-            setColor(bgColor)
-            setStroke(strokeW, strokeColor)
-        }
-
-        // selector/ripple을 제거하고 고정 배경을 적용
-        row.background = drawable
-
-        val tv = row.findViewWithTag<TextView>("option_text")
-        if (isSelected) {
-            // 민트 배경 위 가독성 우선(회색처럼 보이는 현상 방지)
-            tv?.setTextColor(Color.WHITE)
-        } else {
-            tv?.setTextColor(Color.WHITE)
-        }
-    }
-
-    private fun handleOptionClick(answer: String) {
+    private fun handleOptionClick(answerForServer: String, fillDisplayWord: String? = null) {
         timer?.cancel()
         val question = viewModel.getCurrentCachedQuestion() ?: getCurrentQuestion() ?: return
         
@@ -1183,22 +1348,23 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
         if (question.type == QuestionType.FILL) {
             val typeLabel = "단어 채우기"
             val originalText = question.question
+            val display = fillDisplayWord ?: answerForServer
             val replacedText = when {
-                originalText.contains("_____") -> originalText.replace("_____", " $answer ")
-                originalText.contains("[      ]") -> originalText.replace("[      ]", " $answer ")
+                originalText.contains("_____") -> originalText.replace("_____", " $display ")
+                originalText.contains("[      ]") -> originalText.replace("[      ]", " $display ")
                 else -> originalText
             }
             val fullText = "[$typeLabel] $replacedText"
             setHighlightedText(binding.tvQuizQuestion, fullText)
-            binding.tvQuizQuestion.setTextColor(Color.WHITE)
+            binding.tvQuizQuestion.setTextColor(quizColor(R.color.quiz_text_primary))
         }
 
         lockOptions()
         
         if (!viewModel.isSolutionMode.value) {
-            viewModel.checkAnswer(question.id, answer)
+            viewModel.checkAnswer(question.id, answerForServer)
         } else {
-            viewModel.selectAnswer(question.id, answer)
+            viewModel.selectAnswer(question.id, answerForServer)
         }
     }
 
@@ -1225,17 +1391,51 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             card.alpha = 1f
         }
 
-        for (i in 0 until binding.layoutOptionsChips.childCount) {
-            val v = binding.layoutOptionsChips.getChildAt(i)
-            v.isClickable = false
-            v.alpha = 1f
-        }
     }
 
     private fun showFeedback(title: String, content: String) {
+        binding.layoutQuizResult.visibility = View.GONE
+        binding.btnFeedbackRefillHearts.visibility = View.GONE
         binding.layoutFeedbackPanel.visibility = View.VISIBLE
         binding.tvFeedbackTitle.text = title
+        binding.tvFeedbackTitle.setTextColor(quizColor(R.color.quiz_text_primary))
         binding.tvFeedbackContent.text = content
+        binding.tvFeedbackContent.setTextColor(quizColor(R.color.quiz_feedback_text))
+        binding.layoutFeedbackPanel.setCardBackgroundColor(
+            android.content.res.ColorStateList.valueOf(quizColor(R.color.quiz_card_bg))
+        )
+    }
+
+    private fun bindEquippedPetSprites(visual: EquippedPetVisual) {
+        PetArtAssets.bindEquipped(
+            image = binding.ivQuizPetSprite,
+            emojiFallback = binding.tvQuizPetEmoji,
+            petType = visual.petType,
+            stage = visual.stage,
+            grade = visual.grade,
+            lottie = binding.lavQuizPet,
+        )
+        PetArtAssets.bindEquipped(
+            image = binding.ivResultPetSprite,
+            emojiFallback = binding.tvResultPetEmoji,
+            petType = visual.petType,
+            stage = visual.stage,
+            grade = visual.grade,
+            lottie = binding.lavResultPet,
+        )
+    }
+
+    private fun isAimongEvolution(result: QuizResult): Boolean {
+        val stage = result.petStage?.takeIf { it.isNotBlank() }
+            ?: viewModel.displayPetVisual(evolved = true).stage
+        return PetGrowthRules.normalizeStage(stage) == PetGrowthRules.PetStage.AIMONG
+    }
+
+    private fun resolveResultPetVisual(result: QuizResult): EquippedPetVisual {
+        if (!result.petEvolved) return viewModel.displayPetVisual(evolved = false)
+        val serverStage = result.petStage?.takeIf { it.isNotBlank() } ?: return viewModel.displayPetVisual(evolved = true)
+        val base = viewModel.equippedPetVisual.value
+        return base.copy(stage = serverStage)
     }
 
     private fun showEvolutionCelebration() {
@@ -1246,17 +1446,23 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
                 .setCancelable(true)
                 .create()
 
+            val evolved = viewModel.displayPetVisual(evolved = true)
+            PetArtAssets.bindEquipped(
+                image = dialogView.findViewById(R.id.iv_evolution_pet_sprite),
+                emojiFallback = dialogView.findViewById(R.id.tv_evolution_pet_emoji),
+                petType = evolved.petType,
+                stage = evolved.stage,
+                grade = evolved.grade,
+                lottie = dialogView.findViewById(R.id.lav_evolution_effect),
+            )
+
             val btnClose = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btn_evolution_close)
             btnClose?.setOnClickListener {
                 dialog.dismiss()
             }
 
             dialog.show()
-            
-            val lavEvolution = dialogView.findViewById<com.airbnb.lottie.LottieAnimationView>(R.id.lav_evolution_effect)
-            // 실제 진화 애니메이션이 있으면 교체, 없으면 기본 아이들링 유지
-            // lavEvolution.setAnimation("pet_evolution.json")
-            lavEvolution.playAnimation()
+            CelebrationDialogWindow.apply(dialog, requireContext())
         } catch (e: Exception) {
             Toast.makeText(requireContext(), "축하합니다! 아이몽이 진화했습니다!", Toast.LENGTH_LONG).show()
         }
@@ -1273,16 +1479,30 @@ class QuizFragment : BaseFragment<FragmentQuizBinding>(FragmentQuizBinding::infl
             val btnClose = dialogView.findViewById<com.google.android.material.button.MaterialButton>(R.id.btn_mission_not_ready_close)
             btnClose?.setOnClickListener {
                 dialog.dismiss()
-                findNavController().popBackStack()
+                navigateQuizBackToHome()
             }
 
+            val visual = viewModel.equippedPetVisual.value
+            PetArtAssets.bindEquipped(
+                image = dialogView.findViewById(R.id.iv_mission_not_ready_pet_sprite),
+                emojiFallback = dialogView.findViewById(R.id.tv_mission_not_ready_pet_emoji),
+                petType = visual.petType,
+                stage = visual.stage,
+                grade = visual.grade,
+                lottie = dialogView.findViewById(R.id.lav_mission_not_ready_effect),
+            )
+
             dialog.show()
-            
-            val lavEffect = dialogView.findViewById<com.airbnb.lottie.LottieAnimationView>(R.id.lav_mission_not_ready_effect)
-            lavEffect?.playAnimation()
+            CelebrationDialogWindow.apply(dialog, requireContext(), dimAmount = 0.5f)
         } catch (e: Exception) {
             Toast.makeText(requireContext(), "문제 세트를 준비하는 데 실패했습니다. 잠시 후 다시 시도해주세요.", Toast.LENGTH_LONG).show()
-            findNavController().popBackStack()
+            navigateQuizBackToHome()
         }
+    }
+
+    companion object {
+        /** 목업 홈([MockHomeFragment]) 전용 — 실 API는 [com.kduniv.aimong.feature.home.domain.ChildHomeRefreshBus] */
+        const val REQUEST_QUIZ_FINISHED = "quiz_finished"
+        const val EXTRA_REFRESH_HOME = "refresh_home"
     }
 }

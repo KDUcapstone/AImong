@@ -4,184 +4,173 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@drawable/bg_bottom_sheet"
-    android:padding="24dp">
+    android:background="@drawable/bg_bottom_sheet_parent_mock"
+    android:paddingHorizontal="24dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="24dp">
 
-    <!-- 핸들 -->
     <View
         android:id="@+id/view_handle"
         android:layout_width="40dp"
-        android:layout_height="4dp"
+        android:layout_height="5dp"
         android:layout_marginTop="8dp"
-        android:background="#243B70"
+        android:background="@drawable/bg_parent_mock_sheet_handle"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <!-- 타이틀 영역 -->
-    <ImageView
-        android:id="@+id/iv_success_icon"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:layout_marginTop="24dp"
-        android:src="@drawable/ic_check_circle"
-        app:tint="#00FFB2"
+    <FrameLayout
+        android:id="@+id/fl_success_icon"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:layout_marginTop="18dp"
+        android:background="@drawable/bg_register_success_circle"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/view_handle" />
+        app:layout_constraintTop_toBottomOf="@id/view_handle">
+
+        <ImageView
+            android:id="@+id/iv_success_icon"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_gravity="center"
+            android:src="@drawable/ic_check_circle"
+            app:tint="@color/register_accent"
+            tools:ignore="ContentDescription" />
+    </FrameLayout>
 
     <TextView
         android:id="@+id/tv_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:text="자녀 등록 완료!"
-        android:textColor="@color/white"
-        android:textSize="22sp"
+        android:layout_marginTop="14dp"
+        android:text="@string/auth_register_success_title_sheet"
+        android:textColor="@color/register_text_title"
+        android:textSize="20sp"
         android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/iv_success_icon" />
+        app:layout_constraintTop_toBottomOf="@id/fl_success_icon" />
 
     <TextView
         android:id="@+id/tv_subtitle"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:text="발급된 코드로 자녀 앱에서 로그인해주세요."
-        android:textColor="#8A96AD"
+        android:gravity="center"
+        android:text="@string/auth_register_success_subtitle_sheet"
+        android:textColor="@color/register_text_body"
         android:textSize="14sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tv_title" />
 
-    <!-- 정보 카드 -->
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/card_info"
-        android:layout_width="match_parent"
+    <TextView
+        android:id="@+id/tv_starter_tickets"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
-        app:cardBackgroundColor="#1A2B52"
-        app:cardCornerRadius="16dp"
-        app:cardElevation="0dp"
-        app:layout_constraintTop_toBottomOf="@id/tv_subtitle">
+        android:layout_marginTop="6dp"
+        android:gravity="center"
+        android:textColor="@color/register_cta_green"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_subtitle"
+        tools:text="뽑기 티켓 3장이 지급되었어요"
+        tools:visibility="visible" />
+
+    <LinearLayout
+        android:id="@+id/layout_code_block"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:background="@drawable/bg_register_code_box"
+        android:orientation="vertical"
+        android:paddingHorizontal="16dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="18dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_starter_tickets">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="@string/auth_child_login_code_label"
+            android:textColor="@color/register_text_body"
+            android:textSize="13sp" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="20dp">
+            android:layout_marginTop="10dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
-            <!-- 닉네임 -->
-            <LinearLayout
-                android:layout_width="match_parent"
+            <TextView
+                android:id="@+id/tv_connect_code"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="닉네임"
-                    android:textColor="#8A96AD"
-                    android:textSize="14sp" />
-                <TextView
-                    android:id="@+id/tv_nickname"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textColor="@color/white"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    tools:text="홍길동" />
-            </LinearLayout>
+                android:layout_weight="1"
+                android:gravity="center"
+                android:letterSpacing="0.1"
+                android:textColor="@color/register_cta_green"
+                android:textSize="28sp"
+                android:textStyle="bold"
+                tools:text="ABC123" />
 
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:layout_marginVertical="12dp"
-                android:background="#243B70" />
-
-            <!-- 연결 코드 -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="연결 코드"
-                    android:textColor="#8A96AD"
-                    android:textSize="14sp" />
-                <TextView
-                    android:id="@+id/tv_connect_code"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textColor="#FFD600"
-                    android:textSize="20sp"
-                    android:textStyle="bold"
-                    android:letterSpacing="0.2"
-                    tools:text="791979" />
-            </LinearLayout>
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:layout_marginVertical="12dp"
-                android:background="#243B70" />
-
-            <!-- 스타터 티켓 -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="스타터 티켓"
-                    android:textColor="#8A96AD"
-                    android:textSize="14sp" />
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical">
-                    <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:src="@drawable/ic_star_filled"
-                        app:tint="#00E5FF" />
-                    <TextView
-                        android:id="@+id/tv_tickets"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="6dp"
-                        android:textColor="@color/white"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        tools:text="3장" />
-                </LinearLayout>
-            </LinearLayout>
+            <ImageButton
+                android:id="@+id/btn_copy_code"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/child_register_copy_code"
+                android:padding="10dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_copy_outline"
+                app:tint="@color/register_cta_green" />
         </LinearLayout>
-    </com.google.android.material.card.MaterialCardView>
+    </LinearLayout>
 
-    <!-- 확인 버튼 -->
-    <com.google.android.material.button.MaterialButton
+    <LinearLayout
+        android:id="@+id/layout_tip"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:background="@drawable/bg_parent_mock_yellow_tip"
+        android:orientation="vertical"
+        android:padding="14dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/layout_code_block">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/auth_register_success_sheet_tip"
+            android:textColor="@color/register_text_body"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <TextView
         android:id="@+id/btn_confirm"
-        android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:layout_marginTop="32dp"
-        android:layout_marginBottom="16dp"
-        android:backgroundTint="#00FFB2"
-        android:text="확인하고 시작하기"
-        android:textColor="#0A1633"
+        android:layout_width="0dp"
+        android:layout_height="52dp"
+        android:layout_marginTop="20dp"
+        android:background="@drawable/bg_register_submit"
+        android:clickable="true"
+        android:focusable="true"
+        android:foreground="?attr/selectableItemBackground"
+        android:gravity="center"
+        android:text="@string/auth_confirm"
+        android:textColor="@color/register_surface"
         android:textSize="16sp"
         android:textStyle="bold"
-        app:cornerRadius="16dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/card_info" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/layout_tip" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

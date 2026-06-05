@@ -29,28 +29,16 @@ data class ParentDailyStatDto(
     @SerializedName("xpEarned") val xpEarned: Int = 0
 )
 
-data class ParentPrivacyLogResponseData(
-    @SerializedName("page") val page: Int = 0,
-    @SerializedName("size") val size: Int = 20,
-    @SerializedName("totalCount") val totalCount: Int = 0,
-    @SerializedName("hasNext") val hasNext: Boolean = false,
-    @SerializedName("weeklyCount") val weeklyCount: Int = 0,
-    @SerializedName("events") val events: List<ParentPrivacyEventDto> = emptyList()
-)
-
-data class ParentPrivacyEventDto(
-    @SerializedName("detectedType") val detectedType: String,
-    @SerializedName("masked") val masked: Boolean = false,
-    @SerializedName("detectedAt") val detectedAt: String
-)
-
 data class ParentWeakPointsResponseData(
     @SerializedName("page") val page: Int = 0,
     @SerializedName("size") val size: Int = 20,
-    @SerializedName("totalCount") val totalCount: Int = 0,
+    @SerializedName(value = "totalCount", alternate = ["totalElements"])
+    val totalCount: Int = 0,
+    @SerializedName("totalPages") val totalPages: Int = 0,
     @SerializedName("hasNext") val hasNext: Boolean = false,
     @SerializedName("analyzedPeriod") val analyzedPeriod: String? = null,
-    @SerializedName("weakPoints") val weakPoints: List<ParentWeakPointDto> = emptyList()
+    @SerializedName(value = "weakPoints", alternate = ["items"])
+    val weakPoints: List<ParentWeakPointDto> = emptyList()
 )
 
 data class ParentWeakPointDto(

@@ -4,7 +4,8 @@ import com.google.gson.annotations.SerializedName
 
 /** v2.4: GET /missions/{missionId}/status */
 data class MissionStatusResponseData(
-    @SerializedName("missionId") val missionId: Long? = null,
+    /** v2.4: missionId가 UUID/String일 수 있어 String으로 수용 */
+    @SerializedName("missionId") val missionId: String? = null,
     @SerializedName("missionCode") val missionCode: String? = null,
     @SerializedName("title") val title: String? = null,
     @SerializedName("isUnlocked") val isUnlocked: Boolean = true,
@@ -32,7 +33,8 @@ data class MissionStarLevelDto(
 
 data class InProgressAttemptDto(
     @SerializedName("attemptId") val attemptId: String,
-    @SerializedName("setId") val setId: Long,
+    /** v2.4: 서버가 문자열 setId를 줄 수 있어 String으로 수용 */
+    @SerializedName("setId") val setId: String,
     @SerializedName("starLevel") val starLevel: Int? = null,
     @SerializedName("expiresAt") val expiresAt: String? = null
 )

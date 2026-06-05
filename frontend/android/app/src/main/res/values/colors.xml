@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- 기본 시스템 색상 (themes.xml 참조용) -->
+    <!-- 적응형 아이콘·스플래시·홈 부트스트랩 — ic_launcher_foreground 배경과 동일 톤 -->
+    <color name="ic_launcher_background">#16A34A</color>
+
     <color name="aimong_primary">#7C4DFF</color>
     <color name="aimong_primary_variant">#5E35B1</color>
     <color name="aimong_secondary">#03DAC6</color>
@@ -13,15 +16,28 @@
     <color name="home_card_bg">#1A2B52</color>
     <color name="home_card_bg_active">#243B70</color>
 
-    <!-- 퀴즈 전용 색상 (사진 기준 보완) -->
-    <color name="quiz_bg">#0A1633</color>
-    <color name="quiz_card_bg">#1A2B52</color>
-    <color name="quiz_mint">#00FFB2</color>
-    <color name="quiz_purple">#9C27B0</color>
-    <color name="quiz_red">#FF4B4B</color>
-    <color name="quiz_grey_heart">#24335A</color>
-    <color name="quiz_text_grey">#8A96AD</color>
-    <color name="quiz_option_default_stroke">#243B70</color>
+    <!-- 퀴즈 — 자녀 밝은 테마 (홈·퀘스트 시트와 통일, 레이아웃 구조는 유지) -->
+    <color name="quiz_bg">#F0F9FF</color>
+    <color name="quiz_card_bg">#FFFFFF</color>
+    <color name="quiz_mint">#16A34A</color>
+    <color name="quiz_mint_dark">#15803D</color>
+    <color name="quiz_on_accent">#FFFFFF</color>
+    <color name="quiz_text_primary">#0F172A</color>
+    <color name="quiz_text_secondary">#475569</color>
+    <color name="quiz_purple">#7C3AED</color>
+    <color name="quiz_red">#EF4444</color>
+    <color name="quiz_grey_heart">#E2E8F0</color>
+    <color name="quiz_text_grey">#64748B</color>
+    <color name="quiz_option_default_stroke">#E2E8F0</color>
+    <color name="quiz_feedback_panel_correct">#ECFDF5</color>
+    <color name="quiz_feedback_panel_wrong">#FEF2F2</color>
+    <color name="quiz_feedback_text">#334155</color>
+    <color name="quiz_recover_banner_bg">#DCFCE7</color>
+    <color name="quiz_button_secondary_bg">#F1F5F9</color>
+    <color name="quiz_hint_gold">#CA8A04</color>
+    <color name="quiz_divider_dot">#94A3B8</color>
+    <color name="quiz_review_badge_bg">#FEF9C3</color>
+    <color name="quiz_review_badge_text">#854D0E</color>
     <color name="point_purple">#7C4DFF</color>
     <color name="point_pink">#E040FB</color>
     <color name="point_orange">#FF6D00</color>
@@ -31,7 +47,50 @@
 
     <!-- 텍스트 -->
     <color name="text_white">#FFFFFF</color>
+    <color name="aimong_bottom_nav_bg">#050C1F</color>
+    <!-- 자녀: 밝은 홈·하단 네비 (하단바 «퀘스트» 탭은 메뉴에 포함하지 않음) -->
+    <color name="child_bottom_nav_bg">#FFFFFF</color>
+    <color name="child_nav_item_selected">#16A34A</color>
+    <!-- 홈 미션 경로 노드 — 퀴즈·하단 탭 민트와 동일 톤 -->
+    <color name="mission_node_shadow">#15803D</color>
+    <color name="mission_node_surface_light">#4ADE80</color>
+    <color name="child_nav_item_unselected">#94A3B8</color>
+    <color name="child_home_gradient_top">#BAE6FD</color>
+    <color name="child_home_gradient_mid">#E0F2FE</color>
+    <color name="child_home_gradient_bottom">#ECFEFF</color>
+    <color name="child_home_top_bar">#F8FAFC</color>
+    <color name="child_quest_sheet_bg">#F0F9FF</color>
+    <color name="quest_sheet_loading_scrim">#B3F0F9FF</color>
+    <color name="child_quest_sheet_text_primary">#0F172A</color>
+    <color name="child_quest_sheet_text_secondary">#64748B</color>
+    <!-- 스트릭 시트 — 홈 스트릭 칩(오렌지)과 동일 톤 -->
+    <color name="child_streak_accent">#EA580C</color>
+    <color name="child_streak_accent_dark">#C2410C</color>
+    <color name="child_streak_accent_soft">#FFF7ED</color>
+    <color name="child_streak_accent_stroke">#FDBA74</color>
     <color name="text_grey">#9E9E9E</color>
     <color name="text_sub_grey">#757575</color>
-    <color name="chat_privacy_highlight">#66FF6D00</color>
+    <color name="chat_image_toggle_bg_off">#E0F2FE</color>
+    <color name="chat_image_toggle_stroke_off">#7DD3FC</color>
+    <color name="chat_privacy_highlight">#4DFF6D00</color>
+    <color name="chat_privacy_sensitive_text">#C2410C</color>
+
+    <!-- 수집(가챠) 도감 카드 등급 테두리 -->
+    <!-- 도감 카드 — 보유 펫 XP 바 (조각 민트 바와 구분) -->
+    <color name="gacha_pet_xp_progress_start">#93C5FD</color>
+    <color name="gacha_pet_xp_progress_end">#3B82F6</color>
+
+    <color name="gacha_rarity_normal">#F97316</color>
+    <color name="gacha_rarity_rare">#3B82F6</color>
+    <color name="gacha_rarity_epic">#A855F7</color>
+    <color name="gacha_rarity_legend">#EAB308</color>
+
+    <!-- 가챠 확률 다이얼로그 — 밝은 테마 + 따뜻한 나무 톤 -->
+    <color name="gacha_prob_frame">#92400E</color>
+    <color name="gacha_prob_header">#78350F</color>
+    <color name="gacha_prob_parchment">#FFFBEB</color>
+    <color name="gacha_prob_pill_text">#FFFFFF</color>
+    <color name="gacha_prob_trend_up">#16A34A</color>
+    <color name="gacha_prob_trend_down">#DC2626</color>
+    <color name="gacha_prob_nav_arrow">#F59E0B</color>
 </resources>

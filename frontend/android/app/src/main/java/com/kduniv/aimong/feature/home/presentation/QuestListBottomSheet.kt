@@ -4,7 +4,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.fragment.app.activityViewModels
@@ -18,8 +17,10 @@ import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.tabs.TabLayout
 import com.kduniv.aimong.R
+import com.kduniv.aimong.core.navigation.ChildTopLevelNav.navigateToChildTopLevel
 import com.kduniv.aimong.databinding.DialogQuestListBinding
 import com.kduniv.aimong.feature.home.presentation.quest.QuestListViewModel
+import com.kduniv.aimong.feature.home.presentation.quest.QuestRewardCelebrationDialog
 import com.kduniv.aimong.feature.home.presentation.quest.QuestSheetEffect
 import com.kduniv.aimong.feature.home.presentation.quest.QuestSheetPeriod
 import com.kduniv.aimong.feature.home.presentation.quest.QuestSheetPrimaryAction
@@ -56,10 +57,6 @@ class QuestListBottomSheet : BottomSheetDialogFragment() {
         val canStart = arguments?.getBoolean(ARG_CAN_START_MISSION) ?: true
         viewModel.setCanStartMission(canStart)
 
-        binding.btnCheckAchievements.setOnClickListener {
-            viewModel.onCheckAchievements()
-        }
-
         adapter = QuestListAdapter { row -> onQuestRowClicked(row) }
         binding.rvQuests.layoutManager = LinearLayoutManager(requireContext())
         binding.rvQuests.adapter = adapter
@@ -70,12 +67,16 @@ class QuestListBottomSheet : BottomSheetDialogFragment() {
         binding.tabQuestPeriod.addTab(
             binding.tabQuestPeriod.newTab().setText(getString(R.string.quest_tab_weekly))
         )
+        binding.tabQuestPeriod.addTab(
+            binding.tabQuestPeriod.newTab().setText(getString(R.string.quest_tab_parent))
+        )
 
         binding.tabQuestPeriod.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab?) {
                 when (tab?.position) {
                     0 -> viewModel.selectPeriod(QuestSheetPeriod.DAILY)
                     1 -> viewModel.selectPeriod(QuestSheetPeriod.WEEKLY)
+                    2 -> viewModel.selectPeriod(QuestSheetPeriod.PARENT)
                 }
             }
 
@@ -84,6 +85,7 @@ class QuestListBottomSheet : BottomSheetDialogFragment() {
                 when (tab?.position) {
                     0 -> viewModel.selectPeriod(QuestSheetPeriod.DAILY)
                     1 -> viewModel.selectPeriod(QuestSheetPeriod.WEEKLY)
+                    2 -> viewModel.selectPeriod(QuestSheetPeriod.PARENT)
                 }
             }
         })
@@ -91,6 +93,11 @@ class QuestListBottomSheet : BottomSheetDialogFragment() {
         if (savedInstanceState == null) {
             binding.tabQuestPeriod.getTabAt(0)?.select()
         }
+
+        // 이전에 이미 확인한 경우에만 탭 배지 숨김 — 첫 열기에서는 API 직후 빨간 점 표시
+        viewModel.setTabBadgesSuppressed(homeViewModel.uiState.value.shouldSuppressQuestSheetTabBadges())
+        viewModel.onSheetOpened()
+        homeViewModel.acknowledgeQuestNotifications()
 
         binding.btnQuestRetry.setOnClickListener { viewModel.retry() }
 
@@ -101,7 +108,7 @@ class QuestListBottomSheet : BottomSheetDialogFragment() {
                 }
                 launch {
                     viewModel.loading.collect { loading ->
-                        binding.pbQuestLoading.visibility = if (loading) View.VISIBLE else View.GONE
+                        binding.layoutQuestLoadingOverlay.isVisible = loading
                         adapter.setSheetLoading(loading)
                         setQuestTabsEnabled(binding.tabQuestPeriod, !loading)
                     }
@@ -116,18 +123,55 @@ class QuestListBottomSheet : BottomSheetDialogFragment() {
                     }
                 }
                 launch {
+                    combine(viewModel.emptyMessage, viewModel.loading, viewModel.loadError) { empty, loading, err ->
+                        Triple(empty, loading, err)
+                    }.collect { (empty, loading, err) ->
+                        val show = empty != null && !loading && err == null
+                        binding.tvQuestEmpty.isVisible = show
+                        binding.rvQuests.isVisible = !show
+                        if (show) binding.tvQuestEmpty.text = empty
+                    }
+                }
+                launch {
+                    viewModel.dailyTabBadgeCount.collect { count ->
+                        bindQuestTabBadge(binding.tabQuestPeriod.getTabAt(0), count)
+                    }
+                }
+                launch {
+                    viewModel.weeklyTabBadgeCount.collect { count ->
+                        bindQuestTabBadge(binding.tabQuestPeriod.getTabAt(1), count)
+                    }
+                }
+                launch {
+                    viewModel.parentTabBadgeCount.collect { count ->
+                        bindQuestTabBadge(binding.tabQuestPeriod.getTabAt(2), count)
+                    }
+                }
+                launch {
                     viewModel.effects.collect { effect ->
                         when (effect) {
-                            is QuestSheetEffect.ShowToast ->
-                                Toast.makeText(requireContext(), effect.message, Toast.LENGTH_SHORT).show()
+                            is QuestSheetEffect.ShowRewardCelebration ->
+                                QuestRewardCelebrationDialog.show(this@QuestListBottomSheet, effect.ui)
                             is QuestSheetEffect.Snackbar ->
                                 Snackbar.make(binding.root, effect.message, Snackbar.LENGTH_LONG).show()
                             is QuestSheetEffect.TicketsPatched ->
-                                homeViewModel.applyRemainingTickets(effect.normal, effect.rare, effect.epic)
+                                homeViewModel.applyRemainingTickets(effect.normal)
                         }
                     }
                 }
             }
+        }
+    }
+
+    private fun bindQuestTabBadge(tab: TabLayout.Tab?, count: Int) {
+        if (tab == null) return
+        val badge = tab.orCreateBadge
+        if (count <= 0) {
+            badge.isVisible = false
+            badge.clearNumber()
+        } else {
+            badge.isVisible = true
+            badge.clearNumber()
         }
     }
 
@@ -140,28 +184,31 @@ class QuestListBottomSheet : BottomSheetDialogFragment() {
 
     private fun onQuestRowClicked(row: QuestSheetRow) {
         when (row.primaryAction) {
+            QuestSheetPrimaryAction.COMPLETE_CUSTOM ->
+                viewModel.onCompleteCustomQuest(row.questType)
             QuestSheetPrimaryAction.CLAIM ->
-                viewModel.onClaim(row.questType, row.period)
+                viewModel.onClaim(row.questType, row.period, row.title)
             QuestSheetPrimaryAction.GO_LEARN -> {
+                parentFragmentManager.setFragmentResult(
+                    REQUEST_OPEN_MISSION_LEARN,
+                    bundleOf(),
+                )
                 dismiss()
-                val navHost = requireActivity().supportFragmentManager
-                    .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
-                val nav = navHost.navController
-                // 학습 탭(learningFragment)은 제거됨. 홈으로 이동해 스테이지 팝업에서 퀴즈를 시작한다.
-                if (nav.currentDestination?.id != R.id.homeFragment) {
-                    nav.navigate(R.id.homeFragment)
-                }
             }
             QuestSheetPrimaryAction.GO_CHAT -> {
                 dismiss()
-                val navHost = requireActivity().supportFragmentManager
-                    .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
-                val nav = navHost.navController
-                if (nav.currentDestination?.id != R.id.chatFragment) {
-                    nav.navigate(R.id.chatFragment)
-                }
+                navigateChildTopLevel(R.id.chatFragment)
             }
             else -> Unit
+        }
+    }
+
+    private fun navigateChildTopLevel(@androidx.annotation.IdRes destinationId: Int) {
+        val navHost = requireActivity().supportFragmentManager
+            .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
+        val nav = navHost.navController
+        if (nav.currentDestination?.id != destinationId) {
+            nav.navigateToChildTopLevel(destinationId)
         }
     }
 
@@ -171,6 +218,8 @@ class QuestListBottomSheet : BottomSheetDialogFragment() {
     }
 
     companion object {
+        const val REQUEST_OPEN_MISSION_LEARN = "quest_open_mission_learn"
+
         private const val ARG_CAN_START_MISSION = "quest_can_start_mission"
 
         fun newInstance(canStartMission: Boolean = true): QuestListBottomSheet {

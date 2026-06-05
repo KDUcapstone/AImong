@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/settings_screen_bg"
+    android:padding="20dp">
+
+    <ImageView
+        android:id="@+id/btn_back"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:contentDescription="@string/parent_settings_back"
+        android:padding="12dp"
+        android:src="@drawable/ic_back"
+        app:tint="@color/parent_mock_text_primary"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/tv_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/notification_settings_title"
+        android:textColor="@color/parent_mock_text_primary"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@id/btn_back"
+        app:layout_constraintStart_toEndOf="@id/btn_back"
+        app:layout_constraintTop_toTopOf="@id/btn_back" />
+
+    <TextView
+        android:id="@+id/tv_child_readonly_hint"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:text="@string/notification_settings_child_hint"
+        android:textColor="@color/parent_mock_text_secondary"
+        android:textSize="13sp"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btn_back" />
+
+    <TextView
+        android:id="@+id/tv_fcm_gating_hint"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="@string/notification_settings_fcm_gating_hint"
+        android:textColor="@color/parent_mock_text_muted"
+        android:textSize="12sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_child_readonly_hint" />
+
+    <ProgressBar
+        android:id="@+id/progress"
+        style="?android:attr/progressBarStyleLarge"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginTop="24dp"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_fcm_gating_hint" />
+
+    <LinearLayout
+        android:id="@+id/layout_switches"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:orientation="vertical"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_fcm_gating_hint">
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switch_privacy"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="개인정보 알림"
+            android:textColor="@color/parent_mock_text_primary" />
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switch_study"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="학습 리마인더"
+            android:textColor="@color/parent_mock_text_primary" />
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switch_return_reward"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="복귀 보상 알림"
+            android:textColor="@color/parent_mock_text_primary" />
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switch_quest_reward"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="퀘스트 보상 알림"
+            android:textColor="@color/parent_mock_text_primary" />
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switch_marketing"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="마케팅 수신"
+            android:textColor="@color/parent_mock_text_primary" />
+    </LinearLayout>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_save"
+        android:layout_width="0dp"
+        android:layout_height="56dp"
+        android:layout_marginBottom="20dp"
+        android:text="저장"
+        android:textColor="@color/white"
+        android:visibility="gone"
+        app:backgroundTint="@color/parent_mock_blue"
+        app:cornerRadius="16dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

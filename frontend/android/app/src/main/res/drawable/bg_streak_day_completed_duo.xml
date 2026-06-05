@@ -1,8 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:width="36dp" android:height="36dp" android:gravity="center">
+    <item
+        android:width="36dp"
+        android:height="36dp"
+        android:gravity="center">
         <shape android:shape="oval">
-            <solid android:color="#FF5A00" />
+            <gradient
+                android:angle="135"
+                android:endColor="@color/child_streak_accent"
+                android:startColor="#FB923C"
+                android:type="linear" />
         </shape>
     </item>
 </layer-list>

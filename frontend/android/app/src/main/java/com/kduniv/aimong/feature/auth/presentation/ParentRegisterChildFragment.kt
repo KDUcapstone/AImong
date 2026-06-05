@@ -47,7 +47,7 @@ class ParentRegisterChildFragment :
         val raw = binding.etNickname.text?.toString().orEmpty()
         val nickname = raw.trim()
         when {
-            nickname.isEmpty() -> {
+            nickname.isBlank() -> {
                 Snackbar.make(binding.root, R.string.auth_error_nickname_empty, Snackbar.LENGTH_SHORT).show()
             }
             nickname.length > 20 -> {

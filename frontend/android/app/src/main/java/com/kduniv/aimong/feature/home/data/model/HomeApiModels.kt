@@ -17,9 +17,13 @@ data class HomeScreenData(
 )
 
 data class TopStatusDto(
-    /** BE 가이드: 첫 값은 shieldCount — JSON 키가 heartCount 또는 shieldCount */
-    @SerializedName(value = "heartCount", alternate = ["shieldCount"])
-    val heartCount: Int = 0,
+    /**
+     * v2.7: `energy` — 레거시 BE는 `heartCount`/`shieldCount` 키만 줄 수 있어 alternate 유지.
+     */
+    @SerializedName(value = "energy", alternate = ["heartCount", "shieldCount"])
+    val energy: Int = 0,
+    @SerializedName("maxEnergy") val maxEnergy: Int? = null,
+    @SerializedName("nextEnergyRecoverAt") val nextEnergyRecoverAt: String? = null,
     /** profile.totalXp 와 동일한 요약값 — xp 또는 totalXp */
     @SerializedName(value = "xp", alternate = ["totalXp"])
     val xp: Int = 0,
@@ -44,12 +48,14 @@ data class EquippedPetDto(
     @SerializedName("grade") val grade: String,
     @SerializedName("xp") val xp: Int = 0,
     @SerializedName("stage") val stage: String,
+    @SerializedName("mood") val mood: String? = null,
     @SerializedName("crownUnlocked") val crownUnlocked: Boolean = false,
     @SerializedName("crownType") val crownType: String? = null
 )
 
 data class MissionSummaryDto(
-    @SerializedName("todayCompletedCount") val todayCompletedCount: Int = 0,
+    @SerializedName(value = "todayCompletedCount", alternate = ["todaySetCount"])
+    val todayCompletedCount: Int = 0,
     @SerializedName("todayTargetCount") val todayTargetCount: Int = 0,
     @SerializedName("canStartMission") val canStartMission: Boolean = false,
     @SerializedName("recommendedMission") val recommendedMission: RecommendedMissionDto? = null
@@ -58,17 +64,23 @@ data class MissionSummaryDto(
 data class RecommendedMissionDto(
     @SerializedName(value = "id", alternate = ["missionId"])
     val id: String,
-    @SerializedName("setId") val setId: Long? = null,
+    /** v2.4: 서버가 문자열 setId(예: "S0101-L1")를 줄 수 있어 String으로 수용 */
+    @SerializedName("setId") val setId: String? = null,
+    @SerializedName("missionCode") val missionCode: String? = null,
+    @SerializedName("levelNo") val levelNo: Int? = null,
+    @SerializedName("difficulty") val difficulty: String? = null,
     @SerializedName("stage") val stage: Int,
     @SerializedName("title") val title: String,
     @SerializedName("description") val description: String,
+    @SerializedName("isUnlocked") val isUnlocked: Boolean? = null,
     @SerializedName("isReviewable") val isReviewable: Boolean = false
 )
 
 data class StreakDto(
     @SerializedName("continuousDays") val continuousDays: Int = 0,
     @SerializedName("lastCompletedDate") val lastCompletedDate: String? = null,
-    @SerializedName("todayMissionCount") val todayMissionCount: Int = 0,
+    @SerializedName(value = "todaySetCount", alternate = ["todayMissionCount"])
+    val todaySetCount: Int = 0,
     @SerializedName("shieldCount") val shieldCount: Int = 0,
     /** 확장 필드 — 구조 미정 시 무시 */
     @SerializedName("partner") val partner: JsonElement? = null
@@ -81,10 +93,10 @@ data class DailyQuestSummaryDto(
     @SerializedName("quests") val quests: List<DailyQuestItemDto> = emptyList()
 )
 
+/** GET /home 일일 퀘스트 요약 — 보상 문구는 GET /quests/daily 응답을 사용한다. */
 data class DailyQuestItemDto(
     @SerializedName("questType") val questType: String,
     @SerializedName("label") val label: String,
-    @SerializedName("reward") val reward: String = "",
     @SerializedName("claimType") val claimType: String,
     @SerializedName("completed") val completed: Boolean = false,
     @SerializedName("rewardClaimed") val rewardClaimed: Boolean = false,
@@ -100,8 +112,7 @@ data class ReturnRewardDto(
     @SerializedName("hasReward") val hasReward: Boolean = false
 )
 
+/** v2.3: 미사용 기본 티켓만 (`used_at IS NULL`) */
 data class TicketsDto(
     @SerializedName("normal") val normal: Int = 0,
-    @SerializedName("rare") val rare: Int = 0,
-    @SerializedName("epic") val epic: Int = 0
 )

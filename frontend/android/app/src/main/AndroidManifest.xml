@@ -19,7 +19,9 @@
         <activity
             android:name=".MainActivity"
             android:enableOnBackInvokedCallback="true"
-            android:exported="true">
+            android:exported="true"
+            android:theme="@style/Theme.AImong.Splash"
+            android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:cardBackgroundColor="@color/parent_mock_surface"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="8dp"
+    app:strokeColor="@color/parent_mock_border"
+    app:strokeWidth="1dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_parent_mock_code_card"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="20dp"
+            android:paddingVertical="16dp">
+
+            <FrameLayout
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@drawable/bg_parent_child_avatar">
+
+                <ImageView
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:layout_gravity="center"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_role_child"
+                    app:tint="@color/parent_mock_green" />
+            </FrameLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tv_manage_child_name"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/parent_mock_text_primary"
+                    android:textSize="17sp"
+                    android:textStyle="bold"
+                    tools:text="김민준" />
+
+                <TextView
+                    android:id="@+id/tv_manage_subtitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="@string/parent_child_manage_dialog_subtitle"
+                    android:textColor="@color/parent_mock_text_muted"
+                    android:textSize="13sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/parent_mock_border" />
+
+        <include
+            android:id="@+id/row_edit_nickname"
+            layout="@layout/item_parent_child_manage_action" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginHorizontal="20dp"
+            android:background="@color/parent_mock_border" />
+
+        <include
+            android:id="@+id/row_regenerate_code"
+            layout="@layout/item_parent_child_manage_action" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginHorizontal="20dp"
+            android:background="@color/parent_mock_border" />
+
+        <include
+            android:id="@+id/row_delete_child"
+            layout="@layout/item_parent_child_manage_action" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/parent_mock_border" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_manage_close"
+            style="@style/Widget.AImong.MaterialButton.Outlined"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="16dp"
+            android:text="@string/parent_dialog_cancel"
+            android:textColor="@color/parent_mock_text_secondary"
+            app:cornerRadius="12dp"
+            app:strokeColor="@color/parent_mock_border" />
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

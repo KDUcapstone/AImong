@@ -5,6 +5,6 @@
     android:viewportWidth="12"
     android:viewportHeight="12">
     <path
-        android:fillColor="#1A2B52"
+        android:fillColor="@color/quiz_card_bg"
         android:pathData="M12,0 L0,6 L12,12 Z" />
 </vector>

@@ -19,6 +19,9 @@
         <action
             android:id="@+id/action_homeFragment_to_quizFragment"
             app:destination="@id/quizFragment" />
+        <action
+            android:id="@+id/action_homeFragment_to_myProfileFragment"
+            app:destination="@id/myProfileFragment" />
     </fragment>
 
     <fragment
@@ -54,8 +57,50 @@
 
     <fragment
         android:id="@+id/myProfileFragment"
-        android:name="com.kduniv.aimong.feature.home.presentation.ChildMyProfilePlaceholderFragment"
+        android:name="com.kduniv.aimong.feature.home.presentation.my.ChildMyProfileFragment"
         android:label="MY"
-        tools:layout="@layout/fragment_child_my_profile_placeholder" />
+        tools:layout="@layout/fragment_child_my_profile">
+        <action
+            android:id="@+id/action_myProfileFragment_to_notificationSettingsFragment"
+            app:destination="@id/notificationSettingsFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/notificationSettingsFragment"
+        android:name="com.kduniv.aimong.feature.settings.presentation.NotificationSettingsFragment"
+        android:label="@string/notification_settings_title"
+        tools:layout="@layout/fragment_notification_settings" />
+
+    <action
+        android:id="@+id/action_global_child_home"
+        app:destination="@id/homeFragment"
+        app:launchSingleTop="true"
+        app:popUpTo="@id/homeFragment"
+        app:popUpToSaveState="true"
+        app:restoreState="true" />
+
+    <action
+        android:id="@+id/action_global_child_chat"
+        app:destination="@id/chatFragment"
+        app:launchSingleTop="true"
+        app:popUpTo="@id/homeFragment"
+        app:popUpToSaveState="true"
+        app:restoreState="true" />
+
+    <action
+        android:id="@+id/action_global_child_gacha"
+        app:destination="@id/gachaFragment"
+        app:launchSingleTop="true"
+        app:popUpTo="@id/homeFragment"
+        app:popUpToSaveState="true"
+        app:restoreState="true" />
+
+    <action
+        android:id="@+id/action_global_child_myProfile"
+        app:destination="@id/myProfileFragment"
+        app:launchSingleTop="true"
+        app:popUpTo="@id/homeFragment"
+        app:popUpToSaveState="true"
+        app:restoreState="true" />
 
 </navigation>

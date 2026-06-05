@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Z Flip 커버·초소형 폭 -->
+<resources>
+    <dimen name="home_top_chip_min_height">28dp</dimen>
+    <dimen name="home_top_chip_pad_h">5dp</dimen>
+    <dimen name="home_top_chip_pad_v">3dp</dimen>
+    <dimen name="home_top_chip_gap_h">2dp</dimen>
+    <dimen name="home_top_chip_icon">13dp</dimen>
+    <dimen name="home_top_chip_text_gap">3dp</dimen>
+    <dimen name="home_top_chip_text_size">10sp</dimen>
+    <dimen name="home_top_chips_scroll_pad_h">6dp</dimen>
+    <dimen name="home_top_chips_scroll_pad_v">4dp</dimen>
+</resources>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 화면 중앙 AlertDialog — 네 모서리 동일 반경 (바텀시트용 bg_child_quest_sheet 와 구분) -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/child_quest_sheet_bg" />
+    <corners android:radius="24dp" />
+</shape>

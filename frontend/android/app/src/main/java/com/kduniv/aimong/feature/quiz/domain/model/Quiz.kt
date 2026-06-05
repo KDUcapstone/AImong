@@ -16,7 +16,13 @@ data class Question(
     val id: String,
     val type: QuestionType,
     val question: String,
-    val options: List<String>?
+    val options: List<String>?,
+    /** API v1.5 문항 난이도. 없거나 파싱 실패 시 null. */
+    val difficulty: QuestionDifficulty? = null,
+    /** GET questions의 `answerFormat` — check/submit 시 답 문자열 규칙(미지정 시 보기 문구 전송) */
+    val answerFormat: String? = null,
+    /** v2.8: 용어 보강설명 (없으면 빈 목록) */
+    val termHints: List<TermHint> = emptyList()
 )
 
 enum class QuestionType {
@@ -27,20 +33,27 @@ data class QuizResult(
     /** 서버 `normal` | `review` */
     val mode: String = "normal",
     val progressApplied: Boolean = false,
-    val attemptState: String = "submitted",
+    val attemptState: String = AttemptStatus.SUBMITTED.name,
     val streakBonusApplied: Boolean = false,
+    /** v2.11: 100점 만점 환산 점수 */
     val score: Int,
+    /** v2.11: 정답 문항 수 (0~questionCount) */
+    val correctCount: Int = 0,
     val total: Int,
     val wrongCount: Int,
     val isPassed: Boolean,
     val isPerfect: Boolean,
+    val isFirstClear: Boolean = false,
     val equippedPetGrade: String? = null,
     val xpEarned: Int,
     val bonusXp: Int = 0,
     val bonusReason: String? = null,
     val petEvolved: Boolean,
+    /** 제출 직후 장착 펫 단계 — 아이몽 달성 연출 분기용 */
+    val petStage: String? = null,
+    val equippedPetType: String? = null,
     val streakDays: Int,
-    val todayMissionCount: Int = 0,
+    val todaySetCount: Int = 0,
     val rewards: List<QuizReward> = emptyList(),
     val remainingTickets: RemainingTickets? = null,
     val results: List<QuestionResult>,
@@ -51,8 +64,6 @@ data class QuizResult(
 
 data class RemainingTickets(
     val normal: Int,
-    val rare: Int,
-    val epic: Int
 )
 
 /** POST …/questions/{questionId}/report 응답 */
@@ -73,6 +84,10 @@ data class QuizReward(
 data class QuestionResult(
     val questionId: String,
     val isCorrect: Boolean,
-    val explanation: String
+    val explanation: String,
+    /** v2.5 리포트 API 등 확장 필드 */
+    val questionNo: Int? = null,
+    val correctAnswer: String? = null,
+    val submittedAnswer: String? = null
 )
 

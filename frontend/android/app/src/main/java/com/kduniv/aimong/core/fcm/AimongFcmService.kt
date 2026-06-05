@@ -5,6 +5,7 @@ import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.kduniv.aimong.feature.auth.domain.RegisterChildFcmTokenUseCase
 import com.kduniv.aimong.feature.auth.domain.RegisterParentFcmTokenUseCase
+import com.kduniv.aimong.feature.parent.domain.ParentDashboardRefreshBus
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -21,10 +22,38 @@ class AimongFcmService : FirebaseMessagingService() {
     @Inject
     lateinit var registerChildFcmTokenUseCase: RegisterChildFcmTokenUseCase
 
+    @Inject
+    lateinit var parentDashboardRefreshBus: ParentDashboardRefreshBus
+
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
-        // 타입별 처리은 추후 (PRIVACY_ALERT, 미학습 알림 등)
+        if (GachaLevelUpNotificationHelper.showIfApplicable(this, remoteMessage)) {
+            return
+        }
+        if (QuestCompleteRequestNotificationHelper.handleIfApplicable(
+                this,
+                remoteMessage,
+                parentDashboardRefreshBus,
+            )
+        ) {
+            return
+        }
+        if (PrivacyAlertNotificationHelper.showIfApplicable(this, remoteMessage)) {
+            return
+        }
+        if (LearningReminderNotificationHelper.showIfApplicable(this, remoteMessage)) {
+            return
+        }
+        if (WeeklyReportNotificationHelper.showIfApplicable(this, remoteMessage)) {
+            return
+        }
+        if (ChildRewardNotificationHelper.showIfApplicable(this, remoteMessage)) {
+            return
+        }
+        if (StreakShieldNotificationHelper.showIfApplicable(this, remoteMessage)) {
+            return
+        }
     }
 
     override fun onNewToken(token: String) {

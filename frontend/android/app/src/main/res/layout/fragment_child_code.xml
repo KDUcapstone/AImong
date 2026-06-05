@@ -4,16 +4,15 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_auth_gradient">
+    android:background="@drawable/bg_child_login_gradient">
 
     <ImageView
         android:id="@+id/btn_back"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
         android:layout_marginStart="16dp"
-        android:layout_marginTop="52dp"
-        android:padding="12dp"
-        android:src="@drawable/ic_back_white"
+        android:layout_marginTop="16dp"
+        android:src="@drawable/ic_back"
         android:clickable="true"
         android:focusable="true"
         android:background="?attr/selectableItemBackgroundBorderless"
@@ -21,67 +20,175 @@
         app:layout_constraintTop_toTopOf="parent"
         tools:ignore="ContentDescription" />
 
+    <!-- 모바일 화면 기준: 중앙 정렬 콘텐츠(웹처럼 상단으로 뜨지 않게) -->
+    <LinearLayout
+        android:id="@+id/layout_child_login_content"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="24dp"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintVertical_bias="0.5">
+
+        <FrameLayout
+            android:id="@+id/layout_child_login_icon"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:background="@drawable/bg_child_login_icon">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:text="✦"
+                android:textColor="@color/white"
+                android:textSize="36sp"
+                android:textStyle="bold"
+                tools:ignore="HardcodedText" />
+        </FrameLayout>
+
     <TextView
         android:id="@+id/tv_code_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="120dp"
-        android:text="연결 코드 입력"
-        android:textColor="@color/text_white"
-        android:textSize="32sp"
+        android:layout_marginTop="18dp"
+        android:text="환영해요!"
+        android:textColor="#000000"
+        android:textSize="24sp"
         android:textStyle="bold"
-        android:letterSpacing="-0.02"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:letterSpacing="0.0"
+        android:layout_marginBottom="8dp" />
 
     <TextView
         android:id="@+id/tv_code_desc"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
         android:gravity="center"
-        android:text="부모님 앱에 표시된\n6자리 코드를 입력해주세요"
-        android:textColor="#A0B0D0"
-        android:textSize="16sp"
-        android:lineSpacingExtra="4dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_code_title" />
+        android:text="부모님이 알려준 6자리 코드를 입력해요"
+        android:textColor="#4B5563"
+        android:textSize="14sp"
+        android:lineSpacingExtra="4dp" />
 
+    <!-- 표시용 6칸 코드 박스(UI) - 실제 입력은 et_code에서 받는다 (옵션 A) -->
+    <LinearLayout
+        android:id="@+id/layout_code_boxes"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:clipToPadding="false"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:padding="4dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:importantForAccessibility="yes">
+
+        <TextView
+            android:id="@+id/tv_code_box_1"
+            android:layout_width="44dp"
+            android:layout_height="56dp"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/bg_code_digit_box"
+            android:gravity="center"
+            android:textColor="#111827"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            tools:text="4" />
+
+        <TextView
+            android:id="@+id/tv_code_box_2"
+            android:layout_width="44dp"
+            android:layout_height="56dp"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/bg_code_digit_box"
+            android:gravity="center"
+            android:textColor="#111827"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            tools:text="8" />
+
+        <TextView
+            android:id="@+id/tv_code_box_3"
+            android:layout_width="44dp"
+            android:layout_height="56dp"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/bg_code_digit_box"
+            android:gravity="center"
+            android:textColor="#111827"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            tools:text="2" />
+
+        <TextView
+            android:id="@+id/tv_code_box_4"
+            android:layout_width="44dp"
+            android:layout_height="56dp"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/bg_code_digit_box"
+            android:gravity="center"
+            android:textColor="#111827"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            tools:text="9" />
+
+        <TextView
+            android:id="@+id/tv_code_box_5"
+            android:layout_width="44dp"
+            android:layout_height="56dp"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/bg_code_digit_box"
+            android:gravity="center"
+            android:textColor="#111827"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            tools:text="1" />
+
+        <TextView
+            android:id="@+id/tv_code_box_6"
+            android:layout_width="44dp"
+            android:layout_height="56dp"
+            android:background="@drawable/bg_code_digit_box"
+            android:gravity="center"
+            android:textColor="#111827"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            tools:text="7" />
+    </LinearLayout>
+
+    <!-- 실제 입력 필드(숨김) - 기존 흐름/로직(et_code) 유지 -->
     <EditText
         android:id="@+id/et_code"
-        android:layout_width="0dp"
-        android:layout_height="64dp"
-        android:layout_marginHorizontal="48dp"
-        android:layout_marginTop="60dp"
-        android:background="@drawable/bg_glass_card"
+        android:layout_width="1dp"
+        android:layout_height="1dp"
+        android:layout_marginTop="8dp"
+        android:alpha="0.01"
+        android:background="@android:color/transparent"
         android:gravity="center"
-        android:hint="000000"
+        android:importantForAccessibility="no"
         android:inputType="number"
         android:maxLength="6"
-        android:textColor="@color/text_white"
-        android:textColorHint="#405070"
-        android:textSize="32sp"
-        android:textStyle="bold"
-        android:letterSpacing="0.2"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_code_desc" />
+        android:singleLine="true"
+        android:textColor="@android:color/transparent"
+        android:textColorHint="@android:color/transparent"
+        android:textSize="1sp" />
 
     <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/btn_login"
-        android:layout_width="0dp"
-        android:layout_height="56dp"
-        android:layout_marginHorizontal="48dp"
-        android:layout_marginBottom="60dp"
-        android:background="@drawable/bg_glass_card"
-        android:text="연결하기"
-        android:textColor="@color/text_white"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        android:layout_width="match_parent"
+        android:layout_height="58dp"
+        android:layout_marginTop="18dp"
+        android:background="@drawable/bg_primary_green_button"
+        android:text="시작하기"
+        android:textColor="@color/white"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
