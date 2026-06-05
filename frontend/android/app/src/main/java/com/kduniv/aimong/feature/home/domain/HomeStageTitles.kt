@@ -8,5 +8,5 @@ object HomeStageTitles {
         3 to "AI에게 잘 질문하고 활용하기",
     )
 
-    fun title(stage: Int): String = BY_STAGE[stage] ?: "$stage단계"
+    fun title(stage: Int): String = BY_STAGE[stage] ?: "${stage}단계"
 }
