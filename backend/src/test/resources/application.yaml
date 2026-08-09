@@ -1,0 +1,27 @@
+spring:
+  config:
+    import: optional:file:.env[.properties]
+  datasource:
+    url: ${TEST_DB_URL:${SUPABASE_DB_URL:${DB_URL}}}
+    username: ${TEST_DB_USERNAME:${SUPABASE_DB_USERNAME:${DB_USERNAME}}}
+    password: ${TEST_DB_PASSWORD:${SUPABASE_DB_PASSWORD:${DB_PASSWORD}}}
+  flyway:
+    enabled: true
+
+firebase:
+  service-account-path: ""
+
+jwt:
+  secret: ${JWT_SECRET:test-jwt-secret-for-local-db}
+  issuer: aimong-backend
+  child-session-expiration: 2592000000
+
+openai:
+  api-key: ""
+
+aimong:
+  mission:
+    question:
+      set-size: 10
+      attempt-ttl-minutes: 30
+      report-auto-deactivate-enabled: false

@@ -1,3 +1,57 @@
+server:
+  port: ${PORT:8080}
+  servlet:
+    context-path: /api
+
 spring:
+  config:
+    import: optional:file:.env[.properties]
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:supabase, local}
   application:
     name: backend
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: false
+        default_schema: public
+        jdbc:
+          batch_size: 50
+        order_inserts: true
+        order_updates: true
+        query:
+          in_clause_parameter_padding: true
+    show-sql: false
+    open-in-view: false
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 0
+
+firebase:
+  service-account-path: ${FIREBASE_SERVICE_ACCOUNT_PATH:}
+
+openai:
+  api-key: ${OPENAI_API_KEY:}
+  chat-api-key: ${OPENAI_API_CHAT_KEY:${OPENAI_API_KEY:}}
+  missions-api-key: ${OPENAI_API_MISSIONS_KEY:${OPENAI_API_KEY:}}
+  base-url: ${OPENAI_BASE_URL:https://api.openai.com/v1}
+  responses-path: ${OPENAI_RESPONSES_PATH:/responses}
+  mock-enabled: ${OPENAI_MOCK_ENABLED:false}
+
+jwt:
+  secret: ${JWT_SECRET}
+  issuer: aimong-backend
+  child-session-expiration: 2592000000
+
+aimong:
+  mission:
+    question:
+      set-size: 10
+      attempt-ttl-minutes: 30
+      report-auto-deactivate-enabled: false

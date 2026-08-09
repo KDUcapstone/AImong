@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true"
+    android:gravity="center_vertical"
+    android:minHeight="52dp"
+    android:orientation="horizontal"
+    android:paddingHorizontal="20dp"
+    android:paddingVertical="12dp">
+
+    <FrameLayout
+        android:id="@+id/frame_action_icon"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:background="@drawable/bg_parent_mock_success_circle"
+        tools:background="@drawable/bg_stat_icon_blue">
+
+        <ImageView
+            android:id="@+id/iv_action_icon"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:layout_gravity="center"
+            android:importantForAccessibility="no"
+            android:src="@drawable/ic_parent_settings"
+            app:tint="@color/parent_mock_blue"
+            tools:src="@drawable/ic_parent_settings" />
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/tv_action_label"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_weight="1"
+        android:textColor="@color/parent_mock_text_primary"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        tools:text="닉네임 변경" />
+
+    <ImageView
+        android:layout_width="18dp"
+        android:layout_height="18dp"
+        android:importantForAccessibility="no"
+        android:src="@drawable/ic_gacha_prob_chevron_right"
+        app:tint="@color/parent_mock_text_muted" />
+</LinearLayout>

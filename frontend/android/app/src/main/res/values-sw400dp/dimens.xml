@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Z Flip 펼침·일반 소형 폰 (sw 400~411dp) -->
+<resources>
+    <dimen name="home_top_chip_min_height">34dp</dimen>
+    <dimen name="home_top_chip_pad_h">8dp</dimen>
+    <dimen name="home_top_chip_pad_v">6dp</dimen>
+    <dimen name="home_top_chip_gap_h">3dp</dimen>
+    <dimen name="home_top_chip_icon">16dp</dimen>
+    <dimen name="home_top_chip_text_gap">5dp</dimen>
+    <dimen name="home_top_chip_text_size">12sp</dimen>
+    <dimen name="home_top_chips_scroll_pad_h">10dp</dimen>
+    <dimen name="home_top_chips_scroll_pad_v">5dp</dimen>
+</resources>

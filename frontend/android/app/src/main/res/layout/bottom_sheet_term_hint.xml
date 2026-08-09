@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/quiz_card_bg"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <TextView
+        android:id="@+id/tv_term_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="@color/quiz_text_primary"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        tools:text="편향" />
+
+    <TextView
+        android:id="@+id/tv_term_description"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:lineSpacingExtra="4dp"
+        android:textColor="@color/quiz_text_secondary"
+        android:textSize="15sp"
+        tools:text="한쪽으로 치우쳐서 생각하거나 판단하는 것을 말해요." />
+</LinearLayout>

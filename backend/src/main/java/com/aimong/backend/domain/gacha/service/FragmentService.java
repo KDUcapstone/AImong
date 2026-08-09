@@ -1,3 +1,20 @@
 package com.aimong.backend.domain.gacha.service;
-// TODO: 조각 조회, 교환 (일반10/희귀30/영웅80/전설200)
-public class FragmentService {}
+
+import com.aimong.backend.domain.gacha.entity.Fragment;
+import com.aimong.backend.domain.gacha.repository.FragmentRepository;
+import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+@Service
+@RequiredArgsConstructor
+public class FragmentService {
+
+    private final FragmentRepository fragmentRepository;
+
+    public void initializeInventory(UUID childId) {
+        if (fragmentRepository.findByChildId(childId).isEmpty()) {
+            fragmentRepository.save(Fragment.create(childId));
+        }
+    }
+}

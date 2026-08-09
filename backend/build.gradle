@@ -22,8 +22,15 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.9'
+	implementation 'com.google.firebase:firebase-admin:9.4.3'
+	implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+	implementation 'org.flywaydb:flyway-core'
+	implementation 'org.flywaydb:flyway-database-postgresql'
 	compileOnly 'org.projectlombok:lombok'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
+	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
 	runtimeOnly 'org.postgresql:postgresql'
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
@@ -35,4 +42,87 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+tasks.named('bootRun') {
+	// Keep Gradle bootRun as a single-process launch.
+	// Devtools can switch execution onto restartedMain and make port conflicts harder to diagnose.
+	systemProperty 'spring.devtools.restart.enabled', 'false'
+	systemProperty 'spring.devtools.livereload.enabled', 'false'
+	systemProperty 'spring.devtools.add-properties', 'false'
+}
+
+tasks.register('generateKerisQuestionBank', JavaExec) {
+	group = 'aimong'
+	description = 'Generate KERIS elementary AI question bank JSON, review, validation, and SQL artifacts.'
+	classpath = sourceSets.main.runtimeClasspath
+	mainClass = 'com.aimong.backend.tools.questionbank.QuestionBankTool'
+	args = [
+		'full',
+		'src/main/resources/question-bank/keris-elementary-ai-curriculum.json',
+		'build/generated/question-bank/keris-elementary-ai'
+	]
+}
+
+tasks.register('generateKeris16MissionQuestionBank', JavaExec) {
+	group = 'aimong'
+	description = 'Generate the 16-mission KERIS elementary AI question bank artifacts.'
+	classpath = sourceSets.main.runtimeClasspath
+	mainClass = 'com.aimong.backend.tools.questionbank.QuestionBankTool'
+	args = [
+		'full',
+		'src/main/resources/question-bank/keris-elementary-ai-16-mission-curriculum.json',
+		'build/generated/question-bank/keris-elementary-ai-16-mission'
+	]
+}
+
+tasks.register('resetSupabaseTestDatabase') {
+	group = 'aimong'
+	description = 'Dangerous: drop and recreate public/private schemas in the configured Supabase test database.'
+
+	doLast {
+		if (System.getenv('AIMONG_ALLOW_DB_RESET') != 'true') {
+			throw new GradleException('Refusing to reset DB. Set AIMONG_ALLOW_DB_RESET=true explicitly.')
+		}
+
+		def url = System.getenv('SUPABASE_DB_URL') ?: System.getenv('DB_URL')
+		def username = System.getenv('SUPABASE_DB_USERNAME') ?: System.getenv('DB_USERNAME')
+		def password = System.getenv('SUPABASE_DB_PASSWORD') ?: System.getenv('DB_PASSWORD')
+		if (!url || !username || !password) {
+			throw new GradleException('Missing SUPABASE_DB_URL/SUPABASE_DB_USERNAME/SUPABASE_DB_PASSWORD.')
+		}
+
+		def loader = new URLClassLoader(
+				configurations.runtimeClasspath.files.collect { it.toURI().toURL() } as URL[],
+				ClassLoader.getPlatformClassLoader()
+		)
+		def driver = loader.loadClass('org.postgresql.Driver').getDeclaredConstructor().newInstance()
+		def props = new Properties()
+		props.setProperty('user', username)
+		props.setProperty('password', password)
+
+		def connection = driver.connect(url, props)
+		try {
+			connection.autoCommit = false
+			def statement = connection.createStatement()
+			try {
+				statement.execute('DROP SCHEMA IF EXISTS private CASCADE')
+				statement.execute('DROP SCHEMA IF EXISTS public CASCADE')
+				statement.execute('CREATE SCHEMA public')
+				statement.execute('CREATE SCHEMA private')
+				statement.execute('GRANT ALL ON SCHEMA public TO postgres')
+				statement.execute('GRANT ALL ON SCHEMA public TO public')
+				statement.execute('GRANT ALL ON SCHEMA private TO postgres')
+			} finally {
+				statement.close()
+			}
+			connection.commit()
+			logger.lifecycle('Supabase test database reset completed: public/private schemas recreated.')
+		} catch (Throwable throwable) {
+			connection.rollback()
+			throw throwable
+		} finally {
+			connection.close()
+		}
+	}
 }

@@ -1,7 +1,15 @@
 package com.aimong.backend.global.util;
 
-// TODO: 보안 난수 생성 유틸
-// - 6자리 자녀 코드 생성
-// - 가챠 SecureRandom 난수
-public class SecureRandomUtils {
+import java.security.SecureRandom;
+
+public final class SecureRandomUtils {
+
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+
+    private SecureRandomUtils() {
+    }
+
+    public static String generateSixDigitCode() {
+        return "%06d".formatted(SECURE_RANDOM.nextInt(1_000_000));
+    }
 }

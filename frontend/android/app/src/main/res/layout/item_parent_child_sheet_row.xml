@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/root_child_sheet_row"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="10dp"
+    android:background="@drawable/bg_parent_child_sheet_row"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground"
+    android:padding="14dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <FrameLayout
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@drawable/bg_parent_child_avatar">
+
+            <ImageView
+                android:id="@+id/iv_child_avatar"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_gravity="center"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_role_child"
+                app:tint="#16A34A" />
+        </FrameLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tv_child_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/parent_mock_text_primary"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                tools:text="김민준" />
+
+            <TextView
+                android:id="@+id/tv_child_subtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textColor="@color/parent_mock_text_muted"
+                android:textSize="13sp"
+                tools:text="등록일: 2026-05-01" />
+        </LinearLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_child_sheet_manage"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="4dp"
+            android:minHeight="36dp"
+            android:minWidth="0dp"
+            android:paddingHorizontal="8dp"
+            android:text="@string/parent_child_sheet_manage"
+            android:textColor="@color/parent_mock_indigo_accent"
+            android:textSize="13sp" />
+
+        <ImageView
+            android:id="@+id/iv_selected_check"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:importantForAccessibility="no"
+            android:src="@drawable/ic_check_circle"
+            android:visibility="gone"
+            app:tint="@color/parent_mock_blue"
+            tools:visibility="visible" />
+    </LinearLayout>
+</FrameLayout>

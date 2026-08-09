@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 칩·섹션 아래 전체를 스크롤이 차지하고, 미션은 FAB 겹침만큼 margin으로 내림 -->
+    <dimen name="home_path_scroll_padding_top">0dp</dimen>
+    <dimen name="home_path_scroll_padding_bottom">28dp</dimen>
+    <!-- 큰 화면에서 마지막 섹션 플로팅 헤더까지 스크롤 가능하도록 여유 -->
+    <dimen name="home_path_scroll_extent_buffer">32dp</dimen>
+    <dimen name="home_mission_path_top_clearance">120dp</dimen>
+    <dimen name="content_max_width">432dp</dimen>
+    <dimen name="chat_input_column_padding_bottom">12dp</dimen>
+
+    <!-- 미션 경로 노드 캡션(긴 제목 줄바꿈) -->
+    <dimen name="home_mission_caption_max_width">280dp</dimen>
+
+    <!-- 홈 상단 상태 칩 (에너지·기어·XP·티켓·스트릭) -->
+    <dimen name="home_top_chip_min_height">40dp</dimen>
+    <dimen name="home_top_chip_pad_h">10dp</dimen>
+    <dimen name="home_top_chip_pad_v">8dp</dimen>
+    <dimen name="home_top_chip_gap_h">4dp</dimen>
+    <dimen name="home_top_chip_icon">18dp</dimen>
+    <dimen name="home_top_chip_text_gap">6dp</dimen>
+    <dimen name="home_top_chip_text_size">13sp</dimen>
+    <dimen name="home_top_chips_scroll_pad_h">12dp</dimen>
+    <dimen name="home_top_chips_scroll_pad_v">6dp</dimen>
+
+    <!-- 수집 · 도감 그리드 -->
+    <dimen name="gacha_encyclopedia_grid_spacing">10dp</dimen>
+    <dimen name="gacha_pet_card_margin">5dp</dimen>
+    <dimen name="gacha_pet_card_padding">8dp</dimen>
+    <dimen name="gacha_pet_card_art_height">80dp</dimen>
+
+    <!-- 펫 누끼(스프라이트) 표시 크기 — 화면별 통일 -->
+    <dimen name="pet_sprite_gacha_header">104dp</dimen>
+    <dimen name="pet_sprite_home_float">76dp</dimen>
+    <dimen name="pet_sprite_chat_header">56dp</dimen>
+    <dimen name="pet_sprite_chat_bubble">68dp</dimen>
+    <dimen name="pet_sprite_detail_dialog">128dp</dimen>
+    <dimen name="pet_sprite_stats_sheet">120dp</dimen>
+    <dimen name="pet_sprite_quiz_feedback">120dp</dimen>
+    <dimen name="pet_sprite_quiz_result">200dp</dimen>
+    <dimen name="pet_sprite_gacha_reveal">200dp</dimen>
+    <dimen name="pet_sprite_evolution">200dp</dimen>
+    <dimen name="pet_sprite_mission_dialog">180dp</dimen>
+
+    <!-- 축하·보상·진화 등 카드형 다이얼로그 -->
+    <dimen name="dialog_celebration_width">320dp</dimen>
+    <dimen name="dialog_celebration_horizontal_margin">24dp</dimen>
+</resources>

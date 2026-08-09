@@ -1,0 +1,4272 @@
+{
+  "sourceTitle": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1권 인공지능 원리와 AI 교육의 이해",
+  "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png / 🧩 AImong 문제 생성 시스템 설계서 v1.4",
+  "generationVersion": "AImong-KERIS-3step-v2",
+  "normalizationNote": "사용자 요청에는 '3단계 5개 미션 x 5문항'이라고 적혀 있었지만, 총 160문항 및 AImong v1.4의 'missionId당 정확히 10문항' 규칙에 맞추기 위해 16개 미션 x 10문항으로 정규화했습니다.",
+  "totalMissionCount": 16,
+  "totalQuestionCount": 160,
+  "stageSummary": [
+    {
+      "stage": 1,
+      "title": "AI가 뭐예요?",
+      "missionCount": 5,
+      "questionCount": 50
+    },
+    {
+      "stage": 2,
+      "title": "AI 잘 쓰기",
+      "missionCount": 6,
+      "questionCount": 60
+    },
+    {
+      "stage": 3,
+      "title": "비판적 사고",
+      "missionCount": 5,
+      "questionCount": 50
+    }
+  ],
+  "missions": [
+    {
+      "missionCode": "S0101",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "AI는 어디에 있을까?",
+      "questionCount": 10,
+      "difficulty": 1,
+      "missionSummary": "생활 속 여러 도구에서 AI가 하는 일을 알아봅니다.",
+      "curriculumRef": "KERIS-1 Ch2.1 pp.27-29; Ch3.1 pp.83-96; D0qG389 STEP 1",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "missionCode": "S0102",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "AI와 계산기는 어떻게 다를까?",
+      "questionCount": 10,
+      "difficulty": 1,
+      "missionSummary": "규칙 기반과 학습 기반의 차이를 통해 AI와 계산기를 구별합니다.",
+      "curriculumRef": "KERIS-1 Ch2.2 pp.39-50; Ch3.2 pp.97-103; D0qG389 STEP 1",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "missionCode": "S0103",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "AI는 데이터를 보고 배워요",
+      "questionCount": 10,
+      "difficulty": 2,
+      "missionSummary": "레이블, 학습, 테스트를 통해 기계학습의 기본을 이해합니다.",
+      "curriculumRef": "KERIS-1 Ch2.1 pp.34-38; Ch3.2 pp.97-103; Ch3.4 pp.119-134",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "missionCode": "S0104",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "딥러닝과 인식",
+      "questionCount": 10,
+      "difficulty": 2,
+      "missionSummary": "딥러닝이 이미지, 음성, 번역 같은 인식 문제에 어떻게 쓰이는지 알아봅니다.",
+      "curriculumRef": "KERIS-1 Ch2.1 pp.27-29; Ch2.3 pp.61-80; Ch2.1 pp.28-29",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "missionCode": "S0105",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "AI도 틀릴 수 있어요",
+      "questionCount": 10,
+      "difficulty": 2,
+      "missionSummary": "AI의 한계와 그럴듯하지만 틀릴 수 있는 답을 구별하는 연습을 합니다.",
+      "curriculumRef": "KERIS-1 Ch2.2 pp.41-43; Ch4.2 p.167; D0qG389 STEP 1",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "missionCode": "S0201",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "좋은 질문은 목적이 보여요",
+      "questionCount": 10,
+      "difficulty": 2,
+      "missionSummary": "무엇을 하려는지 먼저 말하는 질문을 연습합니다.",
+      "curriculumRef": "KERIS-1 Ch3.1 pp.83-96; Ch3.5 pp.135-154; D0qG389 STEP 2; AImong v1.4 TYPE 2/4 prompt examples",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png / AImong 문제 생성 시스템 설계서 v1.4"
+    },
+    {
+      "missionCode": "S0202",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "좋은 질문은 조건이 구체적이에요",
+      "questionCount": 10,
+      "difficulty": 2,
+      "missionSummary": "대상, 길이, 형식 같은 조건을 넣어 더 좋은 답을 받는 법을 익힙니다.",
+      "curriculumRef": "KERIS-1 Ch3.1 pp.83-96; Ch3.4-3.5 pp.119-154; D0qG389 STEP 2; AImong v1.4",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png / AImong 문제 생성 시스템 설계서 v1.4"
+    },
+    {
+      "missionCode": "S0203",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "개인정보와 생체정보를 지켜요",
+      "questionCount": 10,
+      "difficulty": 2,
+      "missionSummary": "주소, 전화번호, 얼굴, 지문, 목소리 같은 민감한 정보를 안전하게 다룹니다.",
+      "curriculumRef": "KERIS-1 Ch2.1 pp.27-29; Ch4.2 pp.163-178; D0qG389 STEP 2",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "missionCode": "S0204",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "사진·음성·데이터를 바르게 모아요",
+      "questionCount": 10,
+      "difficulty": 3,
+      "missionSummary": "AI 학습용 자료를 모을 때 다양성, 저작권, 허락을 함께 살핍니다.",
+      "curriculumRef": "KERIS-1 Ch3.4 pp.119-134; Ch3.5 pp.135-154; Ch4.2 pp.167-178",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "missionCode": "S0205",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "AI 도구를 실험하고 고쳐요",
+      "questionCount": 10,
+      "difficulty": 3,
+      "missionSummary": "AI for Oceans와 Teachable Machine처럼 결과를 보고 수정하는 활동을 연습합니다.",
+      "curriculumRef": "KERIS-1 Ch3.4 pp.119-134; Ch3.5 pp.135-154",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "missionCode": "S0206",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "AI 도움을 받고 내 답으로 정리해요",
+      "questionCount": 10,
+      "difficulty": 3,
+      "missionSummary": "AI는 힌트와 예시를 주는 도구로 활용하고, 마지막 정리는 내 말로 합니다.",
+      "curriculumRef": "KERIS-1 Ch3.1 pp.83-96; Ch3.5 pp.135-154; D0qG389 STEP 2",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "missionCode": "S0301",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "팩트체크 첫걸음",
+      "questionCount": 10,
+      "difficulty": 3,
+      "missionSummary": "AI 답을 그대로 믿지 않고 핵심 주장부터 다시 확인합니다.",
+      "curriculumRef": "KERIS-1 Ch4.2 pp.167-178; D0qG389 STEP 3",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "missionCode": "S0302",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "출처와 근거를 비교해요",
+      "questionCount": 10,
+      "difficulty": 3,
+      "missionSummary": "글쓴이, 날짜, 기관, 근거를 보며 여러 자료를 비교합니다.",
+      "curriculumRef": "KERIS-1 Ch4.1-4.2 pp.157-178; D0qG389 STEP 3",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "missionCode": "S0303",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "편향을 찾아봐요",
+      "questionCount": 10,
+      "difficulty": 4,
+      "missionSummary": "대표성이 부족한 데이터가 어떤 치우친 결과를 만드는지 살펴봅니다.",
+      "curriculumRef": "KERIS-1 Ch4.2 pp.163-178; Ch4.4 pp.192-224",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "missionCode": "S0304",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "AI의 양면성을 생각해요",
+      "questionCount": 10,
+      "difficulty": 4,
+      "missionSummary": "같은 기술도 긍정적 영향과 부정적 영향을 함께 볼 수 있음을 이해합니다.",
+      "curriculumRef": "KERIS-1 Ch4.1 pp.157-162",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "missionCode": "S0305",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "딜레마와 공정한 선택",
+      "questionCount": 10,
+      "difficulty": 4,
+      "missionSummary": "Moral Machine 사례처럼 이해관계자를 생각하며 공정한 선택을 고민합니다.",
+      "curriculumRef": "KERIS-1 Ch4.3 pp.179-191",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    }
+  ],
+  "questions": [
+    {
+      "externalId": "S0101-01",
+      "missionCode": "S0101",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "AI는 어디에 있을까?",
+      "type": "OX",
+      "question": "스마트 스피커, 번역 앱, 카메라 앱처럼 우리 생활 속 여러 도구에 인공지능이 쓰일 수 있어요.",
+      "options": null,
+      "answer": true,
+      "explanation": "KERIS 1권은 번역 앱, 카메라 앱, 인공지능 스피커 같은 생활 속 사례를 통해 인공지능을 이해하도록 안내해요.",
+      "contentTags": [
+        "FACT",
+        "SAFETY"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.1 pp.27-29; Ch3.1 pp.83-96; D0qG389 STEP 1",
+      "difficulty": 1,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0101-02",
+      "missionCode": "S0101",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "AI는 어디에 있을까?",
+      "type": "OX",
+      "question": "계산이 빠르기만 하면 모두 인공지능이라고 볼 수 있어요.",
+      "options": null,
+      "answer": false,
+      "explanation": "빠른 계산만 하는 도구와, 데이터를 보고 분류하거나 추천하는 인공지능은 같지 않아요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.1 pp.27-29; Ch3.1 pp.83-96; D0qG389 STEP 1",
+      "difficulty": 1,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0101-03",
+      "missionCode": "S0101",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "AI는 어디에 있을까?",
+      "type": "MULTIPLE",
+      "question": "다음 중 생활 속 인공지능 사례로 가장 알맞은 것은 무엇일까요?",
+      "options": [
+        "빈 공책",
+        "색종이를 접는 종이 설명서",
+        "사진 속 꽃을 구별해 주는 카메라 앱",
+        "바람개비 장난감"
+      ],
+      "answer": 3,
+      "explanation": "생활 속 인공지능은 보거나 듣거나 비교해 판단하는 기능을 갖는 경우가 많아요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.1 pp.27-29; Ch3.1 pp.83-96; D0qG389 STEP 1",
+      "difficulty": 1,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0101-04",
+      "missionCode": "S0101",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "AI는 어디에 있을까?",
+      "type": "MULTIPLE",
+      "question": "Quick Draw를 해 보면서 알 수 있는 점으로 가장 알맞은 것은 무엇일까요?",
+      "options": [
+        "인공지능은 사람의 마음을 그대로 읽어요.",
+        "인공지능은 내가 그린 선의 특징을 보고 무엇인지 짐작해요.",
+        "인공지능은 한 번 배운 뒤에는 절대 틀리지 않아요.",
+        "인공지능은 그림을 보지 않고 무작정 정답을 말해요."
+      ],
+      "answer": 2,
+      "explanation": "Quick Draw 같은 활동은 인공지능이 그림의 특징을 보고 추정한다는 점을 보여 줍니다.",
+      "contentTags": [
+        "FACT",
+        "PROMPT"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.1 pp.27-29; Ch3.1 pp.83-96; D0qG389 STEP 1",
+      "difficulty": 1,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0101-05",
+      "missionCode": "S0101",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "AI는 어디에 있을까?",
+      "type": "MULTIPLE",
+      "question": "생활 속 여러 사례를 볼 때 먼저 생각하면 좋은 질문은 무엇일까요?",
+      "options": [
+        "이 도구는 사람을 어떻게 도와주고, 어떤 일을 대신해 줄까?",
+        "크기가 크면 더 똑똑한 인공지능일까?",
+        "겉모습이 예쁘면 모두 인공지능일까?",
+        "전기가 들어오면 모두 인공지능일까?"
+      ],
+      "answer": 1,
+      "explanation": "도구의 모양보다 어떤 일을 하는지 묻는 질문이 더 중요해요.",
+      "contentTags": [
+        "PROMPT",
+        "FACT"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.1 pp.27-29; Ch3.1 pp.83-96; D0qG389 STEP 1",
+      "difficulty": 1,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0101-06",
+      "missionCode": "S0101",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "AI는 어디에 있을까?",
+      "type": "FILL",
+      "question": "우리 생활 속 인공지능을 찾을 때는 겉모습보다 어떤 ____을 하는지 살펴봐요.",
+      "options": [
+        "가격",
+        "기능",
+        "무게",
+        "색깔"
+      ],
+      "answer": [
+        2
+      ],
+      "explanation": "인공지능인지 판단할 때는 어떤 기능을 수행하는지 보는 습관이 중요해요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.1 pp.27-29; Ch3.1 pp.83-96; D0qG389 STEP 1",
+      "difficulty": 1,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0101-07",
+      "missionCode": "S0101",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "AI는 어디에 있을까?",
+      "type": "FILL",
+      "question": "여러 인공지능 사례를 보고 공통점을 찾으려면 사례를 ____ 해 보아야 해요.",
+      "options": [
+        "삭제",
+        "복사",
+        "숨기",
+        "비교"
+      ],
+      "answer": [
+        4
+      ],
+      "explanation": "비교해 보면 여러 도구에서 공통으로 보이는 인공지능의 특징을 찾기 쉬워요.",
+      "contentTags": [
+        "VERIFICATION",
+        "FACT"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.1 pp.27-29; Ch3.1 pp.83-96; D0qG389 STEP 1",
+      "difficulty": 1,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0101-08",
+      "missionCode": "S0101",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "AI는 어디에 있을까?",
+      "type": "SITUATION",
+      "question": "친구가 번역 앱, 카메라 앱, 알람 시계를 보여 주며 \"셋 다 인공지능이야\"라고 말했어요. 가장 먼저 어떻게 하면 좋을까요?",
+      "options": [
+        "배터리가 들어가면 다 인공지능이라고 말해요.",
+        "각 도구가 스스로 인식하거나 추천하는 기능이 있는지 살펴보자고 말해요.",
+        "이름이 어려우면 다 인공지능이라고 정해요.",
+        "겉모습이 비슷하니 그냥 모두 맞다고 해요."
+      ],
+      "answer": 2,
+      "explanation": "도구를 구별할 때는 겉모습보다 기능을 살피는 것이 좋아요.",
+      "contentTags": [
+        "VERIFICATION",
+        "FACT"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.1 pp.27-29; Ch3.1 pp.83-96; D0qG389 STEP 1",
+      "difficulty": 1,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0101-09",
+      "missionCode": "S0101",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "AI는 어디에 있을까?",
+      "type": "SITUATION",
+      "question": "Quick Draw에서 같은 고양이 그림을 그렸는데 한 번은 고양이, 한 번은 여우라고 나왔어요. 가장 알맞은 생각은 무엇일까요?",
+      "options": [
+        "한 번 틀렸으니 절대 쓸 수 없는 도구예요.",
+        "인공지능은 그림의 특징을 보고 짐작하므로 비슷한 그림에서 헷갈릴 수 있어요.",
+        "사람을 속이려고 일부러 오답을 낸 거예요.",
+        "이제는 어떤 그림도 다시 그리면 안 돼요."
+      ],
+      "answer": 2,
+      "explanation": "이 활동은 인공지능이 특징을 바탕으로 추정한다는 점과 한계도 함께 보여 줘요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.1 pp.27-29; Ch3.1 pp.83-96; D0qG389 STEP 1",
+      "difficulty": 1,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0101-10",
+      "missionCode": "S0101",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "AI는 어디에 있을까?",
+      "type": "SITUATION",
+      "question": "모둠에서 새로운 인공지능 아이디어를 발표하려고 해요. 어떤 시작이 가장 좋을까요?",
+      "options": [
+        "누구를 돕는 도구인지와 어떤 문제를 해결하는지 먼저 정해요.",
+        "친구가 만든 것을 그대로 따라 해요.",
+        "사람을 돕는지 생각하지 않고 재미있는 기능만 고릅니다.",
+        "이름부터 아주 멋지게 정하고 기능은 나중에 생각해요."
+      ],
+      "answer": 1,
+      "explanation": "KERIS 활동은 생활 속 문제를 인공지능으로 어떻게 도울 수 있을지 생각하게 해요.",
+      "contentTags": [
+        "PROMPT",
+        "SAFETY"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.1 pp.27-29; Ch3.1 pp.83-96; D0qG389 STEP 1",
+      "difficulty": 1,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0102-01",
+      "missionCode": "S0102",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "AI와 계산기는 어떻게 다를까?",
+      "type": "OX",
+      "question": "계산기는 사람이 정해 놓은 규칙대로 계산하지만, 인공지능은 데이터에서 규칙을 배울 수 있어요.",
+      "options": null,
+      "answer": true,
+      "explanation": "규칙 기반과 학습 기반은 작동 방식이 달라요. 계산기와 같은 도구는 보통 미리 정해 둔 규칙에 따라 움직여요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.2 pp.39-50; Ch3.2 pp.97-103; D0qG389 STEP 1",
+      "difficulty": 1,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0102-02",
+      "missionCode": "S0102",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "AI와 계산기는 어떻게 다를까?",
+      "type": "OX",
+      "question": "규칙 기반 인공지능과 학습 기반 인공지능은 완전히 같은 방식으로 작동해요.",
+      "options": null,
+      "answer": false,
+      "explanation": "규칙 기반은 사람이 규칙을 넣고, 학습 기반은 데이터를 통해 패턴을 배워요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.2 pp.39-50; Ch3.2 pp.97-103; D0qG389 STEP 1",
+      "difficulty": 1,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0102-03",
+      "missionCode": "S0102",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "AI와 계산기는 어떻게 다를까?",
+      "type": "MULTIPLE",
+      "question": "계산기와 인공지능의 차이로 가장 알맞은 것은 무엇일까요?",
+      "options": [
+        "인공지능은 데이터를 보고 분류나 예측을 배울 수 있지만, 계산기는 정해진 계산을 해요.",
+        "인공지능은 숫자를 못 다루고 계산기는 숫자만 다뤄요.",
+        "인공지능은 전기가 필요 없고 계산기는 전기가 필요해요.",
+        "계산기는 화면이 없고 인공지능은 화면이 있어요."
+      ],
+      "answer": 1,
+      "explanation": "핵심 차이는 겉모양이 아니라 작동 방식이에요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.2 pp.39-50; Ch3.2 pp.97-103; D0qG389 STEP 1",
+      "difficulty": 1,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0102-04",
+      "missionCode": "S0102",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "AI와 계산기는 어떻게 다를까?",
+      "type": "MULTIPLE",
+      "question": "다음 중 규칙 기반 인공지능의 예로 가장 알맞은 것은 무엇일까요?",
+      "options": [
+        "많은 그림을 보며 특징을 배우는 그리기 도구",
+        "여러 사진을 보고 스스로 강아지를 분류하는 모델",
+        "전문가가 만든 규칙에 따라 답을 고르는 시스템",
+        "새로운 데이터를 보며 스스로 규칙을 고치는 학습 모델"
+      ],
+      "answer": 3,
+      "explanation": "전문가 시스템처럼 사람이 규칙을 넣는 접근은 규칙 기반에 가까워요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.2 pp.39-50; Ch3.2 pp.97-103; D0qG389 STEP 1",
+      "difficulty": 1,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0102-05",
+      "missionCode": "S0102",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "AI와 계산기는 어떻게 다를까?",
+      "type": "MULTIPLE",
+      "question": "다음 중 학습 기반 인공지능이 특히 잘 쓰이는 일은 무엇일까요?",
+      "options": [
+        "2+3을 더해 5를 구하는 일",
+        "정해진 순서대로 종이접기 설명서를 보여 주는 일",
+        "많은 사진 예시를 보고 사과와 레몬을 구별하는 일",
+        "버튼을 누르면 불을 켜는 일"
+      ],
+      "answer": 3,
+      "explanation": "비슷한 예시를 많이 보고 구별하는 일은 학습 기반이 잘 쓰이는 대표적인 장면이에요.",
+      "contentTags": [
+        "FACT",
+        "PROMPT"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.2 pp.39-50; Ch3.2 pp.97-103; D0qG389 STEP 1",
+      "difficulty": 1,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0102-06",
+      "missionCode": "S0102",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "AI와 계산기는 어떻게 다를까?",
+      "type": "FILL",
+      "question": "사람이 if-then처럼 규칙을 미리 넣는 방식은 ____ 기반 접근이라고 해요.",
+      "options": [
+        "우연",
+        "색깔",
+        "규칙",
+        "감정"
+      ],
+      "answer": [
+        3
+      ],
+      "explanation": "규칙을 직접 정해 넣는 접근은 규칙 기반이라고 불러요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.2 pp.39-50; Ch3.2 pp.97-103; D0qG389 STEP 1",
+      "difficulty": 1,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0102-07",
+      "missionCode": "S0102",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "AI와 계산기는 어떻게 다를까?",
+      "type": "FILL",
+      "question": "많은 예시 데이터를 보고 스스로 패턴을 찾는 것은 ____ 기반 접근이에요.",
+      "options": [
+        "학습",
+        "장식",
+        "복사",
+        "암기"
+      ],
+      "answer": [
+        1
+      ],
+      "explanation": "데이터를 통해 패턴을 찾는 방식은 학습 기반 접근이에요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.2 pp.39-50; Ch3.2 pp.97-103; D0qG389 STEP 1",
+      "difficulty": 1,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0102-08",
+      "missionCode": "S0102",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "AI와 계산기는 어떻게 다를까?",
+      "type": "SITUATION",
+      "question": "친구가 \"사칙연산 계산기도 인공지능이야\"라고 물었어요. 가장 알맞게 설명한 사람은 누구일까요?",
+      "options": [
+        "정해진 계산만 한다면 보통 계산 도구에 더 가깝고, 배워서 분류하는 기능과는 달라요.",
+        "화면이 있으면 전부 인공지능이에요.",
+        "배터리가 들어가면 다 인공지능이에요.",
+        "숫자를 쓰니까 모두 인공지능이에요."
+      ],
+      "answer": 1,
+      "explanation": "이 mission은 규칙과 학습의 차이를 통해 AI를 구별하도록 돕습니다.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.2 pp.39-50; Ch3.2 pp.97-103; D0qG389 STEP 1",
+      "difficulty": 1,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0102-09",
+      "missionCode": "S0102",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "AI와 계산기는 어떻게 다를까?",
+      "type": "SITUATION",
+      "question": "고양이와 강아지 사진을 구별하는 프로그램을 만들려고 해요. 어떤 방법이 더 알맞을까요?",
+      "options": [
+        "수천 개의 사진 규칙을 한 줄씩 손으로 다 써 줘요.",
+        "사진을 보지 않고 색깔만 하나 정해요.",
+        "사진 예시를 많이 보여 주어 패턴을 배우게 해요.",
+        "동물 이름만 크게 외우게 해요."
+      ],
+      "answer": 3,
+      "explanation": "복잡한 사진 구별은 예시를 통해 배우는 학습 기반 접근이 더 잘 맞아요.",
+      "contentTags": [
+        "FACT",
+        "PROMPT"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.2 pp.39-50; Ch3.2 pp.97-103; D0qG389 STEP 1",
+      "difficulty": 1,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0102-10",
+      "missionCode": "S0102",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "AI와 계산기는 어떻게 다를까?",
+      "type": "SITUATION",
+      "question": "모둠에서 규칙 기반 시스템으로 모든 동물을 완벽히 구별하자고 했어요. 가장 알맞은 반응은 무엇일까요?",
+      "options": [
+        "동물 구별은 너무 쉬우니 아무 방법이나 써도 된다고 말해요.",
+        "사진은 보지 말고 크기만 재면 된다고 말해요.",
+        "모든 경우를 규칙으로 적기 어려울 수 있으니 데이터로 배우는 방법도 함께 생각해 보자고 말해요.",
+        "규칙만 많으면 어떤 문제도 무조건 쉬워진다고 말해요."
+      ],
+      "answer": 3,
+      "explanation": "KERIS는 규칙 기반 접근의 한계와 학습 기반 접근의 필요성을 함께 보여 줘요.",
+      "contentTags": [
+        "VERIFICATION",
+        "FACT"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.2 pp.39-50; Ch3.2 pp.97-103; D0qG389 STEP 1",
+      "difficulty": 1,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0103-01",
+      "missionCode": "S0103",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "AI는 데이터를 보고 배워요",
+      "type": "OX",
+      "question": "지도학습에서는 정답 이름표(레이블)가 있는 데이터를 사용해요.",
+      "options": null,
+      "answer": true,
+      "explanation": "사과 사진에 '사과', 레몬 사진에 '레몬'처럼 정답 이름표가 있는 데이터가 지도학습에 쓰여요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.1 pp.34-38; Ch3.2 pp.97-103; Ch3.4 pp.119-134",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0103-02",
+      "missionCode": "S0103",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "AI는 데이터를 보고 배워요",
+      "type": "OX",
+      "question": "학습에 쓰지 않은 새로운 데이터로 성능을 확인하는 일은 필요 없어요.",
+      "options": null,
+      "answer": false,
+      "explanation": "새 데이터로 확인해야 정말로 잘 구별하는지 알 수 있어요.",
+      "contentTags": [
+        "VERIFICATION",
+        "FACT"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.1 pp.34-38; Ch3.2 pp.97-103; Ch3.4 pp.119-134",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0103-03",
+      "missionCode": "S0103",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "AI는 데이터를 보고 배워요",
+      "type": "MULTIPLE",
+      "question": "다음 중 비지도학습을 가장 잘 설명한 것은 무엇일까요?",
+      "options": [
+        "숫자 계산만 빠르게 하는 방법이에요.",
+        "정답표 없이 비슷한 것끼리 스스로 묶어 보는 방법이에요.",
+        "사람이 규칙을 하나씩 적어 넣는 방법이에요.",
+        "정답표를 보고 그대로 외우는 방법이에요."
+      ],
+      "answer": 2,
+      "explanation": "비지도학습은 레이블 없이 비슷한 것끼리 묶는 활동과 연결돼요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.1 pp.34-38; Ch3.2 pp.97-103; Ch3.4 pp.119-134",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0103-04",
+      "missionCode": "S0103",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "AI는 데이터를 보고 배워요",
+      "type": "MULTIPLE",
+      "question": "다음 중 '레이블'의 예로 가장 알맞은 것은 무엇일까요?",
+      "options": [
+        "사진의 배경색",
+        "과일 사진에 붙인 '사과'와 '레몬' 이름표",
+        "사진 파일의 크기",
+        "사진을 찍은 시간"
+      ],
+      "answer": 2,
+      "explanation": "레이블은 정답이나 분류 이름표처럼 쓰이는 정보예요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.1 pp.34-38; Ch3.2 pp.97-103; Ch3.4 pp.119-134",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0103-05",
+      "missionCode": "S0103",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "AI는 데이터를 보고 배워요",
+      "type": "MULTIPLE",
+      "question": "기계학습의 종류를 바르게 묶은 것은 무엇일까요?",
+      "options": [
+        "강화학습, 암기학습, 속독학습",
+        "비지도학습, 확대학습, 도형학습",
+        "지도학습, 번역학습, 계산학습",
+        "지도학습, 비지도학습, 강화학습"
+      ],
+      "answer": 4,
+      "explanation": "KERIS는 기계학습의 대표적인 세 가지 접근을 함께 소개해요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.1 pp.34-38; Ch3.2 pp.97-103; Ch3.4 pp.119-134",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0103-06",
+      "missionCode": "S0103",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "AI는 데이터를 보고 배워요",
+      "type": "FILL",
+      "question": "레몬과 사과 사진에 '레몬', '사과'를 붙여 주는 것은 ____을 다는 것이에요.",
+      "options": [
+        "광고",
+        "레이블",
+        "벌점",
+        "암호"
+      ],
+      "answer": [
+        2
+      ],
+      "explanation": "정답 이름표를 달아 주는 것은 레이블링이라고 이해하면 좋아요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.1 pp.34-38; Ch3.2 pp.97-103; Ch3.4 pp.119-134",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0103-07",
+      "missionCode": "S0103",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "AI는 데이터를 보고 배워요",
+      "type": "FILL",
+      "question": "학습을 마친 뒤에는 새로운 데이터로 다시 ____ 해 보아야 해요.",
+      "options": [
+        "건너뛰기",
+        "숨기",
+        "복사",
+        "테스트"
+      ],
+      "answer": [
+        4
+      ],
+      "explanation": "학습한 데이터만 보고 잘했다고 판단하면 착각할 수 있으니 새 데이터로 테스트해야 해요.",
+      "contentTags": [
+        "VERIFICATION",
+        "FACT"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.1 pp.34-38; Ch3.2 pp.97-103; Ch3.4 pp.119-134",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0103-08",
+      "missionCode": "S0103",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "AI는 데이터를 보고 배워요",
+      "type": "SITUATION",
+      "question": "선생님이 과일과 채소 카드를 두 묶음으로 나누어 보여 주셨어요. 가장 먼저 할 질문은 무엇일까요?",
+      "options": [
+        "카드가 몇 장인지 먼저 외워요.",
+        "선생님이 정한 기준, 즉 레이블이 무엇인지 물어봐요.",
+        "카드 종이의 두께가 같은지 물어봐요.",
+        "카드 모서리가 둥근지 물어봐요."
+      ],
+      "answer": 2,
+      "explanation": "지도학습 활동에서는 어떤 기준으로 나뉘었는지 찾는 것이 핵심이에요.",
+      "contentTags": [
+        "PROMPT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.1 pp.34-38; Ch3.2 pp.97-103; Ch3.4 pp.119-134",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0103-09",
+      "missionCode": "S0103",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "AI는 데이터를 보고 배워요",
+      "type": "SITUATION",
+      "question": "친구가 흐릿한 사진 몇 장만으로도 분류기가 완벽해질 거라고 말했어요. 가장 알맞은 반응은 무엇일까요?",
+      "options": [
+        "더 선명하고 다양한 예시를 모아야 더 잘 배울 수 있다고 말해요.",
+        "흐릿한 사진이 더 어려우니 그게 제일 좋다고 말해요.",
+        "사진 수가 적을수록 언제나 더 잘 배운다고 말해요.",
+        "학습은 사진과 상관없다고 말해요."
+      ],
+      "answer": 1,
+      "explanation": "좋은 학습에는 분명하고 다양한 데이터가 중요해요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.1 pp.34-38; Ch3.2 pp.97-103; Ch3.4 pp.119-134",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0103-10",
+      "missionCode": "S0103",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "AI는 데이터를 보고 배워요",
+      "type": "SITUATION",
+      "question": "AI for Oceans에서 새 그림을 넣었더니 자꾸 틀리게 분류했어요. 어떻게 하는 것이 가장 좋을까요?",
+      "options": [
+        "정답을 몰라도 그냥 맞다고 생각해요.",
+        "틀린 예시와 비슷한 데이터를 더 넣고 다시 학습시켜 봐요.",
+        "한 번 틀렸으니 바로 사용을 포기해요.",
+        "학습 없이 같은 그림만 계속 넣어 봐요."
+      ],
+      "answer": 2,
+      "explanation": "결과를 보고 데이터를 고쳐 보는 과정이 학습 활동의 중요한 부분이에요.",
+      "contentTags": [
+        "VERIFICATION",
+        "PROMPT"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.1 pp.34-38; Ch3.2 pp.97-103; Ch3.4 pp.119-134",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0104-01",
+      "missionCode": "S0104",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "딥러닝과 인식",
+      "type": "OX",
+      "question": "딥러닝은 인공 신경망을 바탕으로 한 머신러닝의 한 종류예요.",
+      "options": null,
+      "answer": true,
+      "explanation": "KERIS는 딥러닝을 머신러닝 안에 들어가는 한 분야로 설명해요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.1 pp.27-29; Ch2.3 pp.61-80; Ch2.1 pp.28-29",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0104-02",
+      "missionCode": "S0104",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "딥러닝과 인식",
+      "type": "OX",
+      "question": "딥러닝은 이미지나 음성 같은 자료를 전혀 다루지 못해요.",
+      "options": null,
+      "answer": false,
+      "explanation": "이미지 인식, 음성 인식, 번역처럼 딥러닝이 많이 쓰이는 분야가 있어요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.1 pp.27-29; Ch2.3 pp.61-80; Ch2.1 pp.28-29",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0104-03",
+      "missionCode": "S0104",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "딥러닝과 인식",
+      "type": "MULTIPLE",
+      "question": "다음 중 딥러닝이 자주 쓰이는 분야로 가장 알맞은 것은 무엇일까요?",
+      "options": [
+        "연필 길이 재는 자",
+        "얼굴 인식, 음성 인식, 번역",
+        "줄넘기 횟수 세기만 하는 손수 카운터",
+        "바람의 세기만 보는 풍향계"
+      ],
+      "answer": 2,
+      "explanation": "딥러닝은 이미지, 음성, 언어를 다루는 인식 문제에서 크게 쓰여요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.1 pp.27-29; Ch2.3 pp.61-80; Ch2.1 pp.28-29",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0104-04",
+      "missionCode": "S0104",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "딥러닝과 인식",
+      "type": "MULTIPLE",
+      "question": "인공 신경망을 쉽게 설명한 것으로 가장 알맞은 것은 무엇일까요?",
+      "options": [
+        "사람처럼 밥을 먹고 잠을 자는 구조예요.",
+        "종이를 접는 순서만 외우는 구조예요.",
+        "한 번도 틀리지 않게 만드는 마법 구조예요.",
+        "여러 입력을 받아 기준을 넘으면 반응하도록 만든 구조예요."
+      ],
+      "answer": 4,
+      "explanation": "인공 신경망은 사람의 뉴런 작동 원리를 본떠 만든 계산 구조예요.",
+      "contentTags": [
+        "FACT",
+        "PROMPT"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.1 pp.27-29; Ch2.3 pp.61-80; Ch2.1 pp.28-29",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0104-05",
+      "missionCode": "S0104",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "딥러닝과 인식",
+      "type": "MULTIPLE",
+      "question": "다음 설명 중 올바른 것은 무엇일까요?",
+      "options": [
+        "딥러닝 안에 인공지능이 포함돼요.",
+        "계산기 안에 딥러닝이 포함돼요.",
+        "모든 인공지능은 곧 딥러닝이에요.",
+        "머신러닝 안에 딥러닝이 포함돼요."
+      ],
+      "answer": 4,
+      "explanation": "관계를 큰 것부터 보면 인공지능 → 머신러닝 → 딥러닝으로 생각할 수 있어요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.1 pp.27-29; Ch2.3 pp.61-80; Ch2.1 pp.28-29",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0104-06",
+      "missionCode": "S0104",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "딥러닝과 인식",
+      "type": "FILL",
+      "question": "얼굴이나 사물을 알아보는 일은 기계의 ____과 관련이 깊어요.",
+      "options": [
+        "수납",
+        "인식",
+        "휴식",
+        "요리"
+      ],
+      "answer": [
+        2
+      ],
+      "explanation": "무엇을 보고 구별하는 일은 인식과 관련이 있어요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.1 pp.27-29; Ch2.3 pp.61-80; Ch2.1 pp.28-29",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0104-07",
+      "missionCode": "S0104",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "딥러닝과 인식",
+      "type": "FILL",
+      "question": "딥러닝은 머신러닝 안에 들어가는 한 ____라고 할 수 있어요.",
+      "options": [
+        "장난",
+        "종류",
+        "색",
+        "교과"
+      ],
+      "answer": [
+        2
+      ],
+      "explanation": "딥러닝은 인공지능의 가장 큰 범주가 아니라 그 안에 포함된 한 종류예요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.1 pp.27-29; Ch2.3 pp.61-80; Ch2.1 pp.28-29",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0104-08",
+      "missionCode": "S0104",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "딥러닝과 인식",
+      "type": "SITUATION",
+      "question": "음성 번역 앱이 내가 말한 문장을 다른 언어로 바꿔 주었어요. 이 일을 가장 잘 설명하는 말은 무엇일까요?",
+      "options": [
+        "인공지능이 음성을 듣고 뜻을 파악한 뒤 다른 언어로 바꿔 준 거예요.",
+        "번역은 인공지능과 전혀 상관없는 일이에요.",
+        "단어 뜻을 하나도 보지 않고 우연히 맞힌 거예요.",
+        "전화기가 스스로 외국 여행을 다녀온 거예요."
+      ],
+      "answer": 1,
+      "explanation": "음성 인식과 번역은 딥러닝이 많이 활용되는 대표적인 예예요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.1 pp.27-29; Ch2.3 pp.61-80; Ch2.1 pp.28-29",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0104-09",
+      "missionCode": "S0104",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "딥러닝과 인식",
+      "type": "SITUATION",
+      "question": "친구가 \"딥러닝이면 사람처럼 다 알아서 생각해\"라고 말했어요. 가장 알맞은 말은 무엇일까요?",
+      "options": [
+        "사람처럼 보일 수 있어도 실제로는 데이터와 모델을 바탕으로 작동한다고 설명해요.",
+        "딥러닝은 전기를 쓰지 않는다고 말해요.",
+        "딥러닝은 이미지를 절대 틀리지 않는다고 말해요.",
+        "딥러닝은 사람보다 무조건 더 똑똑하다고 말해요."
+      ],
+      "answer": 1,
+      "explanation": "인공지능을 지나치게 사람처럼 보는 것보다 작동 방식을 이해하는 것이 중요해요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.1 pp.27-29; Ch2.3 pp.61-80; Ch2.1 pp.28-29",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0104-10",
+      "missionCode": "S0104",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "딥러닝과 인식",
+      "type": "SITUATION",
+      "question": "새로운 사진을 넣었더니 분류기가 자꾸 이상한 답을 내요. 어떻게 생각하는 것이 가장 알맞을까요?",
+      "options": [
+        "인공지능이 화가 나서 일부러 틀린 거예요.",
+        "학습에 없던 모습일 수 있으니 데이터를 더 보완하고 다시 확인해야 해요.",
+        "이제는 어떤 사진도 다시 넣으면 안 돼요.",
+        "한 번 틀리면 절대 고칠 수 없어요."
+      ],
+      "answer": 2,
+      "explanation": "딥러닝도 학습한 범위를 벗어나면 틀릴 수 있어요.",
+      "contentTags": [
+        "VERIFICATION",
+        "FACT"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.1 pp.27-29; Ch2.3 pp.61-80; Ch2.1 pp.28-29",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0105-01",
+      "missionCode": "S0105",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "AI도 틀릴 수 있어요",
+      "type": "OX",
+      "question": "인공지능은 그럴듯하게 말해도 틀릴 수 있어서 다시 확인하는 습관이 필요해요.",
+      "options": null,
+      "answer": true,
+      "explanation": "맞는 말처럼 들려도 언제나 사실은 아닐 수 있으니 한 번 더 확인해야 해요.",
+      "contentTags": [
+        "VERIFICATION",
+        "FACT"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.2 pp.41-43; Ch4.2 p.167; D0qG389 STEP 1",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0105-02",
+      "missionCode": "S0105",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "AI도 틀릴 수 있어요",
+      "type": "OX",
+      "question": "인공지능이 자신 있게 말하면 그 답은 항상 맞는 답이에요.",
+      "options": null,
+      "answer": false,
+      "explanation": "말투가 자신 있어 보여도 근거가 약하거나 틀릴 수 있어요.",
+      "contentTags": [
+        "VERIFICATION",
+        "FACT"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.2 pp.41-43; Ch4.2 p.167; D0qG389 STEP 1",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0105-03",
+      "missionCode": "S0105",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "AI도 틀릴 수 있어요",
+      "type": "MULTIPLE",
+      "question": "인공지능이 틀릴 수 있는 이유로 가장 알맞은 것은 무엇일까요?",
+      "options": [
+        "답이 길면 무조건 틀리기 때문이에요.",
+        "학습한 데이터가 부족하거나 새로운 상황을 만나면 헷갈릴 수 있어요.",
+        "화면이 밝을수록 틀린 답이 나오기 때문이에요.",
+        "전기가 흐르면 언제나 정답이 나오기 때문이에요."
+      ],
+      "answer": 2,
+      "explanation": "데이터의 양과 범위, 상황의 차이는 결과에 영향을 줄 수 있어요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.2 pp.41-43; Ch4.2 p.167; D0qG389 STEP 1",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0105-04",
+      "missionCode": "S0105",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "AI도 틀릴 수 있어요",
+      "type": "MULTIPLE",
+      "question": "다음 중 인공지능의 한계를 보여 주는 예로 가장 알맞은 것은 무엇일까요?",
+      "options": [
+        "새 사진으로 테스트하는 경우",
+        "교과서를 읽고 핵심을 정리하는 경우",
+        "정답표가 있는 사진을 배우는 경우",
+        "비슷한 그림 두 개를 서로 다르게 판단해 헷갈리는 경우"
+      ],
+      "answer": 4,
+      "explanation": "인공지능은 특징을 바탕으로 추정하므로 비슷한 대상에서 혼동할 수 있어요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.2 pp.41-43; Ch4.2 p.167; D0qG389 STEP 1",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0105-05",
+      "missionCode": "S0105",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "AI도 틀릴 수 있어요",
+      "type": "MULTIPLE",
+      "question": "인공지능 답 두 개가 서로 다를 때 가장 먼저 할 일은 무엇일까요?",
+      "options": [
+        "어느 부분이 다른지 표시하고 다른 자료와 비교해 봐요.",
+        "마음에 드는 답만 고르고 끝내요.",
+        "두 답을 모두 사실이라고 믿어요.",
+        "더 길게 쓴 답이 무조건 맞다고 생각해요."
+      ],
+      "answer": 1,
+      "explanation": "다른 부분을 표시하면 무엇을 다시 확인해야 하는지 보이기 쉬워요.",
+      "contentTags": [
+        "VERIFICATION",
+        "FACT"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.2 pp.41-43; Ch4.2 p.167; D0qG389 STEP 1",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0105-06",
+      "missionCode": "S0105",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "AI도 틀릴 수 있어요",
+      "type": "FILL",
+      "question": "인공지능 답을 바로 믿지 말고 한 번 더 ____ 하는 습관을 가져요.",
+      "options": [
+        "외우",
+        "장난",
+        "복사",
+        "확인"
+      ],
+      "answer": [
+        4
+      ],
+      "explanation": "중요한 정보는 책, 수업 자료, 공식 설명 등으로 다시 확인하는 것이 좋아요.",
+      "contentTags": [
+        "VERIFICATION",
+        "FACT"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.2 pp.41-43; Ch4.2 p.167; D0qG389 STEP 1",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0105-07",
+      "missionCode": "S0105",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "AI도 틀릴 수 있어요",
+      "type": "FILL",
+      "question": "인공지능은 모르는 내용도 그럴듯하게 ____ 수 있어요.",
+      "options": [
+        "숨길",
+        "말할",
+        "접을",
+        "먹을"
+      ],
+      "answer": [
+        2
+      ],
+      "explanation": "자신 있는 말투와 사실 여부는 같지 않아요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.2 pp.41-43; Ch4.2 p.167; D0qG389 STEP 1",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0105-08",
+      "missionCode": "S0105",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "AI도 틀릴 수 있어요",
+      "type": "SITUATION",
+      "question": "AI가 \"알파고는 사람처럼 감정을 느껴서 바둑을 둔다\"고 말했어요. 가장 알맞은 행동은 무엇일까요?",
+      "options": [
+        "AI가 말했으니 더 이상 볼 필요가 없다고 생각해요.",
+        "문장이 멋지니 그대로 발표해요.",
+        "친구가 모르면 그냥 맞다고 정해요.",
+        "정말 그런 설명이 맞는지 근거를 찾아보고 다시 확인해요."
+      ],
+      "answer": 4,
+      "explanation": "화려한 표현보다 근거를 찾는 태도가 중요해요.",
+      "contentTags": [
+        "VERIFICATION",
+        "FACT"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.2 pp.41-43; Ch4.2 p.167; D0qG389 STEP 1",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0105-09",
+      "missionCode": "S0105",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "AI도 틀릴 수 있어요",
+      "type": "SITUATION",
+      "question": "친구가 숙제에 넣을 글을 AI가 써 준 문장 그대로 복사하려고 해요. 어떻게 말해 주는 것이 가장 좋을까요?",
+      "options": [
+        "뜻을 몰라도 길면 좋으니 붙여 넣자고 말해요.",
+        "아예 아무 확인도 하지 말자고 말해요.",
+        "힌트와 예시는 참고하고, 이해한 뒤 내 말로 다시 쓰자고 말해요.",
+        "AI가 썼으니 더 멋지니 그대로 내자고 말해요."
+      ],
+      "answer": 3,
+      "explanation": "인공지능은 생각을 돕는 도구로 쓰는 것이 좋아요.",
+      "contentTags": [
+        "SAFETY",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.2 pp.41-43; Ch4.2 p.167; D0qG389 STEP 1",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0105-10",
+      "missionCode": "S0105",
+      "stage": 1,
+      "stageTitle": "AI가 뭐예요?",
+      "missionTitle": "AI도 틀릴 수 있어요",
+      "type": "SITUATION",
+      "question": "이미지 인식에 대해 AI가 세 가지 다른 설명을 줬어요. 가장 좋은 다음 행동은 무엇일까요?",
+      "options": [
+        "셋 다 맞다고 생각하고 그냥 외워요.",
+        "이제 아무 질문도 하지 않아요.",
+        "가장 어려운 단어가 들어간 설명을 무조건 골라요.",
+        "질문을 더 구체적으로 고치고, 책이나 공식 설명과 함께 비교해 봐요."
+      ],
+      "answer": 4,
+      "explanation": "질문을 고치고 여러 자료를 비교하면 더 정확한 답에 가까워질 수 있어요.",
+      "contentTags": [
+        "PROMPT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.2 pp.41-43; Ch4.2 p.167; D0qG389 STEP 1",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0201-01",
+      "missionCode": "S0201",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "좋은 질문은 목적이 보여요",
+      "type": "OX",
+      "question": "인공지능에게 질문할 때는 무엇을 하려는지 먼저 말하면 더 도움이 돼요.",
+      "options": null,
+      "answer": true,
+      "explanation": "목적이 보이면 인공지능도 답의 방향을 더 잘 잡을 수 있어요.",
+      "contentTags": [
+        "PROMPT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch3.1 pp.83-96; Ch3.5 pp.135-154; D0qG389 STEP 2; AImong v1.4 TYPE 2/4 prompt examples",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png / AImong 문제 생성 시스템 설계서 v1.4"
+    },
+    {
+      "externalId": "S0201-02",
+      "missionCode": "S0201",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "좋은 질문은 목적이 보여요",
+      "type": "OX",
+      "question": "질문의 목적을 말하지 않아도 원하는 답을 언제나 똑같이 받을 수 있어요.",
+      "options": null,
+      "answer": false,
+      "explanation": "막연한 질문은 엉뚱한 답을 부를 수 있어요.",
+      "contentTags": [
+        "PROMPT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch3.1 pp.83-96; Ch3.5 pp.135-154; D0qG389 STEP 2; AImong v1.4 TYPE 2/4 prompt examples",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png / AImong 문제 생성 시스템 설계서 v1.4"
+    },
+    {
+      "externalId": "S0201-03",
+      "missionCode": "S0201",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "좋은 질문은 목적이 보여요",
+      "type": "MULTIPLE",
+      "question": "다음 중 목적이 잘 드러난 질문은 무엇일까요?",
+      "options": [
+        "인공지능에 대해 말해 줘.",
+        "과학 발표에 넣을 설명이 필요해요. 5학년이 이해할 말로 3문장만 알려 주세요.",
+        "알아서 다 해 줘.",
+        "아무 말이나 길게 써 줘."
+      ],
+      "answer": 2,
+      "explanation": "무엇을 위해 쓰는 답인지 드러나면 더 알맞은 답을 받을 수 있어요.",
+      "contentTags": [
+        "PROMPT",
+        "FACT"
+      ],
+      "curriculumRef": "KERIS-1 Ch3.1 pp.83-96; Ch3.5 pp.135-154; D0qG389 STEP 2; AImong v1.4 TYPE 2/4 prompt examples",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png / AImong 문제 생성 시스템 설계서 v1.4"
+    },
+    {
+      "externalId": "S0201-04",
+      "missionCode": "S0201",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "좋은 질문은 목적이 보여요",
+      "type": "MULTIPLE",
+      "question": "좋은 질문에 목적을 넣는 이유로 가장 알맞은 것은 무엇일까요?",
+      "options": [
+        "인공지능이 어떤 방향의 답이 필요한지 알기 쉬워져요.",
+        "개인정보를 더 많이 넣을 수 있기 때문이에요.",
+        "질문이 무조건 짧아지기 때문이에요.",
+        "정답이 언제나 하나로만 나오기 때문이에요."
+      ],
+      "answer": 1,
+      "explanation": "목적은 답의 방향을 정하는 중요한 단서예요.",
+      "contentTags": [
+        "PROMPT",
+        "SAFETY"
+      ],
+      "curriculumRef": "KERIS-1 Ch3.1 pp.83-96; Ch3.5 pp.135-154; D0qG389 STEP 2; AImong v1.4 TYPE 2/4 prompt examples",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png / AImong 문제 생성 시스템 설계서 v1.4"
+    },
+    {
+      "externalId": "S0201-05",
+      "missionCode": "S0201",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "좋은 질문은 목적이 보여요",
+      "type": "MULTIPLE",
+      "question": "AI 분류기 아이디어를 정할 때 가장 먼저 생각하면 좋은 것은 무엇일까요?",
+      "options": [
+        "색깔을 몇 가지 쓸지",
+        "누구를 돕는지와 어떤 문제를 해결하는지",
+        "이름을 얼마나 멋지게 지을지",
+        "친구들이 몇 명 웃을지"
+      ],
+      "answer": 2,
+      "explanation": "KERIS 활동도 인공지능 아이디어의 사용 목적을 먼저 정하게 해요.",
+      "contentTags": [
+        "PROMPT",
+        "FACT"
+      ],
+      "curriculumRef": "KERIS-1 Ch3.1 pp.83-96; Ch3.5 pp.135-154; D0qG389 STEP 2; AImong v1.4 TYPE 2/4 prompt examples",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png / AImong 문제 생성 시스템 설계서 v1.4"
+    },
+    {
+      "externalId": "S0201-06",
+      "missionCode": "S0201",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "좋은 질문은 목적이 보여요",
+      "type": "FILL",
+      "question": "좋은 질문에는 내가 이루고 싶은 ____이 드러나요.",
+      "options": [
+        "목적",
+        "무게",
+        "냄새",
+        "소음"
+      ],
+      "answer": [
+        1
+      ],
+      "explanation": "발표용인지, 연습용인지, 아이디어용인지처럼 목적이 보이면 더 좋아요.",
+      "contentTags": [
+        "PROMPT",
+        "FACT"
+      ],
+      "curriculumRef": "KERIS-1 Ch3.1 pp.83-96; Ch3.5 pp.135-154; D0qG389 STEP 2; AImong v1.4 TYPE 2/4 prompt examples",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png / AImong 문제 생성 시스템 설계서 v1.4"
+    },
+    {
+      "externalId": "S0201-07",
+      "missionCode": "S0201",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "좋은 질문은 목적이 보여요",
+      "type": "FILL",
+      "question": "\"숙제용\", \"발표용\", \"연습용\"처럼 쓰임을 알려 주면 질문의 ____이 또렷해져요.",
+      "options": [
+        "방향",
+        "온도",
+        "무게",
+        "속도"
+      ],
+      "answer": [
+        1
+      ],
+      "explanation": "답이 어디를 향해야 하는지 분명해진다는 뜻이에요.",
+      "contentTags": [
+        "PROMPT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch3.1 pp.83-96; Ch3.5 pp.135-154; D0qG389 STEP 2; AImong v1.4 TYPE 2/4 prompt examples",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png / AImong 문제 생성 시스템 설계서 v1.4"
+    },
+    {
+      "externalId": "S0201-08",
+      "missionCode": "S0201",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "좋은 질문은 목적이 보여요",
+      "type": "SITUATION",
+      "question": "환경 보호 포스터에 넣을 짧은 문구가 필요해요. 어떤 질문이 가장 좋을까요?",
+      "options": [
+        "환경 보호 포스터에 넣을 짧은 문구를 3개만 제안해 주세요.",
+        "내 이름과 주소를 넣고 포스터를 대신 만들어 줘.",
+        "환경에 대해 알려 줘.",
+        "아무 문장이나 100개 써 줘."
+      ],
+      "answer": 1,
+      "explanation": "무엇을 만들려는지 먼저 밝히면 답이 훨씬 알맞아져요.",
+      "contentTags": [
+        "PROMPT",
+        "SAFETY"
+      ],
+      "curriculumRef": "KERIS-1 Ch3.1 pp.83-96; Ch3.5 pp.135-154; D0qG389 STEP 2; AImong v1.4 TYPE 2/4 prompt examples",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png / AImong 문제 생성 시스템 설계서 v1.4"
+    },
+    {
+      "externalId": "S0201-09",
+      "missionCode": "S0201",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "좋은 질문은 목적이 보여요",
+      "type": "SITUATION",
+      "question": "친구가 인공지능에게 \"알아서 해 줘\"만 쓰고 답을 기다리고 있어요. 가장 알맞은 조언은 무엇일까요?",
+      "options": [
+        "글자가 짧을수록 무조건 좋다고 말해요.",
+        "목적은 말하지 말고 계속 기다리라고 해요.",
+        "더 어려운 말만 넣으면 된다고 말해요.",
+        "무엇을 위한 답인지 먼저 말해 보자고 해요."
+      ],
+      "answer": 4,
+      "explanation": "좋은 질문은 목적을 먼저 보여 줘요.",
+      "contentTags": [
+        "PROMPT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch3.1 pp.83-96; Ch3.5 pp.135-154; D0qG389 STEP 2; AImong v1.4 TYPE 2/4 prompt examples",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png / AImong 문제 생성 시스템 설계서 v1.4"
+    },
+    {
+      "externalId": "S0201-10",
+      "missionCode": "S0201",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "좋은 질문은 목적이 보여요",
+      "type": "SITUATION",
+      "question": "새로운 AI 분류기를 발표하려고 해요. 시작 문장으로 가장 알맞은 것은 무엇일까요?",
+      "options": [
+        "이름은 아직 없지만 아무거나 해 볼래요.",
+        "이 분류기는 분실물을 빠르게 찾아 주기 위해 만들고 싶어요.",
+        "누구를 돕는지는 생각하지 않았어요.",
+        "왜 만드는지는 모르지만 멋져 보여요."
+      ],
+      "answer": 2,
+      "explanation": "인공지능 도구는 누구를 어떻게 도울지 생각할 때 더 의미 있어져요.",
+      "contentTags": [
+        "PROMPT",
+        "FACT"
+      ],
+      "curriculumRef": "KERIS-1 Ch3.1 pp.83-96; Ch3.5 pp.135-154; D0qG389 STEP 2; AImong v1.4 TYPE 2/4 prompt examples",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png / AImong 문제 생성 시스템 설계서 v1.4"
+    },
+    {
+      "externalId": "S0202-01",
+      "missionCode": "S0202",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "좋은 질문은 조건이 구체적이에요",
+      "type": "OX",
+      "question": "길이, 대상, 형식 같은 조건을 함께 넣으면 인공지능 답이 더 알맞아질 수 있어요.",
+      "options": null,
+      "answer": true,
+      "explanation": "조건은 답의 모습을 더 또렷하게 만들어 줘요.",
+      "contentTags": [
+        "PROMPT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch3.1 pp.83-96; Ch3.4-3.5 pp.119-154; D0qG389 STEP 2; AImong v1.4",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png / AImong 문제 생성 시스템 설계서 v1.4"
+    },
+    {
+      "externalId": "S0202-02",
+      "missionCode": "S0202",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "좋은 질문은 조건이 구체적이에요",
+      "type": "OX",
+      "question": "질문이 구체적일수록 인공지능은 언제나 더 헷갈려요.",
+      "options": null,
+      "answer": false,
+      "explanation": "필요한 조건을 분명히 넣으면 원하는 답에 가까워질 수 있어요.",
+      "contentTags": [
+        "PROMPT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch3.1 pp.83-96; Ch3.4-3.5 pp.119-154; D0qG389 STEP 2; AImong v1.4",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png / AImong 문제 생성 시스템 설계서 v1.4"
+    },
+    {
+      "externalId": "S0202-03",
+      "missionCode": "S0202",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "좋은 질문은 조건이 구체적이에요",
+      "type": "MULTIPLE",
+      "question": "다음 중 가장 구체적인 질문은 무엇일까요?",
+      "options": [
+        "쉽게 설명해 주세요.",
+        "알아서 잘 써 주세요.",
+        "인공지능을 설명해 주세요.",
+        "3학년 동생이 이해할 말로, 예시 1개를 넣어 2문장만 설명해 주세요."
+      ],
+      "answer": 4,
+      "explanation": "대상, 길이, 예시 여부까지 들어가면 질문이 훨씬 구체적이에요.",
+      "contentTags": [
+        "PROMPT",
+        "FACT"
+      ],
+      "curriculumRef": "KERIS-1 Ch3.1 pp.83-96; Ch3.4-3.5 pp.119-154; D0qG389 STEP 2; AImong v1.4",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png / AImong 문제 생성 시스템 설계서 v1.4"
+    },
+    {
+      "externalId": "S0202-04",
+      "missionCode": "S0202",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "좋은 질문은 조건이 구체적이에요",
+      "type": "MULTIPLE",
+      "question": "다음 중 질문에 넣어도 되는 조건으로 가장 알맞은 것은 무엇일까요?",
+      "options": [
+        "같은 반 친구 얼굴 사진을 기준으로 해 주세요.",
+        "표로 정리해 주세요.",
+        "내 친구 전화번호를 넣어 주세요.",
+        "우리 집 주소를 참고해 주세요."
+      ],
+      "answer": 2,
+      "explanation": "형식 같은 조건은 좋아요. 개인정보는 넣지 않는 것이 좋아요.",
+      "contentTags": [
+        "PROMPT",
+        "SAFETY"
+      ],
+      "curriculumRef": "KERIS-1 Ch3.1 pp.83-96; Ch3.4-3.5 pp.119-154; D0qG389 STEP 2; AImong v1.4",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png / AImong 문제 생성 시스템 설계서 v1.4"
+    },
+    {
+      "externalId": "S0202-05",
+      "missionCode": "S0202",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "좋은 질문은 조건이 구체적이에요",
+      "type": "MULTIPLE",
+      "question": "마음에 들지 않는 답을 받았을 때 가장 좋은 행동은 무엇일까요?",
+      "options": [
+        "개인정보를 더 많이 넣어 봐요.",
+        "필요한 조건을 더해서 다시 질문해 봐요.",
+        "아예 확인하지 않고 끝내요.",
+        "아무 설명 없이 화를 내요."
+      ],
+      "answer": 2,
+      "explanation": "조건을 더 구체적으로 주면 답이 달라질 수 있어요.",
+      "contentTags": [
+        "PROMPT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch3.1 pp.83-96; Ch3.4-3.5 pp.119-154; D0qG389 STEP 2; AImong v1.4",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png / AImong 문제 생성 시스템 설계서 v1.4"
+    },
+    {
+      "externalId": "S0202-06",
+      "missionCode": "S0202",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "좋은 질문은 조건이 구체적이에요",
+      "type": "FILL",
+      "question": "좋은 질문은 '누구에게', '얼마나 길게', '어떤 ____으로' 같은 조건을 담아요.",
+      "options": [
+        "소리",
+        "온도",
+        "무게",
+        "형식"
+      ],
+      "answer": [
+        4
+      ],
+      "explanation": "글, 표, 목록처럼 원하는 형식을 알려 주면 좋아요.",
+      "contentTags": [
+        "PROMPT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch3.1 pp.83-96; Ch3.4-3.5 pp.119-154; D0qG389 STEP 2; AImong v1.4",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png / AImong 문제 생성 시스템 설계서 v1.4"
+    },
+    {
+      "externalId": "S0202-07",
+      "missionCode": "S0202",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "좋은 질문은 조건이 구체적이에요",
+      "type": "FILL",
+      "question": "막연한 질문을 고칠 때는 필요한 조건을 하나씩 ____ 보면 도움이 돼요.",
+      "options": [
+        "포기해",
+        "더해",
+        "지워",
+        "숨겨"
+      ],
+      "answer": [
+        2
+      ],
+      "explanation": "조건을 조금씩 더해 보면 어떤 답이 더 좋은지 알 수 있어요.",
+      "contentTags": [
+        "PROMPT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch3.1 pp.83-96; Ch3.4-3.5 pp.119-154; D0qG389 STEP 2; AImong v1.4",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png / AImong 문제 생성 시스템 설계서 v1.4"
+    },
+    {
+      "externalId": "S0202-08",
+      "missionCode": "S0202",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "좋은 질문은 조건이 구체적이에요",
+      "type": "SITUATION",
+      "question": "동생에게 설명할 글이 필요해요. 어떤 질문이 가장 좋을까요?",
+      "options": [
+        "3학년 동생에게 말하듯 쉬운 단어로 설명해 주세요.",
+        "어려운 단어만 많이 넣어 주세요.",
+        "내 친구의 이름과 반을 함께 넣어 주세요.",
+        "길면 좋으니 20문단으로 써 주세요."
+      ],
+      "answer": 1,
+      "explanation": "대상과 수준을 밝혀 주면 답이 더 알맞아져요.",
+      "contentTags": [
+        "PROMPT",
+        "SAFETY"
+      ],
+      "curriculumRef": "KERIS-1 Ch3.1 pp.83-96; Ch3.4-3.5 pp.119-154; D0qG389 STEP 2; AImong v1.4",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png / AImong 문제 생성 시스템 설계서 v1.4"
+    },
+    {
+      "externalId": "S0202-09",
+      "missionCode": "S0202",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "좋은 질문은 조건이 구체적이에요",
+      "type": "SITUATION",
+      "question": "인공지능이 너무 긴 답을 줘서 발표에 쓰기 어려워요. 어떻게 질문을 고치면 좋을까요?",
+      "options": [
+        "핵심만 3줄로 줄여 달라고 다시 요청해요.",
+        "아무것도 바꾸지 않고 다시 그대로 받아 적어요.",
+        "더 길게 30줄로 써 달라고 해요.",
+        "친구 개인정보를 더 넣어 달라고 해요."
+      ],
+      "answer": 1,
+      "explanation": "길이라는 조건을 넣으면 답의 모양을 바꿀 수 있어요.",
+      "contentTags": [
+        "PROMPT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch3.1 pp.83-96; Ch3.4-3.5 pp.119-154; D0qG389 STEP 2; AImong v1.4",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png / AImong 문제 생성 시스템 설계서 v1.4"
+    },
+    {
+      "externalId": "S0202-10",
+      "missionCode": "S0202",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "좋은 질문은 조건이 구체적이에요",
+      "type": "SITUATION",
+      "question": "친구가 좋은 답을 받으려고 학교 이름과 집 주소를 함께 넣으려 해요. 어떻게 말해 주는 것이 가장 좋을까요?",
+      "options": [
+        "개인정보는 빼고, 필요한 조건만 구체적으로 넣자고 말해요.",
+        "친구 얼굴 사진도 같이 넣자고 해요.",
+        "조건이 필요 없으니 아무것도 쓰지 말자고 해요.",
+        "자세할수록 좋으니 모두 넣자고 해요."
+      ],
+      "answer": 1,
+      "explanation": "구체적인 질문은 좋지만, 개인정보까지 넣는 것은 안전하지 않아요.",
+      "contentTags": [
+        "PROMPT",
+        "PRIVACY"
+      ],
+      "curriculumRef": "KERIS-1 Ch3.1 pp.83-96; Ch3.4-3.5 pp.119-154; D0qG389 STEP 2; AImong v1.4",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png / AImong 문제 생성 시스템 설계서 v1.4"
+    },
+    {
+      "externalId": "S0203-01",
+      "missionCode": "S0203",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "개인정보와 생체정보를 지켜요",
+      "type": "OX",
+      "question": "집 주소, 전화번호, 얼굴 사진, 지문 같은 정보는 인공지능에 함부로 넣지 않는 것이 좋아요.",
+      "options": null,
+      "answer": true,
+      "explanation": "개인정보와 생체정보는 특히 조심해서 다뤄야 해요.",
+      "contentTags": [
+        "PRIVACY",
+        "SAFETY"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.1 pp.27-29; Ch4.2 pp.163-178; D0qG389 STEP 2",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0203-02",
+      "missionCode": "S0203",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "개인정보와 생체정보를 지켜요",
+      "type": "OX",
+      "question": "내 지문이나 얼굴 정보는 재미로 아무 AI 서비스에 올려도 괜찮아요.",
+      "options": null,
+      "answer": false,
+      "explanation": "지문, 얼굴, 목소리처럼 몸의 특징이 담긴 정보는 특히 민감할 수 있어요.",
+      "contentTags": [
+        "PRIVACY",
+        "SAFETY"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.1 pp.27-29; Ch4.2 pp.163-178; D0qG389 STEP 2",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0203-03",
+      "missionCode": "S0203",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "개인정보와 생체정보를 지켜요",
+      "type": "MULTIPLE",
+      "question": "다음 중 가장 조심해서 다뤄야 할 정보는 무엇일까요?",
+      "options": [
+        "연필 길이",
+        "전화번호와 집 주소",
+        "오늘 급식 메뉴",
+        "좋아하는 색"
+      ],
+      "answer": 2,
+      "explanation": "전화번호와 주소는 대표적인 개인정보예요.",
+      "contentTags": [
+        "PRIVACY",
+        "SAFETY"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.1 pp.27-29; Ch4.2 pp.163-178; D0qG389 STEP 2",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0203-04",
+      "missionCode": "S0203",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "개인정보와 생체정보를 지켜요",
+      "type": "MULTIPLE",
+      "question": "다음 중 생체정보의 예로 가장 알맞은 것은 무엇일까요?",
+      "options": [
+        "좋아하는 과목과 자리",
+        "교실 벽의 높이와 넓이",
+        "학용품 색깔과 모양",
+        "지문과 얼굴, 목소리"
+      ],
+      "answer": 4,
+      "explanation": "생체정보는 사람 몸의 특징을 담은 정보예요.",
+      "contentTags": [
+        "PRIVACY",
+        "FACT"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.1 pp.27-29; Ch4.2 pp.163-178; D0qG389 STEP 2",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0203-05",
+      "missionCode": "S0203",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "개인정보와 생체정보를 지켜요",
+      "type": "MULTIPLE",
+      "question": "인공지능에게 도움을 요청할 때 가장 안전한 방법은 무엇일까요?",
+      "options": [
+        "친구 전화번호를 그대로 적어요.",
+        "가족 사진을 모두 올려요.",
+        "지문 사진을 같이 보내요.",
+        "실제 이름 대신 가상의 이름이나 익명 정보를 써요."
+      ],
+      "answer": 4,
+      "explanation": "필요한 정보만 남기고 실제 사람을 알아볼 수 있는 정보는 빼는 것이 좋아요.",
+      "contentTags": [
+        "PRIVACY",
+        "SAFETY"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.1 pp.27-29; Ch4.2 pp.163-178; D0qG389 STEP 2",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0203-06",
+      "missionCode": "S0203",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "개인정보와 생체정보를 지켜요",
+      "type": "FILL",
+      "question": "지문, 얼굴, 목소리처럼 몸의 특징을 담은 정보는 ____정보라고 할 수 있어요.",
+      "options": [
+        "온도",
+        "계절",
+        "급식",
+        "생체"
+      ],
+      "answer": [
+        4
+      ],
+      "explanation": "지문, 얼굴, 목소리는 몸의 특징과 관련된 민감한 정보예요.",
+      "contentTags": [
+        "PRIVACY",
+        "FACT"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.1 pp.27-29; Ch4.2 pp.163-178; D0qG389 STEP 2",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0203-07",
+      "missionCode": "S0203",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "개인정보와 생체정보를 지켜요",
+      "type": "FILL",
+      "question": "개인정보를 묻는 화면이 나오면 먼저 ____ 하고 꼭 필요한지 생각해 봐요.",
+      "options": [
+        "복사",
+        "멈춤",
+        "자랑",
+        "공유"
+      ],
+      "answer": [
+        2
+      ],
+      "explanation": "한 번 멈추고 정말 필요한 정보인지 생각하는 습관이 중요해요.",
+      "contentTags": [
+        "SAFETY",
+        "PRIVACY"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.1 pp.27-29; Ch4.2 pp.163-178; D0qG389 STEP 2",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0203-08",
+      "missionCode": "S0203",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "개인정보와 생체정보를 지켜요",
+      "type": "SITUATION",
+      "question": "얼굴 인식 앱을 써 보던 친구가 허락 없이 다른 친구 사진을 올리려 해요. 어떻게 말해 주는 것이 가장 좋을까요?",
+      "options": [
+        "사진이 예쁘면 누구 사진이든 올려도 된다고 말해요.",
+        "얼굴이 보이면 더 정확하니 무조건 올리자고 해요.",
+        "재미있으니 한 번쯤 괜찮다고 말해요.",
+        "허락 없는 얼굴 사진 업로드는 하지 말자고 말해요."
+      ],
+      "answer": 4,
+      "explanation": "다른 사람의 얼굴 사진은 허락 없이 올리면 안 돼요.",
+      "contentTags": [
+        "PRIVACY",
+        "SAFETY"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.1 pp.27-29; Ch4.2 pp.163-178; D0qG389 STEP 2",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0203-09",
+      "missionCode": "S0203",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "개인정보와 생체정보를 지켜요",
+      "type": "SITUATION",
+      "question": "이야기 예시가 필요해서 AI에 사람 정보를 넣으려 해요. 가장 안전한 방법은 무엇일까요?",
+      "options": [
+        "가족의 전화번호를 넣어요.",
+        "지문 사진을 함께 올려요.",
+        "가짜 이름과 가상의 상황으로 바꾸어 물어봐요.",
+        "실제 친구 이름과 주소를 모두 넣어요."
+      ],
+      "answer": 3,
+      "explanation": "실제 사람을 알아볼 수 없게 바꾸는 습관이 좋아요.",
+      "contentTags": [
+        "PRIVACY",
+        "SAFETY"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.1 pp.27-29; Ch4.2 pp.163-178; D0qG389 STEP 2",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0203-10",
+      "missionCode": "S0203",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "개인정보와 생체정보를 지켜요",
+      "type": "SITUATION",
+      "question": "목소리 분류기 활동을 하려고 반 친구들의 녹음을 모으자는 의견이 나왔어요. 가장 알맞은 말은 무엇일까요?",
+      "options": [
+        "재미를 위해 아무 설명 없이 녹음하자고 말해요.",
+        "목소리는 개인정보가 아니라고 말해요.",
+        "친구가 싫다고 해도 일단 녹음하자고 말해요.",
+        "동의를 받고 꼭 필요한 만큼만 쓰거나, 사람 정보가 없는 다른 자료를 찾자고 말해요."
+      ],
+      "answer": 4,
+      "explanation": "목소리도 개인을 알아볼 수 있는 민감한 정보가 될 수 있어요.",
+      "contentTags": [
+        "PRIVACY",
+        "SAFETY"
+      ],
+      "curriculumRef": "KERIS-1 Ch2.1 pp.27-29; Ch4.2 pp.163-178; D0qG389 STEP 2",
+      "difficulty": 2,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0204-01",
+      "missionCode": "S0204",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "사진·음성·데이터를 바르게 모아요",
+      "type": "OX",
+      "question": "AI를 학습시킬 때는 비슷한 자료만 모으기보다 다양하고 분명한 자료를 모으는 것이 좋아요.",
+      "options": null,
+      "answer": true,
+      "explanation": "다양한 자료는 치우침을 줄이고 새로운 상황에도 더 잘 반응하게 도와줘요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch3.4 pp.119-134; Ch3.5 pp.135-154; Ch4.2 pp.167-178",
+      "difficulty": 3,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0204-02",
+      "missionCode": "S0204",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "사진·음성·데이터를 바르게 모아요",
+      "type": "OX",
+      "question": "흐리거나 잘못된 자료가 많아도 분류 결과에는 아무 영향이 없어요.",
+      "options": null,
+      "answer": false,
+      "explanation": "흐릿하거나 엉뚱한 자료가 많으면 분류기가 헷갈리기 쉬워요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch3.4 pp.119-134; Ch3.5 pp.135-154; Ch4.2 pp.167-178",
+      "difficulty": 3,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0204-03",
+      "missionCode": "S0204",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "사진·음성·데이터를 바르게 모아요",
+      "type": "MULTIPLE",
+      "question": "꽃 분류기를 만들 때 가장 좋은 데이터 모으기 방법은 무엇일까요?",
+      "options": [
+        "한 장만 아주 크게 찍어요.",
+        "인터넷에서 출처를 보지 않고 아무 사진이나 모아요.",
+        "한 사람 얼굴 사진만 많이 모아요.",
+        "여러 각도와 여러 밝기에서 찍은 꽃 사진을 고르게 모아요."
+      ],
+      "answer": 4,
+      "explanation": "여러 상황을 담은 자료가 더 튼튼한 분류기에 도움이 돼요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch3.4 pp.119-134; Ch3.5 pp.135-154; Ch4.2 pp.167-178",
+      "difficulty": 3,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0204-04",
+      "missionCode": "S0204",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "사진·음성·데이터를 바르게 모아요",
+      "type": "MULTIPLE",
+      "question": "인터넷에서 이미지를 내려받아 학습 자료로 쓰기 전에 먼저 확인할 것은 무엇일까요?",
+      "options": [
+        "사진 크기가 같은지",
+        "내 기분이 좋은지",
+        "저작권과 사용 허락 여부",
+        "파일 이름이 영어인지"
+      ],
+      "answer": 3,
+      "explanation": "KERIS의 Teachable Machine 활동은 저작권 확인을 강조해요.",
+      "contentTags": [
+        "SAFETY",
+        "FACT"
+      ],
+      "curriculumRef": "KERIS-1 Ch3.4 pp.119-134; Ch3.5 pp.135-154; Ch4.2 pp.167-178",
+      "difficulty": 3,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0204-05",
+      "missionCode": "S0204",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "사진·음성·데이터를 바르게 모아요",
+      "type": "MULTIPLE",
+      "question": "학습이 끝난 뒤에도 테스트용 데이터가 필요한 이유는 무엇일까요?",
+      "options": [
+        "학습에 쓰지 않은 새 자료에서도 잘 되는지 보기 위해서예요.",
+        "결과를 숨기기 위해서예요.",
+        "파일 수를 예쁘게 맞추기 위해서예요.",
+        "인공지능을 더 어렵게 만들기 위해서예요."
+      ],
+      "answer": 1,
+      "explanation": "새 자료에 대한 성능을 보는 것은 매우 중요한 확인 과정이에요.",
+      "contentTags": [
+        "VERIFICATION",
+        "FACT"
+      ],
+      "curriculumRef": "KERIS-1 Ch3.4 pp.119-134; Ch3.5 pp.135-154; Ch4.2 pp.167-178",
+      "difficulty": 3,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0204-06",
+      "missionCode": "S0204",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "사진·음성·데이터를 바르게 모아요",
+      "type": "FILL",
+      "question": "AI 학습용 자료를 모을 때는 양뿐 아니라 ____도 살펴봐야 해요.",
+      "options": [
+        "온도",
+        "무게",
+        "다양성",
+        "속도"
+      ],
+      "answer": [
+        3
+      ],
+      "explanation": "다양성이 부족하면 한쪽으로 치우친 결과가 나올 수 있어요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch3.4 pp.119-134; Ch3.5 pp.135-154; Ch4.2 pp.167-178",
+      "difficulty": 3,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0204-07",
+      "missionCode": "S0204",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "사진·음성·데이터를 바르게 모아요",
+      "type": "FILL",
+      "question": "학습 전에 흔들리거나 관련 없는 이미지는 먼저 ____ 내요.",
+      "options": [
+        "붙여",
+        "자랑해",
+        "늘려",
+        "걸러"
+      ],
+      "answer": [
+        4
+      ],
+      "explanation": "좋지 않은 자료를 미리 걸러 내면 더 깔끔하게 학습시킬 수 있어요.",
+      "contentTags": [
+        "VERIFICATION",
+        "FACT"
+      ],
+      "curriculumRef": "KERIS-1 Ch3.4 pp.119-134; Ch3.5 pp.135-154; Ch4.2 pp.167-178",
+      "difficulty": 3,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0204-08",
+      "missionCode": "S0204",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "사진·음성·데이터를 바르게 모아요",
+      "type": "SITUATION",
+      "question": "Teachable Machine으로 분류기를 만들면서 한 친구 얼굴 사진만 수십 장 모으고 있어요. 가장 알맞은 조언은 무엇일까요?",
+      "options": [
+        "얼굴이 많을수록 재미있으니 계속 모으자고 말해요.",
+        "허락은 필요 없다고 말해요.",
+        "한 사람만 찍을수록 더 공정하다고 말해요.",
+        "사람 얼굴 대신 허락된 사물이나 꽃처럼 안전한 주제로 바꾸고, 다양한 자료를 모으자고 말해요."
+      ],
+      "answer": 4,
+      "explanation": "사람 얼굴 자료는 개인정보와 편향 문제를 함께 생각해야 해요.",
+      "contentTags": [
+        "PRIVACY",
+        "SAFETY"
+      ],
+      "curriculumRef": "KERIS-1 Ch3.4 pp.119-134; Ch3.5 pp.135-154; Ch4.2 pp.167-178",
+      "difficulty": 3,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0204-09",
+      "missionCode": "S0204",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "사진·음성·데이터를 바르게 모아요",
+      "type": "SITUATION",
+      "question": "AI for Oceans 활동에 쓸 이미지를 모으는데 절반은 라벨이 잘못 붙어 있어요. 가장 먼저 할 일은 무엇일까요?",
+      "options": [
+        "틀린 채로 넣어도 괜찮다고 생각해요.",
+        "사진을 더 흐리게 바꿔요.",
+        "라벨을 다시 확인하고 틀린 것은 고쳐요.",
+        "라벨이 귀찮으니 모두 지워요."
+      ],
+      "answer": 3,
+      "explanation": "정확한 라벨은 지도학습에서 아주 중요해요.",
+      "contentTags": [
+        "VERIFICATION",
+        "FACT"
+      ],
+      "curriculumRef": "KERIS-1 Ch3.4 pp.119-134; Ch3.5 pp.135-154; Ch4.2 pp.167-178",
+      "difficulty": 3,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0204-10",
+      "missionCode": "S0204",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "사진·음성·데이터를 바르게 모아요",
+      "type": "SITUATION",
+      "question": "친구가 인터넷에서 본 예쁜 사진을 모두 저장해 학습시키려 해요. 어떻게 말해 주는 것이 가장 좋을까요?",
+      "options": [
+        "사진의 내용보다 파일 이름만 보면 된다고 말해요.",
+        "많을수록 좋으니 아무 사진이나 다 쓰자고 말해요.",
+        "예쁘면 저작권은 볼 필요 없다고 말해요.",
+        "출처와 사용 가능 범위를 먼저 확인하고, 수업에 맞는 자료만 골라 쓰자고 말해요."
+      ],
+      "answer": 4,
+      "explanation": "이미지 수집에서는 저작권과 적절성, 다양성을 함께 봐야 해요.",
+      "contentTags": [
+        "SAFETY",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch3.4 pp.119-134; Ch3.5 pp.135-154; Ch4.2 pp.167-178",
+      "difficulty": 3,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0205-01",
+      "missionCode": "S0205",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "AI 도구를 실험하고 고쳐요",
+      "type": "OX",
+      "question": "AI for Oceans나 Teachable Machine에서는 결과를 보고 데이터를 추가하거나 고쳐 볼 수 있어요.",
+      "options": null,
+      "answer": true,
+      "explanation": "한 번 학습시키고 끝나는 것이 아니라, 결과를 보고 다시 고쳐 볼 수 있어요.",
+      "contentTags": [
+        "VERIFICATION",
+        "FACT"
+      ],
+      "curriculumRef": "KERIS-1 Ch3.4 pp.119-134; Ch3.5 pp.135-154",
+      "difficulty": 3,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0205-02",
+      "missionCode": "S0205",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "AI 도구를 실험하고 고쳐요",
+      "type": "OX",
+      "question": "인공지능이 한 번 틀렸다면 더 고칠 방법은 전혀 없어요.",
+      "options": null,
+      "answer": false,
+      "explanation": "틀린 예시를 보완하거나 라벨을 고치며 다시 학습시킬 수 있어요.",
+      "contentTags": [
+        "VERIFICATION",
+        "FACT"
+      ],
+      "curriculumRef": "KERIS-1 Ch3.4 pp.119-134; Ch3.5 pp.135-154",
+      "difficulty": 3,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0205-03",
+      "missionCode": "S0205",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "AI 도구를 실험하고 고쳐요",
+      "type": "MULTIPLE",
+      "question": "분류기가 새로운 사진을 자꾸 틀릴 때 가장 좋은 방법은 무엇일까요?",
+      "options": [
+        "정답이 무엇인지 보지 않고 넘어가요.",
+        "아무 변화 없이 같은 버튼만 계속 눌러요.",
+        "틀린 유형과 비슷한 데이터를 더 모아 다시 학습시켜요.",
+        "틀렸으니 바로 지워 버려요."
+      ],
+      "answer": 3,
+      "explanation": "결과를 보고 부족한 데이터를 보완하는 것이 좋아요.",
+      "contentTags": [
+        "VERIFICATION",
+        "PROMPT"
+      ],
+      "curriculumRef": "KERIS-1 Ch3.4 pp.119-134; Ch3.5 pp.135-154",
+      "difficulty": 3,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0205-04",
+      "missionCode": "S0205",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "AI 도구를 실험하고 고쳐요",
+      "type": "MULTIPLE",
+      "question": "친구 발표를 듣고 피드백을 주는 이유로 가장 알맞은 것은 무엇일까요?",
+      "options": [
+        "점수만 높게 보이게 하기 위해서예요.",
+        "틀린 답을 숨기기 위해서예요.",
+        "어떤 데이터가 부족한지, 어떻게 더 좋아질지 찾을 수 있어서예요.",
+        "발표 시간을 더 길게 만들기 위해서예요."
+      ],
+      "answer": 3,
+      "explanation": "피드백은 분류기를 고치는 단서를 주기도 해요.",
+      "contentTags": [
+        "VERIFICATION",
+        "FACT"
+      ],
+      "curriculumRef": "KERIS-1 Ch3.4 pp.119-134; Ch3.5 pp.135-154",
+      "difficulty": 3,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0205-05",
+      "missionCode": "S0205",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "AI 도구를 실험하고 고쳐요",
+      "type": "MULTIPLE",
+      "question": "다음 중 가장 좋은 실험 방법은 무엇일까요?",
+      "options": [
+        "테스트 없이 점수만 적는 방법",
+        "아무 데이터도 바꾸지 않고 느낌만 말하는 방법",
+        "한 번에 한 가지 조건만 바꾸며 결과를 비교해 보는 방법",
+        "모든 조건을 한꺼번에 바꾸고 이유는 보지 않는 방법"
+      ],
+      "answer": 3,
+      "explanation": "무엇을 바꿨는지 알 수 있어야 결과도 더 잘 이해할 수 있어요.",
+      "contentTags": [
+        "VERIFICATION",
+        "PROMPT"
+      ],
+      "curriculumRef": "KERIS-1 Ch3.4 pp.119-134; Ch3.5 pp.135-154",
+      "difficulty": 3,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0205-06",
+      "missionCode": "S0205",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "AI 도구를 실험하고 고쳐요",
+      "type": "FILL",
+      "question": "AI 실험에서는 결과가 달라졌을 때 무엇을 바꿨는지 ____해 두면 도움이 돼요.",
+      "options": [
+        "망각",
+        "숨김",
+        "방치",
+        "기록"
+      ],
+      "answer": [
+        4
+      ],
+      "explanation": "기록이 있으면 어떤 변화가 어떤 결과를 만들었는지 알 수 있어요.",
+      "contentTags": [
+        "VERIFICATION",
+        "FACT"
+      ],
+      "curriculumRef": "KERIS-1 Ch3.4 pp.119-134; Ch3.5 pp.135-154",
+      "difficulty": 3,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0205-07",
+      "missionCode": "S0205",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "AI 도구를 실험하고 고쳐요",
+      "type": "FILL",
+      "question": "같은 모델도 새 이미지로 다시 ____해 보아야 믿을 수 있어요.",
+      "options": [
+        "포장",
+        "은폐",
+        "자랑",
+        "테스트"
+      ],
+      "answer": [
+        4
+      ],
+      "explanation": "학습 데이터만으로는 충분하지 않으니 새 이미지 테스트가 필요해요.",
+      "contentTags": [
+        "VERIFICATION",
+        "FACT"
+      ],
+      "curriculumRef": "KERIS-1 Ch3.4 pp.119-134; Ch3.5 pp.135-154",
+      "difficulty": 3,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0205-08",
+      "missionCode": "S0205",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "AI 도구를 실험하고 고쳐요",
+      "type": "SITUATION",
+      "question": "꽃 분류기가 장미와 튤립을 자꾸 헷갈려요. 가장 알맞은 해결 방법은 무엇일까요?",
+      "options": [
+        "장미와 튤립의 다양한 사진을 더 모으고 라벨을 다시 확인해요.",
+        "이미지 수는 줄이고 설명만 길게 쓰자고 해요.",
+        "색이 비슷하니 그냥 같은 꽃으로 합치자고 해요.",
+        "한 번 틀렸으니 분류기를 버리자고 해요."
+      ],
+      "answer": 1,
+      "explanation": "비슷한 대상을 구분하려면 그 차이를 보여 주는 데이터가 더 필요해요.",
+      "contentTags": [
+        "VERIFICATION",
+        "FACT"
+      ],
+      "curriculumRef": "KERIS-1 Ch3.4 pp.119-134; Ch3.5 pp.135-154",
+      "difficulty": 3,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0205-09",
+      "missionCode": "S0205",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "AI 도구를 실험하고 고쳐요",
+      "type": "SITUATION",
+      "question": "웹캠 사진만으로 학습한 뒤 종이 사진으로 시험했더니 결과가 나빠졌어요. 어떤 판단이 가장 알맞을까요?",
+      "options": [
+        "새 자료는 모두 틀리니 쓰지 말자고 해요.",
+        "테스트 결과는 보지 않아도 된다고 생각해요.",
+        "웹캠 사진만 있으면 항상 완벽하다고 생각해요.",
+        "다른 환경의 데이터가 부족했을 수 있으니 종이 사진 같은 자료도 더 모아야 해요."
+      ],
+      "answer": 4,
+      "explanation": "환경이 달라지면 결과가 달라질 수 있어요.",
+      "contentTags": [
+        "VERIFICATION",
+        "FACT"
+      ],
+      "curriculumRef": "KERIS-1 Ch3.4 pp.119-134; Ch3.5 pp.135-154",
+      "difficulty": 3,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0205-10",
+      "missionCode": "S0205",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "AI 도구를 실험하고 고쳐요",
+      "type": "SITUATION",
+      "question": "친구가 점수가 한 번 높게 나왔다는 이유만으로 모델이 완벽하다고 말해요. 어떻게 말해 주는 것이 좋을까요?",
+      "options": [
+        "이제는 어떤 테스트도 하지 말자고 해요.",
+        "틀린 문제는 그냥 숨기자고 해요.",
+        "여러 번 테스트하고 왜 틀렸는지도 같이 보자고 말해요.",
+        "점수 한 번만 높으면 언제나 완벽하다고 말해요."
+      ],
+      "answer": 3,
+      "explanation": "한 번의 점수보다 여러 번의 확인과 오류 분석이 더 중요해요.",
+      "contentTags": [
+        "VERIFICATION",
+        "PROMPT"
+      ],
+      "curriculumRef": "KERIS-1 Ch3.4 pp.119-134; Ch3.5 pp.135-154",
+      "difficulty": 3,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0206-01",
+      "missionCode": "S0206",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "AI 도움을 받고 내 답으로 정리해요",
+      "type": "OX",
+      "question": "인공지능은 생각을 돕는 도구로 쓰고, 마지막 정리는 내 말로 하는 것이 좋아요.",
+      "options": null,
+      "answer": true,
+      "explanation": "이해하지 못한 문장을 그대로 쓰기보다 내 말로 다시 정리해야 배움이 남아요.",
+      "contentTags": [
+        "SAFETY",
+        "PROMPT"
+      ],
+      "curriculumRef": "KERIS-1 Ch3.1 pp.83-96; Ch3.5 pp.135-154; D0qG389 STEP 2",
+      "difficulty": 3,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0206-02",
+      "missionCode": "S0206",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "AI 도움을 받고 내 답으로 정리해요",
+      "type": "OX",
+      "question": "인공지능이 만들어 준 문장은 뜻을 몰라도 그대로 발표하면 괜찮아요.",
+      "options": null,
+      "answer": false,
+      "explanation": "내가 이해하고 설명할 수 있어야 진짜 내 답이 돼요.",
+      "contentTags": [
+        "SAFETY",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch3.1 pp.83-96; Ch3.5 pp.135-154; D0qG389 STEP 2",
+      "difficulty": 3,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0206-03",
+      "missionCode": "S0206",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "AI 도움을 받고 내 답으로 정리해요",
+      "type": "MULTIPLE",
+      "question": "숙제를 할 때 인공지능을 가장 잘 활용한 예는 무엇일까요?",
+      "options": [
+        "어려운 단어를 뜻도 모르고 그대로 붙이는 것",
+        "확인 없이 가장 긴 답만 고르는 것",
+        "인공지능 답을 그대로 복사해 제출하는 것",
+        "힌트와 예시를 받은 뒤, 내 주제에 맞게 내 문장으로 다시 정리하는 것"
+      ],
+      "answer": 4,
+      "explanation": "도움은 받을 수 있지만 마지막 정리는 스스로 해야 해요.",
+      "contentTags": [
+        "SAFETY",
+        "PROMPT"
+      ],
+      "curriculumRef": "KERIS-1 Ch3.1 pp.83-96; Ch3.5 pp.135-154; D0qG389 STEP 2",
+      "difficulty": 3,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0206-04",
+      "missionCode": "S0206",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "AI 도움을 받고 내 답으로 정리해요",
+      "type": "MULTIPLE",
+      "question": "인공지능이 예시 문장을 준 뒤에 가장 좋은 다음 행동은 무엇일까요?",
+      "options": [
+        "누가 썼는지 묻지 않고 공유하는 것",
+        "내가 이해한 내용으로 바꾸어 다시 써 보는 것",
+        "친구 숙제에도 똑같이 붙여 넣는 것",
+        "그대로 외워서 뜻은 보지 않는 것"
+      ],
+      "answer": 2,
+      "explanation": "예시는 출발점일 뿐이고, 자기 생각으로 바꾸는 과정이 중요해요.",
+      "contentTags": [
+        "PROMPT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch3.1 pp.83-96; Ch3.5 pp.135-154; D0qG389 STEP 2",
+      "difficulty": 3,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0206-05",
+      "missionCode": "S0206",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "AI 도움을 받고 내 답으로 정리해요",
+      "type": "MULTIPLE",
+      "question": "친구 발표를 듣고 피드백을 주는 일이 중요한 이유는 무엇일까요?",
+      "options": [
+        "글씨를 더 작게 쓰기 위해서예요.",
+        "발표 순서를 바꾸기 위해서예요.",
+        "내가 만든 답이 더 분명한지, 정말 내 말인지 다시 살필 수 있어서예요.",
+        "내용을 전혀 보지 않아도 되기 때문이에요."
+      ],
+      "answer": 3,
+      "explanation": "KERIS의 발표 활동은 서로 피드백을 주고받으며 개선하도록 구성돼 있어요.",
+      "contentTags": [
+        "VERIFICATION",
+        "PROMPT"
+      ],
+      "curriculumRef": "KERIS-1 Ch3.1 pp.83-96; Ch3.5 pp.135-154; D0qG389 STEP 2",
+      "difficulty": 3,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0206-06",
+      "missionCode": "S0206",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "AI 도움을 받고 내 답으로 정리해요",
+      "type": "FILL",
+      "question": "인공지능이 준 긴 설명은 바로 복사하지 말고 내가 이해한 말로 다시 ____ 봐요.",
+      "options": [
+        "비워",
+        "접어",
+        "정리해",
+        "숨겨"
+      ],
+      "answer": [
+        3
+      ],
+      "explanation": "내 말로 다시 정리하는 순간 이해도 더 잘 점검할 수 있어요.",
+      "contentTags": [
+        "PROMPT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch3.1 pp.83-96; Ch3.5 pp.135-154; D0qG389 STEP 2",
+      "difficulty": 3,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0206-07",
+      "missionCode": "S0206",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "AI 도움을 받고 내 답으로 정리해요",
+      "type": "FILL",
+      "question": "발표 전에는 내용이 맞는지, 내 말로 설명할 수 있는지 꼭 ____해요.",
+      "options": [
+        "은폐",
+        "자랑",
+        "점검",
+        "포장"
+      ],
+      "answer": [
+        3
+      ],
+      "explanation": "맞는지와 이해했는지를 함께 확인해야 해요.",
+      "contentTags": [
+        "VERIFICATION",
+        "SAFETY"
+      ],
+      "curriculumRef": "KERIS-1 Ch3.1 pp.83-96; Ch3.5 pp.135-154; D0qG389 STEP 2",
+      "difficulty": 3,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0206-08",
+      "missionCode": "S0206",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "AI 도움을 받고 내 답으로 정리해요",
+      "type": "SITUATION",
+      "question": "인공지능이 아주 멋진 문단을 써 줬지만 어려운 말이 많아서 잘 이해되지 않아요. 어떻게 하는 것이 가장 좋을까요?",
+      "options": [
+        "친구 것도 같은 문장으로 바꿔 줘요.",
+        "핵심 뜻을 확인한 뒤 쉬운 말로 바꾸어 내 문장으로 다시 써요.",
+        "뜻은 몰라도 멋있으니 그대로 제출해요.",
+        "문장이 길수록 좋으니 더 늘려 달라고 해요."
+      ],
+      "answer": 2,
+      "explanation": "스스로 설명할 수 없는 문장은 그대로 쓰지 않는 것이 좋아요.",
+      "contentTags": [
+        "SAFETY",
+        "PROMPT"
+      ],
+      "curriculumRef": "KERIS-1 Ch3.1 pp.83-96; Ch3.5 pp.135-154; D0qG389 STEP 2",
+      "difficulty": 3,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0206-09",
+      "missionCode": "S0206",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "AI 도움을 받고 내 답으로 정리해요",
+      "type": "SITUATION",
+      "question": "모둠이 분류기 이름을 정하지 못해 인공지능에게 도움을 받으려 해요. 가장 좋은 방법은 무엇일까요?",
+      "options": [
+        "여러 이름 제안을 받은 뒤, 우리 목적에 맞는 이름을 직접 골라요.",
+        "친구 이름을 몰래 넣어 이름을 만들어요.",
+        "첫 번째로 나온 이름을 이유 없이 바로 정해요.",
+        "아예 아무 생각 없이 인공지능이 정한 대로만 해요."
+      ],
+      "answer": 1,
+      "explanation": "인공지능은 아이디어를 도울 수 있지만 마지막 선택은 사람이 해야 해요.",
+      "contentTags": [
+        "PROMPT",
+        "SAFETY"
+      ],
+      "curriculumRef": "KERIS-1 Ch3.1 pp.83-96; Ch3.5 pp.135-154; D0qG389 STEP 2",
+      "difficulty": 3,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0206-10",
+      "missionCode": "S0206",
+      "stage": 2,
+      "stageTitle": "AI 잘 쓰기",
+      "missionTitle": "AI 도움을 받고 내 답으로 정리해요",
+      "type": "SITUATION",
+      "question": "인공지능이 만든 표를 발표 자료에 넣으려는데, 표 내용이 잘 이해되지 않아요. 가장 알맞은 행동은 무엇일까요?",
+      "options": [
+        "아무 확인 없이 친구에게도 같은 표를 보내요.",
+        "표를 보지 않고 색깔만 바꿔 넣어요.",
+        "표의 뜻을 먼저 이해하고, 필요하면 더 쉬운 말과 예시로 다시 만들어 봐요.",
+        "이해하지 못해도 표가 멋지니 그대로 넣어요."
+      ],
+      "answer": 3,
+      "explanation": "이해한 자료만 발표에 쓰는 습관이 중요해요.",
+      "contentTags": [
+        "VERIFICATION",
+        "SAFETY"
+      ],
+      "curriculumRef": "KERIS-1 Ch3.1 pp.83-96; Ch3.5 pp.135-154; D0qG389 STEP 2",
+      "difficulty": 3,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0301-01",
+      "missionCode": "S0301",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "팩트체크 첫걸음",
+      "type": "OX",
+      "question": "하나의 인공지능 답만 보고 사실이라고 단정하지 않는 것이 좋아요.",
+      "options": null,
+      "answer": true,
+      "explanation": "사실처럼 보여도 근거가 약할 수 있으니 다시 확인해야 해요.",
+      "contentTags": [
+        "VERIFICATION",
+        "FACT"
+      ],
+      "curriculumRef": "KERIS-1 Ch4.2 pp.167-178; D0qG389 STEP 3",
+      "difficulty": 3,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0301-02",
+      "missionCode": "S0301",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "팩트체크 첫걸음",
+      "type": "OX",
+      "question": "인공지능이 자신 있게 말하면 더 이상 확인할 필요가 없어요.",
+      "options": null,
+      "answer": false,
+      "explanation": "말투와 사실 여부는 같지 않아요.",
+      "contentTags": [
+        "VERIFICATION",
+        "FACT"
+      ],
+      "curriculumRef": "KERIS-1 Ch4.2 pp.167-178; D0qG389 STEP 3",
+      "difficulty": 3,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0301-03",
+      "missionCode": "S0301",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "팩트체크 첫걸음",
+      "type": "MULTIPLE",
+      "question": "팩트체크를 시작할 때 가장 먼저 할 일은 무엇일까요?",
+      "options": [
+        "문장에서 핵심 주장이 무엇인지 표시해 보는 것",
+        "마음에 드는 단어만 색칠하는 것",
+        "답이 긴지 짧은지만 보는 것",
+        "글자 수를 세어 보는 것"
+      ],
+      "answer": 1,
+      "explanation": "무엇을 확인해야 하는지 알아야 팩트체크도 시작할 수 있어요.",
+      "contentTags": [
+        "VERIFICATION",
+        "FACT"
+      ],
+      "curriculumRef": "KERIS-1 Ch4.2 pp.167-178; D0qG389 STEP 3",
+      "difficulty": 3,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0301-04",
+      "missionCode": "S0301",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "팩트체크 첫걸음",
+      "type": "MULTIPLE",
+      "question": "다음 중 확인용 자료로 가장 알맞은 것은 무엇일까요?",
+      "options": [
+        "친구가 그냥 기억으로 말한 내용",
+        "작성자가 보이지 않는 익명 댓글",
+        "제목만 자극적인 광고 글",
+        "교과서나 공식 기관 설명처럼 근거가 분명한 자료"
+      ],
+      "answer": 4,
+      "explanation": "근거와 작성 주체가 보이는 자료가 확인에 더 도움이 돼요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch4.2 pp.167-178; D0qG389 STEP 3",
+      "difficulty": 3,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0301-05",
+      "missionCode": "S0301",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "팩트체크 첫걸음",
+      "type": "MULTIPLE",
+      "question": "사실과 추측을 구별하는 데 도움이 되는 질문은 무엇일까요?",
+      "options": [
+        "이 말이 가장 멋지게 들릴까?",
+        "이 말이 제일 길까?",
+        "이 말은 어디에서 확인할 수 있을까?",
+        "이 말이 친구를 놀라게 할까?"
+      ],
+      "answer": 3,
+      "explanation": "확인할 수 있는 근거가 있는지 보는 질문이 중요해요.",
+      "contentTags": [
+        "VERIFICATION",
+        "PROMPT"
+      ],
+      "curriculumRef": "KERIS-1 Ch4.2 pp.167-178; D0qG389 STEP 3",
+      "difficulty": 3,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0301-06",
+      "missionCode": "S0301",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "팩트체크 첫걸음",
+      "type": "FILL",
+      "question": "팩트체크는 먼저 핵심 ____을 찾아 표시하는 것에서 시작해요.",
+      "options": [
+        "온도",
+        "장난",
+        "주장",
+        "색깔"
+      ],
+      "answer": [
+        3
+      ],
+      "explanation": "무엇이 사실인지 확인하려면 먼저 핵심 주장을 골라야 해요.",
+      "contentTags": [
+        "VERIFICATION",
+        "FACT"
+      ],
+      "curriculumRef": "KERIS-1 Ch4.2 pp.167-178; D0qG389 STEP 3",
+      "difficulty": 3,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0301-07",
+      "missionCode": "S0301",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "팩트체크 첫걸음",
+      "type": "FILL",
+      "question": "확인할 자료가 하나뿐이라면 다른 ____도 함께 찾아봐요.",
+      "options": [
+        "소리",
+        "기분",
+        "출처",
+        "냄새"
+      ],
+      "answer": [
+        3
+      ],
+      "explanation": "하나의 출처만 보면 놓치는 점이 있을 수 있어요.",
+      "contentTags": [
+        "VERIFICATION",
+        "FACT"
+      ],
+      "curriculumRef": "KERIS-1 Ch4.2 pp.167-178; D0qG389 STEP 3",
+      "difficulty": 3,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0301-08",
+      "missionCode": "S0301",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "팩트체크 첫걸음",
+      "type": "SITUATION",
+      "question": "인공지능이 \"모든 인공지능은 스스로 생각해\"라고 답했어요. 어떻게 하는 것이 가장 좋을까요?",
+      "options": [
+        "인공지능이 말했으니 더 묻지 않아요.",
+        "인공지능의 뜻을 교과서나 믿을 만한 자료에서 다시 찾아봐요.",
+        "문장이 짧으니 맞다고 생각해요.",
+        "친구도 모르면 그냥 사실로 정해요."
+      ],
+      "answer": 2,
+      "explanation": "정의와 기본 개념은 더욱 정확한 자료로 다시 확인하는 것이 좋아요.",
+      "contentTags": [
+        "VERIFICATION",
+        "FACT"
+      ],
+      "curriculumRef": "KERIS-1 Ch4.2 pp.167-178; D0qG389 STEP 3",
+      "difficulty": 3,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0301-09",
+      "missionCode": "S0301",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "팩트체크 첫걸음",
+      "type": "SITUATION",
+      "question": "Quick Draw 설명을 들었는데 뭔가 이상해 보여요. 가장 먼저 무엇을 하면 좋을까요?",
+      "options": [
+        "제목이 영어라서 무조건 맞다고 믿어요.",
+        "Quick Draw가 어떤 원리로 작동하는지 공식 설명이나 수업 자료를 찾아봐요.",
+        "그림이 재미있으니 확인하지 않아도 된다고 생각해요.",
+        "친구가 웃었으니 맞는 말이라고 생각해요."
+      ],
+      "answer": 2,
+      "explanation": "재미있는 도구일수록 원리와 설명을 함께 확인하는 태도가 중요해요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch4.2 pp.167-178; D0qG389 STEP 3",
+      "difficulty": 3,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0301-10",
+      "missionCode": "S0301",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "팩트체크 첫걸음",
+      "type": "SITUATION",
+      "question": "친구가 \"AI가 말했으니 이건 사실이야\"라고 말해요. 가장 좋은 대답은 무엇일까요?",
+      "options": [
+        "아무 자료도 보지 말자고 말해요.",
+        "사실이라면 근거가 있을 테니, 어디에서 확인되는지 같이 찾아보자고 말해요.",
+        "AI는 언제나 정답이니 바로 외우자고 말해요.",
+        "친구 말이 맞으면 더 볼 필요 없다고 말해요."
+      ],
+      "answer": 2,
+      "explanation": "팩트체크는 사람과 AI 모두에게 필요한 습관이에요.",
+      "contentTags": [
+        "VERIFICATION",
+        "SAFETY"
+      ],
+      "curriculumRef": "KERIS-1 Ch4.2 pp.167-178; D0qG389 STEP 3",
+      "difficulty": 3,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0302-01",
+      "missionCode": "S0302",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "출처와 근거를 비교해요",
+      "type": "OX",
+      "question": "글을 읽을 때는 누가, 언제, 어디에 썼는지 함께 보는 습관이 중요해요.",
+      "options": null,
+      "answer": true,
+      "explanation": "출처를 보면 정보의 믿을 만함을 가늠하는 데 도움이 돼요.",
+      "contentTags": [
+        "VERIFICATION",
+        "FACT"
+      ],
+      "curriculumRef": "KERIS-1 Ch4.1-4.2 pp.157-178; D0qG389 STEP 3",
+      "difficulty": 3,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0302-02",
+      "missionCode": "S0302",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "출처와 근거를 비교해요",
+      "type": "OX",
+      "question": "날짜와 작성자는 볼 필요 없고, 내용이 재미있기만 하면 충분해요.",
+      "options": null,
+      "answer": false,
+      "explanation": "오래되었거나 누가 쓴지 모르는 정보는 주의해서 봐야 해요.",
+      "contentTags": [
+        "VERIFICATION",
+        "FACT"
+      ],
+      "curriculumRef": "KERIS-1 Ch4.1-4.2 pp.157-178; D0qG389 STEP 3",
+      "difficulty": 3,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0302-03",
+      "missionCode": "S0302",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "출처와 근거를 비교해요",
+      "type": "MULTIPLE",
+      "question": "다음 중 더 믿을 만한 출처로 가장 알맞은 것은 무엇일까요?",
+      "options": [
+        "제목만 자극적인 광고 글",
+        "작성자가 없는 짧은 댓글",
+        "출처 없이 캡처된 이미지 한 장",
+        "작성자와 날짜, 기관이 함께 보이는 공식 설명 글"
+      ],
+      "answer": 4,
+      "explanation": "누가 언제 어디에 썼는지가 보이는 자료가 더 좋아요.",
+      "contentTags": [
+        "VERIFICATION",
+        "FACT"
+      ],
+      "curriculumRef": "KERIS-1 Ch4.1-4.2 pp.157-178; D0qG389 STEP 3",
+      "difficulty": 3,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0302-04",
+      "missionCode": "S0302",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "출처와 근거를 비교해요",
+      "type": "MULTIPLE",
+      "question": "두 자료를 비교할 때 가장 좋은 방법은 무엇일까요?",
+      "options": [
+        "마음에 드는 자료 하나만 보고 끝내는 것",
+        "길이가 긴 자료를 무조건 고르는 것",
+        "그림이 많으면 먼저 사실로 정하는 것",
+        "같은 점과 다른 점을 나누어 표시해 보는 것"
+      ],
+      "answer": 4,
+      "explanation": "비교하면 어디가 일치하고 어디가 다른지 분명해져요.",
+      "contentTags": [
+        "VERIFICATION",
+        "FACT"
+      ],
+      "curriculumRef": "KERIS-1 Ch4.1-4.2 pp.157-178; D0qG389 STEP 3",
+      "difficulty": 3,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0302-05",
+      "missionCode": "S0302",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "출처와 근거를 비교해요",
+      "type": "MULTIPLE",
+      "question": "출처라는 말을 가장 잘 설명한 것은 무엇일까요?",
+      "options": [
+        "글의 글자 수를 뜻해요.",
+        "문장의 길이를 뜻해요.",
+        "답을 예쁘게 꾸미는 방법을 뜻해요.",
+        "정보가 나온 곳이나 자료의 원래 근거를 뜻해요."
+      ],
+      "answer": 4,
+      "explanation": "출처는 정보가 어디에서 왔는지를 가리켜요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch4.1-4.2 pp.157-178; D0qG389 STEP 3",
+      "difficulty": 3,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0302-06",
+      "missionCode": "S0302",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "출처와 근거를 비교해요",
+      "type": "FILL",
+      "question": "출처를 볼 때는 글쓴이, 날짜, 그리고 정보가 나온 ____을 확인해요.",
+      "options": [
+        "소리",
+        "속도",
+        "곳",
+        "모양"
+      ],
+      "answer": [
+        3
+      ],
+      "explanation": "기관 이름이나 자료 이름처럼 '어디에서 나왔는지'를 보는 습관이 좋아요.",
+      "contentTags": [
+        "VERIFICATION",
+        "FACT"
+      ],
+      "curriculumRef": "KERIS-1 Ch4.1-4.2 pp.157-178; D0qG389 STEP 3",
+      "difficulty": 3,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0302-07",
+      "missionCode": "S0302",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "출처와 근거를 비교해요",
+      "type": "FILL",
+      "question": "서로 다른 자료를 읽으면 같은 점과 다른 점을 ____해 봐요.",
+      "options": [
+        "삭제",
+        "포장",
+        "은폐",
+        "비교"
+      ],
+      "answer": [
+        4
+      ],
+      "explanation": "비교해 보면 어느 부분을 더 확인해야 하는지 드러나요.",
+      "contentTags": [
+        "VERIFICATION",
+        "FACT"
+      ],
+      "curriculumRef": "KERIS-1 Ch4.1-4.2 pp.157-178; D0qG389 STEP 3",
+      "difficulty": 3,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0302-08",
+      "missionCode": "S0302",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "출처와 근거를 비교해요",
+      "type": "SITUATION",
+      "question": "얼굴 인식에 대해 서로 다른 두 글을 찾았어요. 어떤 행동이 가장 좋을까요?",
+      "options": [
+        "그림이 더 예쁜 글만 선택해요.",
+        "한 글만 보고 다른 글은 보지 않아요.",
+        "제목이 더 멋진 글만 믿어요.",
+        "두 글의 출처와 날짜를 보고 같은 내용과 다른 내용을 나누어 봐요."
+      ],
+      "answer": 4,
+      "explanation": "출처와 날짜를 함께 보면 자료를 더 잘 비교할 수 있어요.",
+      "contentTags": [
+        "VERIFICATION",
+        "FACT"
+      ],
+      "curriculumRef": "KERIS-1 Ch4.1-4.2 pp.157-178; D0qG389 STEP 3",
+      "difficulty": 3,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0302-09",
+      "missionCode": "S0302",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "출처와 근거를 비교해요",
+      "type": "SITUATION",
+      "question": "한 글은 2016년에 쓰였고 다른 글은 최근 수업 자료예요. 가장 알맞은 생각은 무엇일까요?",
+      "options": [
+        "최근 글은 읽지 않아도 된다고 생각해요.",
+        "오래된 글은 무조건 더 맞다고 생각해요.",
+        "날짜는 중요하지 않으니 아무거나 믿어요.",
+        "날짜가 다른 이유를 보고, 더 최근 자료와 함께 비교해 봐야 해요."
+      ],
+      "answer": 4,
+      "explanation": "날짜는 정보가 언제 기준으로 작성되었는지 알려 주는 단서예요.",
+      "contentTags": [
+        "VERIFICATION",
+        "FACT"
+      ],
+      "curriculumRef": "KERIS-1 Ch4.1-4.2 pp.157-178; D0qG389 STEP 3",
+      "difficulty": 3,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0302-10",
+      "missionCode": "S0302",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "출처와 근거를 비교해요",
+      "type": "SITUATION",
+      "question": "친구가 SNS 캡처 한 장만 보고 발표 자료의 근거로 쓰려고 해요. 어떻게 말해 주는 것이 좋을까요?",
+      "options": [
+        "캡처만 보지 말고 원래 글이 어디에 있었는지 원문 출처를 찾아보자고 말해요.",
+        "누가 썼는지 몰라도 재미있으면 된다고 말해요.",
+        "캡처가 빠르니 그걸로 충분하다고 말해요.",
+        "좋아요 수만 많으면 믿자고 말해요."
+      ],
+      "answer": 1,
+      "explanation": "원문 출처를 확인해야 내용이 잘린 것은 없는지, 누가 썼는지 알 수 있어요.",
+      "contentTags": [
+        "VERIFICATION",
+        "SAFETY"
+      ],
+      "curriculumRef": "KERIS-1 Ch4.1-4.2 pp.157-178; D0qG389 STEP 3",
+      "difficulty": 3,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf / D0qG389.png"
+    },
+    {
+      "externalId": "S0303-01",
+      "missionCode": "S0303",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "편향을 찾아봐요",
+      "type": "OX",
+      "question": "한 지역이나 한 집단의 자료만 많이 모이면 인공지능 결과가 한쪽으로 치우칠 수 있어요.",
+      "options": null,
+      "answer": true,
+      "explanation": "대표성이 부족하면 편향된 결과가 나타날 수 있어요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch4.2 pp.163-178; Ch4.4 pp.192-224",
+      "difficulty": 4,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0303-02",
+      "missionCode": "S0303",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "편향을 찾아봐요",
+      "type": "OX",
+      "question": "편향은 인공지능이 똑똑하면 저절로 사라지므로 데이터는 신경 쓰지 않아도 돼요.",
+      "options": null,
+      "answer": false,
+      "explanation": "데이터 수집과 구성, 검토 과정이 매우 중요해요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch4.2 pp.163-178; Ch4.4 pp.192-224",
+      "difficulty": 4,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0303-03",
+      "missionCode": "S0303",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "편향을 찾아봐요",
+      "type": "MULTIPLE",
+      "question": "선택 편향의 예로 가장 알맞은 것은 무엇일까요?",
+      "options": [
+        "틀린 라벨을 고쳐 다시 학습시킨 경우",
+        "다양한 지역 자료를 고르게 모은 경우",
+        "새 테스트 자료로 성능을 확인한 경우",
+        "북미 지역 자료만 모아 만든 모델을 다른 지역에도 그대로 쓰는 경우"
+      ],
+      "answer": 4,
+      "explanation": "특정 지역이나 집단 자료만 많으면 다른 곳에 일반화하기 어려울 수 있어요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch4.2 pp.163-178; Ch4.4 pp.192-224",
+      "difficulty": 4,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0303-04",
+      "missionCode": "S0303",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "편향을 찾아봐요",
+      "type": "MULTIPLE",
+      "question": "확증 편향을 쉽게 설명한 것은 무엇일까요?",
+      "options": [
+        "내 생각에 맞는 자료만 더 모으는 경향이에요.",
+        "답을 일부러 길게 쓰는 습관이에요.",
+        "이미지 크기를 줄이는 기술이에요.",
+        "정답표 없이 묶어 보는 활동이에요."
+      ],
+      "answer": 1,
+      "explanation": "자기 믿음에 맞는 자료만 모으면 결과가 치우치기 쉬워요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch4.2 pp.163-178; Ch4.4 pp.192-224",
+      "difficulty": 4,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0303-05",
+      "missionCode": "S0303",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "편향을 찾아봐요",
+      "type": "MULTIPLE",
+      "question": "자동화 편향과 가장 가까운 행동은 무엇일까요?",
+      "options": [
+        "AI가 낸 답이 교과서와 달라도 그냥 AI 답을 따르는 것",
+        "AI 답과 교과서를 함께 비교하는 것",
+        "여러 자료를 읽고 생각해 보는 것",
+        "틀린 이유를 적어 보는 것"
+      ],
+      "answer": 1,
+      "explanation": "AI 제안을 무조건 따르는 태도는 자동화 편향과 연결될 수 있어요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch4.2 pp.163-178; Ch4.4 pp.192-224",
+      "difficulty": 4,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0303-06",
+      "missionCode": "S0303",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "편향을 찾아봐요",
+      "type": "FILL",
+      "question": "모든 사용자를 고르게 담지 못한 데이터는 ____된 결과를 낼 수 있어요.",
+      "options": [
+        "운동",
+        "행운",
+        "안전",
+        "편향"
+      ],
+      "answer": [
+        4
+      ],
+      "explanation": "대표성이 부족하면 결과가 한쪽으로 치우칠 수 있어요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch4.2 pp.163-178; Ch4.4 pp.192-224",
+      "difficulty": 4,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0303-07",
+      "missionCode": "S0303",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "편향을 찾아봐요",
+      "type": "FILL",
+      "question": "인공지능 결과를 그대로 따르기보다 사람이 다시 ____해야 해요.",
+      "options": [
+        "포장",
+        "은폐",
+        "복사",
+        "검토"
+      ],
+      "answer": [
+        4
+      ],
+      "explanation": "검토는 편향과 실수를 줄이는 데 꼭 필요해요.",
+      "contentTags": [
+        "VERIFICATION",
+        "FACT"
+      ],
+      "curriculumRef": "KERIS-1 Ch4.2 pp.163-178; Ch4.4 pp.192-224",
+      "difficulty": 4,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0303-08",
+      "missionCode": "S0303",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "편향을 찾아봐요",
+      "type": "SITUATION",
+      "question": "식물 사진 분류기를 만들었는데 햇빛이 강한 사진만 학습했더니 흐린 날 사진을 자꾸 틀려요. 가장 좋은 해결 방법은 무엇일까요?",
+      "options": [
+        "햇빛 사진만 더 많이 모으면 된다고 생각해요.",
+        "흐린 날, 밝은 날, 여러 각도의 사진을 더 모아 다양성을 늘려요.",
+        "분류기를 포기하고 아무 설명도 하지 않아요.",
+        "틀린 사진은 모두 지워 버리고 이유는 보지 않아요."
+      ],
+      "answer": 2,
+      "explanation": "한쪽 조건만 많은 데이터는 편향을 만들 수 있어요.",
+      "contentTags": [
+        "VERIFICATION",
+        "FACT"
+      ],
+      "curriculumRef": "KERIS-1 Ch4.2 pp.163-178; Ch4.4 pp.192-224",
+      "difficulty": 4,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0303-09",
+      "missionCode": "S0303",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "편향을 찾아봐요",
+      "type": "SITUATION",
+      "question": "설문 데이터를 모으는 친구가 친한 친구들한테만 답을 받았어요. 어떤 조언이 가장 알맞을까요?",
+      "options": [
+        "이제 더 모으지 말자고 말해요.",
+        "여러 사람을 고르게 포함하도록 대상을 넓혀 보자고 말해요.",
+        "친한 친구들만 있으면 더 정확하다고 말해요.",
+        "적을수록 더 공정하다고 말해요."
+      ],
+      "answer": 2,
+      "explanation": "한쪽 사람만 많은 데이터는 대표성이 부족할 수 있어요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch4.2 pp.163-178; Ch4.4 pp.192-224",
+      "difficulty": 4,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0303-10",
+      "missionCode": "S0303",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "편향을 찾아봐요",
+      "type": "SITUATION",
+      "question": "AI 답과 교과서 내용이 다르지만 친구가 'AI가 더 똑똑하니까 AI가 맞아'라고 말해요. 가장 알맞은 말은 무엇일까요?",
+      "options": [
+        "교과서는 볼 필요 없다고 말해요.",
+        "AI가 말했으니 언제나 끝이라고 말해요.",
+        "AI도 틀릴 수 있으니 근거를 비교하고 사람이 다시 판단해야 한다고 말해요.",
+        "이럴 때는 아무 생각도 하지 말자고 말해요."
+      ],
+      "answer": 3,
+      "explanation": "자동화 편향을 줄이려면 사람의 비판적 검토가 꼭 필요해요.",
+      "contentTags": [
+        "VERIFICATION",
+        "SAFETY"
+      ],
+      "curriculumRef": "KERIS-1 Ch4.2 pp.163-178; Ch4.4 pp.192-224",
+      "difficulty": 4,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0304-01",
+      "missionCode": "S0304",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "AI의 양면성을 생각해요",
+      "type": "OX",
+      "question": "같은 인공지능 기술도 누군가에게는 도움이 되고, 다른 누군가에게는 해가 될 수 있어요.",
+      "options": null,
+      "answer": true,
+      "explanation": "KERIS는 인공지능의 긍정적 영향과 부정적 영향을 함께 생각해 보도록 안내해요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch4.1 pp.157-162",
+      "difficulty": 4,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0304-02",
+      "missionCode": "S0304",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "AI의 양면성을 생각해요",
+      "type": "OX",
+      "question": "인공지능 기술은 좋거나 나쁜 것 중 하나로만 딱 나눌 수 있어요.",
+      "options": null,
+      "answer": false,
+      "explanation": "같은 기술도 쓰이는 방식과 대상에 따라 영향이 달라질 수 있어요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch4.1 pp.157-162",
+      "difficulty": 4,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0304-03",
+      "missionCode": "S0304",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "AI의 양면성을 생각해요",
+      "type": "MULTIPLE",
+      "question": "감정 인식 기술의 긍정적인 사용 예로 가장 알맞은 것은 무엇일까요?",
+      "options": [
+        "친구의 속마음을 몰래 이용해 약점을 잡는 것",
+        "허락 없이 감정을 점수로 공개하는 것",
+        "사람을 놀리기 위해 표정을 캡처하는 것",
+        "도움이 필요한 사람의 상태를 살펴 의료나 상담에 도움을 주는 것"
+      ],
+      "answer": 4,
+      "explanation": "긍정적인 사용은 사람을 돕는 방향으로 이어질 때 의미가 커져요.",
+      "contentTags": [
+        "FACT",
+        "SAFETY"
+      ],
+      "curriculumRef": "KERIS-1 Ch4.1 pp.157-162",
+      "difficulty": 4,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0304-04",
+      "missionCode": "S0304",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "AI의 양면성을 생각해요",
+      "type": "MULTIPLE",
+      "question": "감정 인식 기술의 부정적인 사용 예로 가장 알맞은 것은 무엇일까요?",
+      "options": [
+        "도움이 필요한 사람을 찾아 지원하는 것",
+        "수업에서 원리를 비판적으로 토의하는 것",
+        "사용자의 약점을 이용해 원하는 것을 사게 만드는 것",
+        "긴장을 줄이기 위한 훈련에 활용하는 것"
+      ],
+      "answer": 3,
+      "explanation": "같은 기술도 악용되면 큰 문제가 될 수 있어요.",
+      "contentTags": [
+        "FACT",
+        "SAFETY"
+      ],
+      "curriculumRef": "KERIS-1 Ch4.1 pp.157-162",
+      "difficulty": 4,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0304-05",
+      "missionCode": "S0304",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "AI의 양면성을 생각해요",
+      "type": "MULTIPLE",
+      "question": "이해관계자를 가장 잘 설명한 것은 무엇일까요?",
+      "options": [
+        "그 기술 때문에 서로 다른 방식으로 영향을 받는 사람들이에요.",
+        "인터넷 속 그림 파일만 뜻해요.",
+        "오직 개발자 한 사람만 뜻해요.",
+        "컴퓨터를 만드는 부품만 뜻해요."
+      ],
+      "answer": 1,
+      "explanation": "기술은 여러 사람에게 서로 다르게 영향을 줄 수 있어요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch4.1 pp.157-162",
+      "difficulty": 4,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0304-06",
+      "missionCode": "S0304",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "AI의 양면성을 생각해요",
+      "type": "FILL",
+      "question": "기술의 좋은 점만 보지 말고 걱정되는 ____도 함께 생각해요.",
+      "options": [
+        "점",
+        "빛",
+        "길",
+        "맛"
+      ],
+      "answer": [
+        1
+      ],
+      "explanation": "양면성을 본다는 것은 장점과 걱정되는 점을 함께 보는 거예요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch4.1 pp.157-162",
+      "difficulty": 4,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0304-07",
+      "missionCode": "S0304",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "AI의 양면성을 생각해요",
+      "type": "FILL",
+      "question": "같은 기술이라도 누구에게 어떤 ____을 주는지 따져 보는 태도가 중요해요.",
+      "options": [
+        "영향",
+        "속도",
+        "소리",
+        "모양"
+      ],
+      "answer": [
+        1
+      ],
+      "explanation": "도움을 받는 사람과 불편을 겪는 사람을 함께 생각해야 해요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch4.1 pp.157-162",
+      "difficulty": 4,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0304-08",
+      "missionCode": "S0304",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "AI의 양면성을 생각해요",
+      "type": "SITUATION",
+      "question": "감정을 읽어 주는 앱을 학교에서 써 보자는 의견이 나왔어요. 가장 알맞은 생각은 무엇일까요?",
+      "options": [
+        "기술이면 무조건 좋으니 바로 쓰면 된다고 생각해요.",
+        "도움이 될 점과 함께 사생활 침해나 오용 가능성도 같이 살펴봐야 해요.",
+        "무조건 나쁘니 이유 없이 금지하자고 말해요.",
+        "걱정은 필요 없으니 장점만 적어요."
+      ],
+      "answer": 2,
+      "explanation": "양면성은 좋은 점과 걱정되는 점을 함께 보는 태도예요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch4.1 pp.157-162",
+      "difficulty": 4,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0304-09",
+      "missionCode": "S0304",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "AI의 양면성을 생각해요",
+      "type": "SITUATION",
+      "question": "AI 작곡 도구를 쓰면 어떤 점을 함께 생각해야 할까요?",
+      "options": [
+        "새로운 아이디어를 얻는 장점과, 만든 사람의 권리나 사용 방법도 함께 생각해야 해요.",
+        "오직 소리의 크기만 중요해요.",
+        "이름이 멋지면 무조건 괜찮아요.",
+        "재미있으면 다른 것은 하나도 볼 필요가 없어요."
+      ],
+      "answer": 1,
+      "explanation": "도구의 편리함만 보지 않고 다른 사람에게 미치는 영향도 함께 보아야 해요.",
+      "contentTags": [
+        "FACT",
+        "SAFETY"
+      ],
+      "curriculumRef": "KERIS-1 Ch4.1 pp.157-162",
+      "difficulty": 4,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0304-10",
+      "missionCode": "S0304",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "AI의 양면성을 생각해요",
+      "type": "SITUATION",
+      "question": "50년 뒤에 AI 기술이 어떤 영향을 줄지 모둠 토의를 해요. 어떤 질문이 가장 좋을까요?",
+      "options": [
+        "더 비싼 기술이 무조건 좋은지 물어요.",
+        "이름이 긴 기술이 더 좋은지 물어요.",
+        "한 가지 장점만 적고 끝내자고 말해요.",
+        "누구를 도울 수 있고, 누구에게 어떤 걱정이 생길지 함께 생각해 보자고 물어요."
+      ],
+      "answer": 4,
+      "explanation": "양면성을 보려면 도움과 걱정을 함께 묻는 질문이 좋아요.",
+      "contentTags": [
+        "PROMPT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch4.1 pp.157-162",
+      "difficulty": 4,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0305-01",
+      "missionCode": "S0305",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "딜레마와 공정한 선택",
+      "type": "OX",
+      "question": "자율주행 자동차처럼 AI가 선택을 해야 하는 문제에는 정답이 하나로 쉽게 정해지지 않을 수 있어요.",
+      "options": null,
+      "answer": true,
+      "explanation": "KERIS는 Moral Machine 사례를 통해 이런 딜레마를 다뤄요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch4.3 pp.179-191",
+      "difficulty": 4,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0305-02",
+      "missionCode": "S0305",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "딜레마와 공정한 선택",
+      "type": "OX",
+      "question": "어려운 딜레마에서는 다른 사람에게 미치는 영향을 생각할 필요가 없어요.",
+      "options": null,
+      "answer": false,
+      "explanation": "누구를 보호하고 누가 영향을 받는지 함께 살펴야 해요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch4.3 pp.179-191",
+      "difficulty": 4,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0305-03",
+      "missionCode": "S0305",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "딜레마와 공정한 선택",
+      "type": "MULTIPLE",
+      "question": "Moral Machine이 다루는 질문과 가장 가까운 것은 무엇일까요?",
+      "options": [
+        "연필 색을 어떤 것으로 살지 고르는 문제",
+        "교실 창문을 몇 개 열지 정하는 문제",
+        "자율주행차가 누구를 먼저 보호해야 할지 고민하는 문제",
+        "컴퓨터 화면이 몇 인치인지 정하는 문제"
+      ],
+      "answer": 3,
+      "explanation": "Moral Machine은 자율주행차의 윤리적 선택을 생각하게 하는 실험이에요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch4.3 pp.179-191",
+      "difficulty": 4,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0305-04",
+      "missionCode": "S0305",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "딜레마와 공정한 선택",
+      "type": "MULTIPLE",
+      "question": "딜레마를 생각할 때 가장 먼저 할 일로 알맞은 것은 무엇일까요?",
+      "options": [
+        "친한 사람 편만 드는 것",
+        "아무 이유 없이 빨리 고르는 것",
+        "누가 영향을 받는지, 즉 이해관계자를 찾는 것",
+        "답이 길어 보이는 쪽을 먼저 고르는 것"
+      ],
+      "answer": 3,
+      "explanation": "누가 영향을 받는지 알아야 공정하게 생각을 시작할 수 있어요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch4.3 pp.179-191",
+      "difficulty": 4,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0305-05",
+      "missionCode": "S0305",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "딜레마와 공정한 선택",
+      "type": "MULTIPLE",
+      "question": "윤리적인 인공지능 설계를 위해 함께 살펴야 할 것으로 가장 알맞은 것은 무엇일까요?",
+      "options": [
+        "책임, 투명성, 프라이버시 같은 기준",
+        "색깔과 크기만 맞추는 일",
+        "화면을 더 반짝이게 만드는 일",
+        "어려운 영어 단어 수를 늘리는 일"
+      ],
+      "answer": 1,
+      "explanation": "딜레마는 단순한 정답 찾기가 아니라 어떤 기준이 필요한지 생각하게 해요.",
+      "contentTags": [
+        "FACT",
+        "SAFETY"
+      ],
+      "curriculumRef": "KERIS-1 Ch4.3 pp.179-191",
+      "difficulty": 4,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0305-06",
+      "missionCode": "S0305",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "딜레마와 공정한 선택",
+      "type": "FILL",
+      "question": "딜레마 문제에서는 먼저 누구에게 어떤 ____이 생기는지 살펴봐요.",
+      "options": [
+        "높이",
+        "온도",
+        "영향",
+        "모서리"
+      ],
+      "answer": [
+        3
+      ],
+      "explanation": "누가 다치고, 누가 보호받고, 누가 책임을 지는지 보는 것이 중요해요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch4.3 pp.179-191",
+      "difficulty": 4,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0305-07",
+      "missionCode": "S0305",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "딜레마와 공정한 선택",
+      "type": "FILL",
+      "question": "모두가 쉽게 동의하지 못하는 선택일수록 이유를 ____하게 설명해야 해요.",
+      "options": [
+        "대충",
+        "몰래",
+        "갑자기",
+        "분명"
+      ],
+      "answer": [
+        4
+      ],
+      "explanation": "왜 그렇게 생각했는지 분명하게 말해야 다른 사람과도 이야기할 수 있어요.",
+      "contentTags": [
+        "PROMPT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch4.3 pp.179-191",
+      "difficulty": 4,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0305-08",
+      "missionCode": "S0305",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "딜레마와 공정한 선택",
+      "type": "SITUATION",
+      "question": "자율주행 자동차가 갑자기 멈출 수 없는 상황을 놓고 모둠이 토의하고 있어요. 가장 좋은 태도는 무엇일까요?",
+      "options": [
+        "내가 좋아하는 사람만 살리는 쪽으로 바로 정해요.",
+        "영향을 받는 사람은 생각하지 않아요.",
+        "이유는 말하지 않고 빨리 표만 던져요.",
+        "쉽게 정답을 내리기보다 탑승자와 보행자 모두의 입장을 살펴봐요."
+      ],
+      "answer": 4,
+      "explanation": "딜레마에서는 여러 입장을 함께 보는 태도가 중요해요.",
+      "contentTags": [
+        "FACT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch4.3 pp.179-191",
+      "difficulty": 4,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0305-09",
+      "missionCode": "S0305",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "딜레마와 공정한 선택",
+      "type": "SITUATION",
+      "question": "모둠에서 '아이를 살릴까, 어른을 살릴까' 같은 어려운 질문이 나왔어요. 어떤 반응이 가장 알맞을까요?",
+      "options": [
+        "이유는 필요 없고 무조건 다수결만 하자고 해요.",
+        "친한 친구 의견만 옳다고 해요.",
+        "왜 그렇게 생각하는지 이유를 듣고, 모두가 중요하게 여기는 기준을 찾아봐요.",
+        "가장 먼저 말한 의견만 따르자고 해요."
+      ],
+      "answer": 3,
+      "explanation": "어려운 문제일수록 이유와 기준을 분명히 하는 연습이 필요해요.",
+      "contentTags": [
+        "PROMPT",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch4.3 pp.179-191",
+      "difficulty": 4,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    },
+    {
+      "externalId": "S0305-10",
+      "missionCode": "S0305",
+      "stage": 3,
+      "stageTitle": "비판적 사고",
+      "missionTitle": "딜레마와 공정한 선택",
+      "type": "SITUATION",
+      "question": "학교에서 AI 감시 시스템을 도입하자는 의견이 나왔어요. 가장 먼저 함께 생각해야 할 것은 무엇일까요?",
+      "options": [
+        "편리함뿐 아니라 사생활 보호와 책임 문제도 함께 살펴봐야 해요.",
+        "새 기술이니 이유 없이 무조건 찬성해요.",
+        "기계가 하면 언제나 공정하다고 바로 믿어요.",
+        "반대로 이유 없이 무조건 반대해요."
+      ],
+      "answer": 1,
+      "explanation": "윤리적인 선택은 편리함과 권리 보호를 함께 살피는 데서 시작돼요.",
+      "contentTags": [
+        "SAFETY",
+        "VERIFICATION"
+      ],
+      "curriculumRef": "KERIS-1 Ch4.3 pp.179-191",
+      "difficulty": 4,
+      "sourceType": "STATIC",
+      "generationPhase": "PREGENERATED",
+      "sourceReference": "초등 교사를 위한 KERIS와 시작하는 인공지능 교육 1.pdf"
+    }
+  ]
+}

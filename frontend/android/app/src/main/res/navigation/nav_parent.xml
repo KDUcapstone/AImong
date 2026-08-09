@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_parent"
+    app:startDestination="@id/parentDashboardFragment">
+
+    <fragment
+        android:id="@+id/parentDashboardFragment"
+        android:name="com.kduniv.aimong.feature.parent.presentation.ParentDashboardFragment"
+        android:label="Parent Dashboard"
+        tools:layout="@layout/fragment_parent_dashboard">
+        <action
+            android:id="@+id/action_parentDashboardFragment_to_parentSettingsFragment"
+            app:destination="@id/parentSettingsFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/parentSettingsFragment"
+        android:name="com.kduniv.aimong.feature.parent.presentation.ParentSettingsFragment"
+        android:label="@string/parent_settings_title"
+        tools:layout="@layout/fragment_parent_settings">
+        <action
+            android:id="@+id/action_parentSettingsFragment_to_notificationSettingsFragment"
+            app:destination="@id/notificationSettingsFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/notificationSettingsFragment"
+        android:name="com.kduniv.aimong.feature.settings.presentation.NotificationSettingsFragment"
+        android:label="@string/notification_settings_title"
+        tools:layout="@layout/fragment_notification_settings" />
+
+</navigation>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 자녀 하단 네비: 홈·챗봇·수집·MY 만 (별도 «퀘스트» 탭 없음 — 퀘스트는 홈 플로팅 선물로 진입) -->
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/homeFragment"
+        android:icon="@drawable/ic_nav_home_color"
+        android:title="@string/bottom_nav_home" />
+    <item
+        android:id="@+id/chatFragment"
+        android:icon="@drawable/ic_nav_ai_color"
+        android:title="@string/bottom_nav_chatbot" />
+    <item
+        android:id="@+id/gachaFragment"
+        android:icon="@drawable/ic_nav_collection_color"
+        android:title="@string/bottom_nav_gacha" />
+    <item
+        android:id="@+id/myProfileFragment"
+        android:icon="@drawable/ic_nav_my_color"
+        android:title="@string/bottom_nav_my" />
+</menu>

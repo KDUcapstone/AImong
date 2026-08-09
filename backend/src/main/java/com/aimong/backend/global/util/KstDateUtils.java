@@ -1,6 +1,21 @@
 package com.aimong.backend.global.util;
 
-// TODO: KST (Asia/Seoul) 기준 날짜/시각 유틸
-// - LocalDate.now(ZoneId.of("Asia/Seoul"))
-public class KstDateUtils {
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.ZoneId;
+
+public final class KstDateUtils {
+
+    private static final ZoneId KST = ZoneId.of("Asia/Seoul");
+
+    private KstDateUtils() {
+    }
+
+    public static LocalDate today() {
+        return LocalDate.now(KST);
+    }
+
+    public static LocalDate currentWeekStart() {
+        return today().with(DayOfWeek.MONDAY);
+    }
 }

@@ -1,0 +1,191 @@
+package com.kduniv.aimong.feature.home.domain
+
+import androidx.annotation.DrawableRes
+import com.kduniv.aimong.R
+import com.kduniv.aimong.feature.home.data.model.HomeScreenData
+import com.kduniv.aimong.feature.home.presentation.DifficultyUnlockMode
+import com.kduniv.aimong.feature.home.presentation.HomePathItem
+import com.kduniv.aimong.feature.home.presentation.HomeQuizNavigation
+import com.kduniv.aimong.feature.home.presentation.StageRewardUi
+import com.kduniv.aimong.feature.mission.domain.model.Mission
+import com.kduniv.aimong.feature.mission.domain.model.hasActiveStar1
+import com.kduniv.aimong.feature.mission.domain.model.isStar1Completed
+import com.kduniv.aimong.feature.mission.domain.model.openDifficultyCount
+import com.kduniv.aimong.feature.mission.domain.model.showsReviewPathNode
+import com.kduniv.aimong.feature.mission.domain.model.displayTitle
+import com.kduniv.aimong.feature.mission.domain.model.needsStatusStarSupplement
+import com.kduniv.aimong.feature.mission.domain.model.toDisplayMissionTitle
+
+/**
+ * GET /home 의 missionSummary + GET /missions(v2.3) 목록으로 학습 경로 노드를 구성합니다.
+ */
+object HomePathBuilder {
+
+    private data class IslandMeta(
+        @DrawableRes val iconRes: Int,
+        val name: String,
+        @DrawableRes val banner: Int,
+    )
+
+    private val ISLAND_META = listOf(
+        IslandMeta(R.drawable.ic_nav_home_color, "시작의 섬", R.drawable.bg_home_section_banner_stage1),
+        IslandMeta(R.drawable.ic_nav_ai_color, "탐험의 화산섬", R.drawable.bg_home_section_banner_stage2),
+        IslandMeta(R.drawable.ic_nav_study_color, "마스터의 별섬", R.drawable.bg_home_section_banner_stage3),
+    )
+
+    fun build(
+        data: HomeScreenData,
+        missions: List<Mission>,
+        stageRewards: Map<Int, StageRewardUi> = emptyMap(),
+    ): List<HomePathItem> {
+        val rec = data.missionSummary.recommendedMission
+        val summary = data.missionSummary
+        val canStart = summary.canStartMission
+        val items = mutableListOf<HomePathItem>()
+
+        val recSetIdStr = rec?.setId?.toString()?.takeIf { it != "0" && it.isNotBlank() }
+
+        val groupedByStage = missions
+            .groupBy { it.stage }
+            .toSortedMap()
+
+        // v2.4: /home 의 recommendedMission.id 가 UUID가 아닐 수 있어(예: "1").
+        // 홈에서 퀴즈 진입은 /missions 목록의 UUID missionId를 우선 사용하도록 보정한다.
+        val resolvedRecommendedMissionId: String? = rec?.let { r ->
+            missions.firstOrNull { it.missionId == r.id }?.missionId
+                ?: missions.firstOrNull { it.stage == r.stage && it.title == r.title }?.missionId
+                ?: missions.firstOrNull { it.title == r.title }?.missionId
+                ?: r.id
+        }
+
+        for (stage in 1..3) {
+            val stageMissions = groupedByStage[stage] ?: emptyList()
+            val sortedMissions = stageMissions
+                .sortedBy { missionOrderKey(it.missionCode, it.title) }
+
+            val stageTitle = HomeStageTitles.title(stage)
+            val meta = ISLAND_META.getOrNull(stage - 1) ?: ISLAND_META.first()
+            // v2.11: 섬 진행 = 활성 별1 미션 중 ★1 세트 전부 완료 수 (별2·3은 해금 조건 제외)
+            val star1Missions = sortedMissions.filter { it.hasActiveStar1() }
+            val completedStar1 = star1Missions.count { it.isStar1Completed() }
+            items.add(
+                HomePathItem.SectionHeader(
+                    stage = stage,
+                    islandIconRes = meta.iconRes,
+                    islandName = meta.name,
+                    progressCompleted = completedStar1,
+                    progressTotal = star1Missions.size.coerceAtLeast(1),
+                    themeHint = stageTitle,
+                    bannerDrawableRes = meta.banner,
+                )
+            )
+
+            sortedMissions.forEachIndexed { index, m ->
+                // 노드 아래 ★: starLevels[].isPlayable 만 (미션 isUnlocked 와 별개)
+                val stars = m.openDifficultyCount()
+                val displayTitle = m.displayTitle()
+                if (!m.isUnlocked) {
+                    items.add(HomePathItem.Locked(hint = "잠김"))
+                } else if (rec != null && resolvedRecommendedMissionId != null && m.missionId == resolvedRecommendedMissionId) {
+                    val todayNav = HomeQuizNavigation(
+                        entrySetId = recSetIdStr.orEmpty(),
+                        missionId = resolvedRecommendedMissionId,
+                        starLevel = if (!recSetIdStr.isNullOrBlank()) -1 else 1
+                    )
+                    val todayTitle = displayTitle.ifBlank {
+                        rec.title.toDisplayMissionTitle(rec.missionCode.orEmpty())
+                    }
+                    val recMissionStars = m.starLevels
+                    val anyPlayable = recMissionStars.any { it.isPlayable }
+                    val todayUnlock = when {
+                        rec.isReviewable && !anyPlayable -> DifficultyUnlockMode.REVIEW
+                        rec.isReviewable && anyPlayable -> DifficultyUnlockMode.PER_STAR
+                        else -> DifficultyUnlockMode.NEW_PLAY
+                    }
+                    items.add(
+                        HomePathItem.TodayStart(
+                            quizNav = todayNav,
+                            missionTitle = todayTitle,
+                            enabled = canStart,
+                            skipEnergyCheck = rec.isReviewable && !anyPlayable,
+                            unlockMode = todayUnlock,
+                            starsFilled = stars
+                        )
+                    )
+                } else if (m.starLevels.any { it.isPlayable }) {
+                    val star = m.starLevels.firstOrNull { it.isPlayable }?.starLevel?.takeIf { it in 1..3 } ?: 1
+                    items.add(
+                        HomePathItem.Start(
+                            quizNav = HomeQuizNavigation("", m.missionId, star),
+                            missionTitle = displayTitle,
+                            enabled = true,
+                            starsFilled = stars,
+                        )
+                    )
+                } else if (m.showsReviewPathNode()) {
+                    val sl = m.starLevels.first { it.isReviewOnly }
+                    val star = sl.starLevel.takeIf { it in 1..3 } ?: 1
+                    items.add(
+                        HomePathItem.Review(
+                            quizNav = HomeQuizNavigation("", m.missionId, star),
+                            subtitle = displayTitle,
+                            starsFilled = stars
+                        )
+                    )
+                } else if (m.starLevels.any { it.isCompleted }) {
+                    val sl = m.starLevels.firstOrNull { it.isPlayable }
+                        ?: m.starLevels.firstOrNull { it.isReviewOnly }
+                        ?: m.starLevels.firstOrNull()
+                    val star = sl?.starLevel?.takeIf { it in 1..3 } ?: 1
+                    items.add(
+                        HomePathItem.Completed(
+                            order = index + 1,
+                            title = displayTitle,
+                            missionId = m.missionId,
+                            quizNav = HomeQuizNavigation("", m.missionId, star),
+                            starsFilled = stars,
+                        )
+                    )
+                } else if (m.needsStatusStarSupplement()) {
+                    // 서버 status 보강 전이라 별 난이도 정보만 비어 있는 상태.
+                    // 잠금 노드로 막지 않고 클릭 가능한 노드로 둔 뒤, 피커에서 해당 미션만 보강한다.
+                    items.add(
+                        HomePathItem.Start(
+                            quizNav = HomeQuizNavigation("", m.missionId, 1),
+                            missionTitle = displayTitle,
+                            enabled = true,
+                            starsFilled = stars,
+                        )
+                    )
+                } else {
+                    items.add(HomePathItem.Locked(hint = "대기 중"))
+                }
+            }
+
+            if (stage < 3) {
+                val reward = stageRewards[stage]
+                    ?: StageRewardUi.defaultsForStages(listOf(stage)).getValue(stage)
+                items.add(
+                    HomePathItem.InterStageRewardChest(
+                        afterStageNumber = stage,
+                        reward = reward,
+                    ),
+                )
+            }
+        }
+
+        return items
+    }
+
+    private fun missionOrderKey(missionCode: String, title: String): Int {
+        // 예: "S1-M10" -> 10. 파싱 실패 시 0.
+        val idx = missionCode.indexOf("-M")
+        if (idx >= 0) {
+            val n = missionCode.substring(idx + 2).toIntOrNull()
+            if (n != null) return n
+        }
+        // 일부 서버는 "S1M10" 같은 형식일 수 있어 숫자만 추출 시도
+        val digits = missionCode.filter { it.isDigit() }
+        return digits.toIntOrNull() ?: title.filter { it.isDigit() }.toIntOrNull() ?: 0
+    }
+}

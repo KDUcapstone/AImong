@@ -1,3 +1,23 @@
 package com.aimong.backend.domain.auth.repository;
-// TODO: JpaRepository<ParentAccount, Long>
-public interface ParentAccountRepository {}
+
+import com.aimong.backend.domain.auth.entity.ParentAccount;
+import jakarta.persistence.LockModeType;
+import java.util.List;
+import java.util.Optional;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+
+public interface ParentAccountRepository extends JpaRepository<ParentAccount, String> {
+
+    Optional<ParentAccount> findByParentId(String parentId);
+
+    Optional<ParentAccount> findByParentIdAndDeletedAtIsNull(String parentId);
+
+    List<ParentAccount> findAllByDeletedAtIsNull();
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    Optional<ParentAccount> findWithLockByParentId(String parentId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    Optional<ParentAccount> findWithLockByParentIdAndDeletedAtIsNull(String parentId);
+}

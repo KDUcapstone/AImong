@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Tailwind: from-blue-600 (#2563EB) to-indigo-600 (#4F46E5) -->
+    <gradient
+        android:angle="315"
+        android:startColor="#2563EB"
+        android:endColor="#4F46E5"
+        android:type="linear" />
+    <corners android:radius="16dp" />
+</shape>

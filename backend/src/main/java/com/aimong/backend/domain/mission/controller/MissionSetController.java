@@ -1,0 +1,72 @@
+package com.aimong.backend.domain.mission.controller;
+
+import com.aimong.backend.domain.mission.dto.MissionQuestionsResponse;
+import com.aimong.backend.domain.mission.dto.MissionSetCheckRequest;
+import com.aimong.backend.domain.mission.dto.MissionSetReportResponse;
+import com.aimong.backend.domain.mission.dto.QuestionCheckResponse;
+import com.aimong.backend.domain.mission.dto.SubmitRequest;
+import com.aimong.backend.domain.mission.dto.SubmitResponse;
+import com.aimong.backend.domain.mission.service.QuestionCheckService;
+import com.aimong.backend.domain.mission.service.MissionSetReportService;
+import com.aimong.backend.domain.mission.service.QuizService;
+import com.aimong.backend.domain.mission.service.SubmitService;
+import com.aimong.backend.global.response.ApiResponse;
+import jakarta.validation.Valid;
+import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequiredArgsConstructor
+@RequestMapping("/mission-sets")
+public class MissionSetController {
+
+    private final QuizService quizService;
+    private final SubmitService submitService;
+    private final QuestionCheckService questionCheckService;
+    private final MissionSetReportService missionSetReportService;
+
+    @GetMapping("/{setId}/questions")
+    public ApiResponse<MissionQuestionsResponse> getQuestions(
+            @PathVariable String setId,
+            Authentication authentication
+    ) {
+        return ApiResponse.success(quizService.getQuestions(extractChildId(authentication), setId));
+    }
+
+    @PostMapping("/{setId}/submit")
+    public ApiResponse<SubmitResponse> submit(
+            @PathVariable String setId,
+            @Valid @RequestBody SubmitRequest request,
+            Authentication authentication
+    ) {
+        return ApiResponse.success(submitService.submit(extractChildId(authentication), setId, request));
+    }
+
+    @PostMapping("/{setId}/check")
+    public ApiResponse<QuestionCheckResponse> checkQuestion(
+            @PathVariable String setId,
+            @Valid @RequestBody MissionSetCheckRequest request,
+            Authentication authentication
+    ) {
+        return ApiResponse.success(questionCheckService.check(extractChildId(authentication), setId, request));
+    }
+
+    @GetMapping("/{setId}/report")
+    public ApiResponse<MissionSetReportResponse> getReport(
+            @PathVariable String setId,
+            Authentication authentication
+    ) {
+        return ApiResponse.success(missionSetReportService.getReport(extractChildId(authentication), setId));
+    }
+
+    private UUID extractChildId(Authentication authentication) {
+        return UUID.fromString(authentication.getName());
+    }
+}
